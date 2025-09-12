@@ -9,9 +9,10 @@ python = "^3.10"
 psycopg2-binary = "^2.9"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4"
-pylint = "^3.0"
-coverage = "^7.4"
+pytest = "^8.3.5"
+coverage = "^7.7.1"
+pylint = "^3.3.6"
+autopep8 = "^2.3.2"
 robotframework = "^7.0"
 
 [build-system]
