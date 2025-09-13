@@ -15,9 +15,9 @@ brew install node git
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the dev branch**
    ```bash
-   git clone https://github.com/OhtuProjektiSyksy25/GO2-Web-App
+   git clone -b dev https://github.com/OhtuProjektiSyksy25/GO2-Web-App
    cd GO2-Web-App/frontend
    ```
 
