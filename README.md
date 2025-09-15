@@ -8,14 +8,9 @@
 
 ## Installation
 
-## Usage
+### Frontend Setup
 
-## Testing
-
-
-## Frontend Setup
-
-### Prerequisites
+#### Prerequisites
 
 **Install Node.js and Git using Homebrew:**
 ```bash
@@ -24,8 +19,7 @@
 brew install node git
 ```
 
-
-### Installation
+#### Installation
 
 1. **Clone the dev branch**
    ```bash
@@ -45,7 +39,9 @@ brew install node git
 
 4. **The app will open at http://localhost:3000**
 
+## Usage
 
+## Testing
 
 
 ## Documentation
