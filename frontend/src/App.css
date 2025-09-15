@@ -1,0 +1,16 @@
+
+.App {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+
+
+.title {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 600;
+  color: #60B45A;
+  font-family: 'Arial', sans-serif;
+}
