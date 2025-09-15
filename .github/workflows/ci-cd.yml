@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI-CD
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
 jobs:
   ### 1. FRONTEND
   frontend:
-    name: Frontend Build & Test (React + TS)
+    name: Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,6 +27,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
 
       - name: Install frontend dependencies
         run: npm ci
@@ -53,7 +61,7 @@ jobs:
 
   ### 2. BACKEND
   backend:
-    name: Backend Lint & Unit Tests (Python + Poetry)
+    name: Backend 
     runs-on: ubuntu-latest
     defaults:
       run:
