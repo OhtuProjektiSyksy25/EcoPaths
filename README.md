@@ -1,6 +1,6 @@
 # EcoPaths
 
-![CI](https://github.com/OhtuProjektiSyksy25/EcoPaths/blob/main/.github/workflows/ci-cd.yml)
+[![.github/workflows/ci-cd.yml](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml)
 ![Coverage](https://codecov.io/gh/org/repo/branch/main/graph/badge.svg)
 
 ## Project Description
@@ -19,4 +19,4 @@
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE] (https://github.com/OhtuProjektiSyksy25/EcoPaths/blob/main/LICENSE) for more details.
+This project is licensed under the MIT License.
