@@ -44,6 +44,28 @@ brew install node git
 ## Testing
 
 
+### Run Pylint
+```bash
+   poetry run invoke lint
+```
+
+### Run unit tests
+```bash
+   poetry run invoke test
+```
+
+### Generate coverage report
+```bash
+   poetry run invoke coverage
+```
+
+### Run Pylint and Coverage
+```bash
+   poetry run invoke all
+```
+
+
+
 ## Documentation
 
 - [Product backlog](https://github.com/orgs/OhtuProjektiSyksy25/projects/1)  
