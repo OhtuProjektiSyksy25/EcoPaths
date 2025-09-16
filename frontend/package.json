@@ -16,7 +16,10 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
-    "start": "react-scripts start"
+    "start": "react-scripts start",
+    "install-robot": "pip3 install robotframework robotframework-seleniumlibrary",
+    "test:robot": "robot tests/frontend.robot",
+    "test:robot:headless": "robot --variable HEADLESS:true tests/frontend.robot"
   },
   "browserslist": {
     "production": [
