@@ -1,8 +1,9 @@
 [tool.poetry]
-name = "ohtu-projekti-ecopaths"
+name = "ecopaths-backend"
 version = "0.1.0"
 description = "EcoPaths route planner"
 
+packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
