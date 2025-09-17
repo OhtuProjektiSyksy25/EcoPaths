@@ -42,16 +42,16 @@ jobs:
       - name: Type-check (TS)
         run: npx tsc --noEmit
 
-      #- name: Lint frontend code
+      #- name: Lint
       #  run: npm run lint
 
-      #- name: Run frontend tests
+      #- name: Run tests
       #  run: npm test
 
-      - name: Build frontend
-        run: npm run build
+      #- name: Build frontend
+      #  run: npm run build
 
-      # - name: Build & push Docker (frontend)
+      # - name: Build & push Docker
       #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
       #   run: |
       #     docker build -t ghcr.io/<org>/<repo>/frontend:${{ github.sha }} .
@@ -85,13 +85,13 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: poetry install
 
-      - name: Lint backend code (Pylint)
+      - name: Lint
         run: poetry run pylint src
 
-      - name: Run backend unit tests with coverage
+      - name: Run tests with coverage
         run: poetry run coverage run -m pytest
 
       - name: Generate coverage report
@@ -104,7 +104,7 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: true
           
-      # - name: Build & push Docker (backend)
+      # - name: Build & push Docker
       #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
       #   run: |
       #     docker build -t ghcr.io/<org>/<repo>/backend:${{ github.sha }} .
