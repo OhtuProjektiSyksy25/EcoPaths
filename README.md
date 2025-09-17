@@ -43,7 +43,6 @@ brew install node git
 
 ## Testing
 
-
 ### Run Pylint
 ```bash
    poetry run invoke lint
@@ -59,7 +58,7 @@ brew install node git
    poetry run invoke coverage
 ```
 
-### Run Pylint and Coverage
+### Run format, lint and coverage
 ```bash
    poetry run invoke all
 ```
