@@ -8,12 +8,12 @@ def lint(c):
 @task
 def test(c):
     """Run all unit tests"""
-    c.run("poetry run pytest src/tests")
+    c.run("poetry run pytest tests")
 
 @task
 def coverage(c):
     """Run tests with coverage and generate report"""
-    c.run("poetry run coverage run -m pytest src/tests")
+    c.run("poetry run coverage run -m pytest tests")
     c.run("poetry run coverage report")
     c.run("poetry run coverage html")
 

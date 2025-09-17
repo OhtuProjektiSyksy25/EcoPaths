@@ -2,7 +2,7 @@
 name = "ohtu-projekti-ecopaths"
 version = "0.1.0"
 description = "EcoPaths route planner"
-authors = ["Laura Anttila <laura.anttila@helsinki.fi>"]
+
 
 [tool.poetry.dependencies]
 python = "^3.10"

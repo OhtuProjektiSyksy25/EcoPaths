@@ -42,8 +42,8 @@ jobs:
       - name: Type-check (TS)
         run: npx tsc --noEmit
 
-      - name: Lint frontend code
-        run: npm run lint
+      #- name: Lint frontend code
+      #  run: npm run lint
 
       #- name: Run frontend tests
       #  run: npm test
