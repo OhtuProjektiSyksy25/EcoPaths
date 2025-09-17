@@ -1,6 +1,12 @@
 
 # Frontend
 frontend/node_modules/
-backend/__pycache__/
-backend/.pytest_cache/
+
+# Robot framework
+log.html
+output.xml
+report.html
+screenshots/
+selenium*.png
+
 
