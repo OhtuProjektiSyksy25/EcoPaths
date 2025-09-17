@@ -25,7 +25,7 @@
 
 **Run the backend**
 ```bash
-    uvicorn main:app --reload
+    uvicorn src.main:app --reload
 ```
 **Backend will open at http://127.0.0.1:8000**
 
