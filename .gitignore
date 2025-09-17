@@ -1,7 +1,6 @@
 
 # Frontend
 frontend/node_modules/
-frontend/package-lock.json
 
 # Robot framework
 log.html
