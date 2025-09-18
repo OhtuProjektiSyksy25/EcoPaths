@@ -6,23 +6,20 @@ on:
     branches:
       - dev
 
-
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - name: Send PR info to Discord
         run: |
+          payload=$(jq -n \
+            --arg title "${{ github.event.pull_request.title }}" \
+            --arg url "${{ github.event.pull_request.html_url }}" \
+            --arg actor "${{ github.actor }}" \
+            '{embeds:[{title:"📢 Uusi Pull Request", description:($title + "\n" + $url), color:5814783, author:{name:$actor}}]}')
+          
           curl -H "Content-Type: application/json" \
-          -X POST \
-          -d '{
-                "embeds": [{
-                  "title": "📢 Uusi Pull Request",
-                  "description": "**${{ github.event.pull_request.title }}**\n\n${{ github.event.pull_request.html_url }}",
-                  "color": 5814783,
-                  "author": {
-                    "name": "${{ github.actor }}"
-                  }
-                }]
-              }' \
-          ${{ secrets.DISCORD_WEBHOOK }}
+               -X POST \
+               -d "$payload" \
+               ${{ secrets.DISCORD_WEBHOOK }}
+
