@@ -1,9 +1,16 @@
-# GO2-Web-App
+# EcoPaths
+
+[![.github/workflows/ci-cd.yml](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml)
+![Coverage](https://codecov.io/gh/org/repo/branch/main/graph/badge.svg)
+
+## Project Description
 
 
-## Frontend Setup
+## Installation
 
-### Prerequisites
+### Frontend Setup
+
+#### Prerequisites
 
 **Install Node.js and Git using Homebrew:**
 ```bash
@@ -12,8 +19,7 @@
 brew install node git
 ```
 
-
-### Installation
+#### Installation
 
 1. **Clone the dev branch**
    ```bash
@@ -33,6 +39,29 @@ brew install node git
 
 4. **The app will open at http://localhost:3000**
 
+## Usage
+
+## Testing
+
+### Run Pylint
+```bash
+   poetry run invoke lint
+```
+
+### Run unit tests
+```bash
+   poetry run invoke test
+```
+
+### Generate coverage report
+```bash
+   poetry run invoke coverage
+```
+
+### Run format, lint and coverage
+```bash
+   poetry run invoke all
+```
 
 ## Testing
 
@@ -64,4 +93,8 @@ npm run test:robot:headless
 ## Documentation
 
 - [Product backlog](https://github.com/orgs/OhtuProjektiSyksy25/projects/1)  
-- [Sprint task board](https://github.com/orgs/OhtuProjektiSyksy25/projects/1/views/3?filterQuery=sprint%3A%40current)
+- [Sprint task board](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/4)
+
+## License
+
+This project is licensed under the MIT License.
