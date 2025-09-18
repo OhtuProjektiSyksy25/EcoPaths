@@ -29,12 +29,24 @@
 ```
 **Backend will open at http://127.0.0.1:8000**
 
-## Runnng tests
-**Activate poetry virtual environment**
+## Testing
+
+### Run Pylint
 ```bash
-    poetry shell
+   poetry run invoke lint
 ```
-**Run tests**
+
+### Run unit tests
 ```bash
-    pytest
+   poetry run invoke test
+```
+
+### Generate coverage report
+```bash
+   poetry run invoke coverage
+```
+
+### Run format, lint and coverage
+```bash
+   poetry run invoke all
 ```
