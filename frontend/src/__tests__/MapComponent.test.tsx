@@ -1,6 +1,6 @@
 import {render, screen, cleanup} from "@testing-library/react";
 import "@testing-library/jest-dom";
-import MapComponent from "../MapComponent";
+import MapComponent from "../components/MapComponent";
 
 
 jest.mock("react-leaflet", () => ({
@@ -26,3 +26,4 @@ describe("MapComponent", () => {
     });
 
 });
+
