@@ -1,8 +1,9 @@
 [tool.poetry]
-name = "ohtu-projekti-ecopaths"
+name = "ecopaths-backend"
 version = "0.1.0"
 description = "EcoPaths route planner"
-authors = ["Laura Anttila <laura.anttila@helsinki.fi>"]
+
+packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -17,6 +18,7 @@ coverage = "^7.7.1"
 pylint = "^3.3.6"
 autopep8 = "^2.3.2"
 robotframework = "^7.0"
+invoke = "^2.2.0"
 
 [build-system]
 requires = ["poetry-core"]
