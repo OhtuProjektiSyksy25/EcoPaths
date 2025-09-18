@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+""" FastAPI application """
+from fastapi import FastAPI 
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -14,8 +15,14 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
+    """ returns hello world JSON
+    response format: {"message: "Hello World}
+    """
     return {"message": "Hello World"}
 
 @app.get("/berlin")
-async def root():
+async def berlin():
+    """ returns Berlin coordinates as JSON
+        response format: {"coordinates":[latitude, longitude]}
+    """
     return {"coordinates":[52.520008, 13.404954]}
