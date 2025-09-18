@@ -3,6 +3,9 @@ name: Notify Discord on PR
 on:
   pull_request:
     types: [opened]
+    branches:
+      - dev
+
 
 jobs:
   notify:
