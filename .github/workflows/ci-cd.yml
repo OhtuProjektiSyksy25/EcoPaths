@@ -39,7 +39,7 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Type-check (TS)
+      - name: Type-check (TypeScript)
         run: npx tsc --noEmit
 
       #- name: Lint
@@ -85,7 +85,7 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: poetry install
 
       - name: Lint
