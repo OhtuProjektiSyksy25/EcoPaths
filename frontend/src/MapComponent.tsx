@@ -1,6 +1,8 @@
-
-import React, { useEffect, useRef } from "react";
-import {useEffect, useState} from 'react';
+/*
+MapComponent.tsx renders a mapBox map currently centered on Berlin. 
+If the mapbox fails it renders a leaflet map.
+*/
+import React, { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import mapboxgl from "mapbox-gl";
@@ -8,11 +10,42 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const berlinCenter: [number, number] = [52.520008, 13.404954];
 
+interface Coordinates {
+  coordinates: [number, number]
+}
+
+// Constants
+export const initialMapCenter = { lng: 24.9664, lat: 60.211 }
+
+export const initialMapZoom = process.env.REACT_APP_DEV_MAP_VIEW === 'True' ? 13 : 10.03
+
 const MapComponent: React.FC = () => {
-  console.log("MapComponent rendered");
+
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE;
   const mapboxRef = useRef<HTMLDivElement>(null);
+
+  console.log("MapComponent rendered");
+  const [currentCoordinates, setCoords] = useState<[number, number] | null>(null);
+  useEffect(()=> {
+    /*
+    Fetches coordinates of berlin from server
+    */
+    const getCoordinates = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/berlin");
+        console.log("Fetch response:", response);
+        if (!response.ok) {
+          throw new Error(`${response.status}`);
+        }
+        const data: Coordinates = await response.json();
+        setCoords(data.coordinates);
+      } catch (error) {
+        console.error(error)
+      }
+    };
+    getCoordinates();
+  },[]); 
 
   useEffect(() => {
     if (mapboxToken && mapboxRef.current) {
@@ -21,8 +54,8 @@ const MapComponent: React.FC = () => {
       const map = new mapboxgl.Map({
         container: mapboxRef.current,
         style: mapboxStyle,
-        center: berlinCenter,
-        zoom: 14,
+        center: currentCoordinates || initialMapCenter,
+        zoom: initialMapZoom,
       });
       map.addControl(new mapboxgl.NavigationControl());
       return () => 
@@ -52,49 +85,8 @@ const MapComponent: React.FC = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
       </MapContainer>
-      ) : (
-        <p>Loading...</p>)}
     </div>
   );
 };
 
 export default MapComponent;
-
-/*
-MapComponent.tsx renders a Leaflet map currently centered on Berlin.
-*/
-// import { MapContainer, TileLayer} from "react-leaflet";
-// import "leaflet/dist/leaflet.css";
-
-
-/*
-Renders an interactive map (Leaflet/OSM).
-Hardcoded to use central Berlin coordinates.
-*/
-// function MapComponent(): JSX.Element { 
-//   const berlinCenter: [number, number] = [52.520008, 13.404954];
-
-//   return (
-//     <div style={{ height: "100vh", width: "100%" }}>
-//         <p>Map should be here</p>
-//       <MapContainer 
-//         center={berlinCenter} 
-//         zoom={14} 
-//         style={{ height: "100%", width: "100%" }}
-//       >
-
-
-//         <TileLayer
-//           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-//           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//         />
-        
-
-        
-
-//       </MapContainer>
-//     </div>
-//   );
-// }
-
-// export default MapComponent;
