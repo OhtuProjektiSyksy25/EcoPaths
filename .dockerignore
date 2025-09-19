@@ -1,0 +1,27 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+
+# Backend
+backend/.env
+backend/.venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# Logs
+*.log
+
+# General
+.DS_Store
+Thumbs.db
+*.swp
