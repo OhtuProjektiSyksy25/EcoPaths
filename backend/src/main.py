@@ -1,9 +1,13 @@
-""" FastAPI application """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 
 app = FastAPI()
 origins = ["http://localhost:3000"]
+
+app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,16 +17,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    """ returns hello world JSON
-    response format: {"message: "Hello World}
-    """
-    return {"message": "Hello World"}
-
 @app.get("/berlin")
 async def berlin():
-    """ returns Berlin coordinates as JSON
-        response format: {"coordinates":[latitude, longitude]}
-    """
+    print("Berlin endpoint called")
     return {"coordinates":[52.520008, 13.404954]}
+
+@app.get("/{full_path:path}")
+async def spa_handler(full_path: str):
+    index_path = os.path.join("build", "index.html")
+    return FileResponse(index_path)
