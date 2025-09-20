@@ -4,7 +4,7 @@ Root component for the React application.
 It renders the header and the MapComponent.
 */
 
-import MapComponent from "./MapComponent";
+import MapComponent from "./components/MapComponent";
 import "./App.css";
 
 
