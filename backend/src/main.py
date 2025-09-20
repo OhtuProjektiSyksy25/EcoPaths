@@ -24,8 +24,10 @@ app.add_middleware(
 
 @app.get("/berlin")
 async def berlin():
-    print("Berlin endpoint called")
-    return {"coordinates":[52.520008, 13.404954]}
+    """ returns Berlin coordinates as JSON
+        response format: {"coordinates":[longitude, latitude]}
+    """
+    return {"coordinates":[13.404954, 52.520008]}
 
 @app.get("/{full_path:path}")
 async def spa_handler(full_path: str):
