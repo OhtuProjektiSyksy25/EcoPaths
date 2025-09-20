@@ -2,59 +2,33 @@
 MapComponent.tsx renders a mapBox map currently centered on Berlin. 
 If the mapbox fails it renders a leaflet map.
 */
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-
-const berlinCenter: [number, number] = [52.520008, 13.404954];
-
-interface Coordinates {
-  coordinates: [number, number]
-}
-
-// Constants
-export const initialMapCenter = { lng: 24.9664, lat: 60.211 }
-
-export const initialMapZoom = process.env.REACT_APP_DEV_MAP_VIEW === 'True' ? 13 : 10.03
+import { MbMap} from "../types/map";
+import { berlinCenter, initialMapZoom } from "../constants";
+import { useCoordinates } from "../hooks/useCoordinates";
 
 const MapComponent: React.FC = () => {
 
-  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
-  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE;
+  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'Mapbox token is needed in order to use the map';
+  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || 'Mapbox style is needed in order to use the map';
   const mapboxRef = useRef<HTMLDivElement>(null);
-
-  const [currentCoordinates, setCoords] = useState<[number, number] | null>(null);
-  useEffect(()=> {
-    /*
-    Fetches coordinates of berlin from server
-    */
-    const getCoordinates = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/berlin");
-        if (!response.ok) {
-          throw new Error(`${response.status}`);
-        }
-        const data: Coordinates = await response.json();
-        setCoords(data.coordinates);
-      } catch (error) {
-        console.error(error)
-      }
-    };
-    getCoordinates();
-  },[]); 
-
-    console.log("current coordinates:", currentCoordinates);
+  const currentCoordinates = useCoordinates();
 
   useEffect(() => {
+    /*
+    Initializes the mapbox map if token is available, we have coordinates and the mapboxRef is set.
+    */
     if (mapboxToken && mapboxRef.current && currentCoordinates) {
-      console.log("Initializing Mapbox GL JS map");
       mapboxgl.accessToken = mapboxToken;
-      const map = new mapboxgl.Map({
+      const coordsToUse = currentCoordinates || berlinCenter;
+      const map: MbMap = new mapboxgl.Map({
         container: mapboxRef.current,
         style: mapboxStyle,
-        center: currentCoordinates,
+        center: coordsToUse,
         zoom: initialMapZoom,
       });
       map.addControl(new mapboxgl.NavigationControl());
@@ -64,16 +38,14 @@ const MapComponent: React.FC = () => {
   }, [mapboxToken, mapboxStyle, currentCoordinates]);
 
   if (mapboxToken) {
-    console.log("Using Mapbox GL JS with token:", mapboxToken);
     return (
       <div style={{ height: "100vh", width: "100%" }}>
         <div ref={mapboxRef} style={{ height: "100%", width: "100%" }} />
       </div>
     );
   }
-
+ 
   return (
-    console.log("Using Leaflet with OpenStreetMap tiles"),
     <div style={{ height: "100vh", width: "100%" }}>
       <MapContainer
         center={berlinCenter}

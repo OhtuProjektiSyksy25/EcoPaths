@@ -5,6 +5,7 @@ frontend/dist/
 frontend/build/
 *.log
 *.tmp
+.env
 
 # Backend
 .env
