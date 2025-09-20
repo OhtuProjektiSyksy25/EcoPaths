@@ -25,7 +25,6 @@ const MapComponent: React.FC = () => {
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE;
   const mapboxRef = useRef<HTMLDivElement>(null);
 
-  console.log("MapComponent rendered");
   const [currentCoordinates, setCoords] = useState<[number, number] | null>(null);
   useEffect(()=> {
     /*
@@ -34,7 +33,6 @@ const MapComponent: React.FC = () => {
     const getCoordinates = async () => {
       try {
         const response = await fetch("http://127.0.0.1:8000/berlin");
-        console.log("Fetch response:", response);
         if (!response.ok) {
           throw new Error(`${response.status}`);
         }
@@ -47,21 +45,23 @@ const MapComponent: React.FC = () => {
     getCoordinates();
   },[]); 
 
+    console.log("current coordinates:", currentCoordinates);
+
   useEffect(() => {
-    if (mapboxToken && mapboxRef.current) {
+    if (mapboxToken && mapboxRef.current && currentCoordinates) {
       console.log("Initializing Mapbox GL JS map");
       mapboxgl.accessToken = mapboxToken;
       const map = new mapboxgl.Map({
         container: mapboxRef.current,
         style: mapboxStyle,
-        center: currentCoordinates || initialMapCenter,
+        center: currentCoordinates,
         zoom: initialMapZoom,
       });
       map.addControl(new mapboxgl.NavigationControl());
       return () => 
         map.remove();
     }
-  }, [mapboxToken, mapboxStyle]);
+  }, [mapboxToken, mapboxStyle, currentCoordinates]);
 
   if (mapboxToken) {
     console.log("Using Mapbox GL JS with token:", mapboxToken);
