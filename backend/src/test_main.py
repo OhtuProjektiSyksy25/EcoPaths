@@ -14,10 +14,12 @@ def test_read_main():
     assert response.status_code == 200
     assert response.json() == {"message": "Hello World"}
 
+
 def test_berlin():
     """ Test if GET to /berlin status is 200
         and response has correct berlin coordinates    
     """
     response = client.get("/berlin")
     assert response.status_code == 200
-    assert response.json()["coordinates"] == [52.520008, 13.404954]
+
+    assert response.json()["coordinates"] == [13.404954, 52.520008]

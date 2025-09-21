@@ -22,12 +22,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/berlin")
 async def berlin():
     """ returns Berlin coordinates as JSON
         response format: {"coordinates":[longitude, latitude]}
     """
-    return {"coordinates":[13.404954, 52.520008]}
+    return {"coordinates": [13.404954, 52.520008]}
 
 @app.get("/{full_path:path}")
 async def spa_handler(full_path: str):
