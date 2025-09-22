@@ -1,6 +1,6 @@
 # Backend setup
 
-## Installation
+## Installation using Poetry
 
 1. **Install poetry**
 ```bash
@@ -28,6 +28,37 @@
     uvicorn src.main:app --reload
 ```
 **Backend will open at http://127.0.0.1:8000**
+
+
+
+## Installation using Conda
+
+
+
+## Prerequisites
+
+**Have conda installed**
+
+
+1. **Create and activate a conda environment**
+```bash
+    conda create -n ecopaths-backend python=3.11
+    conda activate ecopaths-backend
+```
+
+2. **Install dependencies**
+```bash
+    poetry install
+```
+
+3. **Run the development server**
+```bash
+    uvicorn src.main:app --reload
+```
+
+
+**Backend will open at http://127.0.0.1:8000**
+
 
 ## Testing
 
