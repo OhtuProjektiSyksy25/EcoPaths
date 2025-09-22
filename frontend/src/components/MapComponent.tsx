@@ -24,7 +24,9 @@ const MapComponent: React.FC = () => {
     */
     if (mapboxToken && mapboxRef.current && currentCoordinates) {
       mapboxgl.accessToken = mapboxToken;
-      const coordsToUse = currentCoordinates || berlinCenter;
+      const coordsToUse: [number, number] = currentCoordinates
+        ? [currentCoordinates[0], currentCoordinates[1]]
+        : berlinCenter;
       const map: MbMap = new mapboxgl.Map({
         container: mapboxRef.current,
         style: mapboxStyle,

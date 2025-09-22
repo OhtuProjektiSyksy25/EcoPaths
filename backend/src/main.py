@@ -1,3 +1,4 @@
+""" FastAPI application """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,6 +7,7 @@ import os
 
 app = FastAPI()
 origins = [
+    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
