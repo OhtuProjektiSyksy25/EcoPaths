@@ -1,12 +1,8 @@
 # EcoPaths
 
 [![.github/workflows/ci-cd.yml](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml)
-<<<<<<< HEAD
 [![Coverage](https://codecov.io/gh/OhtuProjektiSyksy25/EcoPaths/branch/main/graph/badge.svg)](https://app.codecov.io/github/OhtuProjektiSyksy25/EcoPaths)
 
-=======
-[![Coverage](https://codecov.io/gh/org/repo/branch/main/graph/badge.svg)](https://app.codecov.io/github/OhtuProjektiSyksy25/EcoPaths/tree/main)
->>>>>>> 303c458 (Update README.md)
 
 ## Project Description
 
