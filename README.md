@@ -32,12 +32,15 @@ brew install node git
    npm install
    ```
 
-3. **Start the development server:**
+3. **Update .env file with your mapbox token. Instructions in .env_example**
+
+
+4. **Start the development server:**
    ```bash
    npm start
    ```
 
-4. **The app will open at http://localhost:3000**
+5. **The app will open at http://localhost:3000**
 
 ## Usage
 

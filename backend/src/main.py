@@ -13,6 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     """ returns hello world JSON
@@ -20,9 +21,10 @@ async def root():
     """
     return {"message": "Hello World"}
 
+
 @app.get("/berlin")
 async def berlin():
     """ returns Berlin coordinates as JSON
-        response format: {"coordinates":[latitude, longitude]}
+        response format: {"coordinates":[longitude, latitude]}
     """
-    return {"coordinates":[52.520008, 13.404954]}
+    return {"coordinates": [13.404954, 52.520008]}
