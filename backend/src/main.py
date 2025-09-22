@@ -14,8 +14,6 @@ origins = [
 
 app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
-app.mount("/static", StaticFiles(directory="build/static"), name="static")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

@@ -30,7 +30,7 @@ RUN poetry install --no-interaction --no-ansi --no-root
 
 COPY backend/ ./
 
-COPY --from=frontend /app/build ./frontend
+COPY --from=frontend /app/build ./backend/build
 
 EXPOSE 8000
 
