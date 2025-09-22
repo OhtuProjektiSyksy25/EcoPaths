@@ -1,7 +1,8 @@
 # EcoPaths
 
 [![.github/workflows/ci-cd.yml](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/OhtuProjektiSyksy25/EcoPaths/actions/workflows/ci-cd.yml)
-![Coverage](https://codecov.io/gh/org/repo/branch/main/graph/badge.svg)
+[![Coverage](https://codecov.io/gh/OhtuProjektiSyksy25/EcoPaths/branch/main/graph/badge.svg)](https://app.codecov.io/github/OhtuProjektiSyksy25/EcoPaths)
+
 
 ## Project Description
 
@@ -23,8 +24,8 @@ brew install node git
 
 1. **Clone the dev branch**
    ```bash
-   git clone -b dev https://github.com/OhtuProjektiSyksy25/GO2-Web-App
-   cd GO2-Web-App/frontend
+   git clone -b dev https://github.com/OhtuProjektiSyksy25/EcoPaths
+   cd EcoPaths/frontend
    ```
 
 2. **Install dependencies:**
