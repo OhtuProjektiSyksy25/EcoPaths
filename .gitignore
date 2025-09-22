@@ -1,0 +1,32 @@
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+*.log
+*.tmp
+
+# Backend
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+backend/coverage.xml
+
+# Robot framework
+log.html
+output.xml
+report.html
+screenshots/
+selenium*.png
+
+# General
+.DS_Store
+Thumbs.db
+*.swp
+
+
+
+

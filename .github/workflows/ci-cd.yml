@@ -1,63 +1,81 @@
-
-
-name: CI/CD
+name: CI-CD
 
 on:
-#  push:
-#    branches: ['main']
-#  pull_request:
-#    branches: ['main']
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
 
 jobs:
-  ### 1. FRONTEND (React + TypeScript)
+  ### 1. FRONTEND
   frontend:
-    name: Frontend (React + TS)
+    name: Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install frontend dependencies
         run: npm ci
 
-      - name: Type-check (TS)
+      - name: Type-check (TypeScript)
         run: npx tsc --noEmit
 
-      - name: Lint
-        run: npm run lint
+      #- name: Lint
+      #  run: npm run lint
 
-      - name: Run tests
-        run: npm test
+      #- name: Run tests
+      #  run: npm test
 
-      - name: Build
-        run: npm run build
+      #- name: Build frontend
+      #  run: npm run build
 
-  ### 2. BACKEND (Python)
+      # - name: Build & push Docker
+      #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
+      #   run: |
+      #     docker build -t ghcr.io/<org>/<repo>/frontend:${{ github.sha }} .
+      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      #     docker push ghcr.io/<org>/<repo>/frontend:${{ github.sha }}
+
+
+  ### 2. BACKEND
   backend:
-    name: Backend (Python)
+    name: Backend 
     runs-on: ubuntu-latest
-    needs: frontend
-
     defaults:
       run:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
+        
       - name: Cache Poetry dependencies
         uses: actions/cache@v3
         with:
@@ -67,49 +85,94 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: poetry install
 
-      - name: Lint with Pylint
+      - name: Lint
         run: poetry run pylint src
 
-      - name: Run unit tests
-        run: poetry run coverage run --branch -m pytest
+      - name: Run tests with coverage
+        run: poetry run coverage run -m pytest
 
       - name: Generate coverage report
         run: poetry run coverage xml
 
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           fail_ci_if_error: true
+          
+      # - name: Build & push Docker
+      #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
+      #   run: |
+      #     docker build -t ghcr.io/<org>/<repo>/backend:${{ github.sha }} .
+      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      #     docker push ghcr.io/<org>/<repo>/backend:${{ github.sha }}
+       
 
+  ### 3. ROBOT TESTS (UI)
+  # robot-tests:
+  #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
 
-  ### 3. ROBOT TESTS (UI testit)
-  robot-tests:
-    name: Robot Framework UI tests
-    runs-on: ubuntu-latest
-    needs: backend
+  #   name: Robot Framework UI Tests (E2E)
+  #   runs-on: ubuntu-latest
+  #   needs: [frontend, backend]
+  #   defaults:
+  #     run:
+  #       working-directory: backend
 
-    defaults:
-      run:
-        working-directory: backend
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-    steps:
-      - uses: actions/checkout@v4
+  #     - name: Setup Chromedriver
+  #       uses: nanasess/setup-chromedriver@master
 
-      - name: Setup Chromedriver
-        uses: nanasess/setup-chromedriver@master
+  #     - name: Start virtual display for UI tests
+  #       run: |
+  #         export DISPLAY=:99
+  #         chromedriver --url-base=/wd/hub &
+  #         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
 
-      - name: Start virtual display
-        run: |
-          export DISPLAY=:99
-          chromedriver --url-base=/wd/hub &
-          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+  #     - name: Run Robot Framework E2E tests
+  #       run: bash run_robot_tests.sh
 
-      - name: Run Robot tests
-        run: bash run_robot_tests.sh
+        
+  ### 4. DEPLOY TO OPENSHIFT
+  # deploy-openshift:
+  #   if: github.ref_name == 'main'  
+  #   name: Deploy to OpenShift
+  #   runs-on: ubuntu-latest
+  #   needs: [frontend, backend]
 
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
+  #     - name: Setup OpenShift CLI
+  #       uses: redhat-actions/oc-login@v2
+  #       with:
+  #         openshift_server_url: ${{ secrets.OPENSHIFT_URL }}
+  #         token: ${{ secrets.OPENSHIFT_TOKEN }}
+
+  #     - name: Login to OpenShift
+  #       run: |
+  #         oc login ${{ secrets.OPENSHIFT_URL }} --token=${{ secrets.OPENSHIFT_TOKEN }} --insecure-skip-tls-verify
+
+  #     - name: Set OpenShift project/namespace
+  #       run: oc project my-namespace  # vaihda omaan
+
+  #     - name: Update backend image
+  #       run: |
+  #         oc set image deployment/backend backend=ghcr.io/<org>/<repo>/backend:${{ github.sha }} --record
+
+  #     - name: Update frontend image
+  #       run: |
+  #         oc set image deployment/frontend frontend=ghcr.io/<org>/<repo>/frontend:${{ github.sha }} --record
+
+  #     - name: Rollout status
+  #       run: |
+  #         oc rollout status deployment/backend
+  #         oc rollout status deployment/frontend

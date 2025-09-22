@@ -1,0 +1,12 @@
+
+[FORMAT]
+indent-string='    '
+max-line-length=100
+
+[REFACTORING]
+max-args=5
+max-locals=10
+
+[DESIGN]
+min-public-methods=1
+max-attributes=10
