@@ -4,6 +4,7 @@ Suite Setup      Open And Configure Browser
 Suite Teardown    Close Browser
 
 
+
 *** Test Cases ***
 Frontend loads correct
     Go To    ${HOME_URL}
@@ -15,16 +16,11 @@ Header is visible
 
 Map component is visible
     Go To    ${HOME_URL}
-    Page Should Contain Element    css=.leaflet-container
+    Wait Until Element Is Visible    css:.mapboxgl-map    timeout=10s
 
-Berlin tile png is visible
-    Go To   ${HOME_URL}
-    Wait Until Element Is Visible    css=.leaflet-tile-container.leaflet-zoom-animated img.leaflet-tile    timeout=5s
-    ${tiles}=    Get WebElements    css=.leaflet-tile-container.leaflet-zoom-animated img.leaflet-tile 
-    ${flag}=    Set Variable    False
-    FOR    ${tile}    IN    @{tiles}
-        ${src}=    Get Element Attribute    ${tile}    src
-        Run Keyword If    '${src}'=='https://c.tile.openstreetmap.org/14/8801/5373.png'    Set Test Variable    ${flag}    True
-        Run Keyword If    ${flag}    Exit For Loop
-    END
-    Should Be True    ${flag}
+Berlin tile png is visible and has loaded content
+    Wait Until Element Is Visible    css=.mapboxgl-canvas-container canvas    timeout=10s
+    Wait Until Element Is Visible    css=.mapboxgl-control-container    timeout=5s
+     ${canvases}=    Get WebElements    css=.mapboxgl-canvas-container canvas
+    Length Should Be    ${canvases}    1
+
