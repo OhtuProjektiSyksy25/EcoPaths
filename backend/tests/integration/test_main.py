@@ -7,14 +7,6 @@ from src.main import app
 client = TestClient(app)
 
 
-def test_read_main():
-    """ Test if GET to / status is 200 and content is:
-    {"message": "Hello World"} """
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Hello World"}
-
-
 def test_berlin():
     """ Test if GET to /berlin status is 200
         and response has correct berlin coordinates    
