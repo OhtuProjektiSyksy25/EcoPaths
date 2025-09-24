@@ -4,6 +4,7 @@ from invoke import task
 def format(c):
     """Format code using autopep8"""
     c.run("autopep8 --in-place --recursive src")
+    print("Code formatted.")
 
 @task
 def lint(c):
@@ -12,14 +13,14 @@ def lint(c):
 
 @task
 def test(c):
-    """Run all unit tests with coverage tracking"""
-    c.run("PYTHONPATH=src poetry run coverage run -m pytest tests")
+    """Run all tests with coverage tracking"""
+    c.run("poetry run pytest --cov=src tests")
 
 @task(pre=[test])
 def coverage(c):
-    """Generate coverage report after tests"""
-    c.run("poetry run coverage report -m")
+    """Generate coverage reports after tests"""
     c.run("poetry run coverage html")
+    c.run("poetry run coverage xml -o coverage.xml")
 
 @task
 def clean(c):
@@ -28,10 +29,15 @@ def clean(c):
 
 @task(pre=[lint, test])
 def check(c):
-    """Run lint and tests (quick check)"""
-    print("Code checks passed.")
+    """Run lint and tests"""
+    print("Check done.")
 
 @task(pre=[format, lint, coverage])
-def all(c):
+def full(c):
     """Run format + lint + coverage"""
-    print("All checks done!")
+    print("Formatted and checked!")
+
+@task
+def run(ctx):
+    """Run backend in development mode"""
+    ctx.run("poetry run uvicorn src.main:app --reload", pty=True)

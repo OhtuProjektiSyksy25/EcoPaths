@@ -61,7 +61,7 @@ jobs:
 
   ### 2. BACKEND
   backend:
-    name: Backend 
+    name: Backend
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -75,7 +75,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-        
+
       - name: Cache Poetry dependencies
         uses: actions/cache@v3
         with:
@@ -92,10 +92,10 @@ jobs:
         run: poetry run pylint src
 
       - name: Run tests with coverage
-        run: poetry run coverage run -m pytest
+        run: poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing tests
 
-      - name: Generate coverage report
-        run: poetry run coverage xml
+      - name: Generate HTML coverage report
+        run: poetry run coverage html -d coverage_html_report
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
@@ -103,7 +103,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           fail_ci_if_error: true
-          
+
       # - name: Build & push Docker
       #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
       #   run: |
@@ -121,7 +121,7 @@ jobs:
   #   needs: [frontend, backend]
   #   defaults:
   #     run:
-  #       working-directory: backend
+  #       working-directory: e2e
 
   #   steps:
   #     - name: Checkout repository

@@ -1,6 +1,24 @@
 [run]
+branch = True
 source = src
+omit = */tests/*, */__init__.py
+
 
 [report]
-omit =
-    tests/*
+fail_under = 50
+show_missing = True
+skip_covered = True
+exclude_lines =
+    # pragma: no cover
+    def __repr__
+    if __name__ == "__main__":
+    raise NotImplementedError
+    @abc.abstractmethod
+
+[html]
+directory = coverage_html_report
+title = Backend Coverage
+skip_covered = True
+
+[xml]
+output = coverage.xml

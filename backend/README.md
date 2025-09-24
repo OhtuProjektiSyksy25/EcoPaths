@@ -62,6 +62,11 @@
 
 ## Testing
 
+### Format code using autopep8
+```bash
+   poetry run invoke format
+```
+
 ### Run Pylint
 ```bash
    poetry run invoke lint
@@ -77,7 +82,12 @@
    poetry run invoke coverage
 ```
 
+### Run lint and unit tests
+```bash
+   poetry run invoke check
+```
+
 ### Run format, lint and coverage
 ```bash
-   poetry run invoke all
+   poetry run invoke full
 ```
