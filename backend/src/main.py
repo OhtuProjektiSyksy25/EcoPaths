@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+
 app = FastAPI()
 origins = [
     "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
@@ -14,7 +15,8 @@ origins = [
     "http://0.0.0.0:8000"
 ]
 
-app.mount("/static", StaticFiles(directory="build/static"), name="static")
+if os.path.isdir("build/static"):
+    app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
