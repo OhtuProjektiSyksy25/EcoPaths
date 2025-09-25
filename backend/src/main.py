@@ -15,8 +15,8 @@ origins = [
     "http://0.0.0.0:8000"
 ]
 
-app.mount("/static", StaticFiles(directory="build/static"), name="static")
-
+if os.path.isdir("build/static"):
+    app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
