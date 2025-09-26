@@ -20,6 +20,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "build": "react-scripts build",
+    "build:ui": "rm -rf ../backend/build && npm run build && cp -r build ../backend",
     "install-robot": "python3 -m pip install robotframework robotframework-seleniumlibrary",
     "test:robot": "python3 -m robot tests/frontend.robot",
     "test:robot:headless": "python3 -m robot --variable HEADLESS:true tests/frontend.robot"

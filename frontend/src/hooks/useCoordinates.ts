@@ -10,7 +10,7 @@ export const useCoordinates = () => {
     useEffect(()=> {
     const getCoordinates = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/berlin");
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/berlin`);
         if (!response.ok) {
           throw new Error(`${response.status}`);
         }
