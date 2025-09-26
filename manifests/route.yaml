@@ -1,0 +1,19 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ecopaths-route
+  namespace: ohtuprojekti-staging
+  labels:
+    app: ecopaths
+    type: external
+spec:
+  host: ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi
+  port:
+    targetPort: 8000
+  to:
+    kind: Service
+    name: ecopaths-svc
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecopaths-dep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecopaths
+  template:
+    metadata:
+      labels:
+        app: ecopaths
+    spec:
+      containers:
+        - name: ecopaths
+          image: uyenmh/ecopaths:1.18
+          ports:
+            - containerPort: 8000
