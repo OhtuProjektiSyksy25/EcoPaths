@@ -24,3 +24,7 @@ Berlin tile png is visible and has loaded content
      ${canvases}=    Get WebElements    css=.mapboxgl-canvas-container canvas
     Length Should Be    ${canvases}    1
 
+From and To input boxes are visible
+    Go To    ${HOME_URL}
+    Element Should Be Visible   css=input[placeholder="From..."]
+    Element Should Be Visible   css=input[placeholder="To..."]

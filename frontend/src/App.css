@@ -14,3 +14,9 @@
   color: #60B45A;
   font-family: 'Arial', sans-serif;
 }
+
+.InputContainer {
+  display:inline-block;
+  padding-right:5px;
+  padding-bottom:5px;
+}

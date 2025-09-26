@@ -5,6 +5,7 @@ It renders the header and the MapComponent.
 */
 
 import MapComponent from "./components/MapComponent";
+import RouteForm from "./components/RouteForm";
 import "./App.css";
 
 
@@ -15,6 +16,7 @@ function App(): JSX.Element {
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
+      <RouteForm/>
       <MapComponent />
     </div>
   );
