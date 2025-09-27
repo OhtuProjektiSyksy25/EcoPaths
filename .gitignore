@@ -17,6 +17,7 @@ __pycache__/
 htmlcov/
 coverage_html_report/
 backend/coverage.xml
+backend/data/*
 
 # Robot framework
 log.html
