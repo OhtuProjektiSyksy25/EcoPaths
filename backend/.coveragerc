@@ -1,6 +1,7 @@
 [run]
 source = src
-
-[report]
 omit =
     tests/*
+
+[report]
+fail_under = 50
