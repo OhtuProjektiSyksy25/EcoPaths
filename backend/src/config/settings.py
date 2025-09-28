@@ -4,6 +4,7 @@
 Configuration settings for EcoPaths backend.
 """
 
+
 class AreaConfig:
     """
     Configuration class for different geographic areas.

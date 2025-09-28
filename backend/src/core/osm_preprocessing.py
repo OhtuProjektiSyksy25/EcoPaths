@@ -1,12 +1,12 @@
+"""
+OSM preprocessing utilities for EcoPaths backend.
+"""
+
 import os
 import requests
 from pyrosm import OSM
 from shapely.geometry import box
-from backend.src.config.settings import AreaConfig
-
-"""
-OSM preprocessing utilities for EcoPaths backend.
-"""
+from config.settings import AreaConfig
 
 
 class OSMPreprocessor:
@@ -74,6 +74,10 @@ class OSMPreprocessor:
         graph = graph.loc[graph.geometry.intersects(bbox_polygon)].copy()
 
         graph.to_parquet(self.output_path)
-
         print(
             f"Parquet edge list saved to {self.output_path} with {len(graph)} rows")
+
+        gpkg_path = self.output_path.replace(".parquet", ".gpkg")
+        graph.to_file(gpkg_path, layer="edges", driver="GPKG")
+        print(
+            f"GeoPackage edge layer saved to {gpkg_path} with {len(graph)} rows")

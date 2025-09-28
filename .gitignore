@@ -14,10 +14,9 @@ build
 __pycache__/
 .pytest_cache/
 .coverage
-htmlcov/
-coverage_html_report/
-backend/coverage.xml
-backend/data/*
+coverage_reports/
+coverage.xml
+backend/data/
 
 # Robot framework
 log.html

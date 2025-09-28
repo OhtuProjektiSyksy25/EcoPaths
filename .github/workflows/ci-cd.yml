@@ -63,9 +63,6 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - name: Checkout repository
@@ -88,21 +85,19 @@ jobs:
       - name: Install backend dependencies
         run: poetry install
 
-      - name: Lint
-        run: poetry run pylint src
+      - name: Ensure coverage directory exists
+        run: mkdir -p coverage_reports/backend/
 
-      - name: Run tests with coverage
-        run: poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing tests
-
-      - name: Generate HTML coverage report
-        run: poetry run coverage html -d coverage_html_report
+      - name: Run backend check (lint + tests + coverage)
+        run: invoke backend-check
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
+          files: coverage_reports/backend/coverage.xml
           fail_ci_if_error: true
+
 
       # - name: Build & push Docker
       #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
