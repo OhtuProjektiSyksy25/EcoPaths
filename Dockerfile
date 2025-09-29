@@ -1,0 +1,44 @@
+# Stage 1 - build the frontend
+FROM node:20 AS frontend
+
+WORKDIR /app
+
+COPY frontend/package*.json ./
+
+RUN npm install
+
+COPY frontend/ ./
+
+ENV REACT_APP_API_URL=https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi
+
+RUN npm run build:ui
+
+# Stage 2 - build the backend
+FROM python:3.11-slim AS backend
+
+RUN apt-get update && apt-get install -y curl build-essential && rm -rf /var/lib/apt/lists/*
+
+
+ENV POETRY_HOME=/opt/poetry
+
+ENV PATH="$POETRY_HOME/bin:$PATH"
+
+ENV POETRY_VIRTUALENVS_IN_PROJECT=true
+
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+WORKDIR /app
+
+COPY backend/pyproject.toml backend/poetry.lock* ./
+
+RUN poetry install --no-interaction --no-ansi --no-root
+
+COPY backend/ ./
+
+COPY --from=frontend /app/build ./build
+
+RUN chmod -R a+rwX /app
+
+EXPOSE 8000
+
+CMD ["poetry", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

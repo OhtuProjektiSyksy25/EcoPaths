@@ -1,7 +1,7 @@
 ---
 name: New Story
 about: A template for new stories
-title: "[STORY]"
+title: ''
 labels: Story
 assignees: ''
 
