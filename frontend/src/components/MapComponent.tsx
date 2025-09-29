@@ -13,8 +13,8 @@ import { useCoordinates } from "../hooks/useCoordinates";
 
 const MapComponent: React.FC = () => {
 
-  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'Mapbox token is needed in order to use the map';
-  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || 'Mapbox style is needed in order to use the map';
+  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
   const mapboxRef = useRef<HTMLDivElement>(null);
   const currentCoordinates = useCoordinates();
 
@@ -40,12 +40,16 @@ const MapComponent: React.FC = () => {
   if (mapboxToken) {
     return (
       <div style={{ height: "100vh", width: "100%" }}>
-        <div ref={mapboxRef} style={{ height: "100%", width: "100%" }} />
+        
+        <div ref={mapboxRef} 
+        data-testid="mapbox-map" 
+        style={{ height: "100%", width: "100%" }} />
       </div>
     );
   }
  
-  return (
+  if (!mapboxToken){
+    return (
     <div style={{ height: "100vh", width: "100%" }}>
       <MapContainer
         center={berlinCenter}
@@ -58,7 +62,10 @@ const MapComponent: React.FC = () => {
         />
       </MapContainer>
     </div>
+  
   );
-};
+}
+return null;
+}
 
 export default MapComponent;
