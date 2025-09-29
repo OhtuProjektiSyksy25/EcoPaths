@@ -4,8 +4,10 @@
 [![Coverage](https://codecov.io/gh/OhtuProjektiSyksy25/EcoPaths/branch/main/graph/badge.svg)](https://app.codecov.io/github/OhtuProjektiSyksy25/EcoPaths)
 
 
-## Project Description
+## Overview
+EcoPaths is a project related to the course Software Engineering Project at the University of Helsinki. 
 
+The web application aims to provide routes based on air quality for pedestrians and cyclists. The project is done in collaboration with MegaSense Oy.
 
 ## Installation
 
@@ -13,18 +15,16 @@
 
 #### Prerequisites
 
-**Install Node.js and Git using Homebrew:**
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+- Node.js
+- Git
 
-brew install node git
-```
 
-#### Installation
 
-1. **Clone the dev branch**
+#### Install frontend
+
+1. **Clone the main branch**
    ```bash
-   git clone -b dev https://github.com/OhtuProjektiSyksy25/EcoPaths
+   git clone https://github.com/OhtuProjektiSyksy25/EcoPaths
    cd EcoPaths/frontend
    ```
 
@@ -33,39 +33,45 @@ brew install node git
    npm install
    ```
 
-3. **Update .env file with your mapbox token. Instructions in .env_example**
+3. **Update .env file with your mapbox token. Instructions in [.env_example](https://github.com/OhtuProjektiSyksy25/EcoPaths/blob/dev/frontend/.env_example)**
 
-
-4. **Start the development server:**
+4. **Build frontend to backend**
    ```bash
-   npm start
+   npm run build:ui
    ```
 
-5. **The app will open at http://localhost:3000**
+### Backend setup
 
-## Usage
+#### Prerequisites
 
-## Testing
+- Poetry
 
-### Run Pylint
-```bash
-   poetry run invoke lint
-```
+#### Install backend
 
-### Run unit tests
-```bash
-   poetry run invoke test
-```
+1. **Change directory to backend**
+   ```bash
+   cd ../backend
+   ```
 
-### Generate coverage report
-```bash
-   poetry run invoke coverage
-```
+2. **Create virtual environment**
+   ```bash
+   poetry shell
+   ```
 
-### Run format, lint and coverage
-```bash
-   poetry run invoke all
-```
+3. **Install dependencies**
+   ```bash
+   poetry install
+   ```
+
+## Startup 
+
+1. **Go to root directory**
+   ```bash
+   cd ..
+   ```
+
+
+
 
 ## Testing
 
