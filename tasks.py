@@ -91,7 +91,7 @@ def full(c):
 def run_backend(c):
     """Run backend in development mode"""
     with c.cd("backend"):
-        c.run("poetry run uvicorn src.main:app --reload", pty=True)
+        c.run("poetry run uvicorn src.main:app --reload --port 8000", pty=True)
     
 @task
 def run_frontend(c):
