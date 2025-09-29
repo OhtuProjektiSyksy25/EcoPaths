@@ -7,7 +7,9 @@
 ## Overview
 EcoPaths is a project related to the course Software Engineering Project at the University of Helsinki. 
 
-The web application aims to provide routes based on air quality for pedestrians and cyclists. The project is done in collaboration with MegaSense Oy.
+The web application aims to provide routes based on air quality for pedestrians and cyclists. 
+
+The project is done in collaboration with MegaSense Oy.
 
 ## Installation
 
@@ -44,7 +46,7 @@ cp .env_example .env
 - Edit `.env` with your own values:
 ```bash 
 REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
-REACT_APP_API_URL=http://localhost:3000
+REACT_APP_API_URL=http://localhost:8000
 REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11
 
 ```
@@ -178,20 +180,29 @@ npm run test:robot:headless
 
 ### Notes / Tips
 
-- **Backend virtual environment:** Make sure the backend virtual environment is activated before running any `invoke` commands:
+- **Activate backend environment:**  
+  Make sure the backend's virtual environment is activated before running development tasks.
   ```bash
   cd backend
   poetry shell
   cd ..
   ```
 
-- **Run commands from root:** Always run `invoke` commands from the root directory (`EcoPaths`), not from inside `backend/` or `frontend/`.
-- **Coverage reports:** Are generated in `coverage_reports/`:
-  - **Backend:** `coverage_reports/backend/`
-  - **Frontend:** `coverage_reports/frontend/`
+- **Run from project root:**  
+  Always execute `invoke` tasks from the root directory of the project (`EcoPaths`), not from within `backend/` or `frontend/`.
 
-- **Port conflicts:** If ports 8000 (backend) or 3000 (frontend) are already in use, stop existing processes first. 
-- **Stopping servers/tests:** Use **Ctrl+C** to stop any running processes cleanly.
+- **Coverage reports location:**  
+  Test coverage reports are saved in the `coverage_reports/` directory:
+  - Backend → `coverage_reports/backend/`
+  - Frontend → `coverage_reports/frontend/`
+
+- **Port conflicts:**  
+  If ports `8000` (backend) or `3000` (frontend) are already in use, stop any existing processes before starting new ones.
+
+- **Stopping servers/tests:**  
+  Use standard interruption *Ctrl+C* to cleanly stop any running development servers or test processes.
+
+
 
 ## Documentation
 
