@@ -3,7 +3,7 @@ ignore=tests
 load-plugins=
 
 [MESSAGES CONTROL]
-disable=
+disable=too-few-public-methods
 
 
 [FORMAT]
