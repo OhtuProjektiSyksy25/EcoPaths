@@ -1,4 +1,6 @@
 import pytest
+import geopandas as gpd
+from shapely.geometry import LineString
 from unittest.mock import patch, MagicMock
 from src.core.osm_preprocessing import OSMPreprocessor
 
@@ -28,3 +30,23 @@ def test_download_pbf_if_missing_downloads_file(tmp_path):
             mock_get.assert_called_once_with("http://example.com/file.pbf", timeout=10, stream=True)
 
 
+@pytest.fixture
+def dummy_graph():
+    """Create a simple GeoDataFrame for reprojection testing."""
+    data = {
+        "geometry": [LineString([(0, 0), (1, 1)])],
+        "length": [1.0],
+    }
+    return gpd.GeoDataFrame(data, crs="EPSG:4326")
+
+def test_reproject_graph_la(dummy_graph):
+    """Test that LA is reprojected to EPSG:2229."""
+    processor = OSMPreprocessor(area="la")
+    reprojected = processor._reproject_graph(dummy_graph)
+    assert reprojected.crs.to_string() == "EPSG:2229"
+
+def test_reproject_graph_berlin(dummy_graph):
+    """Test that Berlin is reprojected to EPSG:25833."""
+    processor = OSMPreprocessor(area="berlin")
+    reprojected = processor._reproject_graph(dummy_graph)
+    assert reprojected.crs.to_string() == "EPSG:25833"
