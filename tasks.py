@@ -1,3 +1,5 @@
+import subprocess
+import signal
 from invoke import task
 
 # ========================
@@ -5,7 +7,7 @@ from invoke import task
 # ========================
 
 @task
-def format(c):
+def format_backend(c):
     """Format backend code using autopep8"""
     with c.cd("backend"):
         c.run("autopep8 --in-place --recursive src")
@@ -13,7 +15,7 @@ def format(c):
 
 
 @task
-def lint(c):
+def lint_backend(c):
     """Run Pylint on backend/src"""
     with c.cd("backend"):
         c.run("poetry run pylint src")
@@ -25,8 +27,8 @@ def lint(c):
 # ========================
 
 @task
-def backend_test(c):
-    """Run backend tests with coverage tracking"""
+def test_backend(c):
+    """Run backend unit tests with coverage tracking"""
     with c.cd("backend"):
         c.run(
             "poetry run pytest --cov=src --cov-report=term-missing "
@@ -37,7 +39,7 @@ def backend_test(c):
 
 
 @task
-def frontend_test(c):
+def test_frontend(c):
     """Run frontend tests (currently not available)"""
     print("Frontend tests not run yet")
     # When frontend tests are ready, you can enable:
@@ -63,19 +65,19 @@ def clean(c):
 # Higher-level convenience tasks
 # ========================
 
-@task(pre=[backend_test, frontend_test])
+@task(pre=[test_backend, test_frontend])
 def coverage(c):
-    """Run all tests and generate coverage reports"""
+    """Run backend and frontend tests and generate coverage reports"""
     print("All tests completed and coverage reports generated.")
 
 
-@task(pre=[backend_test, lint])
-def backend_check(c):
-    """Run lint and backend tests with coverage"""
+@task(pre=[test_backend, lint_backend])
+def check_backend(c):
+    """Run lint and unit tests with coverage"""
     print("Backend checked.")
 
 
-@task(pre=[format, backend_check])
+@task(pre=[format_backend, check_backend])
 def full(c):
     """Format code, lint, run tests, and generate coverage"""
     print("Code formatted and fully checked!")
@@ -86,7 +88,40 @@ def full(c):
 # ========================
 
 @task
-def run(c):
+def run_backend(c):
     """Run backend in development mode"""
     with c.cd("backend"):
-        c.run("poetry run uvicorn src.main:app --reload", pty=True)
+        c.run("poetry run uvicorn src.main:app --reload --port 8000", pty=True)
+    
+@task
+def run_frontend(c):
+    """Run frontend in development mode"""
+    with c.cd("frontend"):
+        c.run("npm start", pty=True)
+
+@task
+def run_all(c):
+    """Run both backend and frontend in development mode"""
+    print("Starting full development environment...")
+    print("Backend: http://127.0.0.1:8000")
+    print("Frontend: http://localhost:3000")
+
+    backend_proc = subprocess.Popen(
+        ["poetry", "run", "uvicorn", "src.main:app", "--reload"],
+        cwd="backend"
+    )
+    frontend_proc = subprocess.Popen(
+        ["npm", "start"],
+        cwd="frontend"
+    )
+
+    try:
+        backend_proc.wait()
+        frontend_proc.wait()
+    except KeyboardInterrupt:
+        print("\nStopping development environment...")
+        backend_proc.send_signal(signal.SIGINT)
+        frontend_proc.send_signal(signal.SIGINT)
+        backend_proc.wait()
+        frontend_proc.wait()
+        print("Development environment stopped.")
