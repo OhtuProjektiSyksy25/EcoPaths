@@ -4,7 +4,7 @@ from config.settings import AreaConfig
 def test_la_area_settings():
     config = AreaConfig("la")
     assert config.area == "la"
-    assert config.bbox == [-118.6347, 33.6598, -118.1044, 34.2250]
+    assert config.bbox == [-118.33, 33.93, -118.20, 34.10]
     assert config.pbf_url.endswith("socal-latest.osm.pbf")
     assert config.pbf_file == "data/socal-latest.osm.pbf"
     assert config.output_file == "data/la_edges.parquet"
