@@ -41,9 +41,9 @@ def frontend_test(c):
     """Run frontend tests (currently not available)"""
     print("Frontend tests not run yet")
     # When frontend tests are ready, you can enable:
-    # with c.cd("frontend"):
-    #     c.run("npm test -- --watchAll=false")
-    #     # optionally generate coverage in coverage_reports/frontend/
+    with c.cd("frontend"):
+        c.run("npm test -- --watchAll=false")
+        # optionally generate coverage in coverage_reports/frontend/
 
 
 # ========================
