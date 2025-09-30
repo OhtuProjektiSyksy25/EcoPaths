@@ -1,25 +1,32 @@
 import redis
 import json
 import logging
+from ..config.settings import RedisConfig
 
 logger = logging.getLogger(__name__)
 
 class RedisCache:
-    def __init__(self, host= "localhost", port=6379, db=0, default_expire=3600):
+    def __init__(self, host=None, port=None, db=None, default_expire=None):
         """
         Initialize connection to Redis
 
         Args:
-            host: Redis host. Defaults to "localhost".
-            port: Redis port. Defaults to 6379.
-            db: Redis database number. Defaults to 0.
-            default_expire: Default expiration time in seconds. Defaults to 3600 (1 hour).
+            host: Redis host. Defaults to config settings.
+            port: Redis port. Defaults to config settings.
+            db: Redis database number. Defaults to config settings.
+            default_expire: Default expiration time in seconds. Defaults to config settings.
         """
+        config = RedisConfig()
+        
+        host = host or config.host
+        port = port or config.port
+        db = db or config.db
+        self.default_expire = default_expire or config.default_expire
+
         try:
             self.client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
-            self.default_expire = default_expire
             self.client.ping()
-            logger.info("Connected to redis successfully")
+            logger.info(f"Connected to redis at {host}:{port}")
         
         except redis.ConnectionError as e:
             logger.error(f"Failed to connect to redis: {e}")
