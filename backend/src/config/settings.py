@@ -61,7 +61,8 @@ class RedisConfig:
     Configuration class for Redis connection settings.
     """
 
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0, default_expire: int = 3600):
+    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0,
+                 default_expire: int = 3600):
         """Initialize Redis configuration.
 
         Args:
