@@ -1,6 +1,11 @@
 """
 OSM preprocessing utilities for EcoPaths backend.
+
+Includes downloading .pbf files, extracting road networks,
+cropping to bounding box, and reprojecting to a suitable CRS
+for accurate spatial analysis.
 """
+
 
 import os
 import requests
@@ -26,6 +31,7 @@ class OSMPreprocessor:
                                           ('walking', 'cycling', 'all', etc.).
                                           Defaults to "all".
         """
+        self.area = area.lower()
         self.config = AreaConfig(area)
         self.pbf_path = self.config.pbf_file
         self.output_path = self.config.output_file
@@ -56,13 +62,18 @@ class OSMPreprocessor:
 
     def extract_edges(self):
         """
-        Extract the road network from the PBF file for the configured area
-        and save it as a Parquet edge list.
+        Extract the road network from the PBF file for the configured area.
 
-        The network is cropped to the area's bounding box and filtered
-        according to the selected network type.
+        Steps:
+            - Downloads the PBF file if missing
+            - Extracts the network using pyrosm
+            - Crops to the area's bounding box
+            - Reprojects to a projected CRS suitable for length calculations
+            - Saves the result as a Parquet file and GeoPackage
+
+        Returns:
+            GeoDataFrame: The processed and reprojected edge network
         """
-
         self.download_pbf_if_missing()
 
         osm = OSM(self.pbf_path)
@@ -73,6 +84,9 @@ class OSMPreprocessor:
         bbox_polygon = box(min_lon, min_lat, max_lon, max_lat)
         graph = graph.loc[graph.geometry.intersects(bbox_polygon)].copy()
 
+        graph = self._reproject_graph(graph)
+        print(f"CRS after reprojection: {graph.crs}")
+
         graph.to_parquet(self.output_path)
         print(
             f"Parquet edge list saved to {self.output_path} with {len(graph)} rows")
@@ -81,3 +95,26 @@ class OSMPreprocessor:
         graph.to_file(gpkg_path, layer="edges", driver="GPKG")
         print(
             f"GeoPackage edge layer saved to {gpkg_path} with {len(graph)} rows")
+
+    def _reproject_graph(self, graph):
+        """
+        Reproject the edge network to a projected CRS based on the area.
+
+        Supported areas:
+            - Berlin → EPSG:25833 (ETRS89 / UTM zone 33N)
+            - LA → EPSG:2229 (NAD83 / California zone 5)
+
+        Raises:
+            ValueError: If area is not recognized
+
+        Args:
+            graph (GeoDataFrame): The cropped edge network
+
+        Returns:
+            GeoDataFrame: Reprojected edge network
+        """
+        if self.area == "berlin":
+            return graph.to_crs("EPSG:25833")
+        if self.area == "la":
+            return graph.to_crs("EPSG:2229")
+        raise ValueError(f"Unknown area '{self.area}' — no CRS defined.")

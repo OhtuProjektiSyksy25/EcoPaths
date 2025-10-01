@@ -39,7 +39,7 @@ class AreaConfig:
             ValueError: If an unknown area is provided
         """
         if self.area == "la":
-            self.bbox = [-118.6347, 33.6598, -118.1044, 34.2250]
+            self.bbox = [-118.33, 33.93, -118.20, 34.10]
             self.pbf_url = "https://download.geofabrik.de/north-america/us/california/" \
                 "socal-latest.osm.pbf"
             self.pbf_file = "data/socal-latest.osm.pbf"
