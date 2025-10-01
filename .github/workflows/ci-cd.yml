@@ -117,33 +117,54 @@ jobs:
        
 
   ### 3. ROBOT TESTS (UI)
-  # robot-tests:
-  #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
+  robot-tests:
+    if: github.event_name == 'pull_request' || github.ref_name == 'main'
+    name: Robot Framework UI Tests (E2E)
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
 
-  #   name: Robot Framework UI Tests (E2E)
-  #   runs-on: ubuntu-latest
-  #   needs: [frontend, backend]
-  #   defaults:
-  #     run:
-  #       working-directory: e2e
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-  #     - name: Setup Chromedriver
-  #       uses: nanasess/setup-chromedriver@master
+      - name: Install Robot Framework
+        run: |
+          pip install robotframework
+          pip install robotframework-seleniumlibrary
 
-  #     - name: Start virtual display for UI tests
-  #       run: |
-  #         export DISPLAY=:99
-  #         chromedriver --url-base=/wd/hub &
-  #         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+      - name: Setup Chromedriver
+        uses: nanasess/setup-chromedriver@master
 
-  #     - name: Run Robot Framework E2E tests
-  #       run: bash run_robot_tests.sh
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-        
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Start virtual display for UI tests
+        run: |
+          export DISPLAY=:99
+          chromedriver --url-base=/wd/hub &
+          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+
+      - name: Start frontend application
+        working-directory: frontend
+        run: | 
+          npm start &
+          sleep 30
+
+      - name: Run Robot Framework E2E tests
+        run: robot --outputdir e2e/results e2e/
+
+
   ### 4. DEPLOY TO OPENSHIFT
   # deploy-openshift:
   #   if: github.ref_name == 'main'  
