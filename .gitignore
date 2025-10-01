@@ -1,8 +1,8 @@
 
 # Frontend
-frontend/node_modules/
 frontend/dist/
 frontend/build/
+frontend/coverage/
 build
 *.log
 *.tmp
@@ -30,6 +30,8 @@ selenium*.png
 Thumbs.db
 *.swp
 node_modules/
+/package.json
+/package-lock.json
 
 
 
