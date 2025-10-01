@@ -21,3 +21,20 @@ def test_get_data_for_algorithm_processes_edges():
     assert "edge_id" in result.columns
     assert result["length_m"].tolist() == [1.0, 1.0, 1.0]
 
+def test_cache_miss_and_hit():
+    """Test cache miss and hit behavior."""
+    model = ComputeModel(area="la")
+
+    assert model.cache_get("la_edges") is None
+
+    data = {
+        "geometry": [LineString([(0, 0), (0, 1)])]
+    }
+    gdf = gpd.GeoDataFrame(data, crs="EPSG:3857")
+    processed = model.compute_lengths(gdf)
+    model.cache_set("la_edges", processed)
+
+    cached = model.cache_get("la_edges")
+    assert cached is not None
+    assert cached.equals(processed)
+

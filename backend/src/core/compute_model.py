@@ -30,7 +30,8 @@ from core.osm_preprocessing import OSMPreprocessor
 
 class ComputeModel:
     """Handles computation and formatting of edge data for algorithm module."""
-
+    cache = {}  # class variable shared by all instances, going to be replaced with redis
+    
     def __init__(self, area: str = "la"):
         """
         Initialize ComputeModel with area configuration.
@@ -76,6 +77,14 @@ class ComputeModel:
 
         edges["length_m"] = edges.geometry.length
         return edges
+    
+    def cache_get(self, key):
+        '''For Redis, replace with: return self.redis_client.get(key)'''
+        return self.cache.get(key)
+    
+    def cache_set(self, key, value):
+        '''For Redis, replace with: self.redis_client.set(key, value)'''
+        self.cache[key] = value
 
     def get_data_for_algorithm(self) -> gpd.GeoDataFrame:
         """
@@ -83,7 +92,14 @@ class ComputeModel:
 
         Returns:
             GeoDataFrame: Processed edge data with length.
+        This method checks for cached data first. If not found, it computes
         """
+        cache_key = f"{self.area}_edges"
+        cached = self.cache_get(cache_key)
+        if cached is not None:
+            print("Cache hit for edge data.")
+            return cached
+        print("Cache miss. Loading from DB...")
 
         if not os.path.exists(self.input_path):
             print(
