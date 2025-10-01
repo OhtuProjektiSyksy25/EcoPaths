@@ -17,6 +17,7 @@ backend/__pycache__/
 backend/.pytest_cache/
 backend/.coverage
 backend/htmlcov/
+backend/preprocessor
 
 # Logs
 *.log

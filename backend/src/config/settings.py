@@ -4,6 +4,9 @@
 Configuration settings for EcoPaths backend.
 """
 
+USE_POSTGIS = False  # False: Parquet, True: PostGIS
+POSTGIS_URL = "postgresql://your_user:your_pass@your_host:5432/your_db"
+
 
 class AreaConfig:
     """
@@ -39,15 +42,17 @@ class AreaConfig:
             ValueError: If an unknown area is provided
         """
         if self.area == "la":
-            self.bbox = [-118.33, 33.93, -118.20, 34.10]
+            self.bbox = [-118.50, 33.90, -118.10, 34.15]
             self.pbf_url = "https://download.geofabrik.de/north-america/us/california/" \
                 "socal-latest.osm.pbf"
-            self.pbf_file = "data/socal-latest.osm.pbf"
+            self.pbf_file = "preprocessor/data/socal-latest.osm.pbf"
             self.output_file = "data/la_edges.parquet"
+            self.postgis_table = "edges_la"
         elif self.area == "berlin":
             self.bbox = [13.0884, 52.3383, 13.7611, 52.6755]
             self.pbf_url = "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf"
-            self.pbf_file = "data/berlin-latest.osm.pbf"
+            self.pbf_file = "preprocessor/data/berlin-latest.osm.pbf"
             self.output_file = "data/berlin_edges.parquet"
+            self.postgis_table = "edges_berlin"
         else:
             raise ValueError(f"Unknown area: {self.area}")

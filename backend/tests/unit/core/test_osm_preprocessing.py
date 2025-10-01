@@ -2,7 +2,7 @@ import pytest
 import geopandas as gpd
 from shapely.geometry import LineString
 from unittest.mock import patch, MagicMock
-from src.core.osm_preprocessing import OSMPreprocessor
+from preprocessor.osm_preprocessing import OSMPreprocessor
 
 def test_download_pbf_if_missing_downloads_file(tmp_path):
     """Test that PBF is downloaded if missing and URL is provided."""

@@ -37,8 +37,9 @@ async def berlin():
     """
     return {"coordinates": [13.404954, 52.520008]}
 
+
 @app.get("/{full_path:path}")
-async def spa_handler(full_path: str): # pylint: disable=unused-argument
+async def spa_handler(full_path: str):  # pylint: disable=unused-argument
     """Catch-all route handler for the frontend SPA.
 
     Args:
