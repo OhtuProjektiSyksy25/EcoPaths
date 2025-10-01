@@ -163,6 +163,13 @@ jobs:
       - name: Run Robot Framework E2E tests
         run: robot --outputdir e2e/results e2e/
 
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-test-results
+          path: e2e/results/
+
 
   ### 4. DEPLOY TO OPENSHIFT
   # deploy-openshift:

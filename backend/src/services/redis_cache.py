@@ -6,7 +6,7 @@ Provides methods to interact with a Redis cache.
 import json
 import logging
 import redis
-from src.config.settings import RedisConfig
+from src.config.settings import RedisConfig # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 
