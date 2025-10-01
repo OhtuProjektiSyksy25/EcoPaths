@@ -6,7 +6,8 @@ frontend/coverage/
 build
 *.log
 *.tmp
-.env
+frontend/.env
+frontend/env.example
 
 # Backend
 .env

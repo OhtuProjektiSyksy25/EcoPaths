@@ -2,10 +2,19 @@
 
    ```bash
    cd EcoPaths/frontend
-   npm run test:jest
+   npm test
    ```
 
-   ## Testing with ROBOT
+# OR
+```bash
+.. cd
+pip install invoke #if you dont have invoke installed
+invoke test-frontend
+open coverage_reports/frontend/lcov-report/index.html
+```
+
+
+## Testing with ROBOT
 
 ### Install robot framework
 
