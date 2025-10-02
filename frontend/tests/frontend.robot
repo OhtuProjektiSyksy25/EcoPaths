@@ -28,3 +28,18 @@ From and To input boxes are visible
     Go To    ${HOME_URL}
     Element Should Be Visible   css=input[placeholder="From..."]
     Element Should Be Visible   css=input[placeholder="To..."]
+
+User is given suggestions based on given "from" input
+    Go To   ${HOME_URL}
+    Element Should Be Visible   css=input[placeholder="From..."]
+    Input Text    css=input[placeholder="From..."]    Bersarinplatz B
+    Wait Until Element Is Visible    css=ul.originul    10s
+    Element Should Contain    css=ul.originul li:first-child    Bersarinplatz Berlin
+
+User is given suggestions based on given "to" input
+    Go To   ${HOME_URL}
+    Element Should Be Visible   css=input[placeholder="To..."]
+    Input Text    css=input[placeholder="To..."]    Bersarinplatz B
+    Wait Until Element Is Visible    css=ul.originul    10s
+    Element Should Contain    css=ul.originul li:first-child    Bersarinplatz Berlin
+
