@@ -13,11 +13,10 @@ from pyrosm import OSM
 from shapely.geometry import box
 from config.settings import AreaConfig
 
-
 class OSMPreprocessor:
     """Handles downloading and processing OSM PBF files into GeoDataFrames."""
 
-    def __init__(self, area: str = "la", network_type: str = "all"):
+    def __init__(self, area: str = "la", network_type: str = "walking"):
         """
         Initialize a Preprocessor instance for a given geographic area.
 
@@ -29,7 +28,7 @@ class OSMPreprocessor:
                                   Defaults to "la".
             network_type (str, optional): Type of OSM network to extract
                                           ('walking', 'cycling', 'all', etc.).
-                                          Defaults to "all".
+                                          Defaults to "walking".
         """
         self.area = area.lower()
         self.config = AreaConfig(area)
@@ -76,25 +75,28 @@ class OSMPreprocessor:
         """
         self.download_pbf_if_missing()
 
-        osm = OSM(self.pbf_path)
+        if self.area == "la":
+            min_lon, min_lat, max_lon, max_lat = self.bbox
+ 
+            osm = OSM(self.pbf_path, bounding_box=[min_lon, min_lat, max_lon, max_lat])
+            graph = osm.get_network(network_type=self.network_type)
+        else:
+            osm = OSM(self.pbf_path)
+            graph = osm.get_network(network_type=self.network_type)
+
         # graph is GeoDataframe
-        graph = osm.get_network(network_type=self.network_type)
-
-        min_lon, min_lat, max_lon, max_lat = self.bbox
-        bbox_polygon = box(min_lon, min_lat, max_lon, max_lat)
-        graph = graph.loc[graph.geometry.intersects(bbox_polygon)].copy()
-
         graph = self._reproject_graph(graph)
         print(f"CRS after reprojection: {graph.crs}")
 
         graph.to_parquet(self.output_path)
-        print(
-            f"Parquet edge list saved to {self.output_path} with {len(graph)} rows")
+        print(f"Parquet edge list saved to {self.output_path} with {len(graph)} rows")
 
-        gpkg_path = self.output_path.replace(".parquet", ".gpkg")
-        graph.to_file(gpkg_path, layer="edges", driver="GPKG")
-        print(
-            f"GeoPackage edge layer saved to {gpkg_path} with {len(graph)} rows")
+        # Save a separate GeoPackage in EPSG:4326 for visualization purposes only (e.g. in QGIS).
+        # This file is not used by the application logic and can be deleted later.
+        gpkg_path = self.output_path.replace(".parquet", "_vis.gpkg")
+        graph_vis = graph.to_crs("EPSG:4326")
+        graph_vis.to_file(gpkg_path, layer="edges", driver="GPKG")
+        print(f"GeoPackage (EPSG:4326) saved to {gpkg_path} for QGIS visualization")
 
     def _reproject_graph(self, graph):
         """
@@ -113,8 +115,13 @@ class OSMPreprocessor:
         Returns:
             GeoDataFrame: Reprojected edge network
         """
-        if self.area == "berlin":
-            return graph.to_crs("EPSG:25833")
-        if self.area == "la":
-            return graph.to_crs("EPSG:2229")
-        raise ValueError(f"Unknown area '{self.area}' — no CRS defined.")
+        area_crs_map = {
+            "berlin": "EPSG:25833",
+            "la": "EPSG:2229",
+        }
+
+        crs = area_crs_map.get(self.area)
+        if not crs:
+            raise ValueError(f"Unknown area '{self.area}', no CRS defined.")
+        return graph.to_crs(crs)
+

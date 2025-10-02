@@ -42,12 +42,12 @@ class AreaConfig:
             self.bbox = [-118.33, 33.93, -118.20, 34.10]
             self.pbf_url = "https://download.geofabrik.de/north-america/us/california/" \
                 "socal-latest.osm.pbf"
-            self.pbf_file = "data/socal-latest.osm.pbf"
+            self.pbf_file = "preprocessor/data/socal-latest.osm.pbf"
             self.output_file = "data/la_edges.parquet"
         elif self.area == "berlin":
             self.bbox = [13.0884, 52.3383, 13.7611, 52.6755]
             self.pbf_url = "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf"
-            self.pbf_file = "data/berlin-latest.osm.pbf"
+            self.pbf_file = "preprocessor/data/berlin-latest.osm.pbf"
             self.output_file = "data/berlin_edges.parquet"
         else:
             raise ValueError(f"Unknown area: {self.area}")
