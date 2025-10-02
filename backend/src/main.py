@@ -47,9 +47,13 @@ async def geocode_forward(value: str):
     if len(value) < 3:
         return []
     photon_url =  f"https://photon.komoot.io/api/?q={value}&limit=4"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(photon_url)
-        photon_suggestions = response.json()
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(photon_url)
+            photon_suggestions = response.json()
+    except httpx.HTTPError as exc:
+        print(f"HTTP Exception for {exc.request.url} - {exc}")
+
     for feature in photon_suggestions.get("features", []):
         suggestion_data = feature.get("properties", {})
         fields = ["name", "street", "housenumber", "city"]
