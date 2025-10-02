@@ -29,6 +29,16 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
         }
     }, [coordinates, onLocationFound]);
 
+
+    React.useEffect(() => {
+        /*
+        Alerts the user if there is an error in obtaining geolocation.
+        */
+        if (error) {
+            alert(error);
+        }
+    }, [error]);
+
     return (
         <div className="location-button-container">
             <button 
@@ -42,11 +52,6 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
 
             </button>
 
-            {error && (
-                <div className="error-message" role="alert">
-                    {error}
-                </div>
-            )}
 
 
             <style>{`

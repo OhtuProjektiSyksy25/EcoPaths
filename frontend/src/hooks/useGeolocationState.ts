@@ -1,5 +1,5 @@
 /*
-Fetches user's current geolocation coordinates using the browser's Geolocation API
+Manages geolocation state and provides a function to get current location.
 */
 
 import { useState, useCallback } from 'react';
@@ -11,6 +11,9 @@ interface GeolocationState {
     }
 
     export const useGeolocation = () => {
+    /*
+    Manages geolocation state and provides a function to get current location.
+    */
     const [state, setState] = useState<GeolocationState>({
         loading: false,
         error: null,
@@ -18,6 +21,9 @@ interface GeolocationState {
     });
 
     const getCurrentLocation = useCallback(() => {
+    /*
+    Initiates geolocation request and updates state based on success or failure.
+    */
         if (!navigator.geolocation) {
             setState(prev => ({
                 ...prev,
@@ -40,10 +46,17 @@ interface GeolocationState {
                 });
             },
             (error) => {
+                let errorMessage: string;
+                
+                if (error.code === error.PERMISSION_DENIED) {
+                    errorMessage = 'Location access denied. Please enable location in your browser.';
+                } else {
+                    errorMessage = error.message;
+                }
                 setState(prev => ({
                     ...prev,
                     loading: false,
-                    error: error.message,
+                    error: errorMessage,
                 }));
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
