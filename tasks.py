@@ -21,6 +21,12 @@ def lint_backend(c):
         c.run("poetry run pylint src")
     print("Linting completed.")
 
+@task
+def format_frontend(c):
+    """Format frontend using prettier"""
+    with c.cd("frontend"):
+        c.run("npx prettier --write .")
+    print("Code formatted")
 
 # ========================
 # Testing & coverage
