@@ -1,6 +1,7 @@
 /*
 MapComponent.tsx renders a mapBox map currently centered on Berlin. 
 If the mapbox fails it renders a leaflet map.
+It also manages markers for From and To locations and adjusts the map view based on their presence.
 */
 import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
@@ -66,6 +67,40 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
       .addTo(mapRef.current)
     }    
   },[fromLocked, toLocked])
+
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to From location if only From is set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates) return;
+    
+    if (fromLocked && (!toLocked || toLocked.length === 0)) {
+      mapRef.current.flyTo({
+        center: fromLocked.geometry.coordinates,
+        zoom: 15,
+        duration: 1500
+      });
+    }
+  }, [fromLocked, toLocked]);
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to fit both From and To locations if both are set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
+
+    const bounds = new mapboxgl.LngLatBounds()
+      .extend(fromLocked.geometry.coordinates)
+      .extend(toLocked.geometry.coordinates);
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 80,
+      duration: 1500
+    });
+  }, [fromLocked, toLocked]);
 
   if (mapboxToken) {
     return (
