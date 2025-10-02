@@ -137,7 +137,7 @@ jobs:
           pip install robotframework-seleniumlibrary
 
       - name: Setup Chromedriver
-        uses: nanasess/setup-chromedriver@master
+        uses: nanasess/setup-chromedriver@v1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -158,10 +158,13 @@ jobs:
         working-directory: frontend
         run: | 
           npm start &
-          sleep 30
+          npx wait-on http://localhost:3000
+
+      - name: Create results directory
+        run: mkdir -p e2e/results
 
       - name: Run Robot Framework E2E tests
-        run: robot --outputdir e2e/results e2e/
+        run: robot $ROBOT_OPTIONS --outputdir
         env:
           DISPLAY: :99
           ROBOT_OPTIONS: "--variable BROWSER:headlesschrome"
