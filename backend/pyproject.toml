@@ -3,7 +3,10 @@ name = "ecopaths-backend"
 version = "0.1.0"
 description = "EcoPaths route planner"
 authors = ["ecoPaths-team"]
-package-mode = false
+packages = [
+    { include = "*", from = "src" },
+    { include = "preprocessor" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
