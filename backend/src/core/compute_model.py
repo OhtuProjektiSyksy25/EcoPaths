@@ -22,8 +22,8 @@ Edge data summary for algorithm developers:
 Use `get_data_for_algorithm()` to retrieve clean and lightweight edge data.
 """
 
-import geopandas as gpd
 from pathlib import Path
+import geopandas as gpd
 from preprocessor.osm_preprocessing import OSMPreprocessor
 from config.settings import AreaConfig
 
