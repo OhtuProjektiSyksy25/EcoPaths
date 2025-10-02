@@ -2,6 +2,7 @@
 branch = True
 source = 
     backend/src
+    preprocessor
 omit =
     */tests/*
     */__init__.py

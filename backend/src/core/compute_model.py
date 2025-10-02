@@ -22,21 +22,21 @@ Edge data summary for algorithm developers:
 Use `get_data_for_algorithm()` to retrieve clean and lightweight edge data.
 """
 
-import os
+from pathlib import Path
 import geopandas as gpd
+from preprocessor.osm_preprocessing import OSMPreprocessor
 from config.settings import AreaConfig
-from core.osm_preprocessing import OSMPreprocessor
 
 
 class ComputeModel:
     """Handles computation and formatting of edge data for algorithm module."""
 
-    def __init__(self, area: str = "la"):
+    def __init__(self, area: str = "berlin"):
         """
         Initialize ComputeModel with area configuration.
 
         Args:
-            area (str, optional): Area identifier. Defaults to "la".
+            area (str, optional): Area identifier. Defaults to "berlin".
         """
         self.area = area.lower()
         self.config = AreaConfig(area)
@@ -55,25 +55,20 @@ class ComputeModel:
 
     def compute_lengths(self, edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Compute edge lengths and assign unique edge IDs.
-
-        This method calculates the length of each edge geometry in meters
-        and adds a 'length_m' column. It also assigns a unique 'edge_id'
-        based on the dataframe index.
+        Assign unique edge IDs and compute geometry lengths in meters.
 
         Args:
-            edges (GeoDataFrame): Preprocessed edge data.
+            edges (GeoDataFrame): Preprocessed edge data with projected CRS.
 
         Returns:
             GeoDataFrame: Edge data with 'edge_id' and 'length_m' columns.
         """
-        edges = edges.copy()
-        edges["edge_id"] = edges.index
-
         if not edges.crs or not edges.crs.is_projected:
             raise ValueError(
-                "Edge geometry must be in a projected CRS for accurate length calculation.")
+                "CRS must be projected for accurate length calculation.")
 
+        edges = edges.copy()
+        edges["edge_id"] = edges.index
         edges["length_m"] = edges.geometry.length
         return edges
 
@@ -85,11 +80,9 @@ class ComputeModel:
             GeoDataFrame: Processed edge data with length.
         """
 
-        if not os.path.exists(self.input_path):
-            print(
-                f"Edge file '{self.input_path}' not found. Running preprocessing...")
-            preprocessor = OSMPreprocessor(area=self.area)
-            preprocessor.extract_edges()
+        if not Path(self.input_path).exists():
+            print("Edge file missing. Running preprocessing..")
+            OSMPreprocessor(area=self.area).extract_edges()
 
         edges = self.load_edges()
         edges = self.compute_lengths(edges)
