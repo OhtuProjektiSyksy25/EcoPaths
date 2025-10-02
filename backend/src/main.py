@@ -85,6 +85,7 @@ def getroute(from_coords:str, to_coords:str):
     from_lon, from_lat = map(float, from_coords.split(","))
     to_lon, to_lat = map(float, to_coords.split(","))
     #route = route_giving_algorithm_service_goes_here([from_lon, from_lat],[to_lon,to_lat])
+    route = "haha"
     return route # :)
 
 
