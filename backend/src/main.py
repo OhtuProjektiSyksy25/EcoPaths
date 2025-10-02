@@ -4,19 +4,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import httpx
 
 
 app = FastAPI()
 origins = [
     "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "http://0.0.0.0:8000"
+    "http://0.0.0.0:8000",
+    "https://photon.komoot.io",
+    "http://172.25.211.59:3000"
 ]
-
-if os.path.isdir("build/static"):
-    app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if os.path.isdir("build/static"):
+    app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
 
 @app.get("/berlin")
@@ -36,6 +40,26 @@ async def berlin():
               {"coordinates": [longitude, latitude]}.
     """
     return {"coordinates": [13.404954, 52.520008]}
+
+@app.get("/api/geocode-forward/{value}")
+async def geocode_forward(value: str):
+    """ move to services folder"""
+    if len(value) < 3:
+        return []
+    photon_url =  f"https://photon.komoot.io/api/?q={value}&limit=4"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(photon_url)
+        photon_suggestions = response.json()
+    for feature in photon_suggestions.get("features", []):
+        suggestion_data = feature.get("properties", {})
+        fields = ["name", "street", "housenumber", "city"]
+        full_address = ""
+        for field in fields:
+            if suggestion_data.get(field):
+                full_address += f"{suggestion_data.get(field)} "
+        feature["full_address"] = full_address
+    return photon_suggestions
+    
 
 @app.get("/{full_path:path}")
 async def spa_handler(full_path: str): # pylint: disable=unused-argument
@@ -49,3 +73,4 @@ async def spa_handler(full_path: str): # pylint: disable=unused-argument
     """
     index_path = os.path.join("build", "index.html")
     return FileResponse(index_path)
+
