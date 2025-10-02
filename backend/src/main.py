@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import httpx
+from services.route_service import RouteService
 
 
 app = FastAPI()
@@ -41,6 +42,7 @@ async def berlin():
     """
     return {"coordinates": [13.404954, 52.520008]}
 
+
 @app.get("/api/geocode-forward/{value}")
 async def geocode_forward(value: str):
     """api endpoint to return a list of suggested addresses based on given value
@@ -53,7 +55,7 @@ async def geocode_forward(value: str):
     """
     if len(value) < 3:
         return []
-    photon_url =  f"https://photon.komoot.io/api/?q={value}&limit=4"
+    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4"
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
@@ -70,9 +72,10 @@ async def geocode_forward(value: str):
                 full_address += f"{suggestion_data.get(field)} "
         feature["full_address"] = full_address
     return photon_suggestions
-    
+
+
 @app.get("/getroute/{from_coords}/{to_coords}")
-def getroute(from_coords:str, to_coords:str):
+def getroute(from_coords: str, to_coords: str):
     """Returns optimal route according to from_coords and to_coords
 
     Args:
@@ -84,14 +87,28 @@ def getroute(from_coords:str, to_coords:str):
     """
     from_lon, from_lat = map(float, from_coords.split(","))
     to_lon, to_lat = map(float, to_coords.split(","))
-    #route = route_giving_algorithm_service_goes_here([from_lon, from_lat],[to_lon,to_lat])
-    route = "haha"
-    return route # :)
+    route = route_service.get_route(
+        (from_lon, from_lat),
+        (to_lon, to_lat)
+    )
 
+    return {"route": route}
+
+
+@app.get("/getroute/{from_coords}/{to_coords}")
+def getroute(from_coords: str, to_coords: str):
+    from_lon, from_lat = map(float, from_coords.split(","))
+    to_lon, to_lat = map(float, to_coords.split(","))
+
+    route = RouteService.get_route(
+        (from_lon, from_lat),
+        (to_lon, to_lat)
+    )
+    return {"route": route}
 
 
 @app.get("/{full_path:path}")
-async def spa_handler(full_path: str): # pylint: disable=unused-argument
+async def spa_handler(full_path: str):  # pylint: disable=unused-argument
     """Catch-all route handler for the frontend SPA.
 
     Args:
@@ -102,4 +119,3 @@ async def spa_handler(full_path: str): # pylint: disable=unused-argument
     """
     index_path = os.path.join("build", "index.html")
     return FileResponse(index_path)
-
