@@ -22,10 +22,11 @@ Edge data summary for algorithm developers:
 Use `get_data_for_algorithm()` to retrieve clean and lightweight edge data.
 """
 
+
 import os
 import geopandas as gpd
+from preprocessor.osm_preprocessing import OSMPreprocessor
 from config.settings import AreaConfig
-from core.osm_preprocessing import OSMPreprocessor
 
 
 class ComputeModel:
@@ -55,25 +56,20 @@ class ComputeModel:
 
     def compute_lengths(self, edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Compute edge lengths and assign unique edge IDs.
-
-        This method calculates the length of each edge geometry in meters
-        and adds a 'length_m' column. It also assigns a unique 'edge_id'
-        based on the dataframe index.
+        Assign unique edge IDs and compute geometry lengths in meters.
 
         Args:
-            edges (GeoDataFrame): Preprocessed edge data.
+            edges (GeoDataFrame): Preprocessed edge data with projected CRS.
 
         Returns:
             GeoDataFrame: Edge data with 'edge_id' and 'length_m' columns.
         """
-        edges = edges.copy()
-        edges["edge_id"] = edges.index
-
         if not edges.crs or not edges.crs.is_projected:
             raise ValueError(
-                "Edge geometry must be in a projected CRS for accurate length calculation.")
+                "CRS must be projected for accurate length calculation.")
 
+        edges = edges.copy()
+        edges["edge_id"] = edges.index
         edges["length_m"] = edges.geometry.length
         return edges
 
@@ -86,8 +82,13 @@ class ComputeModel:
         """
 
         if not os.path.exists(self.input_path):
-            print(
-                f"Edge file '{self.input_path}' not found. Running preprocessing...")
+            if os.path.exists(self.config.pbf_file):
+                print(
+                    f"Edge file '{self.input_path}' missing. "
+                    "Using existing PBF to generate edges..."
+                )
+            else:
+                print("Edge file and PBF missing. Downloading and preprocessing...")
             preprocessor = OSMPreprocessor(area=self.area)
             preprocessor.extract_edges()
 
