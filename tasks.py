@@ -43,8 +43,6 @@ def test_frontend(c):
     """Run frontend tests with coverage tracking"""
     with c.cd("frontend"):
         c.run("npm test -- --watchAll=false")
-        c.run("mkdir -p ../coverage_reports/frontend")
-        c.run("cp -r coverage ../coverage_reports/frontend/")
     print("Frontend coverage reports generated in coverage_reports/frontend/")
 
 # ========================

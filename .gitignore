@@ -2,15 +2,12 @@
 # Frontend
 frontend/dist/
 frontend/build/
-frontend/coverage/
 build
 *.log
 *.tmp
-frontend/.env
 frontend/env.example
 
 # Backend
-.env
 .venv/
 __pycache__/
 .pytest_cache/
@@ -28,6 +25,7 @@ screenshots/
 selenium*.png
 
 # General
+.env
 .DS_Store
 Thumbs.db
 *.swp

@@ -42,6 +42,7 @@ const config: Config = {
   transformIgnorePatterns: [
     '/node_modules/(?!react-leaflet|@react-leaflet|leaflet)/',
   ],
+  coverageDirectory: '../coverage_reports/frontend',
 };
 
 export default config;
