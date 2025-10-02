@@ -19,8 +19,8 @@ interface MapComponentProps {
 
 const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
 
-  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'Mapbox token is needed in order to use the map';
-  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || 'Mapbox style is needed in order to use the map';
+  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
   const mapboxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -70,14 +70,16 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
   if (mapboxToken) {
     return (
       <div style={{ height: "100vh", width: "100%" }}>
-        <div ref={mapboxRef} style={{ height: "100%", width: "100%" }} />
+        
+        <div ref={mapboxRef} 
+        data-testid="mapbox-map" 
+        style={{ height: "100%", width: "100%" }} />
       </div>
     );
   }
  
-
-
-  return (
+  if (!mapboxToken){
+    return (
     <div style={{ height: "100vh", width: "100%" }}>
       <MapContainer
         center={berlinCenter}
@@ -90,7 +92,13 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
         />
       </MapContainer>
     </div>
+  
   );
-};
+}
+/* We ignore this line in coverage report, because it is unreachable.
+However, typescript requires handling this corner case */
+//istanbul ignore next
+return null;
+}
 
 export default MapComponent;
