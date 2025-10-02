@@ -71,6 +71,23 @@ async def geocode_forward(value: str):
         feature["full_address"] = full_address
     return photon_suggestions
     
+@app.get("/getroute/{from_coords}/{to_coords}")
+def getroute(from_coords:str, to_coords:str):
+    """Returns optimal route according to from_coords and to_coords
+
+    Args:
+        from_coords (str): route start coordinates as string seperated by ,
+        to_coords (str): route end coordinates as string seperated by ,
+
+    Returns:
+        route: TODO
+    """
+    from_lon, from_lat = map(float, from_coords.split(","))
+    to_lon, to_lat = map(float, to_coords.split(","))
+    #route = route_giving_algorithm_service_goes_here([from_lon, from_lat],[to_lon,to_lat])
+    return route # :)
+
+
 
 @app.get("/{full_path:path}")
 async def spa_handler(full_path: str): # pylint: disable=unused-argument
