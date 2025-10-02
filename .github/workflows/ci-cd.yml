@@ -137,7 +137,7 @@ jobs:
           pip install robotframework-seleniumlibrary
 
       - name: Setup Chromedriver
-        uses: nanasess/setup-chromedriver@v1
+        uses: nanasess/setup-chromedriver@master
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
