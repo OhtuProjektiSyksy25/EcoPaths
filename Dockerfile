@@ -9,7 +9,13 @@ RUN npm install
 
 COPY frontend/ ./
 
-ENV REACT_APP_API_URL=https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi
+ARG REACT_APP_MAPBOX_TOKEN=dev-default-token
+ARG REACT_APP_MAPBOX_STYLE=dev-style
+ARG REACT_APP_API_URL=https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi
+
+ENV REACT_APP_MAPBOX_TOKEN=$REACT_APP_MAPBOX_TOKEN
+ENV REACT_APP_MAPBOX_STYLE=$REACT_APP_MAPBOX_STYLE
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 RUN npm run build:ui
 
