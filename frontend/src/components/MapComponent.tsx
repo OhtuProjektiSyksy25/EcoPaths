@@ -14,6 +14,7 @@ import { useCoordinates } from "../hooks/useCoordinates";
 interface MapComponentProps {
   fromLocked: any | null
   toLocked: any | null
+  route: any | null
 }
 
 const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {

@@ -13,13 +13,13 @@ class AreaConfig:
     and Parquet output paths for each supported area.
     """
 
-    def __init__(self, area: str = "la"):
+    def __init__(self, area: str = "berlin"):
         """
         Initialize configuration for a specific area.
 
         Args:
             area (str, optional): Area identifier, e.g., "la" or "berlin".
-                                  Defaults to "la".
+                                  Defaults to "berlin".
         """
 
         self.area = area.lower()

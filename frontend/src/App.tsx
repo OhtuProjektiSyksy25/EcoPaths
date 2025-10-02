@@ -3,7 +3,7 @@
 Root component for the React application. 
 It renders the header and the MapComponent.
 */
-import  {useState} from "react";
+import  {useState, useEffect} from "react";
 import MapComponent from "./components/MapComponent";
 import RouteForm from "./components/RouteForm";
 import "./App.css";
@@ -13,7 +13,35 @@ import "./App.css";
 function App(): JSX.Element {
     const [fromLocked, setFromLocked] = useState<any>([])
     const [toLocked, setToLocked] = useState<any>([])
+    const [route, setRoute] = useState<any>([]) //todo fix type
     
+    useEffect(() => {
+      if (fromLocked && toLocked && fromLocked?.full_address && toLocked?.full_address) {
+        const getRoute = async() => {
+          try {
+          const fromCoordinatesString = `${fromLocked.geometry.coordinates[0]},${fromLocked.geometry.coordinates[1]}`
+          const toCoordinatesString = `${toLocked.geometry.coordinates[0]},${toLocked.geometry.coordinates[1]}`
+
+          console.log(fromCoordinatesString)
+          console.log(toCoordinatesString)
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/getroute/${fromCoordinatesString}/${toCoordinatesString}`)
+          if (!response.ok) {
+            throw new Error(`server error: ${response.status}`)
+          } 
+          const data = await response.json()
+          return data
+          } catch (error) {
+          console.log(error)}
+        }
+      
+      const result = getRoute()
+      setRoute(result)
+      }
+      
+
+    },[fromLocked, toLocked])
+
+
   return (
     <div className="App">
       <header className="header">
@@ -24,7 +52,8 @@ function App(): JSX.Element {
         onToSelect={setToLocked}/>
       <MapComponent
         fromLocked={fromLocked} 
-        toLocked={toLocked} />
+        toLocked={toLocked} 
+        route={route}/>
     </div>
   );
 }
