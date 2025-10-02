@@ -22,9 +22,8 @@ Edge data summary for algorithm developers:
 Use `get_data_for_algorithm()` to retrieve clean and lightweight edge data.
 """
 
-
-import os
 import geopandas as gpd
+from pathlib import Path
 from preprocessor.osm_preprocessing import OSMPreprocessor
 from config.settings import AreaConfig
 
@@ -81,16 +80,9 @@ class ComputeModel:
             GeoDataFrame: Processed edge data with length.
         """
 
-        if not os.path.exists(self.input_path):
-            if os.path.exists(self.config.pbf_file):
-                print(
-                    f"Edge file '{self.input_path}' missing. "
-                    "Using existing PBF to generate edges..."
-                )
-            else:
-                print("Edge file and PBF missing. Downloading and preprocessing...")
-            preprocessor = OSMPreprocessor(area=self.area)
-            preprocessor.extract_edges()
+        if not Path(self.input_path).exists():
+            print("Edge file missing. Running preprocessing..")
+            OSMPreprocessor(area=self.area).extract_edges()
 
         edges = self.load_edges()
         edges = self.compute_lengths(edges)

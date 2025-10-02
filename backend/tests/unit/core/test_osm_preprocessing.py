@@ -2,6 +2,7 @@ import pytest
 import geopandas as gpd
 from shapely.geometry import LineString
 from unittest.mock import patch, MagicMock
+from pathlib import Path
 from preprocessor.osm_preprocessing import OSMPreprocessor
 
 def test_download_pbf_if_missing_downloads_file(tmp_path):
@@ -9,25 +10,30 @@ def test_download_pbf_if_missing_downloads_file(tmp_path):
 
     fake_area = "berlin"
     fake_pbf_path = tmp_path / "file.pbf"
-    
-    # Mock AreaConfig to return test paths
+    fake_output_path = tmp_path / "out.parquet"
+
     with patch("preprocessor.osm_preprocessing.AreaConfig") as MockConfig:
-        MockConfig.return_value.pbf_file = str(fake_pbf_path)
-        MockConfig.return_value.output_file = str(tmp_path / "out.parquet")
-        MockConfig.return_value.pbf_url = "http://example.com/file.pbf"
-        MockConfig.return_value.bbox = (0, 0, 1, 1)
+        mock_config = MockConfig.return_value
+        mock_config.pbf_file = fake_pbf_path
+        mock_config.output_file = fake_output_path
+        mock_config.pbf_url = "http://example.com/file.pbf"
+        mock_config.bbox = (0, 0, 1, 1)
 
         preprocessor = OSMPreprocessor(area=fake_area)
 
-        # Mock requests.get to avoid real HTTP call
         with patch("preprocessor.osm_preprocessing.requests.get") as mock_get:
             mock_response = MagicMock()
             mock_response.iter_content.return_value = [b"data"]
+            mock_response.status_code = 200
             mock_get.return_value = mock_response
 
             preprocessor.download_pbf_if_missing()
-            # Check that requests.get was called
+
             mock_get.assert_called_once_with("http://example.com/file.pbf", timeout=10, stream=True)
+
+            assert fake_pbf_path.exists()
+            assert fake_pbf_path.read_bytes() == b"data"
+
 
 
 @pytest.fixture
