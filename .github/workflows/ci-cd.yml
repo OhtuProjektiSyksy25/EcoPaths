@@ -164,6 +164,7 @@ jobs:
         run: mkdir -p e2e/results
 
       - name: Run Robot Framework E2E tests
+        run: robot --outputdir e2e/results e2e/
         env:
           DISPLAY: :99
           ROBOT_OPTIONS: "--variable BROWSER:headlesschrome"
