@@ -11,11 +11,19 @@ import { MbMap} from "../types/map";
 import { berlinCenter, initialMapZoom } from "../constants";
 import { useCoordinates } from "../hooks/useCoordinates";
 
-const MapComponent: React.FC = () => {
+interface MapComponentProps {
+  fromLocked: any | null
+  toLocked: any | null
+}
+
+const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
 
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'Mapbox token is needed in order to use the map';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || 'Mapbox style is needed in order to use the map';
   const mapboxRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+  const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const currentCoordinates = useCoordinates();
 
   useEffect(() => {
@@ -27,17 +35,36 @@ const MapComponent: React.FC = () => {
       const coordsToUse: [number, number] = currentCoordinates
         ? [currentCoordinates[0], currentCoordinates[1]]
         : berlinCenter;
-      const map: MbMap = new mapboxgl.Map({
+        mapRef.current = new mapboxgl.Map({
         container: mapboxRef.current,
         style: mapboxStyle,
         center: coordsToUse,
         zoom: initialMapZoom,
       });
-      map.addControl(new mapboxgl.NavigationControl());
+      mapRef.current.addControl(new mapboxgl.NavigationControl());
       return () => 
-        map.remove();
+        mapRef.current?.remove();
     }
   }, [mapboxToken, mapboxStyle, currentCoordinates]);
+
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    fromMarkerRef.current?.remove()
+    toMarkerRef.current?.remove()
+
+    if (fromLocked?.geometry?.coordinates) {
+      fromMarkerRef.current = new mapboxgl.Marker({color: "red"})
+      .setLngLat([fromLocked.geometry.coordinates[0], fromLocked.geometry.coordinates[1]])
+      .addTo(mapRef.current)
+    }
+
+    if (toLocked?.geometry?.coordinates) {
+      toMarkerRef.current = new mapboxgl.Marker({color: "red"})
+      .setLngLat([toLocked.geometry.coordinates[0], toLocked.geometry.coordinates[1]])
+      .addTo(mapRef.current)
+    }    
+  },[fromLocked, toLocked])
 
   if (mapboxToken) {
     return (
@@ -47,6 +74,8 @@ const MapComponent: React.FC = () => {
     );
   }
  
+
+
   return (
     <div style={{ height: "100vh", width: "100%" }}>
       <MapContainer
