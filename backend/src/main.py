@@ -43,7 +43,14 @@ async def berlin():
 
 @app.get("/api/geocode-forward/{value}")
 async def geocode_forward(value: str):
-    """ move to services folder"""
+    """api endpoint to return a list of suggested addresses based on given value
+
+    Args:
+        value (str): current address search value
+
+    Returns:
+        photon_suggestions: list of json objects or an empty list
+    """
     if len(value) < 3:
         return []
     photon_url =  f"https://photon.komoot.io/api/?q={value}&limit=4"
