@@ -1,15 +1,13 @@
 
 # Frontend
-frontend/node_modules/
 frontend/dist/
 frontend/build/
 build
 *.log
 *.tmp
-.env
+frontend/env.example
 
 # Backend
-.env
 .venv/
 __pycache__/
 .pytest_cache/
@@ -27,9 +25,13 @@ screenshots/
 selenium*.png
 
 # General
+.env
 .DS_Store
 Thumbs.db
 *.swp
+node_modules/
+/package.json
+/package-lock.json
 
 
 
