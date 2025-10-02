@@ -1,6 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    alpha.image.policy.openshift.io/resolve-names: "*"
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"ecopaths:staging","namespace":"ohtuprojekti-staging"},"fieldPath":"spec.template.spec.containers[?(@.name==\"ecopaths\")].image","pause":"false"}]
   name: ecopaths-dep
 spec:
   replicas: 1
@@ -14,6 +18,14 @@ spec:
     spec:
       containers:
         - name: ecopaths
-          image: uyenmh/ecopaths:1.18
+          image: ecopaths:staging
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
