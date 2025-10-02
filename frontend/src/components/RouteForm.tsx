@@ -3,9 +3,9 @@ Component that renders "From" and "To" input fields and manages their state
 renders suggestions for from and to fields and manages their state based on their values
 */
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import InputContainer from "./InputContainer";
-import { error } from "console";
+import { LocationButton } from "./LocationButton";
 
 interface RouteFormProps {
   onFromSelect: (place: any) => void
@@ -19,6 +19,21 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect}) => {
   const [fromSuggestions, setFromSuggestions] = useState<any[]>([])
   const [toSuggestions, setToSuggestions] = useState<any[]>([])
   const debounce = useRef<number | null>()
+
+
+  const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
+    const coordsString = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+    setFrom(coordsString);
+
+    const mockPlace = {
+      center: [coords.lng, coords.lat],
+      place_name: `Current Location (${coordsString})`,
+      properties: { name: "Current Location" },
+      geometry: { coordinates: [coords.lng, coords.lat] }
+    };
+
+  onFromSelect(mockPlace);
+}, [onFromSelect]);
   
   const HandleFromChange = async (value: string) => {
    /*
@@ -70,26 +85,33 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect}) => {
   }
   }, 400)}
 
-  return (
-    <div>
-      <InputContainer
-      placeholder = "From..."
-      value = {from}
-      onChange = {HandleFromChange}
-      suggestions={fromSuggestions}
-      onSelect={onFromSelect}
 
+
+return (
+  <div style={{ display: 'flex', flexDirection: 'column'}}>
+    <div style={{ display: 'flex', alignItems: 'center'}}>
+      <InputContainer
+        placeholder="From..."
+        value={from}
+        onChange={HandleFromChange}
+        suggestions={fromSuggestions}
+        onSelect={onFromSelect}
       />
+      <LocationButton onLocationFound={handleLocationFound} />
+    </div>
 
+    {/* To input row */}
+    <div style={{ display: 'flex', alignItems: 'center' }}>
       <InputContainer
-      placeholder = "To..."
-      value = {to}
-      onChange = {HandleToChange}
-      suggestions={toSuggestions}
-      onSelect={onToSelect}
+        placeholder="To..."
+        value={to}
+        onChange={HandleToChange}
+        suggestions={toSuggestions}
+        onSelect={onToSelect}
       />
     </div>
-  );
+  </div>
+);
 };
 
 export default RouteForm
