@@ -29,11 +29,11 @@ def test_compute_model_raises_error_on_unprojected_crs():
     data = {
         "geometry": [LineString([(24.93, 60.17), (24.94, 60.18)])]
     }
-    # EPSG:4326 is a geographic (unprojected) CRS — not suitable for accurate length calculations
     gdf = gpd.GeoDataFrame(data, crs="EPSG:4326")
 
     model = ComputeModel(area="berlin")
 
-    with pytest.raises(ValueError, match="must be in a projected CRS"):
+    with pytest.raises(ValueError) as exc_info:
         model.compute_lengths(gdf)
 
+    assert str(exc_info.value) == "CRS must be projected for accurate length calculation."

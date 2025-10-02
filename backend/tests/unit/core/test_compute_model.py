@@ -14,10 +14,9 @@ def test_get_data_for_algorithm_processes_edges():
     }
     gdf = gpd.GeoDataFrame(data, crs="EPSG:3857")  # Projected CRS
 
-    model = ComputeModel(area="la")
+    model = ComputeModel(area="berlin")
     result = model.compute_lengths(gdf)
 
     assert "length_m" in result.columns
     assert "edge_id" in result.columns
     assert result["length_m"].tolist() == [1.0, 1.0, 1.0]
-
