@@ -31,12 +31,12 @@ from config.settings import AreaConfig
 class ComputeModel:
     """Handles computation and formatting of edge data for algorithm module."""
 
-    def __init__(self, area: str = "la"):
+    def __init__(self, area: str = "berlin"):
         """
         Initialize ComputeModel with area configuration.
 
         Args:
-            area (str, optional): Area identifier. Defaults to "la".
+            area (str, optional): Area identifier. Defaults to "berlin".
         """
         self.area = area.lower()
         self.config = AreaConfig(area)
