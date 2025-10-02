@@ -4,9 +4,10 @@ Props:
 	-placeholder: string shown when no input has been given (string)
 	-value: current input value (string)
 	-onChange: callback function called with updated value on value change
+  -suggestoins: list of address suggestions
+  -onSelect: callback function called with chosen suggestion
 */
 import React, {useState, useEffect, useRef} from "react";
-
 
 interface InputContainerProps {
   placeholder: string;
@@ -29,12 +30,18 @@ const [isOpen, setIsOpen] = useState(false)
 const containerRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
+  /*
+  useEffect for updating isOpen useState when suggestion updates
+  */
 (!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
 
 },[suggestions])
 
 
 useEffect(() => {
+  /*
+  useEffect for handling clicks outside of input / suggestions box to update isOpen useState
+  */
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
