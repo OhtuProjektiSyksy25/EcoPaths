@@ -1,6 +1,7 @@
 /*
 MapComponent.tsx renders a mapBox map currently centered on Berlin. 
 If the mapbox fails it renders a leaflet map.
+It also manages markers for From and To locations and adjusts the map view based on their presence.
 */
 import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
@@ -67,6 +68,7 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
     }    
   },[fromLocked, toLocked])
 
+
   useEffect(() => {
     if (!mapRef.current || !route) return
     const map = mapRef.current
@@ -95,6 +97,73 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
         });
   }},[route])
 
+  useEffect(() => {
+    /*
+    Zooms the map to From location if only From is set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates) return;
+    
+    if (fromLocked && (!toLocked || toLocked.length === 0)) {
+      mapRef.current.flyTo({
+        center: fromLocked.geometry.coordinates,
+        zoom: 15,
+        duration: 1500
+      });
+    }
+  }, [fromLocked, toLocked]);
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to fit both From and To locations if both are set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
+
+    const bounds = new mapboxgl.LngLatBounds()
+      .extend(fromLocked.geometry.coordinates)
+      .extend(toLocked.geometry.coordinates);
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 80,
+      duration: 1500
+    });
+  }, [fromLocked, toLocked]);
+
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to From location if only From is set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates) return;
+    
+    if (fromLocked && (!toLocked || toLocked.length === 0)) {
+      mapRef.current.flyTo({
+        center: fromLocked.geometry.coordinates,
+        zoom: 15,
+        duration: 1500
+      });
+    }
+  }, [fromLocked, toLocked]);
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to fit both From and To locations if both are set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
+
+    const bounds = new mapboxgl.LngLatBounds()
+      .extend(fromLocked.geometry.coordinates)
+      .extend(toLocked.geometry.coordinates);
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 80,
+      duration: 1500
+    });
+  }, [fromLocked, toLocked]);
+
+
   if (mapboxToken) {
     return (
       <div style={{ height: "100vh", width: "100%" }}>
@@ -106,8 +175,9 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
     );
   }
  
-  if (!mapboxToken){
-    return (
+
+
+  return (
     <div style={{ height: "100vh", width: "100%" }}>
       <MapContainer
         center={berlinCenter}
@@ -122,10 +192,13 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
     </div>
   
   );
-}
+
+
+
 /* We ignore this line in coverage report, because it is unreachable.
 However, typescript requires handling this corner case */
 //istanbul ignore next
+
 return null;
 }
 

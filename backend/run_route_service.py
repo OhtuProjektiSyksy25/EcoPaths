@@ -1,8 +1,8 @@
 from services.route_service import RouteService
 
 # Stub coordinates (lon, lat)
-origin = (13.404954, 52.520008)   # Berlin
-destination = (13.406200, 52.521000)
+origin = (53.404954, 52.520008)   # Berlin
+destination = (33.406200, 52.521000)
 
 # Luo RouteService-instanssi
 route_service = RouteService(area="berlin")

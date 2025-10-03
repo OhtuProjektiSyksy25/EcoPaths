@@ -154,3 +154,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/ecopaths:staging
             ${{ secrets.DOCKER_USERNAME }}/ecopaths:${{ github.sha }}
+          build-args: |
+            REACT_APP_MAPBOX_TOKEN=${{ secrets.REACT_APP_MAPBOX_TOKEN }}
+            REACT_APP_MAPBOX_STYLE=${{ secrets.REACT_APP_MAPBOX_STYLE }}

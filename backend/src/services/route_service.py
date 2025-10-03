@@ -1,20 +1,15 @@
-# services/route_service.py
 """
-RouteService module
-
-Provides RouteService class for computing routes as GeoJSON LineStrings.
-Routes are computed using ComputeModel and currently a stub algorithm.
-CRS: EPSG:4326 (lon/lat), compatible with Mapbox or Leaflet.
+Service that computes routes and returns them as GeoJSON LineStrings.
 """
 
 import geopandas as gpd
 from shapely.geometry import mapping, LineString
 from core.compute_model import ComputeModel
 # from core.algorithm import RouteAlgorithm  # Uncomment when ready
-# from services.redis_cache import RedisCache
+from services.redis_cache import RedisCache
 
 # Cache key template now includes origin and destination coordinates
-# CACHE_KEY_TEMPLATE = "route_{area}_{from_lon}_{from_lat}_{to_lon}_{to_lat}"
+CACHE_KEY_TEMPLATE = "route_{area}_{from_lon}_{from_lat}_{to_lon}_{to_lat}"
 
 
 class RouteService:
@@ -35,7 +30,7 @@ class RouteService:
         """
         self.area = area.lower()
         self.compute_model = ComputeModel(area=self.area)
-#        self.redis = RedisCache()
+        self.redis = RedisCache()
 
     def get_route(self, origin: tuple, destination: tuple) -> dict:
         """
@@ -59,18 +54,18 @@ class RouteService:
 
         # Generate a unique cache key for this route
         # example: route_berlin_13.404954_52.520008_13.4062_52.521
-#        cache_key = CACHE_KEY_TEMPLATE.format(
-#            area=self.area,
-#            from_lon=origin[0],
-#            from_lat=origin[1],
-#            to_lon=destination[0],
-#            to_lat=destination[1]
-#        )
+        cache_key = CACHE_KEY_TEMPLATE.format(
+            area=self.area,
+            from_lon=origin[0],
+            from_lat=origin[1],
+            to_lon=destination[0],
+            to_lat=destination[1]
+        )
 
         # Try to fetch the route from cache first
-#        cached_route = self.redis.get(cache_key)
-#        if cached_route:
-#            return cached_route
+        cached_route = self.redis.get(cache_key)
+        if cached_route:
+            return cached_route
 
         # If not in cache, compute the edges from ComputeModel
         edges = self.compute_model.get_data_for_algorithm()
@@ -111,6 +106,6 @@ class RouteService:
         }
 
         # Save the completed route to Redis cache
-#        self.redis.set(cache_key, geojson_feature)
+        self.redis.set(cache_key, geojson_feature)
 
         return geojson_feature

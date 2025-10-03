@@ -5,6 +5,10 @@ Configuration settings for EcoPaths backend.
 """
 from pathlib import Path
 
+import os
+
+from pathlib import Path
+
 
 class AreaConfig:
     """
@@ -60,3 +64,25 @@ class AreaConfig:
 
         else:
             raise ValueError(f"Unknown area: {self.area}")
+
+
+class RedisConfig:
+    """
+    Configuration class for Redis connection settings.
+    """
+
+    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0,
+                 default_expire: int = 3600):
+        """Initialize Redis configuration.
+
+        Args:
+            host (str, optional): Redis host. Defaults to "localhost".
+            port (int, optional): Redis port. Defaults to 6379.
+            db (int, optional): Redis database number. Defaults to 0.
+            default_expire (int, optional): Default expiration time in seconds. Defaults to 3600.
+        """
+        self.host = os.getenv("REDIS_HOST", host)
+        self.port = int(os.getenv("REDIS_PORT", port))
+        self.db = int(os.getenv("REDIS_DB", db))
+        self.default_expire = int(
+            os.getenv("REDIS_DEFAULT_EXPIRE", default_expire))
