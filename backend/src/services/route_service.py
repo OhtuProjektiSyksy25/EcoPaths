@@ -1,4 +1,6 @@
-# services/route_service.py
+"""
+Service that computes routes and returns them as GeoJSON LineStrings.
+"""
 
 import geopandas as gpd
 from shapely.geometry import mapping, LineString
@@ -26,11 +28,11 @@ class RouteService:
         """
         Computes a route from origin to destination.
         Returns GeoJSON Feature, and caches it in Redis for next use.
-        
+
         Args:
             origin (tuple): (lon, lat)
             destination (tuple): (lon, lat)
-        
+
         Returns:
             dict: GeoJSON Feature of the route
         """
@@ -54,11 +56,14 @@ class RouteService:
 
         # Temporary stub algorithm: replace with RouteAlgorithm later
         class StubAlgorithm:
+            """
+            A temporary stub algorithm for route computation.
+            """
             def __init__(self, edges):
                 self.edges = edges
 
             def compute(self, origin, destination):
-                # Return a simple dummy LineString from origin to destination
+                """Return a simple dummy LineString from origin to destination"""
                 return gpd.GeoDataFrame(
                     [{"geometry": LineString([origin, destination])}],
                     geometry="geometry",

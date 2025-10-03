@@ -10,6 +10,7 @@ from config.settings import RedisConfig
 
 logger = logging.getLogger(__name__)
 
+
 class RedisCache:
     """Class for methods to interact with Redis cache.
     """
@@ -32,15 +33,14 @@ class RedisCache:
         self.default_expire = default_expire or config.default_expire
 
         try:
-            self.client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
+            self.client = redis.Redis(
+                host=host, port=port, db=db, decode_responses=True)
             self.client.ping()
             logger.info("Connected to redis at %s:%s", host, port)
 
         except redis.ConnectionError as e:
             logger.error("Failed to connect to redis: %s", e)
             self.client = None
-
-
 
     def set_geojson(self, key, geojson_data, expire=None):
         """
@@ -58,9 +58,9 @@ class RedisCache:
         try:
             if isinstance(geojson_data, dict):
                 if "type" not in geojson_data:
-                    logger.warning("Invalid GeoJSON data: missing 'type' field.")
+                    logger.warning(
+                        "Invalid GeoJSON data: missing 'type' field.")
                     return False
-
 
             expire_time = expire if expire is not None else self.default_expire
 
@@ -73,7 +73,6 @@ class RedisCache:
         except (redis.RedisError, TypeError, ValueError) as e:
             logger.error("Failed to cache GeoJSON data: '%s': %s", key, e)
             return False
-
 
     def get_geojson(self, key):
         """
@@ -92,14 +91,55 @@ class RedisCache:
             if isinstance(geojson_object, dict) and "type" in geojson_object:
                 logger.debug("Retrieved GeoJSON with key '%s'", key)
                 return geojson_object
-            else:
-                logger.warning("Cached data for key '%s' is not valid GeoJSON", key)
-                return None
 
+            logger.warning("Cached data for key '%s' is not valid GeoJSON", key)
+            return None
 
         except (redis.RedisError, json.JSONDecodeError) as e:
             logger.error("Failed to get cache key '%s': %s", key, e)
             return None
+
+
+    def set(self, key, value, expire=None):
+        """
+        Set a regular (non-GeoJSON) value in the cache
+        
+        Args:
+            key: The key to set.
+            value: The value to set.
+            expire: The expiration time in seconds.
+        """
+        if not self.client:
+            logger.warning("Redis is not connected. Cannot set value.")
+            return False
+
+        try:
+            expire_time = expire if expire is not None else self.default_expire
+            self.client.set(key, json.dumps(value), ex=expire_time)
+            return True
+        except (redis.RedisError, TypeError, ValueError) as e:
+            logger.error("Failed to set cache key '%s': %s", key, e)
+            return False
+
+    def get(self, key):
+        """
+        Get a regular (non-GeoJSON) value from the cache
+        """
+        if not self.client:
+            logger.warning("Redis is not connected. Cannot get value.")
+            return None
+        try:
+            data = self.client.get(key)
+            if not data:
+                return None
+            return json.loads(data)
+        except (redis.RedisError, json.JSONDecodeError) as e:
+            logger.error("Failed to get cache key '%s': %s", key, e)
+            return None
+
+
+
+
 
 
     def delete(self, key):
@@ -130,18 +170,19 @@ class RedisCache:
             logger.error("Failed to clear cache: %s", e)
             return False
 
-
     def exists(self, key):
         """
         Check if a key exists in the cache
         """
         if not self.client:
-            logger.warning("Redis is not connected. Cannot check key existence.")
+            logger.warning(
+                "Redis is not connected. Cannot check key existence.")
             return False
         try:
             return self.client.exists(key) == 1
         except redis.RedisError as e:
-            logger.error("Failed to check existence of cache key '%s': %s", key, e)
+            logger.error(
+                "Failed to check existence of cache key '%s': %s", key, e)
             return False
 
 # needs generate_route_key method

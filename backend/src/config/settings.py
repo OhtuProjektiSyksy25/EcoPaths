@@ -84,4 +84,5 @@ class RedisConfig:
         self.host = os.getenv("REDIS_HOST", host)
         self.port = int(os.getenv("REDIS_PORT", port))
         self.db = int(os.getenv("REDIS_DB", db))
-        self.default_expire = int(os.getenv("REDIS_DEFAULT_EXPIRE", default_expire))
+        self.default_expire = int(
+            os.getenv("REDIS_DEFAULT_EXPIRE", default_expire))
