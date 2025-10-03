@@ -1,15 +1,15 @@
-from services.route_service import RouteService
+from src.services.route_service import RouteService
+import json
 
-# Stub coordinates (lon, lat)
-origin = (53.404954, 52.520008)   # Berlin
-destination = (33.406200, 52.521000)
+# Valid Berlin coordinates (lon, lat)
+origin = (13.4125, 52.5219)
+destination = (13.3904, 52.5076)
 
-# Luo RouteService-instanssi
+# Create RouteService instance
 route_service = RouteService(area="berlin")
 
-# Hae reitti GeoJSON-muodossa
+# Get route as GeoJSON
 geojson_route = route_service.get_route(origin, destination)
 
-# Tulosta tulos
-import json
+# Print result
 print(json.dumps(geojson_route, indent=2))

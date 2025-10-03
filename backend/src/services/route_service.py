@@ -5,7 +5,7 @@ Service that computes routes and returns them as GeoJSON LineStrings.
 import geopandas as gpd
 from shapely.geometry import mapping, LineString
 from core.compute_model import ComputeModel
-# from core.algorithm import RouteAlgorithm  # Uncomment when ready
+from core.algorithm.RouteAlgorithm import RouteAlgorithm
 from services.redis_cache import RedisCache
 
 # Cache key template now includes origin and destination coordinates
@@ -30,7 +30,7 @@ class RouteService:
         """
         self.area = area.lower()
         self.compute_model = ComputeModel(area=self.area)
-        self.redis = RedisCache()
+        #self.redis = RedisCache()
 
     def get_route(self, origin: tuple, destination: tuple) -> dict:
         """
@@ -63,9 +63,9 @@ class RouteService:
         )
 
         # Try to fetch the route from cache first
-        cached_route = self.redis.get(cache_key)
-        if cached_route:
-            return cached_route
+        #cached_route = self.redis.get(cache_key)
+        #if cached_route:
+        #    return cached_route
 
         # If not in cache, compute the edges from ComputeModel
         edges = self.compute_model.get_data_for_algorithm()
@@ -86,7 +86,7 @@ class RouteService:
                     crs="EPSG:4326"
                 )
 
-        algorithm = StubAlgorithm(edges)
+        algorithm = RouteAlgorithm(edges)
 
 #        algorithm = RouteAlgorithm(edges)
         route_gdf = algorithm.compute(origin, destination)
@@ -96,16 +96,16 @@ class RouteService:
             route_gdf = route_gdf.to_crs("EPSG:4326")
 
         # Merge all geometries into a single LineString
-        unified_geom = route_gdf.geometry.union_all()
 
         # Create GeoJSON Feature
+        line = route_gdf.geometry.iloc[0]
+
         geojson_feature = {
             "type": "Feature",
-            "geometry": mapping(unified_geom),
+            "geometry": mapping(line),
             "properties": {}
         }
-
         # Save the completed route to Redis cache
-        self.redis.set(cache_key, geojson_feature)
+        #self.redis.set(cache_key, geojson_feature)
 
         return geojson_feature
