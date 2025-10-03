@@ -52,3 +52,31 @@ class TestRedisCache:
 
             mock_client.get.assert_called_once_with("missing_key")
             assert result is None
+
+
+    def test_default_expire_value(self):
+        """Test default expiration time is set correctly"""
+        mock_client = MagicMock()
+        with patch("src.services.redis_cache.redis.Redis", return_value=mock_client):
+            cache = RedisCache()
+            assert cache.default_expire == 3600
+
+    def test_exists_method(self):
+        """Test exists method"""
+        mock_client = MagicMock()
+        mock_client.exists.return_value = True
+        with patch("src.services.redis_cache.redis.Redis", return_value=mock_client):
+            cache = RedisCache()
+            result = cache.exists("test_key")
+            assert result is True
+            mock_client.exists.assert_called_once_with("test_key")
+
+    def test_delete_method(self):
+        """Test delete method"""
+        mock_client = MagicMock()
+        mock_client.delete.return_value = 1
+        with patch("src.services.redis_cache.redis.Redis", return_value=mock_client):
+            cache = RedisCache()
+            result = cache.delete("test_key")
+            assert result == 1
+            mock_client.delete.assert_called_once_with("test_key")
