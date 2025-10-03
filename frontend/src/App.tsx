@@ -10,17 +10,20 @@ import "./App.css";
 import DisplayContainer from "./components/DisplayContainer";
 
 
+
+
 function App(): JSX.Element {
     const [fromLocked, setFromLocked] = useState<any>([])
     const [toLocked, setToLocked] = useState<any>([])
-    const [route, setRoute] = useState<any>([]) //todo fix type
+    const [route, setRoute] = useState<any>(null) //todo fix type
     
     useEffect(() => {
       if (fromLocked && toLocked && fromLocked?.full_address && toLocked?.full_address) {
         const getRoute = async() => {
           try {
           const fromCoordinatesString = `${fromLocked.geometry.coordinates[0]},${fromLocked.geometry.coordinates[1]}`
-          const toCoordinatesString = `${toLocked.geometry.coordinates[0]},${toLocked.geometry.coordinates[1]}`
+          const toCoordinatesString = `${toLocked.geometry.coordinates[0]},${toLocked.geometry.coordinates[1]}` 
+
 
           console.log(fromCoordinatesString)
           console.log(toCoordinatesString)
@@ -29,13 +32,15 @@ function App(): JSX.Element {
             throw new Error(`server error: ${response.status}`)
           } 
           const data = await response.json()
-          return data
+          console.log("fetched route data:", data.route?.properties?.time_estimate)
+          console.log("full data:", data)
+          setRoute(data.route)
+          
           } catch (error) {
           console.log(error)}
         }
       
-      const result = getRoute()
-      setRoute(result)
+        const result = getRoute()
       }
       
 
@@ -50,7 +55,8 @@ function App(): JSX.Element {
       <RouteForm
         onFromSelect={setFromLocked}
         onToSelect={setToLocked}/>
-      <DisplayContainer label="Walking Time" value="Place Holder" />
+      <DisplayContainer label="Walking Time" value={route?.properties?.time_estimate || "N/A"} />
+
       <MapComponent
         fromLocked={fromLocked} 
         toLocked={toLocked} 
