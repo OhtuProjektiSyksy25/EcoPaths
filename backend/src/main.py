@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from services.route_service import RouteService
 import httpx
 from services.route_service import RouteService
 
@@ -95,6 +96,21 @@ def getroute(from_coords: str, to_coords: str):
         (to_lon, to_lat)
     )
     return {"route": route}
+
+
+@app.get("/api/testroute")
+async def get_route_endpoint():
+    origin = (13.404954, 52.520008)
+    destination = (13.4062, 52.521)
+    
+    # Call get_route and store the result
+    route_result = route_service.get_route(origin, destination)
+    
+    # Print to console (server logs)
+    print("Route result:", route_result)
+    print("Type:", type(route_result))
+    
+    return route_result
 
 
 @app.get("/{full_path:path}")
