@@ -98,13 +98,20 @@ class RouteService:
         # Merge all geometries into a single LineString
         unified_geom = route_gdf.geometry.union_all()
 
+        #calculate time estimate
+        length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
+        avg_speed_mps = 5.0
+        time_estimate = length_m / avg_speed_mps #seconds
+
         # Create GeoJSON Feature
         geojson_feature = {
             "type": "Feature",
             "geometry": mapping(unified_geom),
-            "properties": {}
+            "properties": {
+                "time_estimate": time_estimate,
+                "length_m": length_m
+            }
         }
-
         # Save the completed route to Redis cache
         self.redis.set(cache_key, geojson_feature)
 
