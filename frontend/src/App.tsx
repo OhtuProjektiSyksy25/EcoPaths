@@ -10,17 +10,19 @@ import "./App.css";
 
 
 
+
 function App(): JSX.Element {
     const [fromLocked, setFromLocked] = useState<any>([])
     const [toLocked, setToLocked] = useState<any>([])
-    const [route, setRoute] = useState<any>([]) //todo fix type
+    const [route, setRoute] = useState<any>(null) //todo fix type
     
     useEffect(() => {
       if (fromLocked && toLocked && fromLocked?.full_address && toLocked?.full_address) {
         const getRoute = async() => {
           try {
           const fromCoordinatesString = `${fromLocked.geometry.coordinates[0]},${fromLocked.geometry.coordinates[1]}`
-          const toCoordinatesString = `${toLocked.geometry.coordinates[0]},${toLocked.geometry.coordinates[1]}`
+          const toCoordinatesString = `${toLocked.geometry.coordinates[0]},${toLocked.geometry.coordinates[1]}` 
+
 
           console.log(fromCoordinatesString)
           console.log(toCoordinatesString)
@@ -29,13 +31,13 @@ function App(): JSX.Element {
             throw new Error(`server error: ${response.status}`)
           } 
           const data = await response.json()
-          return data
+          setRoute(data.route)
+          
           } catch (error) {
           console.log(error)}
         }
       
-      const result = getRoute()
-      setRoute(result)
+        const result = getRoute()
       }
       
 
@@ -47,13 +49,18 @@ function App(): JSX.Element {
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
-      <RouteForm
-        onFromSelect={setFromLocked}
-        onToSelect={setToLocked}/>
+      <main>
+        <div className="controls-container">
+        <RouteForm
+          onFromSelect={setFromLocked}
+          onToSelect={setToLocked}
+          route={route}/>
+        </div>
       <MapComponent
         fromLocked={fromLocked} 
         toLocked={toLocked} 
         route={route}/>
+        </main>
     </div>
   );
 }

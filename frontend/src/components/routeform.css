@@ -1,0 +1,8 @@
+.DisplayContainer {
+  background-color: #f0f0f0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 5px 5px;
+  display: flex;
+  width: 20%;
+}
