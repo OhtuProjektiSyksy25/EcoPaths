@@ -3,7 +3,6 @@
 """
 Configuration settings for EcoPaths backend.
 """
-
 from pathlib import Path
 
 

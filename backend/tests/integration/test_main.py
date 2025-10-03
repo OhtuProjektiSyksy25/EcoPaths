@@ -4,9 +4,7 @@ import pytest
 import importlib
 import src.main
 
-
 from fastapi.testclient import TestClient
-
 from src.main import app
 
 client = TestClient(app)
@@ -67,3 +65,20 @@ def test_static_mount_present():
     routes = [route.path for route in app.routes]
 
     assert "/static" in routes
+
+
+def test_getroute(monkeypatch):
+    """Test GET /getroute/{from_coords}/{to_coords} returns mocked route"""
+
+    def mock_get_route(self, from_tuple, to_tuple):
+        assert from_tuple == (24.94, 60.17)
+        assert to_tuple == (13.40, 52.52)
+        return ["mocked_route_point1", "mocked_route_point2"]
+
+    monkeypatch.setattr("services.route_service.RouteService.get_route", mock_get_route)
+
+    response = client.get("/getroute/24.94,60.17/13.40,52.52")
+    assert response.status_code == 200
+    data = response.json()
+    assert "route" in data
+    assert data["route"] == ["mocked_route_point1", "mocked_route_point2"]
