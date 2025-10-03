@@ -31,6 +31,8 @@ app.add_middleware(
 if os.path.isdir("build/static"):
     app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
+route_service = RouteService(area="berlin")
+
 
 @app.get("/berlin")
 async def berlin():
@@ -83,12 +85,11 @@ def getroute(from_coords: str, to_coords: str):
         to_coords (str): route end coordinates as string seperated by ,
 
     Returns:
-        route: TODO
+        dict: GeoJSON Feature of the route
     """
     from_lon, from_lat = map(float, from_coords.split(","))
     to_lon, to_lat = map(float, to_coords.split(","))
 
-    route_service = RouteService()
     route = route_service.get_route(
         (from_lon, from_lat),
         (to_lon, to_lat)
