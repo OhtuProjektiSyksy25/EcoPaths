@@ -7,7 +7,7 @@ import  {useState, useEffect} from "react";
 import MapComponent from "./components/MapComponent";
 import RouteForm from "./components/RouteForm";
 import "./App.css";
-
+import DisplayContainer from "./components/DisplayContainer";
 
 
 function App(): JSX.Element {
@@ -50,6 +50,7 @@ function App(): JSX.Element {
       <RouteForm
         onFromSelect={setFromLocked}
         onToSelect={setToLocked}/>
+      <DisplayContainer label="Walking Time" value="Place Holder" />
       <MapComponent
         fromLocked={fromLocked} 
         toLocked={toLocked} 
