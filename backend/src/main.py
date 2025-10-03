@@ -88,7 +88,8 @@ def getroute(from_coords: str, to_coords: str):
     from_lon, from_lat = map(float, from_coords.split(","))
     to_lon, to_lat = map(float, to_coords.split(","))
 
-    route = RouteService.get_route(
+    route_service = RouteService()
+    route = route_service.get_route(
         (from_lon, from_lat),
         (to_lon, to_lat)
     )
