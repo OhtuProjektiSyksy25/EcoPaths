@@ -4,30 +4,80 @@ Props:
 	-placeholder: string shown when no input has been given (string)
 	-value: current input value (string)
 	-onChange: callback function called with updated value on value change
+  -suggestoins: list of address suggestions
+  -onSelect: callback function called with chosen suggestion
 */
-import React from "react";
+import React, {useState, useEffect, useRef} from "react";
 
 interface InputContainerProps {
   placeholder: string;
   value: string;
   onChange: (value:string) => void;
+  suggestions: any[];
+  onSelect: (place: any) => void;
 }
 
 const InputContainer: React.FC<InputContainerProps> = ({
   placeholder,
   value,
-  onChange
+  onChange,
+  suggestions,
+  onSelect
+  
   }) => {
+
+const [isOpen, setIsOpen] = useState(false)
+const containerRef = useRef<HTMLDivElement | null>(null);
+
+useEffect(() => {
+  /*
+  useEffect for updating isOpen useState when suggestion updates
+  */
+(!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
+
+},[suggestions])
+
+
+useEffect(() => {
+  /*
+  useEffect for handling clicks outside of input / suggestions box to update isOpen useState
+  */
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
 
   return (
-    <div className="InputContainer">
+    <div className="InputContainer" ref={containerRef}>
       <input
       type="text"
       value={value}
       onChange={(e)=> onChange(e.target.value)}
       placeholder={placeholder}
+      onFocus={() => suggestions.length > 0 && setIsOpen(true)}
 			/>
+      {isOpen && suggestions?.length && (
+        <ul className="originul">
+        {suggestions.map((s) => (
+          <li 
+          className="originli" 
+          key={s.properties.osm_id}
+          onClick={() => {
+            onChange(s.full_address)
+            if (onSelect) onSelect(s)
+            setIsOpen(false)
+          }}>
+            {s.full_address}
+          </li>
+          ))}
+        </ul>)}
     </div>
   );
 };

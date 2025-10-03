@@ -19,4 +19,38 @@
   display:inline-block;
   padding-right:5px;
   padding-bottom:5px;
+  width: 20%;
+  position: relative
+}
+
+.originul {
+  z-index: 10;
+  border-radius: 0 0 4px 4px;
+  line-height: 1.5;
+  padding: 0;
+  padding-top: 2px;
+  margin: -3px 0px 0px 1px;
+  list-style-type: none;
+  font-weight: normal;
+  cursor: pointer;
+  position: absolute;
+  width: calc(100% - 1px);
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.06);
+  max-height: calc(100vh - 57px);
+  overflow: auto;
+}
+
+.originli {
+  padding: 7px 8px;
+  margin: 8px;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  transition-duration: 0.15s;
+  -webkit-transition-duration: 0.15s; /* Safari */
+  @media (min-width: 600px) {
+    &:hover {
+      box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.16);
+    }
+  }
 }
