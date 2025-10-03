@@ -92,18 +92,18 @@ class RedisCache:
                 logger.debug("Retrieved GeoJSON with key '%s'", key)
                 return geojson_object
 
-            logger.warning("Cached data for key '%s' is not valid GeoJSON", key)
+            logger.warning(
+                "Cached data for key '%s' is not valid GeoJSON", key)
             return None
 
         except (redis.RedisError, json.JSONDecodeError) as e:
             logger.error("Failed to get cache key '%s': %s", key, e)
             return None
 
-
     def set(self, key, value, expire=None):
         """
         Set a regular (non-GeoJSON) value in the cache
-        
+
         Args:
             key: The key to set.
             value: The value to set.
@@ -111,11 +111,13 @@ class RedisCache:
         """
         if not self.client:
             logger.warning("Redis is not connected. Cannot set value.")
+            print("Redis is not connected. Cannot set value.")
             return False
 
         try:
             expire_time = expire if expire is not None else self.default_expire
             self.client.set(key, json.dumps(value), ex=expire_time)
+            print(f"Cached value with key '{key}'")
             return True
         except (redis.RedisError, TypeError, ValueError) as e:
             logger.error("Failed to set cache key '%s': %s", key, e)
@@ -136,11 +138,6 @@ class RedisCache:
         except (redis.RedisError, json.JSONDecodeError) as e:
             logger.error("Failed to get cache key '%s': %s", key, e)
             return None
-
-
-
-
-
 
     def delete(self, key):
         """

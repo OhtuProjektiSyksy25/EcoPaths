@@ -39,45 +39,45 @@ def route_service(monkeypatch):
     return service
 
 
-# def test_get_route_computes_and_caches(route_service):
-#     """Test that get_route computes a new route and caches it"""
+def test_get_route_computes_and_caches(route_service):
+    """Test that get_route computes a new route and caches it"""
 
-#     origin = (13.40, 52.52)
-#     destination = (13.41, 52.53)
+    origin = (13.40, 52.52)
+    destination = (13.41, 52.53)
 
-#     route = route_service.get_route(origin, destination)
+    route = route_service.get_route(origin, destination)
 
-#     assert route["type"] == "Feature"
-#     assert route["geometry"]["type"] == "LineString"
+    assert route["type"] == "Feature"
+    assert route["geometry"]["type"] == "LineString"
 
-#     # Should contain the origin and destination coordinates
-#     coords = route["geometry"]["coordinates"]
-#     assert coords[0] == origin
-#     assert coords[-1] == destination
+    # Should contain the origin and destination coordinates
+    coords = route["geometry"]["coordinates"]
+    assert coords[0] == origin
+    assert coords[-1] == destination
 
-#     # Cache key must exist
-#     cache_key = f"route_berlin_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
-#     assert cache_key in route_service.redis.store
+    # Cache key must exist
+    cache_key = f"route_berlin_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
+    assert cache_key in route_service.redis.store
 
 
-# def test_get_route_returns_cached_result(route_service):
-#     """Test that get_route returns cached result if available"""
+def test_get_route_returns_cached_result(route_service):
+    """Test that get_route returns cached result if available"""
 
-#     origin = (13.40, 52.52)
-#     destination = (13.41, 52.53)
-#     cache_key = f"route_berlin_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
+    origin = (13.40, 52.52)
+    destination = (13.41, 52.53)
+    cache_key = f"route_berlin_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
 
-#     cached_feature = {
-#         "type": "Feature",
-#         "geometry": mapping(LineString([origin, destination])),
-#         "properties": {"cached": True}
-#     }
+    cached_feature = {
+        "type": "Feature",
+        "geometry": mapping(LineString([origin, destination])),
+        "properties": {"cached": True}
+    }
 
-#     # Pre-populate cache
-#     route_service.redis.set(cache_key, cached_feature)
+    # Pre-populate cache
+    route_service.redis.set(cache_key, cached_feature)
 
-#     route = route_service.get_route(origin, destination)
+    route = route_service.get_route(origin, destination)
 
-#     # Should return cached result instead of recomputing
-#     assert route == cached_feature
-#     assert route["properties"]["cached"] is True
+    # Should return cached result instead of recomputing
+    assert route == cached_feature
+    assert route["properties"]["cached"] is True
