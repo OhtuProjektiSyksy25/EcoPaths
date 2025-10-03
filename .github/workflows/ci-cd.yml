@@ -51,14 +51,6 @@ jobs:
       #- name: Build frontend
       #  run: npm run build
 
-      # - name: Build & push Docker
-      #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
-      #   run: |
-      #     docker build -t ghcr.io/<org>/<repo>/frontend:${{ github.sha }} .
-      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      #     docker push ghcr.io/<org>/<repo>/frontend:${{ github.sha }}
-
-
   ### 2. BACKEND
   backend:
     name: Backend
@@ -108,105 +100,57 @@ jobs:
           files: coverage_reports/backend/coverage.xml
           fail_ci_if_error: true
 
-      # - name: Build & push Docker
-      #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
-      #   run: |
-      #     docker build -t ghcr.io/<org>/<repo>/backend:${{ github.sha }} .
-      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      #     docker push ghcr.io/<org>/<repo>/backend:${{ github.sha }}
-       
-
   ### 3. ROBOT TESTS (UI)
-  robot-tests:
-    name: Robot Framework UI Tests (E2E)
+  # robot-tests:
+  #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
+
+  #   name: Robot Framework UI Tests (E2E)
+  #   runs-on: ubuntu-latest
+  #   needs: [frontend, backend]
+  #   defaults:
+  #     run:
+  #       working-directory: e2e
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Setup Chromedriver
+  #       uses: nanasess/setup-chromedriver@master
+
+  #     - name: Start virtual display for UI tests
+  #       run: |
+  #         export DISPLAY=:99
+  #         chromedriver --url-base=/wd/hub &
+  #         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+
+  #     - name: Run Robot Framework E2E tests
+  #       run: bash run_robot_tests.sh
+
+  ### 4. BUILD & PUSH DOCKER IMAGES
+  docker:
+    name: Docker
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref_name == 'dev'
     needs: [frontend, backend]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          python-version: '3.11'
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Install Robot Framework
-        run: |
-          pip install robotframework
-          pip install robotframework-seleniumlibrary
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Setup Chromedriver
-        uses: nanasess/setup-chromedriver@master
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Build & push Docker image
+        uses: docker/build-push-action@v6
         with:
-          node-version: '20'
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Start virtual display for UI tests
-        run: |
-          export DISPLAY=:99
-          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
-          sleep 5
-
-      - name: Start frontend application
-        working-directory: frontend
-        run: | 
-          npm start &
-          sleep 30
-
-      - name: Run Robot Framework E2E tests
-        run: robot --outputdir e2e/results e2e/
-        env:
-          DISPLAY: :99
-          ROBOT_OPTIONS: "--variable BROWSER:headlesschrome"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: robot-test-results
-          path: e2e/results/
-
-
-  ### 4. DEPLOY TO OPENSHIFT
-  # deploy-openshift:
-  #   if: github.ref_name == 'main'  
-  #   name: Deploy to OpenShift
-  #   runs-on: ubuntu-latest
-  #   needs: [frontend, backend]
-
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Setup OpenShift CLI
-  #       uses: redhat-actions/oc-login@v2
-  #       with:
-  #         openshift_server_url: ${{ secrets.OPENSHIFT_URL }}
-  #         token: ${{ secrets.OPENSHIFT_TOKEN }}
-
-  #     - name: Login to OpenShift
-  #       run: |
-  #         oc login ${{ secrets.OPENSHIFT_URL }} --token=${{ secrets.OPENSHIFT_TOKEN }} --insecure-skip-tls-verify
-
-  #     - name: Set OpenShift project/namespace
-  #       run: oc project my-namespace  # vaihda omaan
-
-  #     - name: Update backend image
-  #       run: |
-  #         oc set image deployment/backend backend=ghcr.io/<org>/<repo>/backend:${{ github.sha }} --record
-
-  #     - name: Update frontend image
-  #       run: |
-  #         oc set image deployment/frontend frontend=ghcr.io/<org>/<repo>/frontend:${{ github.sha }} --record
-
-  #     - name: Rollout status
-  #       run: |
-  #         oc rollout status deployment/backend
-  #         oc rollout status deployment/frontend
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/ecopaths:staging
+            ${{ secrets.DOCKER_USERNAME }}/ecopaths:${{ github.sha }}

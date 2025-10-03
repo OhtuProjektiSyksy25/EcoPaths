@@ -1,28 +1,37 @@
 import pytest
+from pathlib import Path
 from config.settings import AreaConfig
 
-def test_la_area_settings():
-    config = AreaConfig("la")
-    assert config.area == "la"
-    assert config.bbox == [-118.33, 33.93, -118.20, 34.10]
-    assert config.pbf_url.endswith("socal-latest.osm.pbf")
-    assert config.pbf_file == "data/socal-latest.osm.pbf"
-    assert config.output_file == "data/la_edges.parquet"
+@pytest.mark.parametrize("area, bbox, pbf_name, output_name", [
+    ("la", [-118.33, 33.93, -118.20, 34.10], "socal-latest.osm.pbf", "la_edges.parquet"),
+    ("berlin", [13.0884, 52.3383, 13.7611, 52.6755], "berlin-latest.osm.pbf", "berlin_edges.parquet"),
+])
+def test_area_config_values(area, bbox, pbf_name, output_name):
+    config = AreaConfig(area)
 
-def test_berlin_area_settings():
-    config = AreaConfig("berlin")
-    assert config.area == "berlin"
-    assert config.bbox == [13.0884, 52.3383, 13.7611, 52.6755]
-    assert config.pbf_url.endswith("berlin-latest.osm.pbf")
-    assert config.pbf_file == "data/berlin-latest.osm.pbf"
-    assert config.output_file == "data/berlin_edges.parquet"
+    assert config.area == area
+    assert config.bbox == bbox
 
-def test_area_case_insensitive():
+    assert isinstance(config.pbf_file, Path)
+    assert isinstance(config.output_file, Path)
+
+    assert config.pbf_file.is_absolute()
+    assert config.output_file.is_absolute()
+
+    assert config.pbf_file.name == pbf_name
+    assert config.output_file.name == output_name
+
+    assert "preprocessor/data" in str(config.pbf_file)
+    assert "data" in str(config.output_file)
+
+
+def test_area_config_case_insensitive():
     config = AreaConfig("LA")
     assert config.area == "la"
-    assert config.pbf_file == "data/socal-latest.osm.pbf"
+    assert config.pbf_file.name == "socal-latest.osm.pbf"
 
-def test_unknown_area_raises():
-    with pytest.raises(ValueError) as excinfo:
+
+def test_area_config_unknown_area_raises():
+    with pytest.raises(ValueError, match="Unknown area"):
         AreaConfig("tokyo")
-    assert "Unknown area" in str(excinfo.value)
+

@@ -40,13 +40,10 @@ def test_backend(c):
 
 @task
 def test_frontend(c):
-    """Run frontend tests (currently not available)"""
-    print("Frontend tests not run yet")
-    # When frontend tests are ready, you can enable:
-    # with c.cd("frontend"):
-    #     c.run("npm test -- --watchAll=false")
-    #     # optionally generate coverage in coverage_reports/frontend/
-
+    """Run frontend tests with coverage tracking"""
+    with c.cd("frontend"):
+        c.run("npm test -- --watchAll=false")
+    print("Frontend coverage reports generated in coverage_reports/frontend/")
 
 # ========================
 # Utility tasks
