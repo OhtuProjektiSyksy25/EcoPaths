@@ -29,13 +29,12 @@ function App(): JSX.Element {
             throw new Error(`server error: ${response.status}`)
           } 
           const data = await response.json()
-          return data
+          setRoute(data.route)
           } catch (error) {
           console.log(error)}
         }
-      
-      const result = getRoute()
-      setRoute(result)
+      getRoute()
+
       }
       
 

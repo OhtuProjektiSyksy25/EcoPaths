@@ -17,7 +17,7 @@ interface MapComponentProps {
   route: any | null
 }
 
-const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
+const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}) => {
 
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -66,6 +66,34 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
       .addTo(mapRef.current)
     }    
   },[fromLocked, toLocked])
+
+  useEffect(() => {
+    if (!mapRef.current || !route) return
+    const map = mapRef.current
+    const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
+    if (source) {
+      source.setData(route)
+    } else {
+      const source = map.addSource('route', {
+            'type': 'geojson',
+            'data': route
+    }
+    );
+    
+    map.addLayer({
+          'id': 'route',
+            'type': 'line',
+            'source': 'route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#888',
+                'line-width': 8
+            }
+        });
+  }},[route])
 
   if (mapboxToken) {
     return (
