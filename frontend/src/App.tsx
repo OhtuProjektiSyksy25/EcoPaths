@@ -7,7 +7,6 @@ import  {useState, useEffect} from "react";
 import MapComponent from "./components/MapComponent";
 import RouteForm from "./components/RouteForm";
 import "./App.css";
-import DisplayContainer from "./components/DisplayContainer";
 
 
 
@@ -32,8 +31,6 @@ function App(): JSX.Element {
             throw new Error(`server error: ${response.status}`)
           } 
           const data = await response.json()
-          console.log("fetched route data:", data.route?.properties?.time_estimate)
-          console.log("full data:", data)
           setRoute(data.route)
           
           } catch (error) {
@@ -52,15 +49,18 @@ function App(): JSX.Element {
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
-      <RouteForm
-        onFromSelect={setFromLocked}
-        onToSelect={setToLocked}/>
-      <DisplayContainer label="Walking Time" value={route?.properties?.time_estimate || "N/A"} />
-
+      <main>
+        <div className="controls-container">
+        <RouteForm
+          onFromSelect={setFromLocked}
+          onToSelect={setToLocked}
+          route={route}/>
+        </div>
       <MapComponent
         fromLocked={fromLocked} 
         toLocked={toLocked} 
         route={route}/>
+        </main>
     </div>
   );
 }
