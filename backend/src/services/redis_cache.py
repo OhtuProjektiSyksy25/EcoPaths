@@ -6,7 +6,7 @@ Provides methods to interact with a Redis cache.
 import json
 import logging
 import redis
-from src.config.settings import RedisConfig # pylint: disable=import-error
+from config.settings import RedisConfig
 
 logger = logging.getLogger(__name__)
 
@@ -42,37 +42,61 @@ class RedisCache:
 
 
 
-    def set(self, key, value, expire=None):
+    def set_geojson(self, key, geojson_data, expire=None):
         """
-        Set a value in the cache
+        Set a GeoJSON data in the cache
 
         Args:
             key: The key to set.
-            value: The value to set.
+            geojson_data: The GeoJSON data to set.
             expire: The expiration time in seconds. Defaults to None.
         """
         if not self.client:
-            logger.warning("Redis is not connected. Cannot set value.")
+            logger.warning("Redis is not connected. Cannot set GeoJSON.")
             return False
 
         try:
+            if isinstance(geojson_data, dict):
+                if "type" not in geojson_data:
+                    logger.warning("Invalid GeoJSON data: missing 'type' field.")
+                    return False
+
+
             expire_time = expire if expire is not None else self.default_expire
-            self.client.set(key, json.dumps(value), ex=expire_time)
+
+            json_string = json.dumps(geojson_data, separators=(',', ':'))
+            self.client.set(key, json_string, ex=expire_time)
+
+            logger.debug("Cached GeoJSON data with key '%s'", key)
             return True
-        except redis.RedisError as e:
-            logger.error("Failed to set cache key '%s': %s", key, e)
+
+        except (redis.RedisError, TypeError, ValueError) as e:
+            logger.error("Failed to cache GeoJSON data: '%s': %s", key, e)
             return False
 
 
-    def get(self, key):
+    def get_geojson(self, key):
         """
-        Get a value from the cache
+        Get a GeoJSON data from the cache
         """
         if not self.client:
+            logger.warning("Redis is not connected. Cannot get GeoJSON.")
             return None
         try:
             data = self.client.get(key)
-            return json.loads(data) if data else None
+            if not data:
+                return None
+
+            geojson_object = json.loads(data)
+
+            if isinstance(geojson_object, dict) and "type" in geojson_object:
+                logger.debug("Retrieved GeoJSON with key '%s'", key)
+                return geojson_object
+            else:
+                logger.warning("Cached data for key '%s' is not valid GeoJSON", key)
+                return None
+
+
         except (redis.RedisError, json.JSONDecodeError) as e:
             logger.error("Failed to get cache key '%s': %s", key, e)
             return None
@@ -105,3 +129,19 @@ class RedisCache:
         except redis.RedisError as e:
             logger.error("Failed to clear cache: %s", e)
             return False
+
+
+    def exists(self, key):
+        """
+        Check if a key exists in the cache
+        """
+        if not self.client:
+            logger.warning("Redis is not connected. Cannot check key existence.")
+            return False
+        try:
+            return self.client.exists(key) == 1
+        except redis.RedisError as e:
+            logger.error("Failed to check existence of cache key '%s': %s", key, e)
+            return False
+
+# needs generate_route_key method
