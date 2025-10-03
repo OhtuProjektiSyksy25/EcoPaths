@@ -12,7 +12,7 @@ interface DisplayContainerProps {
 const DisplayContainer: React.FC<DisplayContainerProps> = ({ label, value }) => {
   return (
     <div className="DisplayContainer">
-      <span className="label">{label}: </span>
+      <span className="label">{label} : </span>
       <span className="value">{value}</span>
     </div>
   );
