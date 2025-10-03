@@ -92,7 +92,7 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect, route}) 
 
 
 return (
-  <div style={{ display: 'flex', flexDirection: 'column'}}>
+  <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', gap: '10px' }}>
     <div style={{ display: 'flex', alignItems: 'center'}}>
       <InputContainer
         placeholder="From..."
