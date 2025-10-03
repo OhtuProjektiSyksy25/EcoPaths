@@ -7,6 +7,7 @@ It renders the header and the MapComponent.
 import MapComponent from "./components/MapComponent";
 import RouteForm from "./components/RouteForm";
 import "./App.css";
+import DisplayContainer from "./components/displayContainer";
 
 
 
@@ -16,7 +17,10 @@ function App(): JSX.Element {
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
-      <RouteForm/>
+      <div className="controls-row">
+        <RouteForm/>
+        <DisplayContainer label="Walking Time" value="Place Holder" />
+      </div>
       <MapComponent />
     </div>
   );
