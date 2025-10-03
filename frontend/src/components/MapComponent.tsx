@@ -134,7 +134,6 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
 /* We ignore this line in coverage report, because it is unreachable.
 However, typescript requires handling this corner case */
 //istanbul ignore next
-return null;
-}
+
 
 export default MapComponent;
