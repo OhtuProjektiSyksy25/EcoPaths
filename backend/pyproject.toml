@@ -19,6 +19,7 @@ pandas = "^2.3.2"
 geopandas = "^1.1.1"
 pyarrow = "^21.0.0"
 requests = "^2.32.5"
+redis = "^6.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
