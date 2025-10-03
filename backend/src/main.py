@@ -1,11 +1,11 @@
 """ FastAPI application """
 import os
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from services.route_service import RouteService
-import httpx
 
 
 app = FastAPI()
