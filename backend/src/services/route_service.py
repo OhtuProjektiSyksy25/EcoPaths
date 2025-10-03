@@ -128,13 +128,11 @@ class RouteService:
         """
         avg_speed_mps = 5.0  # 5 meters per second (walking speed)
         seconds = length_m / avg_speed_mps
-        
+
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         remaining_seconds = int(seconds % 60)
-        
+
         if hours > 0:
             return f"{hours}h {minutes} min"
-        else:
-            return f"{minutes} min {remaining_seconds} s"
- 
+        return f"{minutes} min {remaining_seconds} s"
