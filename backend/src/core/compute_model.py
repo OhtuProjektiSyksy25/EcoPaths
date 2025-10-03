@@ -120,6 +120,22 @@ class ComputeModel:
     def __repr__(self):
         return f"<ComputeModel area={self.config.area}>"
 
+    def calculate_walking_time(self, distance_m: float) -> float:
+        """
+        Calculate walking time in minutes for a given distance.
+        Args:
+            distance_m (float): Distance in meters.
+        Returns:
+            float: Estimated walking time in minutes.
+        """
+        walking_speed_m_per_s = 1.4  # Average walking speed ~5 km/h
+        time_seconds = distance_m / walking_speed_m_per_s
+        time_minutes = time_seconds / 60
+        if time_minutes > 60:
+            time_hours = time_minutes / 60
+            return time_hours, time_minutes
+        return time_minutes
+
     # This method provides a temporary interface between ComputeModel and RouteAlgorithm.
     # Once RouteService is implemented, this logic should be moved there.
     # Algorithm developer can use get_data_for_algorithm() directly in the meantime.
