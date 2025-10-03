@@ -1,6 +1,7 @@
 /*
 Component that renders "From" and "To" input fields and manages their state
 renders suggestions for from and to fields and manages their state based on their values
+uses LocationButton to get user's current location and set it as "From" value
 */
 
 import React, { useState, useRef, useCallback } from "react";
@@ -100,7 +101,6 @@ return (
       <LocationButton onLocationFound={handleLocationFound} />
     </div>
 
-    {/* To input row */}
     <div style={{ display: 'flex', alignItems: 'center' }}>
       <InputContainer
         placeholder="To..."
