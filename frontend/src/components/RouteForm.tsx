@@ -23,6 +23,12 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect}) => {
 
 
   const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
+       /* 
+    TODO 
+    instead of calling setFrom(coordsString) set placeholder to coords and send 
+    coords to parent (like wiht onSelect) then should work
+    ilater improvement use backward geocoding to provide address (optional)
+   */
     const coordsString = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
     setFrom(coordsString);
 
