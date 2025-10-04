@@ -85,6 +85,7 @@ class RouteService:
                     geometry="geometry",
                     crs="EPSG:4326"
                 )
+        edges = edges.explode(index_parts=False).reset_index(drop=True)
 
         algorithm = RouteAlgorithm(edges)
 

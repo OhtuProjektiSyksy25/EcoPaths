@@ -12,4 +12,4 @@ route_service = RouteService(area="berlin")
 geojson_route = route_service.get_route(origin, destination)
 
 # Print result
-print(json.dumps(geojson_route, indent=2))
+print(f"route service returns: /n{json.dumps(geojson_route, indent=2)}")

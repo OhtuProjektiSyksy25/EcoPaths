@@ -13,6 +13,7 @@ class RouteAlgorithm:
         
         
         print("Building graph from edges...")
+        
         for _, row in edges.iterrows():
             geom = row["geometry"]
 
@@ -36,6 +37,7 @@ class RouteAlgorithm:
             )
 
 
+
     def compute(self, origin, destination):
         # Transform origin/destination to match the edges CRS
         transformer = Transformer.from_crs("EPSG:4326", self.edges_crs, always_xy=True)
@@ -53,7 +55,9 @@ class RouteAlgorithm:
         )
 
 
+
         print(f"Origin node: {origin_node}, Destination node: {dest_node}")
+        print("computing shortest path with these nodes...")
         # Laske lyhin polku pituuden perusteella
         path = nx.shortest_path(self.graph, origin_node, dest_node, weight="weight")
 
