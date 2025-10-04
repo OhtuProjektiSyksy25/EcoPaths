@@ -91,14 +91,13 @@ class RouteService:
 #        algorithm = RouteAlgorithm(edges)
         route_gdf = algorithm.calculate(origin, destination)
 
-        # Ensure the route is in EPSG:4326
-        unified_geom = route_gdf.geometry.union_all()  
+        # Ensure the route is in EPSG:4326 (degrees)
         if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
             route_gdf = route_gdf.to_crs("EPSG:4326")
 
         # Merge all geometries into a single LineString
+        unified_geom = route_gdf.geometry.union_all()
 
-      
         geojson_feature = {
             "type": "Feature",
             "geometry": mapping(unified_geom),

@@ -66,5 +66,5 @@ class RouteAlgorithm:
         return gpd.GeoDataFrame(
             [{"geometry": LineString([pt for geom in line_parts for pt in geom.coords])}],
             geometry="geometry",
-            crs="EPSG:4326"
+            crs="EPSG:25833"
         )
