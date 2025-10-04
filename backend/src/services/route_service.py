@@ -85,25 +85,23 @@ class RouteService:
                     geometry="geometry",
                     crs="EPSG:4326"
                 )
-        edges = edges.explode(index_parts=False).reset_index(drop=True)
 
         algorithm = RouteAlgorithm(edges)
 
 #        algorithm = RouteAlgorithm(edges)
-        route_gdf = algorithm.compute(origin, destination)
+        route_gdf = algorithm.calculate(origin, destination)
 
         # Ensure the route is in EPSG:4326
+        unified_geom = route_gdf.geometry.union_all()  
         if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
             route_gdf = route_gdf.to_crs("EPSG:4326")
 
         # Merge all geometries into a single LineString
 
-        # Create GeoJSON Feature
-        line = route_gdf.geometry.iloc[0]
-
+      
         geojson_feature = {
             "type": "Feature",
-            "geometry": mapping(line),
+            "geometry": mapping(unified_geom),
             "properties": {}
         }
         # Save the completed route to Redis cache

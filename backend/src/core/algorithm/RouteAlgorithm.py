@@ -10,7 +10,7 @@ class RouteAlgorithm:
         # edges oletetaan GeoDataFrameksi, jossa on sarakkeet: u, v, geometry, length
         self.graph = nx.Graph()
         self.edges_crs = edges.crs
-        
+        edges = edges.explode(index_parts=False).reset_index(drop=True)
         
         print("Building graph from edges...")
         
@@ -19,10 +19,6 @@ class RouteAlgorithm:
 
             if geom.geom_type == "LineString":
                 coords = list(geom.coords)
-            elif geom.geom_type == "MultiLineString":
-                # pick the longest part for start/end
-                longest = max(geom.geoms, key=lambda g: g.length)
-                coords = list(longest.coords)
             else:
                 continue  # skip weird geometries
 
@@ -37,8 +33,8 @@ class RouteAlgorithm:
             )
 
 
-
-    def compute(self, origin, destination):
+    print("Calculating shortest path...")
+    def calculate(self, origin, destination):
         # Transform origin/destination to match the edges CRS
         transformer = Transformer.from_crs("EPSG:4326", self.edges_crs, always_xy=True)
         origin_proj = transformer.transform(*origin)         # returns (x, y) in edges CRS
