@@ -4,7 +4,7 @@ a label and value pair for showing information like walking time estimates.
 */
 
 import { render, screen } from '@testing-library/react';
-import DisplayContainer from '../../src/components/displayContainer';
+import DisplayContainer from '../../src/components/DisplayContainer';
 
 describe('DisplayContainer', () => {
   test('renders label and value correctly', () => {
