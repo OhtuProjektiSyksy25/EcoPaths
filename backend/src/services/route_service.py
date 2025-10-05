@@ -5,7 +5,7 @@ Service that computes routes and returns them as GeoJSON LineStrings.
 import geopandas as gpd
 from shapely.geometry import mapping, LineString
 from core.compute_model import ComputeModel
-from core.algorithm.RouteAlgorithm import RouteAlgorithm
+from src.core.algorithm.route_algorithm import RouteAlgorithm
 from services.redis_cache import RedisCache
 
 # Cache key template now includes origin and destination coordinates
@@ -95,7 +95,6 @@ class RouteService:
         if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
             route_gdf = route_gdf.to_crs("EPSG:4326")
 
-        # Merge all geometries into a single LineString
         unified_geom = route_gdf.geometry.union_all()
 
         geojson_feature = {
