@@ -7,13 +7,16 @@ uses LocationButton to get user's current location and set it as "From" value
 import React, { useState, useRef, useCallback } from "react";
 import InputContainer from "./InputContainer";
 import { LocationButton } from "./LocationButton";
+import DisplayContainer from "./DisplayContainer";
+import "./routeform.css";
 
 interface RouteFormProps {
   onFromSelect: (place: any) => void
   onToSelect: (place: any) => void
+  route?: any;
 }
 
-const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect}) => {
+const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect, route}) => {
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -89,7 +92,7 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect}) => {
 
 
 return (
-  <div style={{ display: 'flex', flexDirection: 'column'}}>
+  <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', gap: '10px' }}>
     <div style={{ display: 'flex', alignItems: 'center'}}>
       <InputContainer
         placeholder="From..."
@@ -108,6 +111,10 @@ return (
         onChange={HandleToChange}
         suggestions={toSuggestions}
         onSelect={onToSelect}
+      />
+      <DisplayContainer
+        label="Walking Time"
+        value={route?.properties?.time_estimate || "N/A"} 
       />
     </div>
   </div>
