@@ -9,10 +9,11 @@ import networkx as nx
 import geopandas as gpd
 from pyproj import Transformer
 
+
 class RouteAlgorithm:
     """
     Simple routing algorithm using NetworkX for shortest path calculation.
-    
+
     Attributes:
         graph (nx.Graph): NetworkX graph representation of the edges.
         edges_crs (str): CRS of the input edges for coordinate transformation.
@@ -59,22 +60,26 @@ class RouteAlgorithm:
         Returns:
             GeoDataFrame: GeoDataFrame with the route as a LineString geometry.
         """
-        transformer = Transformer.from_crs("EPSG:4326", self.edges_crs, always_xy=True)
+        transformer = Transformer.from_crs(
+            "EPSG:4326", self.edges_crs, always_xy=True)
         origin_proj = transformer.transform(*origin)
         destination_proj = transformer.transform(*destination)
 
-        largest_cc_nodes = set(max(nx.connected_components(self.graph), key=len))
+        largest_cc_nodes = set(
+            max(nx.connected_components(self.graph), key=len))
 
         origin_node = min(
             largest_cc_nodes,
             key=lambda n: (n[0]-origin_proj[0])**2 + (n[1]-origin_proj[1])**2
-            )
-        dest_node   = min(
+        )
+        dest_node = min(
             largest_cc_nodes,
-            key=lambda n: (n[0]-destination_proj[0])**2 + (n[1]-destination_proj[1])**2
-            )
+            key=lambda n: (n[0]-destination_proj[0])**2 +
+            (n[1]-destination_proj[1])**2
+        )
 
-        path = nx.shortest_path(self.graph, origin_node, dest_node, weight="weight")
+        path = nx.shortest_path(self.graph, origin_node,
+                                dest_node, weight="weight")
 
         line_parts = []
         for u, v in zip(path[:-1], path[1:]):

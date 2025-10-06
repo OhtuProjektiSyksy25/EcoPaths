@@ -69,7 +69,6 @@ class RouteService:
         # If not in cache, compute the edges from ComputeModel
         edges = self.compute_model.get_data_for_algorithm()
 
-
         algorithm = RouteAlgorithm(edges)
 
 #        algorithm = RouteAlgorithm(edges)
@@ -82,7 +81,7 @@ class RouteService:
         # Merge all geometries into a single LineString
         unified_geom = route_gdf.geometry.union_all()
 
-        #calculate time estimate
+        # calculate time estimate
         length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
         time_estimate_formatted = self._calculate_time_estimate(length_m)
 
@@ -103,14 +102,14 @@ class RouteService:
     def _calculate_time_estimate(self, length_m: float) -> str:
         """
         Calculate formatted time estimate from distance.
-        
+
         Args:
             length_m (float): Distance in meters
-            
+
         Returns:
             str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s")
         """
-        avg_speed_mps =   1.4  # 1.4 meters per second (walking speed)
+        avg_speed_mps = 1.4  # 1.4 meters per second (walking speed)
         seconds = length_m / avg_speed_mps
 
         hours = int(seconds // 3600)
