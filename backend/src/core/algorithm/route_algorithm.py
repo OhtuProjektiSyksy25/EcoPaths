@@ -60,42 +60,37 @@ class RouteAlgorithm:
         Returns:
             GeoDataFrame: GeoDataFrame with the route as a LineString geometry.
         """
-        transformer = Transformer.from_crs(
-            "EPSG:4326", self.edges_crs, always_xy=True)
-        origin_proj = transformer.transform(*origin)
-        destination_proj = transformer.transform(*destination)
+        origin_proj = self._project_point(origin)
+        destination_proj = self._project_point(destination)
 
         largest_cc_nodes = set(
             max(nx.connected_components(self.graph), key=len))
-
-        origin_node = min(
-            largest_cc_nodes,
-            key=lambda n: (n[0]-origin_proj[0])**2 + (n[1]-origin_proj[1])**2
-        )
-        dest_node = min(
-            largest_cc_nodes,
-            key=lambda n: (n[0]-destination_proj[0])**2 +
-            (n[1]-destination_proj[1])**2
-        )
+        origin_node = self._nearest_node(largest_cc_nodes, origin_proj)
+        dest_node = self._nearest_node(largest_cc_nodes, destination_proj)
 
         path = nx.shortest_path(self.graph, origin_node,
                                 dest_node, weight="weight")
 
-        line_parts = []
-        for u, v in zip(path[:-1], path[1:]):
-            data = self.graph.get_edge_data(u, v)
-            line_parts.append(data["geometry"])
+        line_parts = [self.graph.get_edge_data(u, v)["geometry"]
+                      for u, v in zip(path[:-1], path[1:])]
 
         merged_geom = unary_union(line_parts)
-        if isinstance(merged_geom, LineString):
-            pass
-        else:
+        if not isinstance(merged_geom, LineString):
             merged_geom = linemerge(merged_geom)
-
         if merged_geom.geom_type == "MultiLineString":
-            all_coords = [pt for line in merged_geom for pt in line.coords]
-            merged_geom = LineString(all_coords)
+            merged_geom = LineString(
+                [pt for line in merged_geom for pt in line.coords])
 
         return gpd.GeoDataFrame([{"geometry": merged_geom}],
                                 geometry="geometry",
                                 crs=self.edges_crs)
+
+    def _project_point(self, lonlat):
+        """Project a WGS84 (lon, lat) point into the edges CRS."""
+        transformer = Transformer.from_crs(
+            "EPSG:4326", self.edges_crs, always_xy=True)
+        return transformer.transform(*lonlat)
+
+    def _nearest_node(self, nodes, point):
+        """Find nearest node from a set given a projected point."""
+        return min(nodes, key=lambda n: (n[0] - point[0])**2 + (n[1] - point[1])**2)

@@ -98,7 +98,6 @@ def getroute(from_coords: str, to_coords: str):
     return {"route": route}
 
 
-
 @app.get("/{full_path:path}")
 async def spa_handler(full_path: str):  # pylint: disable=unused-argument
     """Catch-all route handler for the frontend SPA.
