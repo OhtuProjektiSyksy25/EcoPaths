@@ -65,10 +65,10 @@ useEffect(() => {
 			/>
       {isOpen && suggestions?.length && (
         <ul className="originul">
-        {suggestions.map((s) => (
+        {suggestions.map((s, i) => (
           <li 
           className="originli" 
-          key={s.properties.osm_id}
+          key={`${s.properties.osm_id}-${i}`}
           onClick={() => {
             onChange(s.full_address)
             if (onSelect) onSelect(s)
