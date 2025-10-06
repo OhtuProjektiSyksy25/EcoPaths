@@ -2,8 +2,7 @@
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
 
-import geopandas as gpd
-from shapely.geometry import mapping, LineString
+from shapely.geometry import mapping
 from core.compute_model import ComputeModel
 from core.algorithm.route_algorithm import RouteAlgorithm
 from services.redis_cache import RedisCache
@@ -91,10 +90,6 @@ class RouteService:
         geojson_feature = {
             "type": "Feature",
             "geometry": mapping(unified_geom),
-            "properties": {
-                "time_estimate": time_estimate_formatted,
-                "length_m": length_m
-            }
             "properties": {
                 "time_estimate": time_estimate_formatted,
                 "length_m": length_m

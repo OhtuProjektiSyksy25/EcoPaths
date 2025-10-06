@@ -3,11 +3,11 @@
     Uses NetworkX for graph representation and shortest path calculation.
 """
 
-from itertools import groupby
+from shapely.ops import linemerge, unary_union
+from shapely.geometry import LineString
 import networkx as nx
 import geopandas as gpd
 from pyproj import Transformer
-from shapely.geometry import LineString
 
 class RouteAlgorithm:
     """
@@ -28,6 +28,7 @@ class RouteAlgorithm:
         self.graph = nx.Graph()
         self.edges_crs = edges.crs
         edges = edges.explode(index_parts=False).reset_index(drop=True)
+        edges["length_m"] = edges.geometry.length
 
         for _, row in edges.iterrows():
             geom = row["geometry"]
@@ -47,7 +48,6 @@ class RouteAlgorithm:
                 geometry=geom
             )
 
-
     def calculate(self, origin, destination):
         """
         Calculate the shortest path between origin and destination.
@@ -63,14 +63,16 @@ class RouteAlgorithm:
         origin_proj = transformer.transform(*origin)
         destination_proj = transformer.transform(*destination)
 
+        largest_cc_nodes = set(max(nx.connected_components(self.graph), key=len))
+
         origin_node = min(
-            self.graph.nodes,
-            key=lambda n: (n[0] - origin_proj[0])**2 + (n[1] - origin_proj[1])**2
-        )
-        dest_node = min(
-            self.graph.nodes,
-            key=lambda n: (n[0] - destination_proj[0])**2 + (n[1] - destination_proj[1])**2
-        )
+            largest_cc_nodes,
+            key=lambda n: (n[0]-origin_proj[0])**2 + (n[1]-origin_proj[1])**2
+            )
+        dest_node   = min(
+            largest_cc_nodes,
+            key=lambda n: (n[0]-destination_proj[0])**2 + (n[1]-destination_proj[1])**2
+            )
 
         path = nx.shortest_path(self.graph, origin_node, dest_node, weight="weight")
 
@@ -79,11 +81,16 @@ class RouteAlgorithm:
             data = self.graph.get_edge_data(u, v)
             line_parts.append(data["geometry"])
 
-        all_points = [pt for geom in line_parts for pt in geom.coords]
-        unique_points = [x for x, _ in groupby(all_points)]
+        merged_geom = unary_union(line_parts)
+        if isinstance(merged_geom, LineString):
+            pass
+        else:
+            merged_geom = linemerge(merged_geom)
 
-        return gpd.GeoDataFrame(
-            [{"geometry": LineString(unique_points)}],
-            geometry="geometry",
-            crs=self.edges_crs
-        )
+        if merged_geom.geom_type == "MultiLineString":
+            all_coords = [pt for line in merged_geom for pt in line.coords]
+            merged_geom = LineString(all_coords)
+
+        return gpd.GeoDataFrame([{"geometry": merged_geom}],
+                                geometry="geometry",
+                                crs=self.edges_crs)
