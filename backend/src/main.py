@@ -94,6 +94,7 @@ def getroute(from_coords: str, to_coords: str):
         (from_lon, from_lat),
         (to_lon, to_lat)
     )
+
     return {"route": route}
 
 

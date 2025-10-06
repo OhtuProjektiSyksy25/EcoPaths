@@ -26,17 +26,19 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect, route}) 
 
 
   const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
+
     const coordsString = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
     setFrom(coordsString);
 
     const mockPlace = {
+      full_address: `${coordsString}`,
       center: [coords.lng, coords.lat],
       place_name: `Current Location (${coordsString})`,
       properties: { name: "Current Location" },
       geometry: { coordinates: [coords.lng, coords.lat] }
     };
 
-  onFromSelect(mockPlace);
+  onFromSelect(mockPlace); 
 }, [onFromSelect]);
   
   const HandleFromChange = async (value: string) => {

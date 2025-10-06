@@ -87,9 +87,14 @@ class RouteService:
         length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
         time_estimate_formatted = self._calculate_time_estimate(length_m)
 
+        # Create GeoJSON Feature
         geojson_feature = {
             "type": "Feature",
             "geometry": mapping(unified_geom),
+            "properties": {
+                "time_estimate": time_estimate_formatted,
+                "length_m": length_m
+            }
             "properties": {
                 "time_estimate": time_estimate_formatted,
                 "length_m": length_m
@@ -110,7 +115,7 @@ class RouteService:
         Returns:
             str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s")
         """
-        avg_speed_mps = 1.4  # 5 meters per second (walking speed)
+        avg_speed_mps =   1.4  # 1.4 meters per second (walking speed)
         seconds = length_m / avg_speed_mps
 
         hours = int(seconds // 3600)
