@@ -1,4 +1,4 @@
-from services.route_service import RouteService
+from src.services.route_service import RouteService
 
 # Stub coordinates (lon, lat)
 origin = (53.404954, 52.520008)   # Berlin

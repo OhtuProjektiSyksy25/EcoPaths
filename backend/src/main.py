@@ -1,10 +1,10 @@
 """ FastAPI application """
 import os
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import httpx
 from services.route_service import RouteService
 
 
@@ -96,6 +96,7 @@ def getroute(from_coords: str, to_coords: str):
     )
 
     return {"route": route}
+
 
 
 @app.get("/{full_path:path}")

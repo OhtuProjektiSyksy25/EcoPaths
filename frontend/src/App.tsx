@@ -10,10 +10,11 @@ import "./App.css";
 
 
 
+
 function App(): JSX.Element {
     const [fromLocked, setFromLocked] = useState<any>([])
     const [toLocked, setToLocked] = useState<any>([])
-    const [route, setRoute] = useState<any>([]) //todo fix type
+    const [route, setRoute] = useState<any>(null) //todo fix type
     
     useEffect(() => {
       if (fromLocked && toLocked && fromLocked?.full_address && toLocked?.full_address) {
@@ -43,13 +44,18 @@ function App(): JSX.Element {
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
-      <RouteForm
-        onFromSelect={setFromLocked}
-        onToSelect={setToLocked}/>
+      <main>
+        <div className="controls-container">
+        <RouteForm
+          onFromSelect={setFromLocked}
+          onToSelect={setToLocked}
+          route={route}/>
+        </div>
       <MapComponent
         fromLocked={fromLocked} 
         toLocked={toLocked} 
         route={route}/>
+        </main>
     </div>
   );
 }

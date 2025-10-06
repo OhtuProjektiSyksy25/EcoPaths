@@ -81,3 +81,55 @@ def test_get_route_returns_cached_result(route_service):
     # Should return cached result instead of recomputing
     assert route == cached_feature
     assert route["properties"]["cached"] is True
+
+
+def test_calculate_time_estimate_formats_correctly(route_service):
+    """Test that _calculate_time_estimate formats time correctly for different distances"""
+    
+    # Test short distance (less than 1 hour)
+    # 300 meters at 5 m/s = 60 seconds = 1 minute
+    result = route_service._calculate_time_estimate(300.0)
+    assert result == "1 min 0 s"
+    
+    # Test medium distance
+    # 1500 meters at 5 m/s = 300 seconds = 5 minutes
+    result = route_service._calculate_time_estimate(1500.0)
+    assert result == "5 min 0 s"
+    
+    # Test long distance (over 1 hour)
+    # 20000 meters at 5 m/s = 4000 seconds = 1 hour 6 minutes 40 seconds
+    result = route_service._calculate_time_estimate(20000.0)
+    assert result == "1h 6 min"
+    
+    # Test very long distance (multiple hours)
+    # 54000 meters at 5 m/s = 10800 seconds = 3 hours exactly
+    result = route_service._calculate_time_estimate(54000.0)
+    assert result == "3h 0 min"
+
+
+def test_calculate_time_estimate_edge_cases(route_service):
+    """Test edge cases for time estimation"""
+    
+    # Test zero distance
+    result = route_service._calculate_time_estimate(0.0)
+    assert result == "0 min 0 s"
+    
+    # Test very small distance (1 meter)
+    result = route_service._calculate_time_estimate(1.0)
+    assert result == "0 min 0 s"  # Should round down to 0
+    
+    # Test exactly 1 hour (18000 meters at 5 m/s)
+    result = route_service._calculate_time_estimate(18000.0)
+    assert result == "1h 0 min"
+
+
+def test_calculate_time_estimate_uses_correct_speed(route_service):
+    """Test that the method uses the expected walking speed: 5m per second"""
+    
+    # 5 meters at 5 m/s should be exactly 1 second
+    result = route_service._calculate_time_estimate(5.0)
+    assert result == "0 min 1 s"
+    
+    # 25 meters at 5 m/s should be exactly 5 seconds
+    result = route_service._calculate_time_estimate(25.0)
+    assert result == "0 min 5 s"
