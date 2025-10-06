@@ -85,5 +85,5 @@ class RouteAlgorithm:
         return gpd.GeoDataFrame(
             [{"geometry": LineString(unique_points)}],
             geometry="geometry",
-            crs="EPSG:25833"
+            crs=self.edges_crs
         )

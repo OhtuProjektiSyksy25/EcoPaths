@@ -1,9 +1,10 @@
 # tests/test_route_service.py
 
 import pytest
+import geopandas as gpd
 from shapely.geometry import LineString, mapping
 
-from services.route_service import RouteService
+from src.services.route_service import RouteService
 
 
 class DummyRedis:
@@ -24,7 +25,14 @@ class DummyComputeModel:
         self.area = area
 
     def get_data_for_algorithm(self):
-        return ["dummy_edges"]
+        # CRS must match the origin/destination CRS (EPSG:4326)
+        return gpd.GeoDataFrame(
+            [{"geometry": LineString([(13.40, 52.52), (13.41, 52.53)]), "length_m": 100}],
+            geometry="geometry",
+            crs="EPSG:4326"
+        )
+
+
 
 
 @pytest.fixture
