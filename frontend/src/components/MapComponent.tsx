@@ -18,7 +18,7 @@ interface MapComponentProps {
   route: any | null
 }
 
-const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
+const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}) => {
 
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -69,6 +69,32 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
   },[fromLocked, toLocked])
 
 
+  useEffect(() => {
+    if (!mapRef.current || !route) return
+    const map = mapRef.current
+    const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
+    if (source) {
+      source.setData(route)
+    } else {
+      const source = map.addSource('route', {
+            'type': 'geojson',
+            'data': route
+    }
+    );
+    map.addLayer({
+          'id': 'route',
+            'type': 'line',
+            'source': 'route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#888',
+                'line-width': 8
+            }
+        });
+  }},[route])
 
   useEffect(() => {
     /*
@@ -101,6 +127,41 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked}) => {
       duration: 1500
     });
   }, [fromLocked, toLocked]);
+
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to From location if only From is set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates) return;
+    
+    if (fromLocked && (!toLocked || toLocked.length === 0)) {
+      mapRef.current.flyTo({
+        center: fromLocked.geometry.coordinates,
+        zoom: 15,
+        duration: 1500
+      });
+    }
+  }, [fromLocked, toLocked]);
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to fit both From and To locations if both are set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
+
+    const bounds = new mapboxgl.LngLatBounds()
+      .extend(fromLocked.geometry.coordinates)
+      .extend(toLocked.geometry.coordinates);
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 80,
+      duration: 1500
+    });
+  }, [fromLocked, toLocked]);
+
 
   if (mapboxToken) {
     return (

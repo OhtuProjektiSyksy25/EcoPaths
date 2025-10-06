@@ -126,7 +126,7 @@ class RouteService:
         Returns:
             str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s")
         """
-        avg_speed_mps = 5.0  # 5 meters per second (walking speed)
+        avg_speed_mps =   1.4  # 1.4 meters per second (walking speed)
         seconds = length_m / avg_speed_mps
 
         hours = int(seconds // 3600)
