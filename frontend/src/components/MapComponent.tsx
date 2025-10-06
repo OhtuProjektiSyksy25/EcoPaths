@@ -81,7 +81,6 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
             'data': route
     }
     );
-    console.log("HA")
     map.addLayer({
           'id': 'route',
             'type': 'line',
