@@ -28,8 +28,9 @@ class RouteAlgorithm:
         """
         self.graph = nx.Graph()
         self.edges_crs = edges.crs
-        edges = edges.explode(index_parts=False).reset_index(drop=True)
-        edges["length_m"] = edges.geometry.length
+        if any(edges.geometry.type == "MultiLineString"):
+            edges = edges.explode(index_parts=False).reset_index(drop=True)
+            edges["length_m"] = edges.geometry.length
 
         for _, row in edges.iterrows():
             geom = row["geometry"]
