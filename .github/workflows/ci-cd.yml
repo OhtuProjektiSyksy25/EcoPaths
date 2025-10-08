@@ -45,11 +45,16 @@ jobs:
       #- name: Lint
       #  run: npm run lint
 
-      #- name: Run tests
-      #  run: npm test
+      - name: Run tests with coverage
+        run: npm test
 
-      #- name: Build frontend
-      #  run: npm run build
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage_reports/frontend/lcov.info
+          fail_ci_if_error: 
+
 
   ### 2. BACKEND
   backend:

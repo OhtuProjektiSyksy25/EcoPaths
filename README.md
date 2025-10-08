@@ -17,10 +17,7 @@ The project is done in collaboration with MegaSense Oy.
 
 #### Prerequisites
 
-- Node.js
-- Git
-
-
+- Node.js v20 or newer (required to run and test the frontend)
 
 #### Install frontend
 
