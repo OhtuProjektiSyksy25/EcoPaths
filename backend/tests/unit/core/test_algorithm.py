@@ -112,3 +112,23 @@ def test_invalid_origin(square_edges):
 
     coords = list(gdf.geometry.iloc[0].coords)
     assert coords[0] in [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+
+
+def test_project_point_identity_projection(simple_edges):
+    """Test projection with same CRS (EPSG:4326 -> EPSG:4326)."""
+    algo = RouteAlgorithm(simple_edges)
+    algo.edges_crs = "EPSG:4326"
+    point = (12.0, 55.0)
+    projected = algo._project_point(point)
+
+    assert pytest.approx(projected[0], rel=1e-9) == 12.0
+    assert pytest.approx(projected[1], rel=1e-9) == 55.0
+
+
+def test_nearest_node_basic(simple_edges):
+    """Finds nearest node correctly."""
+    algo = RouteAlgorithm(simple_edges)
+    nodes = {(0, 0), (10, 10), (5, 5)}
+    point = (6, 5)
+    nearest = algo._nearest_node(nodes, point)
+    assert nearest == (5, 5)
