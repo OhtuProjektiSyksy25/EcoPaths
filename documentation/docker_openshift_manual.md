@@ -1,8 +1,8 @@
 # Docker and Openshift Manual
 
-This manual provides instructions for building, testing, and deploying the EcoPaths application using Docker and OpenShift.
+This manual provides instructions for **building**, **testing**, and **deploying** the EcoPaths application using **Docker** and **OpenShift**.
 
-The build and deployment process is already automated through the project’s CI/CD pipeline, so these steps are mainly intended for debugging, local testing, or manual redeployment when needed.
+The build and deployment process is already automated through the project’s CI/CD pipeline, so these steps are mainly intended for **debugging**, **local testing**, or **manual redeployment** when needed.
 
 ## Docker
 
@@ -101,6 +101,34 @@ Apply the manifests whenever you make changes in the `manifests/` directory.
 ```bash
 oc apply -k .
 ```
+
+### Checking and Adjusting Pod Resource Usage
+
+The resource usage (CPU and memory) of pods should be monitored and managed.
+
+Check resource usage:
+
+```bash
+oc adm top pods
+```
+
+This command displays the current resource usage of the pods in the cluster.
+
+Resource limits are defined in `deployment.yaml`. If the pod needs more resources, you can **modify the values in** `limits` in the following snippet:
+
+```
+resources:
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+  requests:
+    memory: "128Mi"
+    cpu: "50m"
+```
+
+> [!CAUTION]
+> The values in `requests` can't be increased due to cluster resource constraints.  
+> Only change the values in `limits`.
 
 ### Checking Pod Status
 
