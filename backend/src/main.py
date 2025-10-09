@@ -1,5 +1,6 @@
 """ FastAPI application """
 import os
+import sys
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +28,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Add project root to PYTHONPATH for imports
+# Ensures modules are found in all environments
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 
 if os.path.isdir("build/static"):
     app.mount("/static", StaticFiles(directory="build/static"), name="static")

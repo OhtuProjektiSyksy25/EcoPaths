@@ -45,6 +45,8 @@ COPY --from=frontend /app/build ./build
 
 RUN chmod -R a+rwX /app
 
+ENV PYTHONPATH="${PYTHONPATH}:/app/src"
+
 EXPOSE 8000
 
 CMD ["poetry", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
