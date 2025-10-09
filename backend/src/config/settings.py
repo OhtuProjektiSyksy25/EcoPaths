@@ -4,12 +4,23 @@
 Configuration settings for EcoPaths backend.
 """
 from pathlib import Path
-
 import os
+from dotenv import load_dotenv
 
-USE_POSTGIS = True  # Set to True to use PostGIS for data storage
-POSTGIS_URL = "postgresql://user:password@localhost:5432/ecopaths"
+# --- Load environment variables ---
+# This allows local .env file support for dev,
+# and uses OpenShift env vars automatically in production.
+load_dotenv()
 
+# === Global database settings ===
+USE_POSTGIS = os.getenv("USE_POSTGIS", "true").lower() == "true"
+POSTGIS_URL = os.getenv(
+    "POSTGIS_URL",
+    "postgresql://user:password@localhost:5432/ecopaths"
+)
+
+
+# === Area-specific settings ===
 AREA_SETTINGS = {
     "la": {
         "bbox": [-118.33, 33.93, -118.20, 34.10],
@@ -21,11 +32,9 @@ AREA_SETTINGS = {
     },
 }
 
-
 class AreaConfig:
     """Configuration class for defining area-specific parameters like
     bounding boxes, PBF download URLs, and output file paths."""
-
     def __init__(self, area: str = "berlin"):
         self.area = area.lower()
         self.project_root = Path(__file__).resolve().parents[2]
