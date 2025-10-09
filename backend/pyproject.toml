@@ -6,6 +6,7 @@ authors = ["ecoPaths-team"]
 packages = [
     { include = "config", from = "src" },
     { include = "core", from = "src" },
+    { include = "db", from = "src" },
     { include = "services", from = "src" },
     { include = "preprocessor" }
 ]
@@ -23,6 +24,8 @@ pyarrow = "^21.0.0"
 requests = "^2.32.5"
 redis = "^6.4.0"
 shapely = "^2.1.2"
+sqlalchemy = "^2.0.0"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"

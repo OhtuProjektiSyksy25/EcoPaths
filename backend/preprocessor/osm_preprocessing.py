@@ -5,54 +5,35 @@ Includes downloading .pbf files, extracting road networks,
 cropping to bounding box, and reprojecting to a suitable CRS
 for accurate spatial analysis.
 """
-
-
 import os
 import requests
 from pathlib import Path
 from pyrosm import OSM
-from shapely.geometry import box
-from config.settings import AreaConfig
+from sqlalchemy import inspect
+from src.config.settings import AreaConfig, USE_POSTGIS
+from src.db.db_manager import DatabaseManager
 
 class OSMPreprocessor:
     """Handles downloading and processing OSM PBF files into GeoDataFrames."""
 
     def __init__(self, area: str = "la", network_type: str = "walking"):
-        """
-        Initialize a Preprocessor instance for a given geographic area.
-
-        This sets up the PBF file paths, output paths, and bounding box
-        based on the area configuration.
-
-        Args:
-            area (str, optional): Area identifier, e.g., "la" or "berlin".
-                                  Defaults to "la".
-            network_type (str, optional): Type of OSM network to extract
-                                          ('walking', 'cycling', 'all', etc.).
-                                          Defaults to "walking".
-        """
         self.area = area.lower()
         self.config = AreaConfig(area)
         self.pbf_path: Path = self.config.pbf_file
         self.output_path: Path = self.config.output_file
         self.pbf_url = self.config.pbf_url
-        self.bbox = self.config.bbox
+        self.bbox = self.config.bbox  # None = use full PBF
         self.network_type = network_type
+        self.table_name = f"edges_{self.area}"
 
         self.pbf_path.parent.mkdir(parents=True, exist_ok=True)
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
     def download_pbf_if_missing(self):
-        """
-        Download the PBF file if it does not exist locally.
-
-        Raises:
-            ValueError: If the PBF file is missing and no URL is provided.
-        """
-        if not os.path.exists(self.pbf_path):
+        """Download the PBF file if it does not exist locally."""
+        if not self.pbf_path.exists():
             if not self.pbf_url:
-                raise ValueError(
-                    "PBF file is missing and no download URL is provided!")
+                raise ValueError("PBF file is missing and no download URL is provided!")
             print(f"Downloading PBF from: {self.pbf_url}")
             r = requests.get(self.pbf_url, timeout=10, stream=True)
             with self.pbf_path.open("wb") as f:
@@ -64,71 +45,55 @@ class OSMPreprocessor:
         """
         Extract the road network from the PBF file for the configured area.
 
-        Steps:
-            - Downloads the PBF file if missing
-            - Extracts the network using pyrosm
-            - Crops to the area's bounding box
-            - Reprojects to a projected CRS suitable for length calculations
-            - Saves the result as a Parquet file and GeoPackage
-
         Returns:
             GeoDataFrame: The processed and reprojected edge network
         """
-        if self.output_path.exists():
-            print(f"Edge file already exists at {self.output_path}. Skipping extraction.")
-            return
-        
+        if USE_POSTGIS:
+                db = DatabaseManager(table_name=self.table_name)
+                if db.exists():
+                    print(f"Table '{self.table_name}' already exists in PostGIS. Skipping extraction.")
+                    return
         self.download_pbf_if_missing()
 
-        print("Processing OSM data into edge network...")
-
-        if self.area == "la":
+        # OSM network extraction
+        if self.bbox:
             min_lon, min_lat, max_lon, max_lat = self.bbox
- 
             osm = OSM(str(self.pbf_path), bounding_box=[min_lon, min_lat, max_lon, max_lat])
-            graph = osm.get_network(network_type=self.network_type)
         else:
-            osm = OSM(str(self.pbf_path))
-            graph = osm.get_network(network_type=self.network_type)
+            osm = OSM(str(self.pbf_path))  # full extent
+            
+      # graph is GeoDataframe
+        graph = osm.get_network(network_type=self.network_type)
 
-        # graph is GeoDataframe
+  
         graph = self._reproject_graph(graph)
-        print(f"CRS after reprojection: {graph.crs}")
 
-        graph.to_parquet(self.output_path)
-        print(f"Parquet edge list saved to {self.output_path} with {len(graph)} rows")
+        # Save to PostGIS or Parquet
+        self._save_graph(graph)
 
-        # Save a separate GeoPackage in EPSG:4326 for visualization purposes only (e.g. in QGIS).
-        # This file is not used by the application logic and can be deleted later.
-        gpkg_path = self.output_path.with_name(self.output_path.stem + "_vis.gpkg")
-        graph_vis = graph.to_crs("EPSG:4326")
-        graph_vis.to_file(gpkg_path, layer="edges", driver="GPKG")
-        print(f"GeoPackage (EPSG:4326) saved to {gpkg_path} for QGIS visualization")
+        return graph
 
     def _reproject_graph(self, graph):
-        """
-        Reproject the edge network to a projected CRS based on the area.
-
-        Supported areas:
-            - Berlin → EPSG:25833 (ETRS89 / UTM zone 33N)
-            - LA → EPSG:2229 (NAD83 / California zone 5)
-
-        Raises:
-            ValueError: If area is not recognized
-
-        Args:
-            graph (GeoDataFrame): The cropped edge network
-
-        Returns:
-            GeoDataFrame: Reprojected edge network
-        """
+        """Reproject the edge network to a projected CRS based on the area."""
         area_crs_map = {
             "berlin": "EPSG:25833",
             "la": "EPSG:2229",
         }
-
         crs = area_crs_map.get(self.area)
         if not crs:
             raise ValueError(f"Unknown area '{self.area}', no CRS defined.")
         return graph.to_crs(crs)
 
+    def _save_graph(self, graph):
+        """Save the GeoDataFrame to PostGIS or Parquet depending on USE_POSTGIS."""
+        if USE_POSTGIS:
+            self._save_to_postgis(graph)
+        else:
+            graph.to_parquet(self.output_path)
+            print(f"Parquet edge list saved to {self.output_path} with {len(graph)} rows")
+
+    def _save_to_postgis(self, graph):
+        """Save the GeoDataFrame to a PostGIS table."""
+        db = DatabaseManager(table_name=self.table_name)
+        db.save(graph)
+        print(f"Edge data saved to PostGIS table '{self.table_name}' with {len(graph)} rows")
