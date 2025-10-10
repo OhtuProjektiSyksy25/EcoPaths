@@ -10,19 +10,23 @@ The build and deployment process is already automated through the project’s CI
 
 1. Make sure you're in the **root directory** of the project.
 
-2. Build the image:
+2. Build the image for **OpenShift deployment**:
 
 ```bash
 docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
 ```
 
-> **Note:** The map component doesn't render when running the image locally, but will work when it's deployed to OpenShift. 
+> **Note:** When running this image locally, the map component might not render correctly. The map component will render properly when the image deployed to OpenShift. 
 
-**To build an image that works locally**, use this command instead:
+To **test the application locally** with the map component, use this command instead:
 
 ```bash
 docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg REACT_APP_API_URL=http://localhost:8000 -t <IMAGE_NAME> .
 ```
+
+> [!CAUTION]
+> This locally built image is only for testing.  
+> **Do not push it to Docker Hub**, as it will **not work in OpenShift**.
 
 ### Creating and running a Docker container
 
