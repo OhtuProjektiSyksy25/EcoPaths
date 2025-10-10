@@ -1,35 +1,28 @@
 """
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
-
+import geopandas as gpd
 from shapely.geometry import mapping
-from core.compute_model import ComputeModel
+from core.edge_enrichment_model import EdgeEnrichmentModel
 from core.algorithm.route_algorithm import RouteAlgorithm
 from services.redis_cache import RedisCache
 
-# Cache key template now includes origin and destination coordinates
-CACHE_KEY_TEMPLATE = "route_{area}_{from_lon}_{from_lat}_{to_lon}_{to_lat}"
-
 
 class RouteService:
-    """
+    """"
     Service for computing optimal routes and returning them as GeoJSON Features.
-
-    Attributes:
-        area (str): Name of the area (lowercased).
-        compute_model (ComputeModel): Instance of ComputeModel to get edge data.
     """
 
-    def __init__(self, area: str = "berlin"):
+    def __init__(self, edges: gpd.GeoDataFrame, redis=None):
         """
-        Initialize RouteService with a specific area.
+        Initialize the RouteService.
 
         Args:
-            area (str): Name of the area (default "berlin").
+            edges (gpd.GeoDataFrame): GeoDataFrame containing road network edges.
+            redis (RedisCache, optional): Redis cache instance for caching routes.
         """
-        self.area = area.lower()
-        self.compute_model = ComputeModel(area=self.area)
-        self.redis = RedisCache()
+        self.edges = edges
+        self.redis = redis or RedisCache()
 
     def get_route(self, origin: tuple, destination: tuple) -> dict:
         """
@@ -40,52 +33,24 @@ class RouteService:
             destination (tuple): Ending point as (lon, lat)
 
         Returns:
-            dict: GeoJSON Feature representing the route, e.g.
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": [[13.404954, 52.520008], [13.4062, 52.521]]
-                    },
-                    "properties": {}
-                }
-        """
+            dict: GeoJSON Feature representing the route
+"""
 
-        # Generate a unique cache key for this route
-        # example: route_berlin_13.404954_52.520008_13.4062_52.521
-        cache_key = CACHE_KEY_TEMPLATE.format(
-            area=self.area,
-            from_lon=origin[0],
-            from_lat=origin[1],
-            to_lon=destination[0],
-            to_lat=destination[1]
-        )
-
-        # Try to fetch the route from cache first
+        cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
         cached_route = self.redis.get(cache_key)
         if cached_route:
             return cached_route
 
-        # If not in cache, compute the edges from ComputeModel
-        edges = self.compute_model.get_data_for_algorithm()
-
-        algorithm = RouteAlgorithm(edges)
-
-#        algorithm = RouteAlgorithm(edges)
+        algorithm = RouteAlgorithm(self.edges)
         route_gdf = algorithm.calculate(origin, destination)
 
-        # Ensure the route is in EPSG:4326
         if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
             route_gdf = route_gdf.to_crs("EPSG:4326")
 
-        # Merge all geometries into a single LineString
         unified_geom = route_gdf.geometry.union_all()
-
-        # calculate time estimate
         length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
         time_estimate_formatted = self._calculate_time_estimate(length_m)
 
-        # Create GeoJSON Feature
         geojson_feature = {
             "type": "Feature",
             "geometry": mapping(unified_geom),
@@ -94,9 +59,8 @@ class RouteService:
                 "length_m": length_m
             }
         }
-        # Save the completed route to Redis cache
-        self.redis.set(cache_key, geojson_feature)
 
+        self.redis.set(cache_key, geojson_feature)
         return geojson_feature
 
     def _calculate_time_estimate(self, length_m: float) -> str:
@@ -119,3 +83,35 @@ class RouteService:
         if hours > 0:
             return f"{hours}h {minutes} min"
         return f"{minutes} min {remaining_seconds} s"
+
+
+class RouteServiceFactory:
+    """
+    Factory class for creating RouteService instances based on area name.
+
+    This class loads the appropriate road network data for the given area
+    and returns a configured RouteService instance.
+    """
+    @staticmethod
+    def from_area(area: str) -> RouteService:
+        """
+        Create a RouteService instance for a specific area.
+
+        Args:
+            area (str): Name of the area (e.g., "berlin").
+
+        Returns:
+            RouteService: A service instance initialized with the area's road network.
+        """
+        try:
+            model = EdgeEnrichmentModel(area)
+            edges = model.get_enriched_edges()
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f"\nRouteServiceFactory failed: edges file for area '{area}' not found.\n"
+                f"Expected file: {e.filename}\n"
+                f"Please run the preprocessing step to generate the required file.\n"
+                f"Example: `invoke preprocess-osm --area={area}`\n"
+            ) from e
+
+        return RouteService(edges)

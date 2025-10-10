@@ -24,6 +24,7 @@ AREA_SETTINGS = {
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, area: str = "berlin"):
         self.area = area.lower()
@@ -41,8 +42,13 @@ class AreaConfig:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+        # === File paths ===
         self.pbf_file = self.data_dir / f"{self.area}-latest.osm.pbf"
-        self.output_file = self.output_dir / f"{self.area}_edges.parquet"
+        self.edges_output_file = self.output_dir / f"{self.area}_edges.parquet"
+        self.air_quality_file = self.output_dir / \
+            f"{self.area}_air_quality.geojson"
+        self.enriched_output_file = self.output_dir / \
+            f"{self.area}_enriched_edges.parquet"
 
 
 class RedisConfig:
