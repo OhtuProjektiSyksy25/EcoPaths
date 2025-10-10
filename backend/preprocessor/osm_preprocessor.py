@@ -12,7 +12,7 @@ class OSMPreprocessor:
         self.config = AreaConfig(area)
         self.area = self.config.area
         self.pbf_path = self.config.pbf_file
-        self.output_path = self.config.output_file
+        self.output_path = self.config.edges_output_file
         self.pbf_url = self.config.pbf_url
         self.bbox = self.config.bbox
         self.crs = self.config.crs
@@ -44,6 +44,8 @@ class OSMPreprocessor:
         graph = osm.get_network(network_type=self.network_type)
 
         graph = graph.to_crs(self.crs)
+
+        graph = graph.explode(index_parts=False).reset_index(drop=True)
         graph = self._clean_geometry(graph)
         self._save_graph(graph)
 
@@ -66,11 +68,16 @@ class OSMPreprocessor:
         selected_attributes = [col for col in ["highway", "access"] if col in gdf.columns]
         columns = ["edge_id", "geometry", "length_m"] + selected_attributes
 
-        return gdf[columns]
 
+        if gdf.empty or gdf.geometry.is_empty.any():
+            raise ValueError("Geometry cleaning resulted in empty or invalid edges.")
+
+        return gdf[columns]
 
     def _save_graph(self, graph):
         """Save the processed graph to a Parquet file."""
+        if graph.empty or graph.geometry.is_empty.any():
+            raise ValueError("Cannot save: graph contains empty geometries.")
         graph.to_parquet(self.output_path)
         print(f"Saved {len(graph)} edges to {self.output_path}")
 

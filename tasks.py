@@ -1,6 +1,9 @@
 import subprocess
 import signal
 from invoke import task
+from shapely import area
+
+from backend.src.core.edge_enrichment_model import EdgeEnrichmentModel
 
 # ========================
 # Code formatting & linting
@@ -132,6 +135,7 @@ def run_all(c):
 def preprocess_osm(c, area="berlin", network="walking", dry_run=False, format="parquet"):
     """Run OSM preprocessing for a given area and network type"""
     from backend.preprocessor.osm_preprocessor import OSMPreprocessor
+    from backend.src.config.settings import AreaConfig
 
     print(f"Preprocessing area '{area}' with network '{network}'...")
     processor = OSMPreprocessor(area=area, network_type=network)
@@ -141,10 +145,43 @@ def preprocess_osm(c, area="berlin", network="walking", dry_run=False, format="p
 
     if dry_run:
         print("Dry-run enabled: output not saved.")
+        return
+
+    config = AreaConfig(area)
 
     if format == "gpkg":
-        gpkg_path = processor.output_path.with_suffix(".gpkg")
+        gpkg_path = config.edges_output_file.with_suffix(".gpkg")
         graph.to_file(gpkg_path, driver="GPKG")
         print(f"Saved to GeoPackage: {gpkg_path}")
+    else:
+        graph.to_parquet(config.edges_output_file)
+        print(f"Saved to Parquet: {config.edges_output_file}")
 
     print("Preprocessing complete.")
+
+# ========================
+# Edge enrichment model tasks
+# ========================
+
+@task
+def edge_enrichment_model(c, area="berlin", overwrite=False):
+    """Run EdgeEnrichmentModel and export enriched edges to file"""
+    from backend.src.core.edge_enrichment_model import EdgeEnrichmentModel
+    from backend.src.config.settings import AreaConfig
+
+    config = AreaConfig(area)
+    output_path = config.enriched_output_file
+
+    if output_path.exists() and not overwrite:
+        print(f"File already exists: {output_path}. Use --overwrite to regenerate.")
+        return
+
+    model = EdgeEnrichmentModel(area)
+    model.load_air_quality_data(config.air_quality_file)
+    model.combine_data()
+
+    enriched = model.get_enriched_edges()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    enriched.to_parquet(output_path)
+
+    print(f"Edge enrichment complete. Saved to {output_path}")

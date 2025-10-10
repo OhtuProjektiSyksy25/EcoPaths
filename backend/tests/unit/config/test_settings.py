@@ -9,7 +9,7 @@ def test_valid_area_berlin():
     assert config.crs == "EPSG:25833"
     assert config.pbf_url.endswith("berlin-latest.osm.pbf")
     assert config.pbf_file.name == "berlin-latest.osm.pbf"
-    assert config.output_file.name == "berlin_edges.parquet"
+    assert config.edges_output_file.name == "berlin_edges.parquet"
     assert config.data_dir.exists()
     assert config.output_dir.exists()
 
@@ -20,7 +20,7 @@ def test_valid_area_la():
     assert config.crs == "EPSG:2229"
     assert config.pbf_url.endswith("socal-latest.osm.pbf")
     assert config.pbf_file.name == "la-latest.osm.pbf"
-    assert config.output_file.name == "la_edges.parquet"
+    assert config.edges_output_file.name == "la_edges.parquet"
 
 def test_invalid_area_raises():
     with pytest.raises(ValueError) as excinfo:
