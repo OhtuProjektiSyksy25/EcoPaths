@@ -1,35 +1,31 @@
 import pytest
 from pathlib import Path
-from config.settings import AreaConfig
+from src.config.settings import AreaConfig
 
-@pytest.mark.parametrize("area, bbox, pbf_name, output_name", [
-    ("la", [-118.33, 33.93, -118.20, 34.10], "socal-latest.osm.pbf", "la_edges.parquet"),
-    ("berlin", [13.0884, 52.3383, 13.7611, 52.6755], "berlin-latest.osm.pbf", "berlin_edges.parquet"),
-])
-def test_area_config_values(area, bbox, pbf_name, output_name):
-    config = AreaConfig(area)
+def test_valid_area_berlin():
+    config = AreaConfig("berlin")
+    assert config.area == "berlin"
+    assert config.bbox is None
+    assert config.crs == "EPSG:25833"
+    assert config.pbf_url.endswith("berlin-latest.osm.pbf")
+    assert config.pbf_file.name == "berlin-latest.osm.pbf"
+    assert config.output_file.name == "berlin_edges.parquet"
+    assert config.data_dir.exists()
+    assert config.output_dir.exists()
 
-    assert config.area == area
-    assert config.bbox == bbox
-
-    assert isinstance(config.pbf_file, Path)
-    assert isinstance(config.output_file, Path)
-
-    assert config.pbf_file.is_absolute()
-    assert config.output_file.is_absolute()
-
-    assert config.pbf_file.name == pbf_name
-    assert config.output_file.name == output_name
-
-    assert "preprocessor/data" in str(config.pbf_file)
-    assert "data" in str(config.output_file)
-
-
-def test_area_config_case_insensitive():
-    config = AreaConfig("LA")
+def test_valid_area_la():
+    config = AreaConfig("la")
     assert config.area == "la"
-    assert config.pbf_file.name == "socal-latest.osm.pbf"
+    assert config.bbox == [-118.33, 33.93, -118.20, 34.10]
+    assert config.crs == "EPSG:2229"
+    assert config.pbf_url.endswith("socal-latest.osm.pbf")
+    assert config.pbf_file.name == "la-latest.osm.pbf"
+    assert config.output_file.name == "la_edges.parquet"
 
+def test_invalid_area_raises():
+    with pytest.raises(ValueError) as excinfo:
+        AreaConfig("helsinki")
+    assert "Unknown area: helsinki" in str(excinfo.value)
 
 def test_area_config_unknown_area_raises():
     with pytest.raises(ValueError, match="Unknown area"):
