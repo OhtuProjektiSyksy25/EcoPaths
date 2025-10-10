@@ -122,3 +122,29 @@ def run_all(c):
         backend_proc.wait()
         frontend_proc.wait()
         print("Development environment stopped.")
+
+
+# ========================
+# OSM Preprocessor tasks
+# ========================
+
+@task
+def preprocess_osm(c, area="berlin", network="walking", dry_run=False, format="parquet"):
+    """Run OSM preprocessing for a given area and network type"""
+    from backend.preprocessor.osm_preprocessor import OSMPreprocessor
+
+    print(f"Preprocessing area '{area}' with network '{network}'...")
+    processor = OSMPreprocessor(area=area, network_type=network)
+    graph = processor.extract_edges()
+
+    print(f"Network processed: {len(graph)} edges")
+
+    if dry_run:
+        print("Dry-run enabled: output not saved.")
+
+    if format == "gpkg":
+        gpkg_path = processor.output_path.with_suffix(".gpkg")
+        graph.to_file(gpkg_path, driver="GPKG")
+        print(f"Saved to GeoPackage: {gpkg_path}")
+
+    print("Preprocessing complete.")

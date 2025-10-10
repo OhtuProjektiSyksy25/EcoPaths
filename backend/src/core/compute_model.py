@@ -24,7 +24,7 @@ Use `get_data_for_algorithm()` to retrieve clean and lightweight edge data.
 
 from pathlib import Path
 import geopandas as gpd
-from preprocessor.osm_preprocessing import OSMPreprocessor
+from preprocessor.osm_preprocessor import OSMPreprocessor
 from config.settings import AreaConfig
 
 
