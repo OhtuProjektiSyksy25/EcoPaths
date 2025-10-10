@@ -6,3 +6,4 @@ resources:
   - manifests/service.yaml
   - manifests/imagestream.yaml
   - manifests/deployment.yaml
+  - manifests/configmap.yaml

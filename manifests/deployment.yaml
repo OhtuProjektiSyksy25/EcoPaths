@@ -22,6 +22,12 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          env:
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecopaths-config
+                  key: DB_URL
           resources:
             limits:
               memory: "512Mi"
