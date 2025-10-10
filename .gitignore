@@ -1,20 +1,21 @@
 
 # Frontend
-frontend/node_modules/
 frontend/dist/
 frontend/build/
+build
 *.log
 *.tmp
-.env
+frontend/env.example
 
 # Backend
-.env
 .venv/
 __pycache__/
 .pytest_cache/
 .coverage
-htmlcov/
-backend/coverage.xml
+coverage_reports/
+coverage.xml
+backend/data
+backend/preprocessor/data/
 
 # Robot framework
 log.html
@@ -24,10 +25,14 @@ screenshots/
 selenium*.png
 
 # General
+.env
 .DS_Store
 Thumbs.db
 *.swp
+node_modules/
+/package.json
+/package-lock.json
 
 
-
-
+# Redis
+backend/dump.rdb

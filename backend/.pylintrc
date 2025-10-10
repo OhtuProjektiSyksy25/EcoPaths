@@ -1,12 +1,37 @@
+[MASTER]
+init-hook='import sys; sys.path.append(".")'
+ignore=tests
+load-plugins=
+
+[MESSAGES CONTROL]
+disable=too-few-public-methods
+
 
 [FORMAT]
 indent-string='    '
 max-line-length=100
+max-module-lines=1000
+good-names=i,j,k,ex,Run,_
 
 [REFACTORING]
 max-args=5
-max-locals=10
+max-locals=15
+max-returns=6
+max-branches=12
+max-statements=50
 
 [DESIGN]
 min-public-methods=1
 max-attributes=10
+max-parents=7
+max-public-methods=20
+max-nested-blocks=5
+
+[TYPECHECK]
+ignored-classes=
+ignored-modules=
+
+[REPORTS]
+output-format=colorized
+reports=no
+score=yes
