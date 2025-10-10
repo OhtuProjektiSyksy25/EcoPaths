@@ -2,10 +2,9 @@
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
 
-import geopandas as gpd
-from shapely.geometry import mapping, LineString
+from shapely.geometry import mapping
 from core.compute_model import ComputeModel
-# from core.algorithm import RouteAlgorithm  # Uncomment when ready
+from core.algorithm.route_algorithm import RouteAlgorithm
 from services.redis_cache import RedisCache
 
 # Cache key template now includes origin and destination coordinates
@@ -70,26 +69,10 @@ class RouteService:
         # If not in cache, compute the edges from ComputeModel
         edges = self.compute_model.get_data_for_algorithm()
 
-        # Temporary stub algorithm: replace with RouteAlgorithm later
-        class StubAlgorithm:
-            """Return simple LineString from origin to destination."""
-
-            def __init__(self, edges):
-                self.edges = edges
-
-            def compute(self, origin, destination):
-                """Computes"""
-                # Return a simple dummy LineString from origin to destination
-                return gpd.GeoDataFrame(
-                    [{"geometry": LineString([origin, destination])}],
-                    geometry="geometry",
-                    crs="EPSG:4326"
-                )
-
-        algorithm = StubAlgorithm(edges)
+        algorithm = RouteAlgorithm(edges)
 
 #        algorithm = RouteAlgorithm(edges)
-        route_gdf = algorithm.compute(origin, destination)
+        route_gdf = algorithm.calculate(origin, destination)
 
         # Ensure the route is in EPSG:4326
         if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
@@ -98,7 +81,7 @@ class RouteService:
         # Merge all geometries into a single LineString
         unified_geom = route_gdf.geometry.union_all()
 
-        #calculate time estimate
+        # calculate time estimate
         length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
         time_estimate_formatted = self._calculate_time_estimate(length_m)
 
@@ -119,14 +102,14 @@ class RouteService:
     def _calculate_time_estimate(self, length_m: float) -> str:
         """
         Calculate formatted time estimate from distance.
-        
+
         Args:
             length_m (float): Distance in meters
-            
+
         Returns:
             str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s")
         """
-        avg_speed_mps =   1.4  # 1.4 meters per second (walking speed)
+        avg_speed_mps = 1.4  # 1.4 meters per second (walking speed)
         seconds = length_m / avg_speed_mps
 
         hours = int(seconds // 3600)
