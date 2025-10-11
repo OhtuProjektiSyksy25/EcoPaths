@@ -52,8 +52,7 @@ def aq_point(tmp_path):
 def create_model(edges_path, aq_path, enriched_path):
     model = EdgeEnrichmentModel("berlin")
     model.config = DummyConfig(edges_path, aq_path, enriched_path)
-    model.road_gdf = gpd.read_parquet(edges_path)
-    model.air_quality_gdf = gpd.read_file(aq_path)
+    model.load_data()
     return model
 
 def test_combine_data_with_polygon(road_data, aq_polygon, tmp_path):
@@ -105,8 +104,7 @@ def test_combine_data_aggregates_duplicates(tmp_path):
     enriched_path = tmp_path / "enriched.parquet"
     model = EdgeEnrichmentModel("berlin")
     model.config = DummyConfig(edges_path, aq_path, enriched_path)
-    model.road_gdf = gpd.read_parquet(edges_path)
-    model.air_quality_gdf = gpd.read_file(aq_path)
+    model.load_data()
 
     model.combine_data()
     assert model.combined_gdf is not None
