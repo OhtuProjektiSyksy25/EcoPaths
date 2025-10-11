@@ -16,7 +16,7 @@ def test_valid_area_berlin():
 def test_valid_area_la():
     config = AreaConfig("la")
     assert config.area == "la"
-    assert config.bbox == [-118.33, 33.93, -118.20, 34.10]
+    assert config.bbox == [-118.30, 33.95, -118.083, 34.13]
     assert config.crs == "EPSG:2229"
     assert config.pbf_url.endswith("socal-latest.osm.pbf")
     assert config.pbf_file.name == "la-latest.osm.pbf"

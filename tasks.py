@@ -1,8 +1,9 @@
 import subprocess
 import signal
 from invoke import task
-from shapely import area
-
+from shapely import area, box
+import geopandas as gpd
+from pathlib import Path
 from backend.src.core.edge_enrichment_model import EdgeEnrichmentModel
 
 # ========================
@@ -132,32 +133,27 @@ def run_all(c):
 # ========================
 
 @task
-def preprocess_osm(c, area="berlin", network="walking", dry_run=False, format="parquet"):
+def preprocess_osm(c, area="berlin", network="walking", overwrite=False):
     """Run OSM preprocessing for a given area and network type"""
     from backend.preprocessor.osm_preprocessor import OSMPreprocessor
     from backend.src.config.settings import AreaConfig
 
     print(f"Preprocessing area '{area}' with network '{network}'...")
+    config = AreaConfig(area)
     processor = OSMPreprocessor(area=area, network_type=network)
+    output_path = config.edges_output_file
+
     graph = processor.extract_edges()
 
     print(f"Network processed: {len(graph)} edges")
 
-    if dry_run:
-        print("Dry-run enabled: output not saved.")
+    if output_path.exists() and not overwrite:
+        print(f"File already exists: {output_path}. Use --overwrite to regenerate.")
         return
 
-    config = AreaConfig(area)
+    graph.to_parquet(output_path)
+    print(f"Saved to Parquet: {output_path}")
 
-    if format == "gpkg":
-        gpkg_path = config.edges_output_file.with_suffix(".gpkg")
-        graph.to_file(gpkg_path, driver="GPKG")
-        print(f"Saved to GeoPackage: {gpkg_path}")
-    else:
-        graph.to_parquet(config.edges_output_file)
-        print(f"Saved to Parquet: {config.edges_output_file}")
-
-    print("Preprocessing complete.")
 
 # ========================
 # Edge enrichment model tasks
@@ -167,21 +163,77 @@ def preprocess_osm(c, area="berlin", network="walking", dry_run=False, format="p
 def edge_enrichment_model(c, area="berlin", overwrite=False):
     """Run EdgeEnrichmentModel and export enriched edges to file"""
     from backend.src.core.edge_enrichment_model import EdgeEnrichmentModel
-    from backend.src.config.settings import AreaConfig
-
-    config = AreaConfig(area)
-    output_path = config.enriched_output_file
-
-    if output_path.exists() and not overwrite:
-        print(f"File already exists: {output_path}. Use --overwrite to regenerate.")
-        return
 
     model = EdgeEnrichmentModel(area)
-    model.load_air_quality_data(config.air_quality_file)
-    model.combine_data()
+    enriched = model.get_enriched_edges(overwrite=overwrite)
 
-    enriched = model.get_enriched_edges()
+    print(f"Edge enrichment complete. Saved to {model.config.enriched_output_file}")
+
+
+@task
+def generate_aq_data(c, area="berlin", overwrite=False):
+    """Generate synthetic air quality data as 500x500m grid over the area"""
+    from backend.src.config.settings import AreaConfig
+    import geopandas as gpd
+    from shapely.geometry import box
+    import numpy as np
+
+    config = AreaConfig(area)
+    output_path = config.aq_output_file
+
+    if output_path.exists() and not overwrite:
+        print(f"Air quality file already exists: {output_path}. Use --overwrite to regenerate.")
+        return
+
+    print(f"Generating synthetic air quality data for '{area}'...")
+
+    # Read roads and create bbox
+    road_gdf = gpd.read_parquet(config.edges_output_file)
+    minx, miny, maxx, maxy = road_gdf.total_bounds
+
+    print(f"Generating synthetic AQ data over bbox: {minx}, {miny}, {maxx}, {maxy}")
+
+    # Create 500m x 500m grid
+    cell_size = 500
+    x_coords = np.arange(minx, maxx, cell_size)
+    y_coords = np.arange(miny, maxy, cell_size)
+
+    polygons = []
+    aq_values = []
+
+    for x in x_coords:
+        for y in y_coords:
+            poly = box(x, y, x + cell_size, y + cell_size)
+            polygons.append(poly)
+            aq_values.append(np.random.randint(20, 100))  # random value
+
+    aq_gdf = gpd.GeoDataFrame({
+        "aq_value": aq_values,
+        "geometry": polygons
+    }, crs=config.crs)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    enriched.to_parquet(output_path)
+    aq_gdf.to_file(output_path, driver="GeoJSON")
 
-    print(f"Edge enrichment complete. Saved to {output_path}")
+    print(f"AQ-GeoJSON saved: {output_path}")
+
+@task
+def convert_parquet(c, input_path, output_path=None, overwrite=False):
+    """Convert a Parquet file to GeoPackage format."""
+    input_path = Path(input_path)
+    output_path = Path(output_path) if output_path else input_path.with_suffix(".gpkg")
+
+    if not input_path.exists():
+        print(f"Input file not found: {input_path}")
+        return
+
+    if output_path.exists() and not overwrite:
+        print(f"GeoPackage already exists: {output_path}. Use --overwrite to regenerate.")
+        return
+
+    print(f"Converting {input_path.name} → {output_path.name}...")
+    gdf = gpd.read_parquet(input_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    gdf.to_file(output_path, driver="GPKG")
+    print(f"Saved to GeoPackage: {output_path}")
+
