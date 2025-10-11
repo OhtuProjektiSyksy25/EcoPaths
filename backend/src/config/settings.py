@@ -15,7 +15,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
     },
     "la": {
-        "bbox": [-118.33, 33.93, -118.20, 34.10],
+        "bbox": [-118.30, 33.95, -118.083, 34.13],
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
     },
@@ -45,10 +45,9 @@ class AreaConfig:
         # === File paths ===
         self.pbf_file = self.data_dir / f"{self.area}-latest.osm.pbf"
         self.edges_output_file = self.output_dir / f"{self.area}_edges.parquet"
-        self.air_quality_file = self.output_dir / \
-            f"{self.area}_air_quality.geojson"
+        self.aq_output_file = self.output_dir / f"{self.area}_aq.geojson"
         self.enriched_output_file = self.output_dir / \
-            f"{self.area}_enriched_edges.parquet"
+            f"{self.area}_enriched.parquet"
 
 
 class RedisConfig:

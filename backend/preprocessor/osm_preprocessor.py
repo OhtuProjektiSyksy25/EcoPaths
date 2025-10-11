@@ -68,7 +68,6 @@ class OSMPreprocessor:
         selected_attributes = [col for col in ["highway", "access"] if col in gdf.columns]
         columns = ["edge_id", "geometry", "length_m"] + selected_attributes
 
-
         if gdf.empty or gdf.geometry.is_empty.any():
             raise ValueError("Geometry cleaning resulted in empty or invalid edges.")
 
