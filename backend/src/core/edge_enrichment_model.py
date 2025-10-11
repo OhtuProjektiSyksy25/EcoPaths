@@ -22,14 +22,13 @@ class EdgeEnrichmentModel:
         """
         self.config = AreaConfig(area)
         self.area = area
-
-        # Load road network from preprocessed Parquet file
-        self.road_gdf = gpd.read_parquet(self.config.edges_output_file)
-
-        # Placeholders for optional air quality and combined data
-        # self.air_quality_gdf = None
-        self.air_quality_gdf = gpd.read_file(self.config.aq_output_file)
+        self.road_gdf = None
+        self.air_quality_gdf = None
         self.combined_gdf = None
+
+    def load_data(self):
+        self.road_gdf = gpd.read_parquet(self.config.edges_output_file)
+        self.air_quality_gdf = gpd.read_file(self.config.aq_output_file)
 
     def combine_data(self):
         """

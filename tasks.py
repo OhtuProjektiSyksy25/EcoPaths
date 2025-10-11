@@ -165,6 +165,7 @@ def edge_enrichment_model(c, area="berlin", overwrite=False):
     from backend.src.core.edge_enrichment_model import EdgeEnrichmentModel
 
     model = EdgeEnrichmentModel(area)
+    model.load_data()
     enriched = model.get_enriched_edges(overwrite=overwrite)
 
     print(f"Edge enrichment complete. Saved to {model.config.enriched_output_file}")
