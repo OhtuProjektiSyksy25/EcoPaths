@@ -27,6 +27,12 @@ class EdgeEnrichmentModel:
         self.combined_gdf = None
 
     def load_data(self):
+        """
+        Load road network and air quality data from files.
+
+        Reads the edge data from a Parquet file and the air quality data from a GeoJSON file.
+        Stores the results in `road_gdf` and `air_quality_gdf`.
+        """
         self.road_gdf = gpd.read_parquet(self.config.edges_output_file)
         self.air_quality_gdf = gpd.read_file(self.config.aq_output_file)
 
