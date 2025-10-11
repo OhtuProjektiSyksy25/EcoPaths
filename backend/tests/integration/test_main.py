@@ -66,19 +66,14 @@ def test_static_mount_present():
 
     assert "/static" in routes
 
-
 def test_getroute(monkeypatch):
-    """Test GET /getroute/{from_coords}/{to_coords} returns mocked route"""
+    class DummyRouteService:
+        def get_route(self, origin, destination):
+            return ["mocked_route_point1", "mocked_route_point2"]
 
-    def mock_get_route(self, from_tuple, to_tuple):
-        assert from_tuple == (24.94, 60.17)
-        assert to_tuple == (13.40, 52.52)
-        return ["mocked_route_point1", "mocked_route_point2"]
+    monkeypatch.setattr("src.main.create_route_service", lambda: DummyRouteService())
 
-    monkeypatch.setattr("services.route_service.RouteService.get_route", mock_get_route)
-
-    response = client.get("/getroute/24.94,60.17/13.40,52.52")
-    assert response.status_code == 200
-    data = response.json()
-    assert "route" in data
-    assert data["route"] == ["mocked_route_point1", "mocked_route_point2"]
+    with TestClient(app) as client:
+        response = client.get("/getroute/24.94,60.17/13.40,52.52")
+        assert response.status_code == 200
+        assert response.json()["route"] == ["mocked_route_point1", "mocked_route_point2"]

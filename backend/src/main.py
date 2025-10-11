@@ -1,16 +1,16 @@
-""" FastAPI application """
+"""FastAPI application entry point"""
+from contextlib import asynccontextmanager
 import os
 import sys
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from services.route_service import RouteService
+from services.route_service import RouteServiceFactory
 
-
-app = FastAPI()
-origins = [
+# === CORS configuration ===
+ALLOWED_ORIGINS = [
     "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -21,26 +21,48 @@ origins = [
     "http://172.25.211.59:3000"
 ]
 
+# === App initialization ===
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """
+    FastAPI lifespan handler that initializes application state on startup.
+
+    Sets up shared services such as RouteService and attaches them to app.state.
+    """
+    application.state.route_service = create_route_service()
+    yield
+
+
+def create_route_service():
+    """Creates and returns a RouteService instance for the app."""
+    return RouteServiceFactory.from_area("berlin")
+
+
+app = FastAPI(lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Add project root to PYTHONPATH for imports
-# Ensures modules are found in all environments
+# === Add project root to PYTHONPATH ===
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
+# === Mount static files if available ===
+STATIC_DIR = "build/static"
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-if os.path.isdir("build/static"):
-    app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
-route_service = RouteService(area="berlin")
+# === Routes ===
 
 
 @app.get("/berlin")
@@ -66,6 +88,7 @@ async def geocode_forward(value: str):
     """
     if len(value) < 3:
         return []
+
     photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4"
     try:
         async with httpx.AsyncClient() as client:
@@ -73,6 +96,7 @@ async def geocode_forward(value: str):
             photon_suggestions = response.json()
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
+        return []
 
     for feature in photon_suggestions.get("features", []):
         suggestion_data = feature.get("properties", {})
@@ -86,7 +110,7 @@ async def geocode_forward(value: str):
 
 
 @app.get("/getroute/{from_coords}/{to_coords}")
-def getroute(from_coords: str, to_coords: str):
+def getroute(from_coords: str, to_coords: str, request: Request):
     """Returns optimal route according to from_coords and to_coords
 
     Args:
@@ -99,10 +123,8 @@ def getroute(from_coords: str, to_coords: str):
     from_lon, from_lat = map(float, from_coords.split(","))
     to_lon, to_lat = map(float, to_coords.split(","))
 
-    route = route_service.get_route(
-        (from_lon, from_lat),
-        (to_lon, to_lat)
-    )
+    route_service = request.app.state.route_service
+    route = route_service.get_route((from_lon, from_lat), (to_lon, to_lat))
 
     return {"route": route}
 
