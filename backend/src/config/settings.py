@@ -10,12 +10,13 @@ import os
 # === Area-specific settings ===
 AREA_SETTINGS = {
     "berlin": {
-        "bbox": None,
+        # WGS84 (EPSG:4326), use None for full file
+        "bbox": [13.300, 52.4525, 13.510, 52.5875],
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
     },
     "la": {
-        "bbox": [-118.30, 33.95, -118.083, 34.13],
+        "bbox": [-118.30, 33.95, -118.083, 34.13],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
     },

@@ -1,3 +1,8 @@
+"""
+Download and process OpenStreetMap data into a cleaned road network.
+"""
+
+
 import requests
 from pathlib import Path
 from pyrosm import OSM
@@ -6,9 +11,23 @@ from src.config.settings import AreaConfig
 from shapely.geometry import LineString, MultiLineString
 
 class OSMPreprocessor:
-    """Handles downloading and processing OSM PBF files into GeoDataFrames."""
+    """
+    Handles downloading and processing OpenStreetMap (OSM) PBF files into a cleaned GeoDataFrame of road network edges.
+
+    This class supports area-specific configurations, bounding box filtering, and network type selection.
+    The output is saved as a Parquet file containing simplified geometries and basic attributes.
+    """
 
     def __init__(self, area: str = "berlin", network_type: str = "walking"):
+        """
+        Initialize the OSMPreprocessor with area-specific settings.
+
+        Args:
+            area (str): Name of the area defined in AREA_SETTINGS (e.g. 'berlin').
+            network_type (str): Type of network to extract (e.g. 'walking', 'cycling').
+
+        Sets up paths, bounding box, CRS, and download URL for the selected area.
+        """
         self.config = AreaConfig(area)
         self.area = self.config.area
         self.pbf_path = self.config.pbf_file
@@ -19,7 +38,14 @@ class OSMPreprocessor:
         self.network_type = network_type
 
     def download_pbf_if_missing(self):
-        """Download the PBF file if it does not exist locally."""
+        """
+        Download the OSM PBF file from the configured URL if it does not exist locally.
+
+        Raises:
+            ValueError: If no download URL is provided.
+            requests.HTTPError: If the download fails.
+        """
+
         if self.pbf_path.exists():
             return
         if not self.pbf_url:
@@ -34,7 +60,18 @@ class OSMPreprocessor:
         print("Download completed.")
 
     def extract_edges(self):
-        """Extract and process the road network from the PBF file."""
+        """
+        Extract and process the road network from the PBF file.
+
+        Loads the network using pyrosm, applies CRS transformation, cleans geometries,
+        and saves the result to a Parquet file.
+
+        Returns:
+            GeoDataFrame: Cleaned road network edges with geometry, length, and attributes.
+
+        Raises:
+            ValueError: If geometry cleaning results in empty or invalid edges.
+        """
         # Suppress Pandas FutureWarning (e.g. chained assignment)
         warnings.filterwarnings("ignore", category=FutureWarning, module="pyrosm")
 
@@ -52,7 +89,21 @@ class OSMPreprocessor:
         return graph
 
     def _clean_geometry(self, gdf):
-        """Convert MultiLineStrings to LineStrings, compute lengths, and keep selected attributes."""
+        """
+        Clean and simplify road geometries.
+
+        Converts MultiLineStrings to the longest LineString, computes edge lengths (rounded to 2 decimals),
+        assigns unique edge IDs, and retains selected attributes.
+
+        Args:
+            gdf (GeoDataFrame): Raw road network data.
+
+        Returns:
+            GeoDataFrame: Cleaned and structured edge data.
+
+        Raises:
+            ValueError: If resulting geometries are empty or invalid.
+        """
         def to_linestring(geom):
             if isinstance(geom, MultiLineString):
                 return max(geom.geoms, key=lambda g: g.length)
@@ -62,7 +113,7 @@ class OSMPreprocessor:
 
         gdf = gdf.copy()
         gdf["geometry"] = gdf.geometry.apply(to_linestring)
-        gdf["length_m"] = gdf.geometry.length
+        gdf["length_m"] = gdf.geometry.length.round(2)
         gdf["edge_id"] = range(len(gdf))
 
         selected_attributes = [col for col in ["highway", "access"] if col in gdf.columns]
@@ -74,7 +125,15 @@ class OSMPreprocessor:
         return gdf[columns]
 
     def _save_graph(self, graph):
-        """Save the processed graph to a Parquet file."""
+        """
+        Save the processed road network to a Parquet file.
+
+        Args:
+            graph (GeoDataFrame): Cleaned edge data.
+
+        Raises:
+            ValueError: If the graph contains empty geometries.
+        """
         if graph.empty or graph.geometry.is_empty.any():
             raise ValueError("Cannot save: graph contains empty geometries.")
         graph.to_parquet(self.output_path)

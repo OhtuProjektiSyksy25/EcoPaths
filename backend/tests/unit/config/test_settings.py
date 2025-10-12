@@ -5,7 +5,7 @@ from src.config.settings import AreaConfig
 def test_valid_area_berlin():
     config = AreaConfig("berlin")
     assert config.area == "berlin"
-    assert config.bbox is None
+    assert config.bbox == [13.300, 52.4525, 13.510, 52.5875]
     assert config.crs == "EPSG:25833"
     assert config.pbf_url.endswith("berlin-latest.osm.pbf")
     assert config.pbf_file.name == "berlin-latest.osm.pbf"

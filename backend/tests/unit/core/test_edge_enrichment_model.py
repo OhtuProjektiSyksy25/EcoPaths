@@ -2,7 +2,7 @@ import pytest
 import geopandas as gpd
 from shapely.geometry import LineString, Polygon, Point
 from pathlib import Path
-from src.core.edge_enrichment_model import EdgeEnrichmentModel
+from src.core.edge_enricher import EdgeEnricher
 
 CRS_BERLIN = "EPSG:25833"  # ETRS89 / UTM zone 33N
 
@@ -50,7 +50,7 @@ def aq_point(tmp_path):
     return path
 
 def create_model(edges_path, aq_path, enriched_path):
-    model = EdgeEnrichmentModel("berlin")
+    model = EdgeEnricher("berlin")
     model.config = DummyConfig(edges_path, aq_path, enriched_path)
     model.load_data()
     return model
@@ -102,7 +102,7 @@ def test_combine_data_aggregates_duplicates(tmp_path):
     aq.to_file(aq_path, driver="GeoJSON")
 
     enriched_path = tmp_path / "enriched.parquet"
-    model = EdgeEnrichmentModel("berlin")
+    model = EdgeEnricher("berlin")
     model.config = DummyConfig(edges_path, aq_path, enriched_path)
     model.load_data()
 
