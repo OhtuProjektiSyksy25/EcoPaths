@@ -1,0 +1,9 @@
+# This file is an example ConfigMap and is not deployed to OpenShift.
+# To use it, copy it to configmap.yaml and update DB_URL as needed.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecopaths-config
+data:
+  DB_URL: postgresql://ohtuprojektitesti:passwordhere@hostnamehere:5432/ohtuprojekti?targetServerType=primary&ssl=true
