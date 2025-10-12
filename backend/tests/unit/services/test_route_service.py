@@ -46,8 +46,6 @@ def route_service(monkeypatch):
     return service
 
 
-
-
 def test_get_route_computes_and_caches(route_service):
     """Test that get_route computes a new route and caches it"""
 

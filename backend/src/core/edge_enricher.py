@@ -5,9 +5,9 @@ import geopandas as gpd
 from src.config.settings import AreaConfig
 
 
-class EdgeEnrichmentModel:
+class EdgeEnricher:
     """
-    EdgeEnrichmentModel handles spatial data for environmental routing and analysis.
+    EdgeEnricher handles spatial data for environmental routing and analysis.
 
     It loads preprocessed road network data and optionally combines it with air quality data.
     Designed to work immediately with road data, and extend easily when air quality data is added.
@@ -91,12 +91,6 @@ class EdgeEnrichmentModel:
                 ["aq_value"]].mean()
             self.combined_gdf = self.road_gdf.merge(
                 aq_agg, on="edge_id", how="left")
-
-        print("Data combination complete.")
-        print("Columns in combined data:")
-        print(self.combined_gdf.columns.tolist())
-        print("First rows:")
-        print(self.combined_gdf.head())
 
     def save_combined_data(self, output_path: Path):
         """

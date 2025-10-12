@@ -3,7 +3,7 @@ Service that computes routes and returns them as GeoJSON LineStrings.
 """
 import geopandas as gpd
 from shapely.geometry import mapping
-from core.edge_enrichment_model import EdgeEnrichmentModel
+from core.edge_enricher import EdgeEnricher
 from core.algorithm.route_algorithm import RouteAlgorithm
 from services.redis_cache import RedisCache
 
@@ -104,7 +104,7 @@ class RouteServiceFactory:
             RouteService: A service instance initialized with the area's road network.
         """
         try:
-            model = EdgeEnrichmentModel(area)
+            model = EdgeEnricher(area)
             model.load_data()
             edges = model.get_enriched_edges()
         except FileNotFoundError as e:
