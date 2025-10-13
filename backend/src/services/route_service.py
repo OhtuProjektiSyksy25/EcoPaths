@@ -9,7 +9,7 @@ from services.redis_cache import RedisCache
 
 
 class RouteService:
-    """"
+    """
     Service for computing optimal routes and returning them as GeoJSON Features.
     """
 
@@ -34,7 +34,7 @@ class RouteService:
 
         Returns:
             dict: GeoJSON Feature representing the route
-"""
+        """
 
         cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
         cached_route = self.redis.get(cache_key)
