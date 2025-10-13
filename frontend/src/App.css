@@ -5,22 +5,60 @@
   flex-direction: column;
 }
 
-
+.header {
+  background-color: white;
+  padding: 5px;
+  border-bottom: 1px solid #e8f7ec;
+  flex-shrink: 0;
+}
 
 .title {
   margin: 0;
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 600;
   color: #60B45A;
   font-family: 'Arial', sans-serif;
+  padding-left: 20px;
+  padding-bottom: 5px;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+}
+
+.map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 }
 
 .InputContainer {
-  display:inline-block;
-  padding-right:5px;
-  padding-bottom:5px;
-  width: 20%;
-  position: relative
+  display: block;
+  width: 100%;
+  position: relative;
+}
+
+.InputContainer input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 16px;
+  border: 2px solid #ebebeb;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.InputContainer input:focus {
+  outline: none;
+  border-color: #60B45A;
+}
+
+.InputContainer input::placeholder {
+  color: #999;
+  font-size: 16px;
 }
 
 .originul {
@@ -44,13 +82,14 @@
 .originli {
   padding: 7px 8px;
   margin: 8px;
-  border-radius: 3px;
+  border-radius: 4px;
   box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
   transition-duration: 0.15s;
-  -webkit-transition-duration: 0.15s; /* Safari */
-  @media (min-width: 600px) {
-    &:hover {
-      box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.16);
-    }
+  -webkit-transition-duration: 0.15s;
+}
+
+@media (min-width: 600px) {
+  .originli:hover {
+    box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.16);
   }
 }

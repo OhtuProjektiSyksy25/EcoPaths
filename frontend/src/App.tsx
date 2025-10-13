@@ -5,7 +5,7 @@ It renders the header and the MapComponent.
 */
 import  {useState, useEffect} from "react";
 import MapComponent from "./components/MapComponent";
-import RouteForm from "./components/RouteForm";
+import SideBar from "./components/SideBar";
 import "./App.css";
 
 
@@ -39,26 +39,32 @@ function App(): JSX.Element {
     },[fromLocked, toLocked])
 
 
-  return (
+
+ return (
     <div className="App">
+
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
-      <main>
-        <div className="controls-container">
-        <RouteForm
+
+      <main className="main-container">
+
+        <SideBar
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
-          route={route}/>
+          route={route}
+        />
+
+        <div className="map-container">
+          <MapComponent
+            fromLocked={fromLocked}
+            toLocked={toLocked}
+            route={route}
+          />
         </div>
-      <MapComponent
-        fromLocked={fromLocked} 
-        toLocked={toLocked} 
-        route={route}/>
-        </main>
+      </main>
     </div>
   );
 }
+
 export default App;
-
-

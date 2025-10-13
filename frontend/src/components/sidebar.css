@@ -1,0 +1,64 @@
+.sidebar {
+  width: 350px;
+  background-color: rgb(255, 255, 255);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 5;
+  border-radius: 12px;
+  margin: 10px;
+}
+
+.sidebar-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-title {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-family: 'Arial', sans-serif;
+}
+
+.input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.location-button {
+  padding: 8px 16px;
+  background-color: #60B45A;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.location-button:hover {
+  background-color: #4fa04a;
+}
+
+.location-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.DisplayContainer {
+  width: 90%;
+  padding: 8px 16px;
+  background-color: #ddfde7 ;
+  color: rgb(54, 53, 53);
+  border-radius: 4px;
+  font-size: 18px;
+}

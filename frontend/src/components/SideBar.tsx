@@ -8,15 +8,15 @@ import React, { useState, useRef, useCallback } from "react";
 import InputContainer from "./InputContainer";
 import { LocationButton } from "./LocationButton";
 import DisplayContainer from "./DisplayContainer";
-import "./routeform.css";
+import "./sidebar.css";
 
-interface RouteFormProps {
+interface SideBarProps {
   onFromSelect: (place: any) => void
   onToSelect: (place: any) => void
   route?: any;
 }
 
-const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect, route}) => {
+const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route}) => {
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -94,33 +94,40 @@ const RouteForm: React.FC<RouteFormProps> = ({onFromSelect, onToSelect, route}) 
 
 
 return (
-  <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', gap: '10px' }}>
-    <div style={{ display: 'flex', alignItems: 'center'}}>
-      <InputContainer
-        placeholder="From..."
-        value={from}
-        onChange={HandleFromChange}
-        suggestions={fromSuggestions}
-        onSelect={onFromSelect}
-      />
-      <LocationButton onLocationFound={handleLocationFound} />
-    </div>
+  <div className="sidebar">
+    <div className="sidebar-content">
+      <h1 className="sidebar-title">Where would you like to go?</h1>
+      
+      <div className="input-box">
+          <InputContainer
+            placeholder="Start location"
+            value={from}
+            onChange={HandleFromChange}
+            suggestions={fromSuggestions}
+            onSelect={onFromSelect}
+          />
+          <LocationButton onLocationFound={handleLocationFound} />
+      </div>
 
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <InputContainer
-        placeholder="To..."
-        value={to}
-        onChange={HandleToChange}
-        suggestions={toSuggestions}
-        onSelect={onToSelect}
-      />
-      <DisplayContainer
-        label="Walking Time"
-        value={route?.properties?.time_estimate || "N/A"} 
-      />
+      <div className="input-box">
+        <InputContainer
+          placeholder="Destination"
+          value={to}
+          onChange={HandleToChange}
+          suggestions={toSuggestions}
+          onSelect={onToSelect}
+        />
+      </div>
+
+      {route && (
+        <DisplayContainer
+          label="Walking Time"
+          value={route?.properties?.time_estimate}
+        />
+      )}
     </div>
   </div>
 );
 };
 
-export default RouteForm
+export default SideBar
