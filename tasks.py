@@ -130,6 +130,9 @@ def run_all(c):
 # ========================
 # OSM Preprocessor tasks
 # ========================
+# Default area is 'berlin', network type is 'walking'
+# invoke preprocess-osm --help for options 
+# example usage: invoke preprocess-osm
 
 @task
 def preprocess_osm(c, area="berlin", network="walking", overwrite=False):
@@ -145,14 +148,9 @@ def preprocess_osm(c, area="berlin", network="walking", overwrite=False):
     if output_path.exists() and not overwrite:
         print(f"File already exists: {output_path}. Use --overwrite to regenerate.")
         return
-    
+
     graph = processor.extract_edges()
-
-    print(f"Network processed: {len(graph)} edges")
-
-    graph.to_parquet(output_path)
-    print(f"Saved to Parquet: {output_path}")
-
+    return graph
 
 # ========================
 # Edge enricher tasks
@@ -169,6 +167,9 @@ def enrich_edges(c, area="berlin", overwrite=False):
 
     print(f"Edge enrichment complete. Saved to {model.config.enriched_output_file}")
 
+# ========================
+# Mock AQ data generation tasks
+# ========================
 
 @task
 def generate_aq_data(c, area="berlin", overwrite=False):
