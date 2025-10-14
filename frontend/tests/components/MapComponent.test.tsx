@@ -10,13 +10,31 @@ import { LockedLocation, RouteGeoJSON } from '../../src/types/route';
 /* 
 Mock mapbox-gl, because we cannot test the actual map rendering in Jest.
 */
-jest.mock('mapbox-gl', () => ({
-  Map: jest.fn(() => ({
-    addControl: jest.fn(),
-    remove: jest.fn(),
-  })),
-  NavigationControl: jest.fn(),
-}));
+jest.mock('mapbox-gl', () => {
+  return {
+    Map: jest.fn(() => ({
+      addControl: jest.fn(),
+      remove: jest.fn(),
+      getSource: jest.fn(() => ({
+        setData: jest.fn(),
+      })),
+      addSource: jest.fn(),
+      addLayer: jest.fn(),
+      flyTo: jest.fn(),
+      fitBounds: jest.fn(),
+    })),
+    NavigationControl: jest.fn(),
+    Marker: jest.fn(() => ({
+      setLngLat: jest.fn().mockReturnThis(),
+      addTo: jest.fn().mockReturnThis(),
+      remove: jest.fn(),
+    })),
+    LngLatBounds: jest.fn(() => ({
+      extend: jest.fn().mockReturnThis(),
+    })),
+  };
+});
+
 
 /* Mock react-leaflet  */
 jest.mock('react-leaflet', () => ({
