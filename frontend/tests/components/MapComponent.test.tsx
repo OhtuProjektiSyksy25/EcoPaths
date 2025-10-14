@@ -5,6 +5,7 @@ based on the presence of a Mapbox token.
 
 import { render, screen } from '@testing-library/react';
 import MapComponent from '../../src/components/MapComponent';
+import { LockedLocation, RouteGeoJSON } from '../../src/types/route';
 
 /* 
 Mock mapbox-gl, because we cannot test the actual map rendering in Jest.
@@ -31,6 +32,18 @@ jest.mock('../../src/hooks/useCoordinates', () => ({
   useCoordinates: jest.fn(() => [52.52, 13.405]), // Berlin coordinates
 }));
 
+const mockLocked: LockedLocation = {
+  full_address: 'Test address',
+  geometry: {
+    coordinates: [24.94, 60.17], // Helsinki
+  },
+};
+
+const mockRoute: RouteGeoJSON = {
+  type: 'FeatureCollection',
+  features: [],
+};
+
 describe('MapComponent', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -40,24 +53,33 @@ describe('MapComponent', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
-    render(<MapComponent />);
+    render(
+      <MapComponent
+        fromLocked={mockLocked}
+        toLocked={mockLocked}
+        route={mockRoute}
+      />
+    );
 
-    /* Check for the div that Mapbox GL JS would render into and that the mock class is mapbox-map */
     const mapboxDiv = screen.getByTestId('mapbox-map');
-
     expect(mapboxDiv).toBeInTheDocument();
   });
-/* If no token is provided, the Leaflet map should render, find the openstreetmap */
+
   test('renders Leaflet map when no Mapbox token', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = '';
 
-    render(<MapComponent />);
+    render(
+      <MapComponent
+        fromLocked={mockLocked}
+        toLocked={mockLocked}
+        route={mockRoute}
+      />
+    );
 
     const leafletMap = screen.getByTestId('leaflet-map');
     expect(leafletMap).toBeInTheDocument();
 
     const tileLayer = screen.getByTestId('tile-layer');
     expect(tileLayer).toBeInTheDocument();
-
   });
 });
