@@ -42,26 +42,39 @@ class RouteService:
             return cached_route
 
         algorithm = RouteAlgorithm(self.edges)
-        route_gdf = algorithm.calculate(origin, destination)
+        # route_gdf = algorithm.calculate(origin, destination)
 
-        if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
-            route_gdf = route_gdf.to_crs("EPSG:4326")
+        fastest_route, fastest_aq_route = (algorithm.calculate(origin, destination))
 
-        unified_geom = route_gdf.geometry.union_all()
-        length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
+        if fastest_route.crs is None or fastest_route.crs.to_string() != "EPSG:4326":
+            fastest_route = fastest_route.to_crs("EPSG:4326")
+        if fastest_aq_route is None or fastest_aq_route.crs.to_string() != "EPSG:4326":
+            fastest_aq_route = fastest_aq_route.to_crs("EPSG:4326")
+
+        unified_geom_fastest = fastest_route.geometry.union_all()
+        unified_geom_fastest_aq = fastest_aq_route.geometry.union_all()
+        length_m = fastest_route.to_crs("EPSG:3857").geometry.length.sum()
         time_estimate_formatted = self._calculate_time_estimate(length_m)
 
-        geojson_feature = {
+        geojson_feature_fastest = {
             "type": "Feature",
-            "geometry": mapping(unified_geom),
+            "geometry": mapping(unified_geom_fastest),
+            "properties": {
+                "time_estimate": time_estimate_formatted,
+                "length_m": length_m
+            }
+        }
+        geojson_feature_fastest_aq = {
+            "type": "Feature",
+            "geometry": mapping(unified_geom_fastest_aq),
             "properties": {
                 "time_estimate": time_estimate_formatted,
                 "length_m": length_m
             }
         }
 
-        self.redis.set(cache_key, geojson_feature)
-        return geojson_feature
+        self.redis.set(cache_key, geojson_feature_fastest)
+        return geojson_feature_fastest, geojson_feature_fastest_aq
 
     def _calculate_time_estimate(self, length_m: float) -> str:
         """

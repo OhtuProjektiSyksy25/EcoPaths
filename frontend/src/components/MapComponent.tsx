@@ -72,29 +72,89 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
   useEffect(() => {
     if (!mapRef.current || !route) return
     const map = mapRef.current
-    const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
-    if (source) {
-      source.setData(route)
-    } else {
-      const source = map.addSource('route', {
-            'type': 'geojson',
-            'data': route
-    }
-    );
+
+  // Normalise route prop:
+  // backend may return { route, route_aq } (two features), an array [f1,f2],
+  // a single Feature, or a FeatureCollection.
+  let geojson: any = null;
+
+  // If route is an object with two fields (route, route_aq)
+  if (route.route && route.route_aq) {
+    const f1 = route.route.type === "Feature" ? { ...route.route, properties: { ...(route.route.properties||{}), route_type: "fastest" } } : null;
+    const f2 = route.route_aq.type === "Feature" ? { ...route.route_aq, properties: { ...(route.route_aq.properties||{}), route_type: "fast_and_aq" } } : null;
+    const features = [f1, f2].filter(Boolean);
+    geojson = { type: "FeatureCollection", features };
+  } else if (Array.isArray(route)) {
+    const features = route.map((r: any, i: number) => {
+      if (r?.type === "Feature") return { ...r, properties: { ...(r.properties||{}), route_type: i === 0 ? "fastest" : "fast_and_aq" } };
+      return { type: "Feature", geometry: r, properties: { route_type: i === 0 ? "fastest" : "fast_and_aq" } };
+    });
+    geojson = { type: "FeatureCollection", features };
+  } else if (route.type === "FeatureCollection") {
+    geojson = route;
+    // Ensure properties contain route_type if you want coloring
+  } else if (route.type === "Feature") {
+    const f = { ...route, properties: { ...(route.properties||{}), route_type: route.properties?.route_type || "fastest" } };
+    geojson = { type: "FeatureCollection", features: [f] };
+  } else {
+    // try parse if string
+    try { geojson = typeof route === "string" ? JSON.parse(route) : route; } catch { console.warn("Unsupported route format"); return; }
+  }
+
+  const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
+  if (source) {
+    source.setData(geojson);
+  } else {
+    map.addSource("route", { type: "geojson", data: geojson });
     map.addLayer({
-          'id': 'route',
-            'type': 'line',
-            'source': 'route',
-            'layout': {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            'paint': {
-                'line-color': '#888',
-                'line-width': 8
-            }
-        });
-  }},[route])
+      id: "route",
+      type: "line",
+      source: "route",
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: {
+        "line-color": [
+          "match",
+          ["get", "route_type"],
+          "fastest", "#1f78b4",
+          "fast_and_aq", "#33a02c",
+          "#888"
+        ],
+        "line-width": [
+          "match",
+          ["get", "route_type"],
+          "fastest", 6,
+          "fast_and_aq", 6,
+          4
+        ]
+      }
+    });
+  }
+}, [route]);
+
+  //   const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
+  //   if (source) {
+  //     source.setData(route)
+  //     console.log("Updated route source")
+  //   } else {
+  //     const source = map.addSource('route', {
+  //           'type': 'geojson',
+  //           'data': route
+  //   }
+  //   );
+  //   map.addLayer({
+  //         'id': 'route',
+  //           'type': 'line',
+  //           'source': 'route',
+  //           'layout': {
+  //               'line-join': 'round',
+  //               'line-cap': 'round'
+  //           },
+  //           'paint': {
+  //               'line-color': '#888',
+  //               'line-width': 8
+  //           }
+  //       });
+  // }},[route])
 
   useEffect(() => {
     /*

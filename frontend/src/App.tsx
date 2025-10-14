@@ -27,7 +27,8 @@ function App(): JSX.Element {
             throw new Error(`server error: ${response.status}`)
           } 
           const data = await response.json()
-          setRoute(data.route)
+          // server returns { route, route_aq } — keep both so MapComponent can draw both
+          setRoute(data)
           } catch (error) {
           console.log(error)}
         }

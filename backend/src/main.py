@@ -124,9 +124,9 @@ def getroute(from_coords: str, to_coords: str, request: Request):
     to_lon, to_lat = map(float, to_coords.split(","))
 
     route_service = request.app.state.route_service
-    route = route_service.get_route((from_lon, from_lat), (to_lon, to_lat))
+    route_fastest, route_fastest_aq = route_service.get_route((from_lon, from_lat), (to_lon, to_lat))
 
-    return {"route": route}
+    return {"route": route_fastest, "route_aq": route_fastest_aq}
 
 
 @app.get("/{full_path:path}")

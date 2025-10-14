@@ -21,16 +21,20 @@ class RouteAlgorithm:
 
     def __init__(self, edges):
         """
+        Moved to preprocessor
+
         Initialize the routing algorithm with edge data.
 
         Args:
             edges (GeoDataFrame): GeoDataFrame containing edge geometries and lengths.
         """
-        self.graph = nx.Graph()
+        self.graph_fastest = nx.Graph()
+        self.graph_fast_and_aq = nx.Graph()
         self.edges_crs = edges.crs
-        if any(edges.geometry.type == "MultiLineString"):
-            edges = edges.explode(index_parts=False).reset_index(drop=True)
-            edges["length_m"] = edges.geometry.length
+        # if any(edges.geometry.type == "MultiLineString"):
+        #     edges = edges.explode(index_parts=False).reset_index(drop=True)
+        #     edges["length_m"] = edges.geometry.length
+        print('edges:', edges)
 
         for _, row in edges.iterrows():
             geom = row["geometry"]
@@ -39,14 +43,21 @@ class RouteAlgorithm:
                 coords = list(geom.coords)
             else:
                 continue
-
+            # ottaa kadunpätkän ensimmäisen ja viimeisen pisteen
+            # ja lisää ne solmuiksi verkkoon
             u = coords[0]
             v = coords[-1]
 
-            self.graph.add_edge(
+            self.graph_fastest.add_edge(
                 u,
                 v,
                 weight=row["length_m"],
+                geometry=geom
+            )
+            self.graph_fast_and_aq.add_edge(
+                u,
+                v,
+                weight=row["length_m"] * row["aq_value"],
                 geometry=geom
             )
 
@@ -61,30 +72,58 @@ class RouteAlgorithm:
         Returns:
             GeoDataFrame: GeoDataFrame with the route as a LineString geometry.
         """
+        # Koordinaatit ei ole kaikkiin pisteisiin, vaan esim kodin koordinaatit pitää snäpätä johonkin pisteeseen
+
         origin_proj = self._project_point(origin)
         destination_proj = self._project_point(destination)
 
-        largest_cc_nodes = set(
-            max(nx.connected_components(self.graph), key=len))
-        origin_node = self._nearest_node(largest_cc_nodes, origin_proj)
-        dest_node = self._nearest_node(largest_cc_nodes, destination_proj)
+        largest_cc_nodes_fastest = set(
+            max(nx.connected_components(self.graph_fastest), key=len))
+        largest_cc_nodes_fastest_and_aq = set(
+            max(nx.connected_components(self.graph_fast_and_aq), key=len))
+        origin_node = self._nearest_node(largest_cc_nodes_fastest, origin_proj)
+        dest_node = self._nearest_node(largest_cc_nodes_fastest, destination_proj)
 
-        path = nx.shortest_path(self.graph, origin_node,
+        origin_node = self._nearest_node(largest_cc_nodes_fastest_and_aq, origin_proj)
+        dest_node = self._nearest_node(largest_cc_nodes_fastest_and_aq, destination_proj)
+
+        path_fastest = nx.shortest_path(self.graph_fastest, origin_node,
+                                dest_node, weight="weight")
+        path_fastest_and_aq = nx.shortest_path(self.graph_fast_and_aq, origin_node,
                                 dest_node, weight="weight")
 
-        line_parts = [self.graph.get_edge_data(u, v)["geometry"]
-                      for u, v in zip(path[:-1], path[1:])]
+        line_parts_fastest = [self.graph_fastest.get_edge_data(u, v)["geometry"]
+                      for u, v in zip(path_fastest[:-1], path_fastest[1:])]
+        line_parts_fastest_and_aq = [self.graph_fast_and_aq.get_edge_data(u, v)["geometry"]
+                      for u, v in zip(path_fastest_and_aq[:-1], path_fastest_and_aq[1:])]
+        #mitä tekee ja miksi?
+        merged_geom_fastest = unary_union(line_parts_fastest)
+        merged_geom_fastest_and_aq = unary_union(line_parts_fastest_and_aq)
 
-        merged_geom = unary_union(line_parts)
-        if not isinstance(merged_geom, LineString):
-            merged_geom = linemerge(merged_geom)
-        if merged_geom.geom_type == "MultiLineString":
-            merged_geom = LineString(
-                [pt for line in merged_geom for pt in line.coords])
+        #merged geom on palautettu sellaiseen muotoon, että se voidaan palauttaa geodataframina
+        if not isinstance(merged_geom_fastest, LineString):
+            merged_geom_fastest = linemerge(merged_geom_fastest)
+        if not isinstance(merged_geom_fastest_and_aq, LineString):
+            merged_geom_fastest_and_aq = linemerge(merged_geom_fastest_and_aq)
+        if merged_geom_fastest.geom_type == "MultiLineString":
+            # MultiLineString may not be directly iterable in some Shapely versions;
+            # iterate its .geoms sequence to access component LineStrings.
+            merged_geom_fastest = LineString(
+                [pt for line in merged_geom_fastest.geoms for pt in line.coords]
+            )
+        if merged_geom_fastest_and_aq.geom_type == "MultiLineString":
+            merged_geom_fastest_and_aq = LineString(
+                [pt for line in merged_geom_fastest_and_aq.geoms for pt in line.coords]
+            )
+        gdf_fastest = gpd.GeoDataFrame([{"geometry": merged_geom_fastest}],
+                               geometry="geometry",
+                               crs=self.edges_crs)
+        gdf_fast_and_aq = gpd.GeoDataFrame([{"geometry": merged_geom_fastest_and_aq}],
+                                   geometry="geometry",
+                                   crs=self.edges_crs)
 
-        return gpd.GeoDataFrame([{"geometry": merged_geom}],
-                                geometry="geometry",
-                                crs=self.edges_crs)
+        return gdf_fastest, gdf_fast_and_aq
+
 
     def _project_point(self, lonlat):
         """Project a WGS84 (lon, lat) point into the edges CRS."""
