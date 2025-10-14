@@ -165,11 +165,12 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
 
   if (mapboxToken) {
     return (
-      <div style={{ height: "100vh", width: "100%" }}>
-        
-        <div ref={mapboxRef} 
-        data-testid="mapbox-map" 
-        style={{ height: "100%", width: "100%" }} />
+      <div style={{ height: "100%", width: "100%" }}>
+        <div
+          ref={mapboxRef}
+          data-testid="mapbox-map"
+          style={{ height: "100%", width: "100%" }}
+        />
       </div>
     );
   }
@@ -177,7 +178,7 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
 
 
   return (
-    <div style={{ height: "100vh", width: "100%" }}>
+    <div style={{ height: "100%", width: "100%" }}>
       <MapContainer
         center={berlinCenter}
         zoom={14}

@@ -1,13 +1,23 @@
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
 
 .App {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .header {
   background-color: white;
-  padding: 5px;
+  padding-top: 8px;
+  padding-bottom: 3px;
+  padding-left: 8px;
   border-bottom: 1px solid #e8f7ec;
   flex-shrink: 0;
 }
@@ -16,23 +26,28 @@
   margin: 0;
   font-size: 2rem;
   font-weight: 600;
-  color: #60B45A;
+  color: black;
   font-family: 'Arial', sans-serif;
   padding-left: 20px;
   padding-bottom: 5px;
 }
 
 .main-container {
+  flex: 1;
   display: flex;
   flex-direction: row;
-  flex: 1;
   overflow: hidden;
 }
 
 .map-container {
+  display: flex;
   flex: 1;
+  min-height: 0;
+  margin: 12px;
   position: relative;
   overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .InputContainer {

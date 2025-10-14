@@ -55,10 +55,14 @@
 }
 
 .DisplayContainer {
-  width: 90%;
-  padding: 8px 16px;
-  background-color: #ddfde7 ;
-  color: rgb(54, 53, 53);
-  border-radius: 4px;
+  display: flex;
+  gap: 8px;
+  padding: 32px;
+  background-color: rgba(17, 212, 82, 0.3);
+  color: rgb(34, 34, 34);
+  border-radius: 12px;
   font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #11d452;
 }
