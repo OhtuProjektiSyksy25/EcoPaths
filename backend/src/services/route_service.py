@@ -2,10 +2,12 @@
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
 import geopandas as gpd
-from shapely.geometry import mapping
 from core.edge_enricher import EdgeEnricher
 from core.algorithm.route_algorithm import RouteAlgorithm
+from config.settings import AreaConfig
 from services.redis_cache import RedisCache
+from services.geo_transformer import GeoTransformer
+from utils.time_format import format_walk_time
 
 
 class RouteService:
@@ -24,19 +26,27 @@ class RouteService:
         self.edges = edges
         self.redis = redis or RedisCache()
 
-    def get_route(self, origin: tuple, destination: tuple) -> dict:
-        """
-        Compute the optimal route between two points as a GeoJSON Feature.
+    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
+        """Gets route to destination from origin.
 
         Args:
-            origin (tuple): Starting point as (lon, lat)
-            destination (tuple): Ending point as (lon, lat)
+            origin_gdf (gpd.GeoDataFrame): GeoDataFrame containing the origin point.
+            destination_gdf (gpd.GeoDataFrame): GeoDataFrame containing the destination point.
 
         Returns:
-            dict: GeoJSON Feature representing the route
+            dict: GeoJSON Feature representing the computed route.
         """
+        origin, destination = RouteService.extract_lonlat_from_gdf(
+            origin_gdf, destination_gdf)
+        cache_key = (
+            f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
+            f"{round(destination[0], 4)}_{round(destination[1], 4)}"
+        )
+        # uncomment after RouteAlgorithm supports GeoDataFrame inputs
+        # origin = origin_gdf.geometry.iloc[0]
+        # destination = destination_gdf.geometry.iloc[0]
+        # cache_key = f"route_{origin.x}_{origin.y}_{destination.x}_{destination.y}"
 
-        cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
         cached_route = self.redis.get(cache_key)
         if cached_route:
             return cached_route
@@ -44,45 +54,44 @@ class RouteService:
         algorithm = RouteAlgorithm(self.edges)
         route_gdf = algorithm.calculate(origin, destination)
 
-        if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
-            route_gdf = route_gdf.to_crs("EPSG:4326")
+        # Workaround — RouteAlgorithm returns only merged LineString without edge attributes
+        #  Replace when RouteAlgorithm returns edge-level GeoDataFrame.
+        # Change when RouteAlgorithm returns 'length_m' column
+        route_gdf = route_gdf.to_crs("EPSG:3857")
+        total_length_m = float(route_gdf.geometry.length.sum())
+        formatted_time = format_walk_time(total_length_m)
+        route_gdf["dummy"] = "ok"
+        geojson_feature = GeoTransformer.gdf_to_feature_collection(
+            route_gdf, property_keys=["dummy"])
 
-        unified_geom = route_gdf.geometry.union_all()
-        length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
-        time_estimate_formatted = self._calculate_time_estimate(length_m)
-
-        geojson_feature = {
-            "type": "Feature",
-            "geometry": mapping(unified_geom),
-            "properties": {
-                "time_estimate": time_estimate_formatted,
-                "length_m": length_m
+        response = {
+            "route": geojson_feature,
+            "summary": {
+                "length_m": total_length_m,
+                "time_estimate": formatted_time
             }
         }
+        route_gdf = route_gdf.to_crs("EPSG:4326")
 
-        self.redis.set(cache_key, geojson_feature)
-        return geojson_feature
+        self.redis.set(cache_key, response)
+        return response
 
-    def _calculate_time_estimate(self, length_m: float) -> str:
+
+# Remove extract_lonlat_from_gdf once RouteAlgorithm supports GeoDataFrame inputs
+
+
+    @staticmethod
+    def extract_lonlat_from_gdf(
+        origin_gdf: gpd.GeoDataFrame,
+        destination_gdf: gpd.GeoDataFrame
+    ) -> tuple[tuple[float, float], tuple[float, float]]:
         """
-        Calculate formatted time estimate from distance.
-
-        Args:
-            length_m (float): Distance in meters
-
-        Returns:
-            str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s")
+        TEMPORARY: Extract (lon, lat) tuples from GeoDataFrames by transforming to WGS84.
+        Remove when RouteAlgorithm supports GeoDataFrame inputs directly.
         """
-        avg_speed_mps = 1.4  # 1.4 meters per second (walking speed)
-        seconds = length_m / avg_speed_mps
-
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        remaining_seconds = int(seconds % 60)
-
-        if hours > 0:
-            return f"{hours}h {minutes} min"
-        return f"{minutes} min {remaining_seconds} s"
+        origin_wgs = origin_gdf.to_crs("EPSG:4326").geometry.iloc[0]
+        destination_wgs = destination_gdf.to_crs("EPSG:4326").geometry.iloc[0]
+        return (origin_wgs.x, origin_wgs.y), (destination_wgs.x, destination_wgs.y)
 
 
 class RouteServiceFactory:
@@ -93,7 +102,7 @@ class RouteServiceFactory:
     and returns a configured RouteService instance.
     """
     @staticmethod
-    def from_area(area: str) -> RouteService:
+    def from_area(area: str) -> tuple[RouteService, AreaConfig]:
         """
         Create a RouteService instance for a specific area.
 
@@ -107,6 +116,7 @@ class RouteServiceFactory:
             model = EdgeEnricher(area)
             model.load_data()
             edges = model.get_enriched_edges()
+            area_config = model.area_config
         except FileNotFoundError as e:
             raise FileNotFoundError(
                 f"\nRouteServiceFactory failed: edges file for area '{area}' not found.\n"
@@ -115,4 +125,4 @@ class RouteServiceFactory:
                 f"Example: `invoke preprocess-osm --area={area}`\n"
             ) from e
 
-        return RouteService(edges)
+        return RouteService(edges), area_config
