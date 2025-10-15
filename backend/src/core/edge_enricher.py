@@ -26,6 +26,16 @@ class EdgeEnricher:
         self.air_quality_gdf = None
         self.combined_gdf = None
 
+    @property
+    def area_config(self) -> AreaConfig:
+        """
+        Exposes the AreaConfig instance used by this enricher.
+
+        Returns:
+            AreaConfig: Configuration object for the selected area.
+        """
+        return self.config
+
     def load_data(self):
         """
         Load road network and air quality data from files.

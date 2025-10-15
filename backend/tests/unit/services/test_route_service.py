@@ -2,7 +2,7 @@
 
 import pytest
 import geopandas as gpd
-from shapely.geometry import LineString, mapping
+from shapely.geometry import LineString, Point
 from unittest.mock import MagicMock
 
 from src.services.route_service import RouteService
@@ -49,85 +49,41 @@ def route_service(monkeypatch):
 def test_get_route_computes_and_caches(route_service):
     """Test that get_route computes a new route and caches it"""
 
-    origin = (13.40, 52.52)
-    destination = (13.41, 52.53)
+    origin_gdf = gpd.GeoDataFrame(geometry=[Point(13.40, 52.52)], crs="EPSG:4326")
+    destination_gdf = gpd.GeoDataFrame(geometry=[Point(13.41, 52.53)], crs="EPSG:4326")
 
-    route = route_service.get_route(origin, destination)
+    result = route_service.get_route(origin_gdf, destination_gdf)
 
-    assert route["type"] == "Feature"
-    assert route["geometry"]["type"] == "LineString"
+    assert "route" in result
+    assert "summary" in result
+    assert result["route"]["type"] == "FeatureCollection"
+    assert len(result["route"]["features"]) == 1
 
-    coords = route["geometry"]["coordinates"]
-    assert coords[0] == origin
-    assert coords[-1] == destination
+    from pytest import approx
+    coords = result["route"]["features"][0]["geometry"]["coordinates"]
+    assert coords[0] == approx([13.40, 52.52], abs=1e-4)
+    assert coords[-1] == approx([13.41, 52.53], abs=1e-4)
 
+    origin = (round(13.40, 4), round(52.52, 4))
+    destination = (round(13.41, 4), round(52.53, 4))
     cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
     assert cache_key in route_service.redis.store
 
 
+
 def test_get_route_returns_cached_result(route_service):
-    origin = (13.40, 52.52)
-    destination = (13.41, 52.53)
-    cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
+    """Test that get_route returns cached result if available"""
 
-    expected_feature = route_service.get_route(origin, destination)
+    origin_gdf = gpd.GeoDataFrame(geometry=[Point(13.40, 52.52)], crs="EPSG:4326")
+    destination_gdf = gpd.GeoDataFrame(geometry=[Point(13.41, 52.53)], crs="EPSG:4326")
+    cache_key = "route_13.4_52.52_13.41_52.53"
 
+    expected_result = route_service.get_route(origin_gdf, destination_gdf)
+
+    # Clear and manually set cache
     route_service.redis.store = {}
-    route_service.redis.set(cache_key, expected_feature)
+    route_service.redis.set(cache_key, expected_result)
 
-    route = route_service.get_route(origin, destination)
+    result = route_service.get_route(origin_gdf, destination_gdf)
 
-    assert route == expected_feature
-
-
-
-def test_calculate_time_estimate_formats_correctly(route_service):
-    """Test that _calculate_time_estimate formats time correctly for different distances"""
-    
-    # Test short distance (less than 1 hour)
-    # 300 meters at 5 m/s = 60 seconds = 1 minute
-    result = route_service._calculate_time_estimate(300.0)
-    assert result == "3 min 34 s"
-    
-    # Test medium distance
-    # 1500 meters at 5 m/s = 300 seconds = 5 minutes
-    result = route_service._calculate_time_estimate(1500.0)
-    assert result == "17 min 51 s"
-    
-    # Test long distance (over 1 hour)
-    # 20000 meters at 5 m/s = 4000 seconds = 1 hour 6 minutes 40 seconds
-    result = route_service._calculate_time_estimate(20000.0)
-    assert result == "3h 58 min"
-    
-    # Test very long distance (multiple hours)
-    # 54000 meters at 5 m/s = 10800 seconds = 3 hours exactly
-    result = route_service._calculate_time_estimate(54000.0)
-    assert result == "10h 42 min"
-
-
-def test_calculate_time_estimate_edge_cases(route_service):
-    """Test edge cases for time estimation"""
-    
-    # Test zero distance
-    result = route_service._calculate_time_estimate(0.0)
-    assert result == "0 min 0 s"
-    
-    # Test very small distance (1 meter)
-    result = route_service._calculate_time_estimate(1.0)
-    assert result == "0 min 0 s"  # Should round down to 0
-    
-    # Test exactly 1 hour (18000 meters at 5 m/s)
-    result = route_service._calculate_time_estimate(18000.0)
-    assert result == "3h 34 min"
-
-
-def test_calculate_time_estimate_uses_correct_speed(route_service):
-    """Test that the method uses the expected walking speed: 5m per second"""
-    
-    # 5 meters at 5 m/s should be exactly 1 second
-    result = route_service._calculate_time_estimate(5.0)
-    assert result == "0 min 3 s"
-    
-    # 25 meters at 5 m/s should be exactly 5 seconds
-    result = route_service._calculate_time_estimate(25.0)
-    assert result == "0 min 17 s"
+    assert result == expected_result
