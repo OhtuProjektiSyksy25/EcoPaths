@@ -31,12 +31,16 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const currentCoordinates = useCoordinates();
+  const userUsedLocationRef = useRef(false);
 
   const handleLocationFound = (coords: { lat: number; lng: number }) => {
     /*
     Centers the map on the user's current location and adds a dot marker to that location.
     */
     if (!mapRef.current) return;
+    if (userUsedLocationRef.current) return;
+
+    userUsedLocationRef.current = true;
 
     const { lat, lng } = coords;
 
@@ -104,6 +108,10 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
 
   useEffect(() => {
     if (!mapRef.current || !route) return
+
+    userUsedLocationRef.current = false;
+    locationMarkerRef.current?.remove();
+
     const map = mapRef.current
     const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
     if (source) {
