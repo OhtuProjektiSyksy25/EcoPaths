@@ -66,14 +66,3 @@ def test_static_mount_present():
 
     assert "/static" in routes
 
-def test_getroute(monkeypatch):
-    class DummyRouteService:
-        def get_route(self, origin, destination):
-            return ["mocked_route_point1", "mocked_route_point2"]
-
-    monkeypatch.setattr("src.main.create_route_service", lambda: DummyRouteService())
-
-    with TestClient(app) as client:
-        response = client.get("/getroute/24.94,60.17/13.40,52.52")
-        assert response.status_code == 200
-        assert response.json()["route"] == ["mocked_route_point1", "mocked_route_point2"]

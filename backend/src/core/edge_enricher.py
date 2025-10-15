@@ -26,15 +26,42 @@ class EdgeEnricher:
         self.air_quality_gdf = None
         self.combined_gdf = None
 
+    @property
+    def area_config(self) -> AreaConfig:
+        """
+        Exposes the AreaConfig instance used by this enricher.
+
+        Returns:
+            AreaConfig: Configuration object for the selected area.
+        """
+        return self.config
+
     def load_data(self):
         """
         Load road network and air quality data from files.
 
-        Reads the edge data from a Parquet file and the air quality data from a GeoJSON file.
-        Stores the results in `road_gdf` and `air_quality_gdf`.
+        Verifies that the configured paths are valid before attempting to read.
         """
-        self.road_gdf = gpd.read_parquet(self.config.edges_output_file)
-        self.air_quality_gdf = gpd.read_file(self.config.aq_output_file)
+        edge_path = Path(self.config.edges_output_file)
+        if not edge_path.exists():
+            raise FileNotFoundError(
+                f"Road network file not found for area '{self.area}'.\n"
+                f"Expected file: {edge_path}\n"
+                f"Please run preprocessing: `invoke preprocess-osm --area={self.area}`"
+            )
+
+        self.road_gdf = gpd.read_parquet(edge_path)
+
+        aq_path = Path(self.config.aq_output_file)
+        if aq_path.exists() and aq_path.stat().st_size > 0:
+            try:
+                self.air_quality_gdf = gpd.read_file(aq_path)
+            except Exception as e: # pylint: disable=W0718
+                print(f"Failed to read air quality data: {e}")
+                self.air_quality_gdf = None
+        else:
+            print("Air quality file not found or empty. Skipping AQ data.")
+            self.air_quality_gdf = None
 
     def combine_data(self):
         """
@@ -115,6 +142,7 @@ class EdgeEnricher:
         Returns:
             GeoDataFrame: Road network with or without air quality data.
         """
+        self.load_data()
 
         enriched_path = self.config.enriched_output_file
 
@@ -123,12 +151,12 @@ class EdgeEnricher:
             return gpd.read_parquet(enriched_path)
 
         print("Enriched data file not found or overwrite requested. Generating now...")
-        self.combine_data()
-        self.save_combined_data(enriched_path)
 
-        if self.combined_gdf is not None:
+        if self.air_quality_gdf is not None:
+            self.combine_data()
+            self.save_combined_data(enriched_path)
             print("Returning newly combined road and air quality network.")
             return self.combined_gdf
 
-        print("Combination failed. Returning original road network.")
+        print("No AQ data available. Returning original road network.")
         return self.road_gdf

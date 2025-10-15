@@ -115,11 +115,11 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
     const map = mapRef.current
     const source = map.getSource("route") as mapboxgl.GeoJSONSource | undefined;
     if (source) {
-      source.setData(route)
+      source.setData(route.route)
     } else {
       const source = map.addSource('route', {
             'type': 'geojson',
-            'data': route
+            'data': route.route
     }
     );
     map.addLayer({
