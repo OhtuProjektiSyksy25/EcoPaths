@@ -164,8 +164,6 @@ def enrich_edges(c, area="berlin", overwrite=False):
     model = EdgeEnricher(area)
     model.get_enriched_edges(overwrite=overwrite)
 
-    print(f"Edge enrichment complete. Saved to {model.config.enriched_output_file}")
-
 # ========================
 # Mock AQ data generation tasks
 # ========================
