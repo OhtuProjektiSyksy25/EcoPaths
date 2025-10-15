@@ -80,7 +80,7 @@ class RouteAlgorithm:
             merged_geom = linemerge(merged_geom)
         if merged_geom.geom_type == "MultiLineString":
             merged_geom = LineString(
-                [pt for line in merged_geom for pt in line.coords])
+                [pt for line in merged_geom.geoms for pt in line.coords])
 
         return gpd.GeoDataFrame([{"geometry": merged_geom}],
                                 geometry="geometry",

@@ -6,6 +6,8 @@ metadata:
   labels:
     app: ecopaths
     type: external
+  annotations:
+    haproxy.router.openshift.io/timeout: 120s
 spec:
   host: ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi
   port:

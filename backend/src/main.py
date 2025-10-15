@@ -11,7 +11,7 @@ from services.route_service import RouteServiceFactory
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
-    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
+    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
