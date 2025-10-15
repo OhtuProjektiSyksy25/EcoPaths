@@ -14,9 +14,10 @@ interface SideBarProps {
   onFromSelect: (place: any) => void
   onToSelect: (place: any) => void
   route?: any;
+  children?: React.ReactNode;
 }
 
-const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route}) => {
+const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, children}) => {
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -164,10 +165,12 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route}) => {
           />
         </div>
 
-        {route && (
+        {children}
+
+        {route && !children && (
           <DisplayContainer
             label="Walking Time"
-            value={route?.properties?.time_estimate}
+            value={route.summary.time_estimate}
           />
         )}
       </div>

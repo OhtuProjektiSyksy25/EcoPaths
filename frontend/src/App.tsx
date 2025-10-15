@@ -41,10 +41,14 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           route={route}
-          
-          {loading && <p>Loading route...</p>}
-          {error && <p className="error">{error}</p>}
-        />
+        >
+        {(loading || error) && (
+          <div className="route-loading-message">
+            {loading && <p>Loading route...</p>}
+            {error && <p className="error">{error}</p>}
+          </div>
+        )}
+        </SideBar>
 
         <div className="map-container">
           <MapComponent
