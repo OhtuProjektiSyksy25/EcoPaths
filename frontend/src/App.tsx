@@ -6,7 +6,7 @@ It renders the header and the MapComponent.
 import  {useState, useEffect} from "react";
 import MapComponent from "./components/MapComponent";
 import SideBar from "./components/SideBar";
-import "./App.css";
+import "./styles/App.css";
 
 
 

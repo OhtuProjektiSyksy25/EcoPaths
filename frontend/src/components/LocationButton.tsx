@@ -5,6 +5,8 @@ It uses the useGeolocation hook to manage state and handle errors.
 
 import React from "react";
 import { useGeolocation } from "../hooks/useGeolocationState";
+import { LocateFixed, Locate } from "lucide-react";
+import "../styles/LocationButton.css";
 
 interface LocationButtonProps {
     onLocationFound: (coords: { lat: number; lng: number }) => void;
@@ -18,7 +20,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
     disabled = false
 }) => {
     const { getCurrentLocation, loading, error, coordinates } = useGeolocation();
-
+    const [flash, setFlash] = React.useState(false);
 
     React.useEffect(() => {
         /*
@@ -39,6 +41,24 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
         }
     }, [error]);
 
+    React.useEffect(() => {
+        /*
+        Manages the flashing effect of the location icon when loading.
+        */
+        let interval: number | undefined;
+        if (loading) {
+            interval = window.setInterval(() => setFlash(prev => !prev), 500);
+        } else {
+            setFlash(false);
+            if (interval) window.clearInterval(interval);
+        }
+        return () => {
+            if (interval) window.clearInterval(interval);
+        };
+    }, [loading]);
+
+
+
     return (
         <div className="location-button-container">
             <button 
@@ -47,19 +67,13 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
                 className={`location-button ${className}`}
                 title="Use my current location"
             >
-
-            {loading ? "Locating..." : "Current Location" }
-
+                {loading ? (
+                    flash ? <Locate size={18} /> : <LocateFixed size={18} />
+                ) : (
+                    <LocateFixed size={18} />
+                )}
             </button>
 
-
-
-            <style>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style> 
         </div>
     );
 };
