@@ -105,7 +105,6 @@ class RouteServiceFactory:
         """
         try:
             model = EdgeEnricher(area)
-            model.load_data()
             edges = model.get_enriched_edges()
         except FileNotFoundError as e:
             raise FileNotFoundError(
