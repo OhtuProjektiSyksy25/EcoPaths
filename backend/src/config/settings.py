@@ -22,6 +22,11 @@ AREA_SETTINGS = {
         "crs": "EPSG:2229",
         "tile_size_m": 500,
     },
+    "helsinki": {
+        "bbox": [24.80, 60.13, 25.20, 60.30],  # WGS84 (EPSG:4326)
+        "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
+        "crs": "EPSG:3067",  # ETRS-TM35FIN
+    },
 }
 
 

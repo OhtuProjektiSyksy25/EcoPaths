@@ -2,7 +2,6 @@
 Download and process OpenStreetMap data into a cleaned road network.
 """
 
-
 import requests
 from pathlib import Path
 from pyrosm import OSM
@@ -77,7 +76,8 @@ class OSMPreprocessor:
         warnings.filterwarnings("ignore", category=FutureWarning, module="pyrosm")
 
         self.download_pbf_if_missing()
-
+            
+        print(f"Preprocessing edges...")
         osm = OSM(str(self.pbf_path), bounding_box=self.bbox) if self.bbox else OSM(str(self.pbf_path))
         graph = osm.get_network(network_type=self.network_type)
 
@@ -91,10 +91,10 @@ class OSMPreprocessor:
 
     def _clean_geometry(self, gdf):
         """
-        Clean and simplify road geometries.
+        Filter, clean, and simplify road geometries.
 
-        Converts MultiLineStrings to the longest LineString, computes edge lengths (rounded to 2 decimals),
-        assigns unique edge IDs, and retains selected attributes.
+        Removes edges with restricted access (e.g. private or customers), converts MultiLineStrings to the longest LineString,
+        computes edge lengths (rounded to 2 decimals), assigns unique edge IDs, and retains selected attributes.
 
         Args:
             gdf (GeoDataFrame): Raw road network data.
@@ -113,11 +113,16 @@ class OSMPreprocessor:
             return geom.convex_hull
 
         gdf = gdf.copy()
+
+        allowed_access = [None, "yes", "permissive"]
+        if "access" in gdf.columns:
+            gdf = gdf[gdf["access"].isin(allowed_access)]
+
         gdf["geometry"] = gdf.geometry.apply(to_linestring)
         gdf["length_m"] = gdf.geometry.length.round(2)
         gdf["edge_id"] = range(len(gdf))
 
-        selected_attributes = [col for col in ["highway", "access"] if col in gdf.columns]
+        selected_attributes = [col for col in ["highway"] if col in gdf.columns]
         columns = ["edge_id", "geometry", "length_m"] + selected_attributes
 
         if gdf.empty or gdf.geometry.is_empty.any():

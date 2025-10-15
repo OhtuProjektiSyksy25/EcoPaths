@@ -29,7 +29,7 @@ def test_clean_geometry_includes_expected_columns(processor):
 
     cleaned = processor._clean_geometry(gdf)
 
-    assert set(cleaned.columns) == {"edge_id", "geometry", "length_m", "highway", "access"}
+    assert set(cleaned.columns) == {"edge_id", "geometry", "length_m", "highway"}
     assert cleaned["length_m"].iloc[0] > 0
 
 
