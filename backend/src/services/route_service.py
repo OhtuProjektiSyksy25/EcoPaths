@@ -81,8 +81,8 @@ class RouteService:
         remaining_seconds = int(seconds % 60)
 
         if hours > 0:
-            return f"{hours}h {minutes} min"
-        return f"{minutes} min {remaining_seconds} s"
+            return f"{hours}h {minutes}min"
+        return f"{minutes}min {remaining_seconds}s"
 
 
 class RouteServiceFactory:
