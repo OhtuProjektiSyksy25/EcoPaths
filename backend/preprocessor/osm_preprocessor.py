@@ -8,6 +8,7 @@ from pathlib import Path
 from pyrosm import OSM
 import warnings
 from src.config.settings import AreaConfig
+from src.utils.grid import Grid
 from shapely.geometry import LineString, MultiLineString
 
 class OSMPreprocessor:
@@ -123,6 +124,9 @@ class OSMPreprocessor:
             raise ValueError("Geometry cleaning resulted in empty or invalid edges.")
 
         return gdf[columns]
+
+
+
 
     def _save_graph(self, graph):
         """
