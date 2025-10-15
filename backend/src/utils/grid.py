@@ -59,6 +59,13 @@ class Grid:
             gpd.GeoDataFrame: GeoDataFrame containing the grid tiles.
         """
 
+        # Return from parquet file if exists
+        if self.area_config.grid_file.exists():
+            return gpd.read_parquet(self.area_config.grid_file)
+
+        # Otherwise, create new grid
+        print(f"Creating new grid for area '{self.area_config.area}'...")
+
         # Convert max bounds to meters
         max_x, max_y = self.to_meters.transform(self.max_lon, self.max_lat)
 
@@ -96,6 +103,10 @@ class Grid:
             grid_gdf['centroid'].x.values,
             grid_gdf['centroid'].y.values
         )
+
+        # Save to parquet
+        grid_gdf.to_parquet(self.area_config.grid_file)
+        print(f"Grid saved to {self.area_config.grid_file}")
 
         return grid_gdf
 

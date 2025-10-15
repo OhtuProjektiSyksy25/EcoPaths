@@ -26,6 +26,7 @@ AREA_SETTINGS = {
         "bbox": [24.80, 60.13, 25.20, 60.30],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
+        "tile_size_m": 500,
     },
 }
 
@@ -57,6 +58,7 @@ class AreaConfig:
         self.aq_output_file = self.output_dir / f"{self.area}_aq.geojson"
         self.enriched_output_file = self.output_dir / \
             f"{self.area}_enriched.parquet"
+        self.grid_file = self.output_dir / f"{self.area}_grid.parquet"
 
 
 class RedisConfig:
