@@ -36,16 +36,22 @@ class RouteService:
         Returns:
             dict: GeoJSON Feature representing the computed route.
         """
+        # uncomment after RouteAlgorithm supports GeoDataFrame inputs
+        # origin = origin_gdf.geometry.iloc[0]
+        # destination = destination_gdf.geometry.iloc[0]
+        # cache_key = (
+        #     f"route_{round(origin.x, 4)}_{round(origin.y, 4)}_"
+        #     f"{round(destination.x, 4)}_{round(destination.y, 4)}"
+        # )
+
+
+        # Workaround remove when RouteAlgorithm supports GeoDataFrame inputs
         origin, destination = RouteService.extract_lonlat_from_gdf(
             origin_gdf, destination_gdf)
         cache_key = (
             f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
             f"{round(destination[0], 4)}_{round(destination[1], 4)}"
         )
-        # uncomment after RouteAlgorithm supports GeoDataFrame inputs
-        # origin = origin_gdf.geometry.iloc[0]
-        # destination = destination_gdf.geometry.iloc[0]
-        # cache_key = f"route_{origin.x}_{origin.y}_{destination.x}_{destination.y}"
 
         cached_route = self.redis.get(cache_key)
         if cached_route:
@@ -55,7 +61,7 @@ class RouteService:
         route_gdf = algorithm.calculate(origin, destination)
 
         # Workaround — RouteAlgorithm returns only merged LineString without edge attributes
-        #  Replace when RouteAlgorithm returns edge-level GeoDataFrame.
+        # Replace when RouteAlgorithm returns edge-level GeoDataFrame.
         # Change when RouteAlgorithm returns 'length_m' column
         route_gdf = route_gdf.to_crs("EPSG:3857")
         total_length_m = float(route_gdf.geometry.length.sum())
@@ -71,15 +77,12 @@ class RouteService:
                 "time_estimate": formatted_time
             }
         }
-        route_gdf = route_gdf.to_crs("EPSG:4326")
 
         self.redis.set(cache_key, response)
         return response
 
 
 # Remove extract_lonlat_from_gdf once RouteAlgorithm supports GeoDataFrame inputs
-
-
     @staticmethod
     def extract_lonlat_from_gdf(
         origin_gdf: gpd.GeoDataFrame,
