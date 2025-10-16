@@ -31,18 +31,18 @@ class Grid:
         self.tile_size_m = area_config.tile_size_m
 
         # setup coordinate transformation
-        # WGS84 (lat/lon) <-> Web Mercator (meters)
+        # WGS84 (lat/lon) <-> Local CRS (meters)
         self.wgs84 = pyproj.CRS("EPSG:4326")
-        self.web_mercator = pyproj.CRS("EPSG:3857")
+        self.local_crs = pyproj.CRS(area_config.crs)
 
         # transformers
         self.to_meters = pyproj.Transformer.from_crs(
             self.wgs84,
-            self.web_mercator,
+            self.local_crs,
             always_xy=True
         )
         self.to_latlon = pyproj.Transformer.from_crs(
-            self.web_mercator,
+            self.local_crs,
             self.wgs84,
             always_xy=True
         )
@@ -93,7 +93,7 @@ class Grid:
             col += 1
 
         # Convert to GeoDataFrame
-        grid_gdf = gpd.GeoDataFrame(grid_cells, crs="EPSG:3857")
+        grid_gdf = gpd.GeoDataFrame(grid_cells, crs=self.area_config.crs)
 
         # Get center points for tiles
         grid_gdf['centroid'] = grid_gdf.geometry.centroid
