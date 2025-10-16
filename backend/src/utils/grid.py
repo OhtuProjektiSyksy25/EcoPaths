@@ -100,9 +100,10 @@ class Grid:
             grid_gdf['centroid'].x.values,
             grid_gdf['centroid'].y.values
         )
+        grid_gdf = grid_gdf.drop(columns=['centroid'])
+        grid_gdf.to_file(self.area_config.grid_file, driver="GeoJSON")
 
         # Save to parquet
-        grid_gdf.to_parquet(self.area_config.grid_file)
         print(f"Grid saved to {self.area_config.grid_file}")
 
         return grid_gdf
