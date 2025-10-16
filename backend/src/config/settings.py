@@ -14,16 +14,19 @@ AREA_SETTINGS = {
         "bbox": [13.300, 52.4525, 13.510, 52.5875],
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
+        "tile_size_m": 500,
     },
     "la": {
         "bbox": [-118.30, 33.95, -118.083, 34.13],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
+        "tile_size_m": 500,
     },
     "helsinki": {
         "bbox": [24.80, 60.13, 25.20, 60.30],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
+        "tile_size_m": 500,
     },
 }
 
@@ -41,6 +44,7 @@ class AreaConfig:
         self.bbox = settings["bbox"]
         self.pbf_url = settings["pbf_url"]
         self.crs = settings["crs"]
+        self.tile_size_m = settings.get("tile_size_m", 500)
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.data_dir = self.project_root / "preprocessor" / "data"
@@ -54,6 +58,7 @@ class AreaConfig:
         self.aq_output_file = self.output_dir / f"{self.area}_aq.geojson"
         self.enriched_output_file = self.output_dir / \
             f"{self.area}_enriched.parquet"
+        self.grid_file = self.output_dir / f"{self.area}_grid.parquet"
 
 
 class RedisConfig:
