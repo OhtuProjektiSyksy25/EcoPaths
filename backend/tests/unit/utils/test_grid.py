@@ -26,7 +26,7 @@ class TestGrid:
         assert berlin_grid.max_lon == berlin_config.bbox[2]
         assert berlin_grid.max_lat == berlin_config.bbox[3]
 
-    def test_create_grid(self, berlin_grid):
+    def test_create_grid(self, berlin_grid, berlin_config):
         """ Test grid creation for Berlin."""
         grid_gdf = berlin_grid.create_grid()
 
@@ -38,7 +38,7 @@ class TestGrid:
         for col in expected_columns:
             assert col in grid_gdf.columns
 
-        assert str(grid_gdf.crs) == "EPSG:3857"
+        assert str(grid_gdf.crs) == berlin_config.crs
 
 
 
