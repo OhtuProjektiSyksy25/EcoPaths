@@ -14,6 +14,7 @@ class Grid:
     """
     Grid class for creating and querying a spatial tile grid.
     """
+
     def __init__(self, area_config: AreaConfig):
         """
         Initialize grid for an area.
@@ -101,8 +102,9 @@ class Grid:
             grid_gdf['centroid'].y.values
         )
 
-        # Save to parquet
-        grid_gdf.to_parquet(self.area_config.grid_file)
+        grid_gdf = grid_gdf.drop(columns=['centroid'])
+        grid_gdf.to_file(self.area_config.grid_file, driver="GeoJSON")
+
         print(f"Grid saved to {self.area_config.grid_file}")
 
         return grid_gdf

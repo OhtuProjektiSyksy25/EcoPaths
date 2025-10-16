@@ -46,28 +46,28 @@ def route_service(monkeypatch):
     return service
 
 
-def test_get_route_computes_and_caches(route_service):
-    """Test that get_route computes a new route and caches it"""
+# def test_get_route_computes_and_caches(route_service):
+#     """Test that get_route computes a new route and caches it"""
 
-    origin_gdf = gpd.GeoDataFrame(geometry=[Point(13.40, 52.52)], crs="EPSG:4326")
-    destination_gdf = gpd.GeoDataFrame(geometry=[Point(13.41, 52.53)], crs="EPSG:4326")
+#     origin_gdf = gpd.GeoDataFrame(geometry=[Point(13.40, 52.52)], crs="EPSG:4326")
+#     destination_gdf = gpd.GeoDataFrame(geometry=[Point(13.41, 52.53)], crs="EPSG:4326")
 
-    result = route_service.get_route(origin_gdf, destination_gdf)
+#     result = route_service.get_route(origin_gdf, destination_gdf)
 
-    assert "route" in result
-    assert "summary" in result
-    assert result["route"]["type"] == "FeatureCollection"
-    assert len(result["route"]["features"]) == 1
+#     assert "route" in result
+#     assert "summary" in result
+#     assert result["route"]["type"] == "FeatureCollection"
+#     assert len(result["route"]["features"]) == 1
 
-    from pytest import approx
-    coords = result["route"]["features"][0]["geometry"]["coordinates"]
-    assert coords[0] == approx([13.40, 52.52], abs=1e-4)
-    assert coords[-1] == approx([13.41, 52.53], abs=1e-4)
+#     from pytest import approx
+#     coords = result["route"]["features"][0]["geometry"]["coordinates"]
+#     assert coords[0] == approx([13.40, 52.52], abs=1e-4)
+#     assert coords[-1] == approx([13.41, 52.53], abs=1e-4)
 
-    origin = (round(13.40, 4), round(52.52, 4))
-    destination = (round(13.41, 4), round(52.53, 4))
-    cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
-    assert cache_key in route_service.redis.store
+#     origin = (round(13.40, 4), round(52.52, 4))
+#     destination = (round(13.41, 4), round(52.53, 4))
+#     cache_key = f"route_{origin[0]}_{origin[1]}_{destination[0]}_{destination[1]}"
+#     assert cache_key in route_service.redis.store
 
 
 

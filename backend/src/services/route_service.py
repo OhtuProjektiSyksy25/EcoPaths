@@ -49,15 +49,15 @@ class RouteService:
         # Workaround remove when RouteAlgorithm supports GeoDataFrame inputs
         origin, destination = RouteService.extract_lonlat_from_gdf(
             origin_gdf, destination_gdf)
-        cache_key = (
-            f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
-            f"{round(destination[0], 4)}_{round(destination[1], 4)}"
-        )
+        # cache_key = (
+        #     f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
+        #     f"{round(destination[0], 4)}_{round(destination[1], 4)}"
+        # )
         # ----
 
-        cached_route = self.redis.get(cache_key)
-        if cached_route:
-            return cached_route
+        # cached_route = self.redis.get(cache_key)
+        # if cached_route:
+        #     return cached_route
 
         # uncomment and make it work when tiles_ids are available in edges and
         # RouteAlgorithm returns edge-level GeoDataFrame output
@@ -119,7 +119,7 @@ class RouteService:
         }
         # -----
 
-        self.redis.set(cache_key, response)
+        # self.redis.set(cache_key, response)
         return response
 
     def _create_buffer(self, origin_point, destination_point, buffer_m=1000) -> Polygon:
