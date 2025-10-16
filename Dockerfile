@@ -24,7 +24,6 @@ FROM python:3.11-slim AS backend
 
 RUN apt-get update && apt-get install -y curl build-essential && rm -rf /var/lib/apt/lists/*
 
-
 ENV POETRY_HOME=/opt/poetry
 
 ENV PATH="$POETRY_HOME/bin:$PATH"

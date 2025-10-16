@@ -1,0 +1,47 @@
+.sidebar {
+  width: 350px;
+  background-color: rgb(255, 255, 255);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 5;
+  border-radius: 12px;
+  margin: 10px;
+}
+
+.sidebar-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-title {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-family: 'Arial', sans-serif;
+}
+
+.input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.DisplayContainer {
+  display: flex;
+  gap: 8px;
+  padding: 32px;
+  background-color: rgba(17, 212, 82, 0.3);
+  color: rgb(34, 34, 34);
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #11d452;
+  margin-top: 16px;
+}

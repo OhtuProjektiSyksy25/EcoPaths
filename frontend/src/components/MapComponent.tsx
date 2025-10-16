@@ -11,6 +11,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { MbMap} from "../types/map";
 import { berlinCenter, initialMapZoom } from "../constants";
 import { useCoordinates } from "../hooks/useCoordinates";
+import { LocationButton } from "./LocationButton";
+import "../styles/MapComponent.css";
+
 
 interface MapComponentProps {
   fromLocked: any | null
@@ -26,7 +29,37 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const currentCoordinates = useCoordinates();
+  const userUsedLocationRef = useRef(false);
+
+  const handleLocationFound = (coords: { lat: number; lng: number }) => {
+    /*
+    Centers the map on the user's current location and adds a dot marker to that location.
+    */
+    if (!mapRef.current) return;
+    if (userUsedLocationRef.current) return;
+
+    userUsedLocationRef.current = true;
+
+    const { lat, lng } = coords;
+
+    locationMarkerRef.current?.remove();
+
+    const elem = document.createElement("div");
+    elem.className = "current-location-dot";
+
+    locationMarkerRef.current = new mapboxgl.Marker({element: elem})
+      .setLngLat([lng, lat])
+      .addTo(mapRef.current);
+
+    mapRef.current.flyTo({
+      center: [lng, lat],
+      zoom: 15,
+      duration: 1500,
+    });
+  };
+
 
   useEffect(() => {
     /*
@@ -43,11 +76,15 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
         center: coordsToUse,
         zoom: initialMapZoom,
       });
-      mapRef.current.addControl(new mapboxgl.NavigationControl());
+
+      const navControl = new mapboxgl.NavigationControl();
+      mapRef.current.addControl(navControl, 'bottom-right');
+
       return () => 
         mapRef.current?.remove();
     }
   }, [mapboxToken, mapboxStyle, currentCoordinates]);
+
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -71,6 +108,10 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
 
   useEffect(() => {
     if (!mapRef.current || !route) return
+
+    userUsedLocationRef.current = false;
+    locationMarkerRef.current?.remove();
+
     const map = mapRef.current
 
   // Normalise route prop:
@@ -189,7 +230,6 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
   }, [fromLocked, toLocked]);
 
 
-
   useEffect(() => {
     /*
     Zooms the map to From location if only From is set.
@@ -225,19 +265,23 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
 
   if (mapboxToken) {
     return (
-      <div style={{ height: "100vh", width: "100%" }}>
-        
-        <div ref={mapboxRef} 
-        data-testid="mapbox-map" 
-        style={{ height: "100%", width: "100%" }} />
+      <div style={{ position: "relative", height: "100%", width: "100%" }}>
+        <div
+          ref={mapboxRef}
+          data-testid="mapbox-map"
+          style={{ height: "100%", width: "100%" }}
+        />
+
+        <div className="location-button-container">
+          <LocationButton onLocationFound={handleLocationFound} />
+        </div>
       </div>
     );
   }
  
 
-
   return (
-    <div style={{ height: "100vh", width: "100%" }}>
+    <div style={{ height: "100%", width: "100%" }}>
       <MapContainer
         center={berlinCenter}
         zoom={14}

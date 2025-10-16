@@ -3,14 +3,24 @@
 Root component for the React application. 
 It renders the header and the MapComponent.
 */
-import  {useState, useEffect} from "react";
+import { useState } from "react";
 import MapComponent from "./components/MapComponent";
-import RouteForm from "./components/RouteForm";
-import "./App.css";
+import SideBar from "./components/SideBar";
+import { useRoute } from "./hooks/useRoute";
+import { LockedLocation } from "./types";
+import "./styles/App.css";
 
-
-
-
+/**
+ * Root component of the EcoPaths React application.
+ *
+ * Manages the state of selected start and end locations,
+ * fetches the route using a custom hook, and renders the UI including:
+ * - Header
+ * - RouteForm for selecting locations
+ * - MapComponent for visualizing the route
+ *
+ * @returns JSX.Element representing the full application layout
+ */
 function App(): JSX.Element {
     const [fromLocked, setFromLocked] = useState<any>([])
     const [toLocked, setToLocked] = useState<any>([])
@@ -40,26 +50,38 @@ function App(): JSX.Element {
     },[fromLocked, toLocked])
 
 
-  return (
+ return (
     <div className="App">
+
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
-      <main>
-        <div className="controls-container">
-        <RouteForm
+
+      <main className="main-container">
+
+        <SideBar
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
-          route={route}/>
+          route={route}
+        >
+        {(loading || error) && (
+          <div className="route-loading-message">
+            {loading && <p>Loading route...</p>}
+            {error && <p className="error">{error}</p>}
+          </div>
+        )}
+        </SideBar>
+
+        <div className="map-container">
+          <MapComponent
+            fromLocked={fromLocked}
+            toLocked={toLocked}
+            route={route}
+          />
         </div>
-      <MapComponent
-        fromLocked={fromLocked} 
-        toLocked={toLocked} 
-        route={route}/>
-        </main>
+      </main>
     </div>
   );
 }
+
 export default App;
-
-

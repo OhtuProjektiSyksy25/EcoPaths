@@ -1,0 +1,122 @@
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.App {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  background-color: white;
+  padding-top: 8px;
+  padding-bottom: 3px;
+  padding-left: 8px;
+  border-bottom: 1px solid #e8f7ec;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: black;
+  font-family: 'Arial', sans-serif;
+  padding-left: 20px;
+  padding-bottom: 5px;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.map-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  margin: 12px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.InputContainer {
+  display: block;
+  width: 100%;
+  position: relative;
+}
+
+.InputContainer input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 16px;
+  border: 2px solid #ebebeb;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.InputContainer input:focus {
+  outline: none;
+  border-color: #60B45A;
+}
+
+.InputContainer input::placeholder {
+  color: #999;
+  font-size: 16px;
+}
+
+.route-loading-message p {
+  padding: 16px 24px;
+  background-color: rgba(100, 149, 237, 0.2);
+  border: 2px solid #6495ed;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 18px;
+  color: #222;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-top: 16px;
+}
+
+.originul {
+  z-index: 10;
+  border-radius: 0 0 4px 4px;
+  line-height: 1.5;
+  padding: 0;
+  padding-top: 2px;
+  margin: -3px 0px 0px 1px;
+  list-style-type: none;
+  font-weight: normal;
+  cursor: pointer;
+  position: absolute;
+  width: calc(100% - 1px);
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.06);
+  max-height: calc(100vh - 57px);
+  overflow: auto;
+}
+
+.originli {
+  padding: 7px 8px;
+  margin: 8px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  transition-duration: 0.15s;
+  -webkit-transition-duration: 0.15s;
+}
+
+@media (min-width: 600px) {
+  .originli:hover {
+    box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.16);
+  }
+}
