@@ -56,7 +56,7 @@ class EdgeEnricher:
         if aq_path.exists() and aq_path.stat().st_size > 0:
             try:
                 self.air_quality_gdf = gpd.read_file(aq_path)
-            except Exception as e: # pylint: disable=W0718
+            except Exception as e:  # pylint: disable=W0718
                 print(f"Failed to read air quality data: {e}")
                 self.air_quality_gdf = None
         else:

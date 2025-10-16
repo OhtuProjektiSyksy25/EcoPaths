@@ -1,4 +1,4 @@
-from src.utils.time_format import format_walk_time
+from src.utils.route_summary import format_walk_time
 
 def test_short_distance():
     assert format_walk_time(140) == "1 min 40 s"
