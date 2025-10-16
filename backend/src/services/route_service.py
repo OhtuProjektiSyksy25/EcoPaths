@@ -150,10 +150,6 @@ class RouteService:
         destination_wgs = destination_gdf.to_crs("EPSG:4326").geometry.iloc[0]
         return (origin_wgs.x, origin_wgs.y), (destination_wgs.x, destination_wgs.y)
 
-    def _create_buffer(self, origin_point, destination_point, buffer_m=300) -> Polygon:
-        line = LineString([origin_point, destination_point])
-        return line.buffer(buffer_m)
-
 
 class RouteServiceFactory:
     """
