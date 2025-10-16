@@ -5,10 +5,10 @@ It renders the header and the MapComponent.
 */
 import { useState } from "react";
 import MapComponent from "./components/MapComponent";
-import RouteForm from "./components/RouteForm";
+import SideBar from "./components/SideBar";
 import { useRoute } from "./hooks/useRoute";
 import { LockedLocation } from "./types";
-import "./App.css";
+import "./styles/App.css";
 
 /**
  * Root component of the EcoPaths React application.
@@ -27,33 +27,39 @@ function App(): JSX.Element {
 
   const { route, loading, error } = useRoute(fromLocked, toLocked);
 
-  return (
+
+ return (
     <div className="App">
+
       <header className="header">
         <h1 className="title">EcoPaths</h1>
       </header>
 
-      <main>
-        <div className="controls-container">
-          <RouteForm
-            onFromSelect={setFromLocked}
-            onToSelect={setToLocked}
+      <main className="main-container">
+
+        <SideBar
+          onFromSelect={setFromLocked}
+          onToSelect={setToLocked}
+          route={route}
+        >
+        {(loading || error) && (
+          <div className="route-loading-message">
+            {loading && <p>Loading route...</p>}
+            {error && <p className="error">{error}</p>}
+          </div>
+        )}
+        </SideBar>
+
+        <div className="map-container">
+          <MapComponent
+            fromLocked={fromLocked}
+            toLocked={toLocked}
             route={route}
           />
         </div>
-
-        {loading && <p>Loading route...</p>}
-        {error && <p className="error">{error}</p>}
-
-        <MapComponent
-          fromLocked={fromLocked}
-          toLocked={toLocked}
-          route={route}
-        />
       </main>
     </div>
   );
 }
 
 export default App;
-
