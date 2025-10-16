@@ -113,20 +113,25 @@ async def geocode_forward(value: str):
 @app.post("/getroute")
 async def getroute(request: Request):
     """
-    API endpoint for computing a route between two GeoJSON Point features.
+    API endpoint for computing multiple route options between two GeoJSON Point features.
 
     Expects a GeoJSON FeatureCollection with exactly two features:
     - One with properties.role = "start"
     - One with properties.role = "end"
 
-    Converts the geometries to projected GeoDataFrames, computes the route,
-    and returns it as a GeoJSON Feature.
-
-    Args:
-        request (Request): FastAPI request containing GeoJSON payload.
-
     Returns:
-        dict: GeoJSON Feature representing the computed route in WGS84.
+        dict: {
+            "routes": {
+                "fastest": GeoJSON FeatureCollection,
+                "best_aq": GeoJSON FeatureCollection,
+                "balanced": GeoJSON FeatureCollection
+            },
+            "summaries": {
+                "fastest": {...},
+                "best_aq": {...},
+                "balanced": {...}
+            }
+        }
     """
     data = await request.json()
     features = data.get("features", [])

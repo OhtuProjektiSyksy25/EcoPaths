@@ -2,12 +2,13 @@
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
 import geopandas as gpd
+from shapely.geometry import LineString, Polygon
 from core.edge_enricher import EdgeEnricher
 from core.algorithm.route_algorithm import RouteAlgorithm
 from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
-from utils.time_format import format_walk_time
+from utils.route_summary import format_walk_time
 
 
 class RouteService:
@@ -24,6 +25,7 @@ class RouteService:
             redis (RedisCache, optional): Redis cache instance for caching routes.
         """
         self.edges = edges
+        # self.tiles = tiles
         self.redis = redis or RedisCache()
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
@@ -44,7 +46,6 @@ class RouteService:
         #     f"{round(destination.x, 4)}_{round(destination.y, 4)}"
         # )
 
-
         # Workaround remove when RouteAlgorithm supports GeoDataFrame inputs
         origin, destination = RouteService.extract_lonlat_from_gdf(
             origin_gdf, destination_gdf)
@@ -52,17 +53,56 @@ class RouteService:
             f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
             f"{round(destination[0], 4)}_{round(destination[1], 4)}"
         )
+        # ----
 
         cached_route = self.redis.get(cache_key)
         if cached_route:
             return cached_route
 
-        algorithm = RouteAlgorithm(self.edges)
-        route_gdf = algorithm.calculate(origin, destination)
+        # uncomment and make it work when tiles_ids are available in edges and
+        # RouteAlgorithm returns edge-level GeoDataFrame output
+        # buffer = self._create_buffer(origin, destination, buffer_m=1000)
+        # tile_ids = self.tiles[self.tiles.intersects(buffer)]["tile_id"].unique()
+        # edges_subset = self.edges[self.edges["tile_id"].isin(tile_ids)]
+
+        # edges_subset["combined_score"] = (
+        #     0.5 * edges_subset["length_m"] + 0.5 * edges_subset["aq_value"]
+        # )
+
+        # # mode: weight column
+        # route_modes = {
+        #     "fastest": "length_m",
+        #     "best_aq": "aq_value",
+        #     "balanced": "combined_score"
+        # }
+
+        # routes = {}
+        # summaries = {}
+
+        # algorithm = RouteAlgorithm(edges_subset)
+        # route_gdf = algorithm.calculate(origin, destination)
+
+        # for mode, weight in route_modes.items():
+        #     route_gdf = algorithm.calculate_path(origin, destination, weight=weight)
+        #     route_gdf["mode"] = mode
+
+        #     summaries[mode] = summarize_route(route_gdf)
+
+        #     props = [col for col in route_gdf.columns if col != "geometry"]
+        #     routes[mode] = GeoTransformer.gdf_to_feature_collection(
+        #         route_gdf, property_keys=props
+        #     )
+
+        # response = {
+        #     "routes": routes,
+        #     "summaries": summaries
+        # }
 
         # Workaround — RouteAlgorithm returns only merged LineString without edge attributes
         # Replace when RouteAlgorithm returns edge-level GeoDataFrame.
         # Change when RouteAlgorithm returns 'length_m' column
+        algorithm = RouteAlgorithm(self.edges)
+        route_gdf = algorithm.calculate(origin, destination)
         route_gdf = route_gdf.to_crs("EPSG:3857")
         total_length_m = float(route_gdf.geometry.length.sum())
         formatted_time = format_walk_time(total_length_m)
@@ -77,10 +117,24 @@ class RouteService:
                 "time_estimate": formatted_time
             }
         }
+        # -----
 
         self.redis.set(cache_key, response)
         return response
 
+    def _create_buffer(self, origin_point, destination_point, buffer_m=1000) -> Polygon:
+        """
+        Creates a buffer polygon around a straight line between origin and destination points.
+
+        Args:
+            origin_point (Point): Starting point of the route.
+            destination_point (Point): Ending point of the route.
+            buffer_m (int, optional): Buffer radius in meters around the line. Defaults to 1000.
+
+        Returns:
+            Polygon: A polygon representing the buffered area around the route line.
+        """
+        return LineString([origin_point, destination_point]).buffer(buffer_m)
 
 # Remove extract_lonlat_from_gdf once RouteAlgorithm supports GeoDataFrame inputs
     @staticmethod
@@ -118,6 +172,7 @@ class RouteServiceFactory:
         try:
             model = EdgeEnricher(area)
             edges = model.get_enriched_edges()
+            # tiles = model.get_tiles()
             area_config = model.area_config
         except FileNotFoundError as e:
             raise FileNotFoundError(
