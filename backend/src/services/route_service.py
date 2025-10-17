@@ -9,6 +9,7 @@ from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
 from utils.route_summary import format_walk_time
+from utils.redis_utils import RedisUtils
 
 
 class RouteService:
@@ -149,6 +150,25 @@ class RouteService:
         origin_wgs = origin_gdf.to_crs("EPSG:4326").geometry.iloc[0]
         destination_wgs = destination_gdf.to_crs("EPSG:4326").geometry.iloc[0]
         return (origin_wgs.x, origin_wgs.y), (destination_wgs.x, destination_wgs.y)
+
+
+    def edge_fetcher(self, tile_ids: list): #rename function?
+        """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
+           that were not already present in redis. Creates and returns a GeoDataFrame of all the edges
+           contained in tiles specified in tile_ids
+
+        Args:
+            tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
+
+        Returns:
+            GeoDataFrame: GeoDataFrame
+        """
+        non_existing_tile_ids = RedisUtils.prune_found_ids(tile_ids, self.redis)
+        if RedisUtils.edge_enricher_to_redis_handler(non_existing_tile_ids, self.redis):
+            route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(tile_ids, self.redis)
+            route_ready_gdf.to_file("edgestemp.geojson", driver="GeoJSON")
+            return route_ready_gdf
+        #error handling needed
 
 
 class RouteServiceFactory:

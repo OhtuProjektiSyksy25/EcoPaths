@@ -182,4 +182,27 @@ class RedisCache:
                 "Failed to check existence of cache key '%s': %s", key, e)
             return False
 
+    def set_direct(self, key, value, expire=None):
+        """
+        Set a regular (non-GeoJSON) value in the cache directly
+
+        Args:
+            key: The key to set.
+            value: The value to set.
+            expire: The expiration time in seconds.
+        """
+        if not self.client:
+            logger.warning("Redis is not connected. Cannot set value.")
+            print("Redis is not connected. Cannot set value.")
+            return False
+
+        try:
+            expire_time = expire if expire is not None else self.default_expire
+            self.client.set(key, value, ex=expire_time)
+            print(f"Cached value with key '{key}'")
+            return True
+        except (redis.RedisError, TypeError, ValueError) as e:
+            logger.error("Failed to set cache key '%s': %s", key, e)
+            return False
+        
 # needs generate_route_key method
