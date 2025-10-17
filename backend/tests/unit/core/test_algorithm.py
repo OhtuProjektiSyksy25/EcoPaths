@@ -5,6 +5,7 @@ from src.core.algorithm.route_algorithm import RouteAlgorithm
 
 # --- Fixtures ---
 
+
 @pytest.fixture
 def simple_edges():
     """
@@ -68,11 +69,11 @@ def test_simple_path(simple_edges):
     assert isinstance(gdf, gpd.GeoDataFrame)
     assert len(gdf) == 1
     line = gdf.geometry.iloc[0]
-    
+
     print("Line coords:", list(line.coords))
     print("Graph nodes:", list(algo.graph.nodes))
     print("Graph edges:", list(algo.graph.edges))
-    
+
     assert list(line.coords) == [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0)]
 
 

@@ -14,6 +14,7 @@ class Grid:
     """
     Grid class for creating and querying a spatial tile grid.
     """
+
     def __init__(self, area_config: AreaConfig):
         """
         Initialize grid for an area.
@@ -56,9 +57,11 @@ class Grid:
             gpd.GeoDataFrame: GeoDataFrame containing the grid tiles.
         """
 
-        # Return from parquet file if exists
-        if self.area_config.grid_file.exists():
-            return gpd.read_parquet(self.area_config.grid_file)
+        # Load from existing file if available
+        if self.area_config.grid_file_parquet.exists():
+            return gpd.read_parquet(self.area_config.grid_file_parquet)
+        if self.area_config.grid_file_geojson.exists():
+            return gpd.read_file(self.area_config.grid_file_geojson)
 
         # Otherwise, create new grid
         print(f"Creating new grid for area '{self.area_config.area}'...")
@@ -101,9 +104,14 @@ class Grid:
             grid_gdf['centroid'].y.values
         )
 
-        # Save to parquet
-        grid_gdf.to_parquet(self.area_config.grid_file)
-        print(f"Grid saved to {self.area_config.grid_file}")
+        grid_gdf = grid_gdf.drop(columns=['centroid'])
+
+        # Save to both formats
+        grid_gdf.to_parquet(self.area_config.grid_file_parquet, index=False)
+        grid_gdf.to_file(self.area_config.grid_file_geojson, driver="GeoJSON")
+
+        print(f" Grid saved to:{self.area_config.grid_file_parquet}")
+        print(f" and {self.area_config.grid_file_geojson}")
 
         return grid_gdf
 

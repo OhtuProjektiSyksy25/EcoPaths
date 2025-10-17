@@ -58,7 +58,8 @@ class AreaConfig:
         self.aq_output_file = self.output_dir / f"{self.area}_aq.geojson"
         self.enriched_output_file = self.output_dir / \
             f"{self.area}_enriched.parquet"
-        self.grid_file = self.output_dir / f"{self.area}_grid.parquet"
+        self.grid_file_geojson = self.output_dir / f"{self.area}_grid.geojson"
+        self.grid_file_parquet = self.output_dir / f"{self.area}_grid.parquet"
 
 
 class RedisConfig:
