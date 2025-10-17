@@ -60,6 +60,45 @@ def clean(c):
     c.run("rm -rf coverage_reports/backend/")
     print("Removed backend test artifacts and coverage reports")
 
+# ========================
+# Grid generation
+# ========================
+
+@task
+def create_grid(c, area=None):
+    """
+    Create a grid for the specified area.
+    """
+    if area is None:
+        print("Error: --area parameter is required")
+        print("Usage: inv create-grid --area=<city>")
+        return
+
+    print(f"Creating grid for {area}...")
+
+    with c.cd("backend"):
+        c.run(f"""
+poetry run python -c "
+from src.utils.grid import Grid
+from src.config.settings import AreaConfig
+
+try:
+    config = AreaConfig('{area}')
+    grid = Grid(config)
+    
+    # Check if grid already exists
+    if config.grid_file.exists():
+        print('Grid already exists.')
+    
+    grid_gdf = grid.create_grid()
+    print(f'Loaded {{len(grid_gdf)}} tiles')
+    print(f'File: {{config.grid_file}}')
+    
+except ValueError as e:
+    print(f'Error: {{e}}')
+    print('Area not available. Check available areas in settings.py.')
+"
+        """, warn=True)
 
 # ========================
 # Higher-level convenience tasks

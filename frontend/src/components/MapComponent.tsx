@@ -196,6 +196,49 @@ const MapComponent: React.FC<MapComponentProps> = ({fromLocked, toLocked, route}
   //           }
   //       });
   // }},[route])
+// useEffect(() => {
+//   if (!mapRef.current || !routes) return;
+//   drawRoutes(mapRef.current, routes);
+// }, [routes]);
+
+
+//   function drawRoutes(map: mapboxgl.Map, routes: Record<string, GeoJSON.FeatureCollection>) {
+//   const colors = {
+//     fastest: "#007AFF",
+//     best_aq: "#34C759",
+//     balanced: "#FF9500"
+//   };
+
+//   Object.entries(routes).forEach(([mode, geojson]) => {
+//     const sourceId = `route-${mode}`;
+//     const layerId = `route-${mode}`;
+
+//     if (map.getSource(sourceId)) {
+//       (map.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson);
+//     } else {
+//       map.addSource(sourceId, {
+//         type: "geojson",
+//         data: geojson
+//       });
+
+//       map.addLayer({
+//         id: layerId,
+//         type: "line",
+//         source: sourceId,
+//         layout: {
+//           "line-join": "round",
+//           "line-cap": "round"
+//         },
+//         paint: {
+//           "line-color": colors[mode],
+//           "line-width": 5,
+//           "line-opacity": 0.8
+//         }
+//       });
+//     }
+//   });
+// }
+
 
   useEffect(() => {
     /*
