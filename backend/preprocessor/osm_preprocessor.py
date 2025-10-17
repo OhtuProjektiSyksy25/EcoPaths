@@ -2,23 +2,27 @@
 Download and process OpenStreetMap data into a cleaned road network.
 """
 
+import warnings
+from pathlib import Path
 import requests
 import geopandas as gpd
-from pathlib import Path
 from pyrosm import OSM
-import warnings
+from shapely.geometry import Point, LineString, MultiLineString, GeometryCollection
 from shapely.ops import split
-from shapely.geometry import LineString, MultiLineString, GeometryCollection
+from shapely.errors import TopologicalError
 from src.config.settings import AreaConfig
 from src.utils.grid import Grid
 
 
 class OSMPreprocessor:
     """
-    Handles downloading and processing OpenStreetMap (OSM) PBF files into a cleaned GeoDataFrame of road network edges.
+    Handles downloading and processing OpenStreetMap (OSM) PBF files 
+    into a cleaned GeoDataFrame of road network edges.
 
-    This class supports area-specific configurations, bounding box filtering, and network type selection.
-    The output is saved as a Parquet file containing simplified geometries and basic attributes.
+    This class supports area-specific configurations, bounding box filtering, 
+    and network type selection.
+    The output is saved as a Parquet file containing 
+    simplified geometries and basic attributes.
     """
 
     def __init__(self, area: str = "berlin", network_type: str = "walking"):
@@ -52,7 +56,8 @@ class OSMPreprocessor:
         if self.pbf_path.exists():
             return
         if not self.pbf_url:
-            raise ValueError("PBF file is missing and no download URL is provided!")
+            raise ValueError(
+                "PBF file is missing and no download URL is provided!")
 
         print(f"Downloading PBF from: {self.pbf_url}")
         response = requests.get(self.pbf_url, timeout=10, stream=True)
@@ -77,12 +82,14 @@ class OSMPreprocessor:
         Returns:
             GeoDataFrame: Final processed edge data with tile assignments and attributes.
         """
-        warnings.filterwarnings("ignore", category=FutureWarning, module="pyrosm")
+        warnings.filterwarnings(
+            "ignore", category=FutureWarning, module="pyrosm")
 
         self.download_pbf_if_missing()
         osm = OSM(str(self.pbf_path), bounding_box=self.bbox)
         graph = self._prepare_graph(osm)
         grid = self._load_or_create_grid()
+        print("Preparing edges...")
         graph = self._assign_tiles(graph, grid)
         graph = self._clean_geometry(graph)
         self._save_graph(graph)
@@ -107,15 +114,32 @@ class OSMPreprocessor:
         graph = graph.to_crs(self.crs)
         graph = graph.explode(index_parts=False).reset_index(drop=True)
 
-        def to_linestring(geom):
-            if isinstance(geom, MultiLineString):
-                return max(geom.geoms, key=lambda g: g.length)
-            elif isinstance(geom, LineString):
-                return geom
-            return geom.convex_hull
-
-        graph["geometry"] = graph.geometry.apply(to_linestring)
+        graph["geometry"] = graph.geometry.apply(self._to_linestring)
         return graph
+
+    def _to_linestring(self, geom):
+        """
+        Normalize geometry to a single LineString.
+
+        - If MultiLineString or GeometryCollection, returns the longest LineString
+        - If LineString, returns as-is
+        - Otherwise, returns convex hull
+
+        Args:
+            geom (shapely geometry): Input geometry.
+
+        Returns:
+            LineString: Normalized geometry.
+        """
+        if isinstance(geom, (MultiLineString, GeometryCollection)):
+            lines = [g for g in geom.geoms if isinstance(g, LineString)]
+            if lines:
+                return max(lines, key=lambda g: g.length)
+        if isinstance(geom, LineString):
+            return geom
+        if isinstance(geom, Point):
+            return LineString([geom, geom])  # zero-length line
+        return geom.convex_hull if hasattr(geom, "convex_hull") else geom
 
     def _load_or_create_grid(self):
         """
@@ -127,12 +151,12 @@ class OSMPreprocessor:
         Returns:
             GeoDataFrame: Grid tiles with tile IDs and geometry.
         """
-        grid_path = Path(self.config.grid_file)
+        grid_path = Path(self.config.grid_file_parquet)
         if not grid_path.exists():
             print("Grid file missing. Generating automatically.")
             grid = Grid(self.config).create_grid()
         else:
-            grid = gpd.read_file(grid_path)
+            grid = gpd.read_parquet(grid_path)
         return grid
 
     def _assign_tiles(self, edges: gpd.GeoDataFrame, grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -156,9 +180,10 @@ class OSMPreprocessor:
 
         for _, row in edges.iterrows():
             geom = row.geometry
+
             try:
                 result = split(geom, tile_boundaries)
-            except Exception:
+            except (ValueError, TopologicalError):
                 result = [geom]
 
             if isinstance(result, GeometryCollection):
@@ -202,12 +227,6 @@ class OSMPreprocessor:
         Raises:
             ValueError: If resulting geometries are empty or invalid.
         """
-        def to_linestring(geom):
-            if isinstance(geom, MultiLineString):
-                return max(geom.geoms, key=lambda g: g.length)
-            elif isinstance(geom, LineString):
-                return geom
-            return geom.convex_hull
 
         gdf = gdf.copy()
 
@@ -215,15 +234,22 @@ class OSMPreprocessor:
         if "access" in gdf.columns:
             gdf = gdf[gdf["access"].isin(allowed_access)]
 
-        gdf["geometry"] = gdf.geometry.apply(to_linestring)
+        mask = ~gdf.geometry.apply(lambda g: isinstance(g, LineString))
+        if mask.any():
+            gdf.loc[mask, "geometry"] = gdf.loc[mask,
+                                                "geometry"].apply(self._to_linestring)
+
         gdf["length_m"] = gdf.geometry.length.round(2)
         gdf["edge_id"] = range(len(gdf))
 
-        selected_attributes = [col for col in ["highway"] if col in gdf.columns]
-        columns = ["edge_id", "tile_id", "geometry", "length_m"] + selected_attributes
+        selected_attributes = [col for col in [
+            "highway"] if col in gdf.columns]
+        columns = ["edge_id", "tile_id", "geometry",
+                   "length_m"] + selected_attributes
 
         if gdf.empty or gdf.geometry.is_empty.any():
-            raise ValueError("Geometry cleaning resulted in empty or invalid edges.")
+            raise ValueError(
+                "Geometry cleaning resulted in empty or invalid edges.")
 
         return gdf[columns]
 
@@ -241,5 +267,3 @@ class OSMPreprocessor:
             raise ValueError("Cannot save: graph contains empty geometries.")
         graph.to_parquet(self.output_path)
         print(f"Saved {len(graph)} edges to {self.output_path}")
-
-    
