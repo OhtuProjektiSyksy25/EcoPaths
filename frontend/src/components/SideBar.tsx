@@ -9,15 +9,15 @@ import InputContainer from "./InputContainer";
 import { useGeolocation } from "../hooks/useGeolocationState";
 import DisplayContainer from "./DisplayContainer";
 import "../styles/SideBar.css";
+import { RouteSummary } from "@/types/route";
 
 interface SideBarProps {
-  onFromSelect: (place: any) => void
-  onToSelect: (place: any) => void
-  route?: any;
+  onFromSelect: (place: any) => void;
+  onToSelect: (place: any) => void;
+  summaries: Record<string, RouteSummary> | null;
   children?: React.ReactNode;
 }
-
-const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, children}) => {
+const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, children}) => {
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -167,12 +167,12 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
 
         {children}
 
-        {route && !children && (
-          <DisplayContainer
-            label="Walking Time"
-            value={route.summary.time_estimate}
-          />
-        )}
+      {summaries?.fastest && !children && (
+        <DisplayContainer
+          label="Walking Time"
+          value={summaries.fastest.time_estimate}
+        />
+      )}
       </div>
     </div>
   );

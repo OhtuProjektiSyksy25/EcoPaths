@@ -158,8 +158,9 @@ async def getroute(request: Request):
     route_service = request.app.state.route_service
     response = route_service.get_route(origin_gdf, destination_gdf)
 
+    print(response)
+
     return JSONResponse(content=response)
-#return {"route": route_fastest, "route_aq": route_fastest_aq}
 
 
 @app.get("/{full_path:path}")

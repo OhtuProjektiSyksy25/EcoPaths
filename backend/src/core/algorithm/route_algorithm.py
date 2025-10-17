@@ -1,136 +1,148 @@
-"""
-    A module for calculating routes using a simple routing algorithm.
-    Uses NetworkX for graph representation and shortest path calculation.
-"""
-
-from shapely.ops import linemerge, unary_union
-from shapely.geometry import LineString
-import networkx as nx
 import geopandas as gpd
-from pyproj import Transformer
+import networkx as nx
+from shapely.geometry import Point, LineString
+from shapely.strtree import STRtree
+from shapely.ops import split
+import numpy as np
+import pandas as pd
 
 
 class RouteAlgorithm:
-    """
-    Simple routing algorithm using NetworkX for shortest path calculation.
+    def __init__(self, edges_gdf: gpd.GeoDataFrame):
+        self.edges = edges_gdf.copy()
+        self.edges_tree = STRtree(self.edges.geometry.values)
+        self.edges["start_node"] = self.edges.geometry.apply(
+            lambda g: tuple(g.coords[0]))
+        self.edges["end_node"] = self.edges.geometry.apply(
+            lambda g: tuple(g.coords[-1]))
+        print(f"Edgejä ladattu: {len(self.edges)}")
 
-    Attributes:
-        graph (nx.Graph): NetworkX graph representation of the edges.
-        edges_crs (str): CRS of the input edges for coordinate transformation.
-    """
+    def calculate_path(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
+                       weight="length_m", method="dijkstra") -> gpd.GeoDataFrame:
 
-    def __init__(self, edges):
-        """
-        Moved to preprocessor
+        origin_point = origin_gdf.geometry.iloc[0]
+        destination_point = destination_gdf.geometry.iloc[0]
 
-        Initialize the routing algorithm with edge data.
+        origin_node, origin_splits = self.snap_and_split(origin_point)
+        destination_node, destination_splits = self.snap_and_split(
+            destination_point)
 
-        Args:
-            edges (GeoDataFrame): GeoDataFrame containing edge geometries and lengths.
-        """
-        self.graph_fastest = nx.Graph()
-        self.graph_fast_and_aq = nx.Graph()
-        self.edges_crs = edges.crs
-        # if any(edges.geometry.type == "MultiLineString"):
-        #     edges = edges.explode(index_parts=False).reset_index(drop=True)
-        #     edges["length_m"] = edges.geometry.length
-        print('edges:', edges)
+        self.extra_edges = origin_splits + destination_splits
+        G = self.build_graph(weight=weight, extra_edges=self.extra_edges)
 
-        for _, row in edges.iterrows():
-            geom = row["geometry"]
+        if origin_node not in G or destination_node not in G:
+            raise ValueError("Snap point not in graph.")
 
-            if geom.geom_type == "LineString":
-                coords = list(geom.coords)
+        path_nodes = self.calculate_route(
+            G, origin_node, destination_node, method=method)
+
+        all_edges = pd.concat(
+            [self.edges, gpd.GeoDataFrame(self.extra_edges)], ignore_index=True)
+
+        path_edges = []
+        for u, v in zip(path_nodes[:-1], path_nodes[1:]):
+            edge_row = all_edges[
+                (all_edges.start_node == u) & (all_edges.end_node == v)
+            ]
+            if not edge_row.empty:
+                path_edges.append(edge_row.iloc[0])
             else:
-                continue
-            # ottaa kadunpätkän ensimmäisen ja viimeisen pisteen
-            # ja lisää ne solmuiksi verkkoon
-            u = coords[0]
-            v = coords[-1]
+                print(f"Cannot find edge for nodes: {u} → {v}")
 
-            self.graph_fastest.add_edge(
-                u,
-                v,
-                weight=row["length_m"],
-                geometry=geom
-            )
-            self.graph_fast_and_aq.add_edge(
-                u,
-                v,
-                weight=row["length_m"] * row["aq_value"],
-                geometry=geom
-            )
+        print(f"Path edges count: {len(path_edges)}")
+        route_gdf = gpd.GeoDataFrame(path_edges, crs=self.edges.crs).copy()
+        return route_gdf
 
-    def calculate(self, origin, destination):
-        """
-        Calculate the shortest path between origin and destination.
+    def snap_and_split(self, point: Point) -> tuple[tuple, list]:
+        try:
+            nearest_idx = self.edges_tree.nearest(point)
+            edge_row = self.edges.iloc[nearest_idx]
+            print(f"Lähin edge indeksi: {nearest_idx}")
+        except Exception as e:
+            distances = self.edges.geometry.distance(point)
+            if distances.empty:
+                return None, []
+            nearest_idx = distances.idxmin()
+            edge_row = self.edges.iloc[nearest_idx]
 
-        Args:
-            origin (tuple): Starting point as (lon, lat)
-            destination (tuple): Ending point as (lon, lat)
+        line: LineString = edge_row.geometry
+        snapped_point = line.interpolate(line.project(point))
+        snapped_coord = tuple(snapped_point.coords[0])
+        snapped_coord = (round(snapped_point.x, 3), round(snapped_point.y, 3))
 
-        Returns:
-            GeoDataFrame: GeoDataFrame with the route as a LineString geometry.
-        """
-        # Koordinaatit ei ole kaikkiin pisteisiin, vaan esim kodin koordinaatit pitää snäpätä johonkin pisteeseen
+        snapped_point = line.interpolate(line.project(point))
 
-        origin_proj = self._project_point(origin)
-        destination_proj = self._project_point(destination)
+        cut_line = LineString([
+            (snapped_point.x - 0.01, snapped_point.y - 0.01),
+            (snapped_point.x + 0.01, snapped_point.y + 0.01)
+        ])
 
-        largest_cc_nodes_fastest = set(
-            max(nx.connected_components(self.graph_fastest), key=len))
-        largest_cc_nodes_fastest_and_aq = set(
-            max(nx.connected_components(self.graph_fast_and_aq), key=len))
-        origin_node = self._nearest_node(largest_cc_nodes_fastest, origin_proj)
-        dest_node = self._nearest_node(largest_cc_nodes_fastest, destination_proj)
+        split_result = split(line, cut_line)
 
-        origin_node = self._nearest_node(largest_cc_nodes_fastest_and_aq, origin_proj)
-        dest_node = self._nearest_node(largest_cc_nodes_fastest_and_aq, destination_proj)
+        print(
+            f"Split result: {split_result.geom_type}, parts: {len(split_result.geoms)}")
 
-        path_fastest = nx.shortest_path(self.graph_fastest, origin_node,
-                                dest_node, weight="weight")
-        path_fastest_and_aq = nx.shortest_path(self.graph_fast_and_aq, origin_node,
-                                dest_node, weight="weight")
+        lines = [geom for geom in split_result.geoms if isinstance(
+            geom, LineString)]
+        if len(lines) != 2:
+            return snapped_coord, []
 
-        line_parts_fastest = [self.graph_fastest.get_edge_data(u, v)["geometry"]
-                      for u, v in zip(path_fastest[:-1], path_fastest[1:])]
-        line_parts_fastest_and_aq = [self.graph_fast_and_aq.get_edge_data(u, v)["geometry"]
-                      for u, v in zip(path_fastest_and_aq[:-1], path_fastest_and_aq[1:])]
-        #mitä tekee ja miksi?
-        merged_geom_fastest = unary_union(line_parts_fastest)
-        merged_geom_fastest_and_aq = unary_union(line_parts_fastest_and_aq)
+        edge_a = edge_row.copy()
+        edge_a.geometry = lines[0]
+        edge_a.start_node = tuple(lines[0].coords[0])
+        edge_a.end_node = tuple(lines[0].coords[-1])
 
-        #merged geom on palautettu sellaiseen muotoon, että se voidaan palauttaa geodataframina
-        if not isinstance(merged_geom_fastest, LineString):
-            merged_geom_fastest = linemerge(merged_geom_fastest)
-        if not isinstance(merged_geom_fastest_and_aq, LineString):
-            merged_geom_fastest_and_aq = linemerge(merged_geom_fastest_and_aq)
-        if merged_geom_fastest.geom_type == "MultiLineString":
-            # MultiLineString may not be directly iterable in some Shapely versions;
-            # iterate its .geoms sequence to access component LineStrings.
-            merged_geom_fastest = LineString(
-                [pt for line in merged_geom_fastest.geoms for pt in line.coords]
-            )
-        if merged_geom_fastest_and_aq.geom_type == "MultiLineString":
-            merged_geom_fastest_and_aq = LineString(
-                [pt for line in merged_geom_fastest_and_aq.geoms for pt in line.coords]
-            )
-        gdf_fastest = gpd.GeoDataFrame([{"geometry": merged_geom_fastest}],
-                               geometry="geometry",
-                               crs=self.edges_crs)
-        gdf_fast_and_aq = gpd.GeoDataFrame([{"geometry": merged_geom_fastest_and_aq}],
-                                   geometry="geometry",
-                                   crs=self.edges_crs)
+        edge_b = edge_row.copy()
+        edge_b.geometry = lines[1]
+        edge_b.start_node = tuple(lines[1].coords[0])
+        edge_b.end_node = tuple(lines[1].coords[-1])
 
-        return gdf_fastest, gdf_fast_and_aq
+        print(
+            f"Splitted edges: {edge_a.start_node}→{edge_a.end_node}, {edge_b.start_node}→{edge_b.end_node}")
+        split_point = tuple(lines[0].coords[-1])
+        return split_point, [edge_a, edge_b]
 
+    def build_graph(self, weight="length_m", extra_edges: list = None) -> nx.DiGraph:
+        print("Build a graph...")
+        G = nx.DiGraph()
+        all_edges = self.edges.copy()
+        if extra_edges:
+            all_edges = gpd.GeoDataFrame(
+                pd.concat([all_edges, gpd.GeoDataFrame(extra_edges)]), crs=self.edges.crs)
+            print(f"Added {len(extra_edges)} slitted edges to graph.")
 
-    def _project_point(self, lonlat):
-        """Project a WGS84 (lon, lat) point into the edges CRS."""
-        transformer = Transformer.from_crs(
-            "EPSG:4326", self.edges_crs, always_xy=True)
-        return transformer.transform(*lonlat)
+        for _, row in all_edges.iterrows():
+            start, end = row.start_node, row.end_node
+            G.add_edge(start, end, edge_id=row.get(
+                "edge_id", None), weight=row.get(weight, 1))
+        return G
 
-    def _nearest_node(self, nodes, point):
-        """Find nearest node from a set given a projected point."""
-        return min(nodes, key=lambda n: (n[0] - point[0])**2 + (n[1] - point[1])**2)
+    def find_edge_by_nodes(self, u: tuple, v: tuple):
+        match = self.edges[
+            (self.edges.start_node == u) & (self.edges.end_node == v)
+        ]
+        return match.iloc[0] if not match.empty else None
+
+    @staticmethod
+    def euclidean_heuristic(u, v):
+        x1, y1 = u
+        x2, y2 = v
+        return np.hypot(x2 - x1, y2 - y1)
+
+    @staticmethod
+    def calculate_route(G: nx.DiGraph, origin_node: tuple, destination_node: tuple, method="dijkstra") -> list:
+        try:
+            if method == "astar":
+                return nx.astar_path(
+                    G,
+                    origin_node,
+                    destination_node,
+                    heuristic=RouteAlgorithm.euclidean_heuristic,
+                    weight="weight"
+                )
+            else:
+                return nx.dijkstra_path(G, origin_node, destination_node, weight="weight")
+        except nx.NetworkXNoPath:
+            print("No route found.")
+            raise ValueError(
+                "No route could be found between the given origin and destination points.")
