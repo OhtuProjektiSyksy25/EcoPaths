@@ -6,12 +6,13 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from services.route_service import RouteServiceFactory
+from services.geo_transformer import GeoTransformer
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
-    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
+    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
@@ -29,15 +30,16 @@ async def lifespan(application: FastAPI):
     """
     FastAPI lifespan handler that initializes application state on startup.
 
-    Sets up shared services such as RouteService and attaches them to app.state.
+    Sets up shared services such as RouteService and AreaConfig.
     """
-    application.state.route_service = create_route_service()
+    selected_area = "berlin"
+
+    route_service, area_config = RouteServiceFactory.from_area(selected_area)
+
+    application.state.route_service = route_service
+    application.state.area_config = area_config
+
     yield
-
-
-def create_route_service():
-    """Creates and returns a RouteService instance for the app."""
-    return RouteServiceFactory.from_area("berlin")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -63,7 +65,6 @@ if os.path.isdir(STATIC_DIR):
 
 
 # === Routes ===
-
 
 @app.get("/berlin")
 async def berlin():
@@ -109,24 +110,55 @@ async def geocode_forward(value: str):
     return photon_suggestions
 
 
-@app.get("/getroute/{from_coords}/{to_coords}")
-def getroute(from_coords: str, to_coords: str, request: Request):
-    """Returns optimal route according to from_coords and to_coords
+@app.post("/getroute")
+async def getroute(request: Request):
+    """
+    API endpoint for computing multiple route options between two GeoJSON Point features.
 
-    Args:
-        from_coords (str): route start coordinates as string seperated by ,
-        to_coords (str): route end coordinates as string seperated by ,
+    Expects a GeoJSON FeatureCollection with exactly two features:
+    - One with properties.role = "start"
+    - One with properties.role = "end"
 
     Returns:
-        dict: GeoJSON Feature of the route
+        dict: {
+            "routes": {
+                "fastest": GeoJSON FeatureCollection,
+                "best_aq": GeoJSON FeatureCollection,
+                "balanced": GeoJSON FeatureCollection
+            },
+            "summaries": {
+                "fastest": {...},
+                "best_aq": {...},
+                "balanced": {...}
+            }
+        }
     """
-    from_lon, from_lat = map(float, from_coords.split(","))
-    to_lon, to_lat = map(float, to_coords.split(","))
+    data = await request.json()
+    features = data.get("features", [])
+
+    if len(features) != 2:
+        return JSONResponse(status_code=400, content={"error": "GeoJSON must contain two features"})
+
+    start_feature = next(
+        (f for f in features if f["properties"].get("role") == "start"), None)
+    end_feature = next(
+        (f for f in features if f["properties"].get("role") == "end"), None)
+
+    if not start_feature or not end_feature:
+        return JSONResponse(status_code=400, content={"error": "Missing start or end feature"})
+
+    area_config = request.app.state.area_config
+    target_crs = area_config.crs
+
+    origin_gdf = GeoTransformer.geojson_to_projected_gdf(
+        start_feature["geometry"], target_crs)
+    destination_gdf = GeoTransformer.geojson_to_projected_gdf(
+        end_feature["geometry"], target_crs)
 
     route_service = request.app.state.route_service
-    route = route_service.get_route((from_lon, from_lat), (to_lon, to_lat))
+    response = route_service.get_route(origin_gdf, destination_gdf)
 
-    return {"route": route}
+    return JSONResponse(content=response)
 
 
 @app.get("/{full_path:path}")
