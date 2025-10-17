@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from src.config.settings import AreaConfig
 
+
 def test_valid_area_berlin():
     config = AreaConfig("berlin")
     assert config.area == "berlin"
@@ -13,6 +14,7 @@ def test_valid_area_berlin():
     assert config.data_dir.exists()
     assert config.output_dir.exists()
 
+
 def test_valid_area_la():
     config = AreaConfig("la")
     assert config.area == "la"
@@ -21,6 +23,7 @@ def test_valid_area_la():
     assert config.pbf_url.endswith("socal-latest.osm.pbf")
     assert config.pbf_file.name == "la-latest.osm.pbf"
     assert config.edges_output_file.name == "la_edges.parquet"
+
 
 def test_valid_area_helsinki():
     config = AreaConfig("helsinki")
@@ -31,9 +34,8 @@ def test_valid_area_helsinki():
     assert config.pbf_file.name == "helsinki-latest.osm.pbf"
     assert config.edges_output_file.name == "helsinki_edges.parquet"
 
+
 def test_invalid_area_raises():
     with pytest.raises(ValueError) as excinfo:
         AreaConfig("london")
     assert "Unknown area: london" in str(excinfo.value)
-
-
