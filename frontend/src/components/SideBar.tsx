@@ -163,9 +163,9 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
                 ? []
                 : (showFromCurrentLocation && !from
                   ? [{
-                      full_address: "Your location",
-                      place_name: "Your location",
-                      properties: { name: "Your location", isCurrentLocation: true },
+                      full_address: "Use my current location",
+                      place_name: "Your Location",
+                      properties: { name: "Your Location", isCurrentLocation: true },
                       geometry: { coordinates: [0, 0] }
                     }]
                   : fromSuggestions)
@@ -181,6 +181,8 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
               onBlur={handleFromBlur}
             />
         </div>
+
+        <div className="divider"/>
 
         <div className="input-box">
           <InputContainer

@@ -32,6 +32,17 @@
   gap: 8px;
 }
 
+.divider {
+  text-align: center;
+  color: #999;
+  font-size: 18px;
+  line-height: 5px;
+}
+
+.divider::before {
+  content: "⋮";
+}
+
 .DisplayContainer {
   display: flex;
   gap: 8px;
