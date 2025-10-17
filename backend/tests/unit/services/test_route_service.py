@@ -70,12 +70,13 @@ def route_service(monkeypatch):
 #     assert cache_key in route_service.redis.store
 
 
-
 def test_get_route_returns_cached_result(route_service):
     """Test that get_route returns cached result if available"""
 
-    origin_gdf = gpd.GeoDataFrame(geometry=[Point(13.40, 52.52)], crs="EPSG:4326")
-    destination_gdf = gpd.GeoDataFrame(geometry=[Point(13.41, 52.53)], crs="EPSG:4326")
+    origin_gdf = gpd.GeoDataFrame(
+        geometry=[Point(13.40, 52.52)], crs="EPSG:4326")
+    destination_gdf = gpd.GeoDataFrame(
+        geometry=[Point(13.41, 52.53)], crs="EPSG:4326")
     cache_key = "route_13.4_52.52_13.41_52.53"
 
     expected_result = route_service.get_route(origin_gdf, destination_gdf)
