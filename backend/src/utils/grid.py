@@ -1,6 +1,5 @@
 """
 Grid module for creating and managing spatial tile grids.
-
 This module provides a Grid class that creates a regular grid of tiles
 over a geographic area, using GeoPandas for efficient spatial operations.
 """
@@ -17,33 +16,29 @@ class Grid:
     def __init__(self, area_config: AreaConfig):
         """
         Initialize grid for an area.
-
         Args:
             area_config (AreaConfig): Configuration for the area.
         """
         self.area_config = area_config
 
-        self.origin_lon = area_config.bbox[0]
-        self.origin_lat = area_config.bbox[1]
-        self.max_lon = area_config.bbox[2]
-        self.max_lat = area_config.bbox[3]
+        self.origin_lon, self.origin_lat, self.max_lon, self.max_lat = area_config.bbox
 
         self.tile_size_m = area_config.tile_size_m
 
         # setup coordinate transformation
         # WGS84 (lat/lon) <-> Local CRS (meters)
-        self.wgs84 = pyproj.CRS("EPSG:4326")
-        self.local_crs = pyproj.CRS(area_config.crs)
+        wgs84 = pyproj.CRS("EPSG:4326")
+        local_crs = pyproj.CRS(area_config.crs)
 
         # transformers
         self.to_meters = pyproj.Transformer.from_crs(
-            self.wgs84,
-            self.local_crs,
+            wgs84,
+            local_crs,
             always_xy=True
         )
         self.to_latlon = pyproj.Transformer.from_crs(
-            self.local_crs,
-            self.wgs84,
+            local_crs,
+            wgs84,
             always_xy=True
         )
 
@@ -54,7 +49,6 @@ class Grid:
 
     def create_grid(self) -> gpd.GeoDataFrame:
         """Create a grid of tiles for the given area.
-
         Returns:
             gpd.GeoDataFrame: GeoDataFrame containing the grid tiles.
         """
@@ -79,7 +73,7 @@ class Grid:
             row = 0
 
             while y <= max_y:
-                # Create box polygon (500m × 500m in Web Mercator)
+                # Create box polygon (500m × 500m in local CRS)
                 grid_cells.append({
                     "tile_id": f"r{row}_c{col}",
                     "row": row,
@@ -104,6 +98,8 @@ class Grid:
             grid_gdf['centroid'].y.values
         )
 
+        grid_gdf.to_file(self.area_config.aq_output_file, driver='GeoJSON')
+
         # Save to parquet
         grid_gdf.to_parquet(self.area_config.grid_file)
         print(f"Grid saved to {self.area_config.grid_file}")
@@ -113,7 +109,6 @@ class Grid:
     def get_tile_id(self, lon: float, lat: float) -> str:
         """
         Get tile ID for given lon/lat.
-
         Args:
             lon (float): longitude.
             lat (float): latitude.
@@ -137,10 +132,8 @@ class Grid:
     def get_tile_center(self, tile_id: str) -> tuple[float, float]:
         """
         Get center coordinates of a tile by its ID.
-
         Args:
             tile_id (str): Tile ID in format "r{row}_c{col}".
-
         Returns:
             tuple[float, float]: (lon, lat) of the tile center.
         """
@@ -159,14 +152,11 @@ class Grid:
     def parse_tile_id(self, tile_id: str) -> tuple[int, int]:
         """
         Parse tile ID into row and column integers.
-
         Args:
             tile_id (str): Tile ID in format "r{row}_c{col}".
-
         Returns:
             tuple[int, int]: (row, col) as integers.
         """
         parts = tile_id.replace('r', '').replace('c', '').split('_')
         row, col = int(parts[0]), int(parts[1])
         return row, col
-
