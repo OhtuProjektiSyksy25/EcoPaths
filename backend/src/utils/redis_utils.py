@@ -7,7 +7,9 @@ from services.geo_transformer import GeoTransformer
 from services.redis_cache import RedisCache
 from core.edge_enricher import EdgeEnricher
 
-
+"""
+    CRS IS SET ONLY FOR BERLIN
+"""
 
 class RedisUtils:
     """
@@ -44,7 +46,7 @@ class RedisUtils:
         tile_grouped_gdf_dict = RedisUtils.group_gdf_by_tile(gdf)
         failed_to_save = []
         for tile_id, gdf in tile_grouped_gdf_dict.items():
-            gdf = gdf.to_crs("EPSG:4326")
+            gdf = gdf.to_crs("EPSG:25833")
             tile_grouped_featurecollection = gdf.to_json()
             attempt = redis.set_direct(tile_id, tile_grouped_featurecollection, 3600)
             if attempt == False:
@@ -97,7 +99,7 @@ class RedisUtils:
 
         if not features:
             return False
-        gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:4326")
+        gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:25833")
         return gdf
     
     @staticmethod
