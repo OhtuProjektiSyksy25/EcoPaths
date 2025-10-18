@@ -24,7 +24,7 @@ class TestGrid:
         assert berlin_grid.max_lat == berlin_config.bbox[3]
 
     def test_create_grid(self, berlin_grid, berlin_config):
-        """Test grid creation for Berlin."""
+        """Test grid can be loaded/created."""
         grid_gdf = berlin_grid.create_grid()
 
         assert grid_gdf is not None
