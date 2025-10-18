@@ -35,7 +35,6 @@ jest.mock('mapbox-gl', () => {
   };
 });
 
-
 /*
 Mock react-leaflet
 */
@@ -60,6 +59,7 @@ Mock LocationButton
 jest.mock("../../src/components/LocationButton", () => ({
   LocationButton: (props: any) => <div data-testid="location-button-mock" />,
 }));
+
 const mockLocked: LockedLocation = {
   full_address: 'Test address',
   geometry: {
@@ -72,13 +72,17 @@ const mockRoute: RouteGeoJSON = {
   features: [],
 };
 
+const mockRoutes: Record<string, RouteGeoJSON> = {
+  fastest: mockRoute
+};
+
 describe('MapComponent', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   /*
-  Check for the div that Mapbox GL JS would render into and that the mock class is mapbox-map
+  Check that Mapbox container renders when token is provided
   */
   test('renders Mapbox container when token is provided', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
@@ -88,7 +92,7 @@ describe('MapComponent', () => {
       <MapComponent
         fromLocked={mockLocked}
         toLocked={mockLocked}
-        route={mockRoute}
+        routes={mockRoutes}
       />
     );
 
@@ -97,18 +101,18 @@ describe('MapComponent', () => {
   });
 
   /*
-  Check that the LocationButton is rendered in the map container
+  Check that the LocationButton is rendered
   */
   test("renders LocationButton in the map container", () => {
     process.env.REACT_APP_MAPBOX_TOKEN = "fake-token";
-    render(<MapComponent fromLocked={null} toLocked={null} route={null} />);
+    render(<MapComponent fromLocked={null} toLocked={null} routes={null} />);
 
     const locationButton = screen.getByTestId("location-button-mock"); 
     expect(locationButton).toBeInTheDocument();
   });
 
   /*
-  If no token is provided, the Leaflet map should render, find the openstreetmap
+  Check that Leaflet map renders when no Mapbox token
   */
   test('renders Leaflet map when no Mapbox token', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = '';
@@ -117,7 +121,7 @@ describe('MapComponent', () => {
       <MapComponent
         fromLocked={mockLocked}
         toLocked={mockLocked}
-        route={mockRoute}
+        routes={mockRoutes}
       />
     );
 
