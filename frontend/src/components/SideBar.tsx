@@ -4,7 +4,7 @@ renders suggestions for from and to fields and manages their state based on thei
 uses LocationButton to get user's current location and set it as "From" value
 */
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import InputContainer from "./InputContainer";
 import { useGeolocation } from "../hooks/useGeolocationState";
 import DisplayContainer from "./DisplayContainer";
@@ -24,24 +24,17 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
   const [fromSuggestions, setFromSuggestions] = useState<any[]>([])
   const [toSuggestions, setToSuggestions] = useState<any[]>([])
   const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false)
+  const [waitingForLocation, setWaitingForLocation] = useState(false);
   const debounce = useRef<number | null>()
   const { getCurrentLocation, coordinates } = useGeolocation();
 
-  const handleCurrentLocationSelect = useCallback(async () => {
+  useEffect(() => {
     /*
-    Handles selection of "Your location" suggestion
-    Uses geolocation hook to get current coordinates
     Creates a mock place object and calls onFromSelect with it
+    when waiting for location and coordinates become available.
     */
-    try {
-      if (!coordinates) {
-        await getCurrentLocation();
-        return;
-      }
-
+    if (waitingForLocation && coordinates) {
       const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
-      setFrom(coordsString);
-
       const mockPlace = {
         full_address: coordsString,
         center: [coordinates.lng, coordinates.lat],
@@ -50,12 +43,43 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
         geometry: { coordinates: [coordinates.lng, coordinates.lat] }
       };
 
+      setFrom(coordsString);
       onFromSelect(mockPlace);
       setShowFromCurrentLocation(false);
+      setWaitingForLocation(false);
+    }
+  }, [coordinates, waitingForLocation, onFromSelect]);
+
+  const handleCurrentLocationSelect = useCallback(async () => {
+    /*
+    Handles selection of "Your location" suggestion
+    Uses geolocation hook to get current coordinates
+    Creates a mock place object and calls onFromSelect with it
+    */
+    try {
+      setWaitingForLocation(true);
+
+      if (!coordinates) {
+        await getCurrentLocation();
+      } else {
+        const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
+        const mockPlace = {
+          full_address: coordsString,
+          center: [coordinates.lng, coordinates.lat],
+          place_name: `Your Location (${coordsString})`,
+          properties: { name: "Your Location" },
+          geometry: { coordinates: [coordinates.lng, coordinates.lat] }
+        };
+
+        setFrom(coordsString);
+        onFromSelect(mockPlace);
+      }
     } catch (error) {
       console.log("Error getting current location:", error);
+      setWaitingForLocation(false);
     }
   }, [coordinates, getCurrentLocation, onFromSelect]);
+
 
   const handleFromFocus = () => {
     /*
@@ -80,6 +104,7 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
    updates fromSuggestions
    */
     setFrom(value)
+    setShowFromCurrentLocation(false)
     if (debounce.current) clearTimeout(debounce.current)
     debounce.current = window.setTimeout(async () => {
     if (!value) {
@@ -94,7 +119,6 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
     setFromSuggestions(data.features)
   } catch (error) {
     console.log(error)
-    setFromSuggestions([])
   }
   }, 400)}
 
@@ -134,15 +158,18 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
               placeholder="Start location"
               value={from}
               onChange={HandleFromChange}
-              suggestions={showFromCurrentLocation ? [
-                {
-                  full_address: "Your location",
-                  place_name: "Your location",
-                  properties: { name: "Your location", isCurrentLocation: true },
-                  geometry: { coordinates: [0, 0] }
-                },
-                ...fromSuggestions
-              ] : fromSuggestions}
+              suggestions={
+                /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
+                ? []
+                : (showFromCurrentLocation && !from
+                  ? [{
+                      full_address: "Use my current location",
+                      place_name: "Your Location",
+                      properties: { name: "Your Location", isCurrentLocation: true },
+                      geometry: { coordinates: [0, 0] }
+                    }]
+                  : fromSuggestions)
+              }
               onSelect={(place) => {
                 if (place.properties?.isCurrentLocation) {
                   handleCurrentLocationSelect();
@@ -154,6 +181,8 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, route, child
               onBlur={handleFromBlur}
             />
         </div>
+
+        <div className="divider"/>
 
         <div className="input-box">
           <InputContainer
