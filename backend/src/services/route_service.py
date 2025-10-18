@@ -166,7 +166,6 @@ class RouteService:
         non_existing_tile_ids = RedisUtils.prune_found_ids(tile_ids, self.redis)
         if RedisUtils.edge_enricher_to_redis_handler(non_existing_tile_ids, self.redis):
             route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(tile_ids, self.redis)
-            route_ready_gdf.to_file("edgestemp.geojson", driver="GeoJSON")
             return route_ready_gdf
         #error handling needed
 
