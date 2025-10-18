@@ -29,17 +29,24 @@ const InputContainer: React.FC<InputContainerProps> = ({
   onSelect,
   onFocus,
   onBlur
-  
+
   }) => {
 
 const [isOpen, setIsOpen] = useState(false)
 const containerRef = useRef<HTMLDivElement | null>(null);
+const inputSelected = useRef(false);
 
 useEffect(() => {
   /*
   useEffect for updating isOpen useState when suggestion updates
   */
-(!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
+  if (inputSelected.current) {
+    inputSelected.current = false;
+    setIsOpen(false);
+    return;
+  }
+
+  (!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
 
 },[suggestions])
 
@@ -68,7 +75,7 @@ useEffect(() => {
       onChange={(e)=> onChange(e.target.value)}
       placeholder={placeholder}
       onFocus={() => {
-        suggestions.length > 0 && setIsOpen(true);
+        suggestions.length > 0 && inputSelected.current === false && setIsOpen(true);
         onFocus?.();
       }}
       onBlur={() => {
@@ -85,6 +92,7 @@ useEffect(() => {
             onChange(s.full_address)
             if (onSelect) onSelect(s)
             setIsOpen(false)
+            inputSelected.current = true;
           }}>
             {s.full_address}
           </li>
