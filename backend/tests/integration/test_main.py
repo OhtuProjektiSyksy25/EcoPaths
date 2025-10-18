@@ -19,6 +19,7 @@ def test_berlin():
 
     assert response.json()["coordinates"] == [13.404954, 52.520008]
 
+
 @pytest.fixture
 def create_index_html(tmp_path, monkeypatch):
     """ Create a temporary build/index.html file for testing """
@@ -29,6 +30,7 @@ def create_index_html(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     yield
 
+
 @pytest.fixture
 def create_static_dir(tmp_path, monkeypatch):
     """ Create a temporary build/static directory for testing """
@@ -37,6 +39,7 @@ def create_static_dir(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     yield
 
+
 @pytest.mark.usefixtures("create_index_html")
 def test_spa_handler_serves_index_html():
     """ Test if the catch-all route serves index.html """
@@ -44,6 +47,7 @@ def test_spa_handler_serves_index_html():
     assert response.status_code == 200
     assert response.text == "<html>SPA</html>"
     assert response.headers["content-type"].startswith("text/html")
+
 
 def test_static_mount_not_present(monkeypatch):
     """Test that /static is not mounted if build/static does not exist."""
@@ -56,6 +60,7 @@ def test_static_mount_not_present(monkeypatch):
 
     assert "/static" not in routes
 
+
 @pytest.mark.usefixtures("create_static_dir")
 def test_static_mount_present():
     """Test that /static is mounted if build/static does exist."""
@@ -65,4 +70,3 @@ def test_static_mount_present():
     routes = [route.path for route in app.routes]
 
     assert "/static" in routes
-

@@ -9,6 +9,7 @@ from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
 from utils.route_summary import format_walk_time
+from utils.redis_utils import RedisUtils
 
 
 class RouteService:
@@ -49,15 +50,15 @@ class RouteService:
         # Workaround remove when RouteAlgorithm supports GeoDataFrame inputs
         origin, destination = RouteService.extract_lonlat_from_gdf(
             origin_gdf, destination_gdf)
-        cache_key = (
-            f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
-            f"{round(destination[0], 4)}_{round(destination[1], 4)}"
-        )
+        # cache_key = (
+        #     f"route_{round(origin[0], 4)}_{round(origin[1], 4)}_"
+        #     f"{round(destination[0], 4)}_{round(destination[1], 4)}"
+        # )
         # ----
 
-        cached_route = self.redis.get(cache_key)
-        if cached_route:
-            return cached_route
+        # cached_route = self.redis.get(cache_key)
+        # if cached_route:
+        #     return cached_route
 
         # uncomment and make it work when tiles_ids are available in edges and
         # RouteAlgorithm returns edge-level GeoDataFrame output
@@ -119,7 +120,7 @@ class RouteService:
         }
         # -----
 
-        self.redis.set(cache_key, response)
+        # self.redis.set(cache_key, response)
         return response
 
     def _create_buffer(self, origin_point, destination_point, buffer_m=1000) -> Polygon:
@@ -149,6 +150,25 @@ class RouteService:
         origin_wgs = origin_gdf.to_crs("EPSG:4326").geometry.iloc[0]
         destination_wgs = destination_gdf.to_crs("EPSG:4326").geometry.iloc[0]
         return (origin_wgs.x, origin_wgs.y), (destination_wgs.x, destination_wgs.y)
+
+
+    def edge_fetcher(self, tile_ids: list): #rename function?
+        """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
+           that were not already present in redis. Creates and returns a GeoDataFrame of all the edges
+           contained in tiles specified in tile_ids
+
+        Args:
+            tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
+
+        Returns:
+            GeoDataFrame: GeoDataFrame
+        """
+        non_existing_tile_ids = RedisUtils.prune_found_ids(tile_ids, self.redis)
+        if RedisUtils.edge_enricher_to_redis_handler(non_existing_tile_ids, self.redis):
+            route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(tile_ids, self.redis)
+            route_ready_gdf.to_file("edgestemp.geojson", driver="GeoJSON")
+            return route_ready_gdf
+        #error handling needed
 
 
 class RouteServiceFactory:

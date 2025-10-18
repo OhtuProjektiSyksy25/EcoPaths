@@ -11,17 +11,17 @@ from pathlib import Path
 
 @task
 def format_backend(c):
-    """Format backend code using autopep8"""
+    """Format backend code using autopep8 for src, preprocessor, and tests"""
     with c.cd("backend"):
-        c.run("autopep8 --in-place --recursive src")
+        c.run("autopep8 --in-place --recursive src preprocessor tests")
     print("Code formatted.")
 
 
 @task
 def lint_backend(c):
-    """Run Pylint on backend/src"""
+    """Run Pylint on all backend modules: src, preprocessor, and tests."""
     with c.cd("backend"):
-        c.run("poetry run pylint src")
+        c.run("poetry run pylint src preprocessor tests")
     print("Linting completed.")
 
 
@@ -34,7 +34,7 @@ def test_backend(c):
     """Run backend unit tests with coverage tracking"""
     with c.cd("backend"):
         c.run(
-            "poetry run pytest --cov=src --cov-report=term-missing "
+            "poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing "
             "--cov-report=xml:../coverage_reports/backend/coverage.xml tests"
         )
         c.run("poetry run coverage html -d ../coverage_reports/backend/htmlcov")

@@ -8,6 +8,7 @@ class TestGrid:
     @pytest.fixture
     def berlin_grid(self):
         """Create Berlin grid instance."""
+        """Create Berlin grid instance."""
         area_config = AreaConfig("berlin")
         return Grid(area_config)
 
@@ -24,7 +25,7 @@ class TestGrid:
         assert berlin_grid.max_lat == berlin_config.bbox[3]
 
     def test_create_grid(self, berlin_grid, berlin_config):
-        """Test grid can be loaded/created."""
+        """Test grid creation for Berlin."""
         grid_gdf = berlin_grid.create_grid()
 
         assert grid_gdf is not None
@@ -49,12 +50,15 @@ class TestGrid:
         center_lon = (berlin_config.bbox[0] + berlin_config.bbox[2]) / 2
         center_lat = (berlin_config.bbox[1] + berlin_config.bbox[3]) / 2
 
+
         tile_id_center = berlin_grid.get_tile_id(center_lon, center_lat)
+
 
         tile_id_origin = berlin_grid.get_tile_id(
             berlin_config.bbox[0],
             berlin_config.bbox[1]
         )
+
 
         # center and origin should be different tiles
         assert tile_id_center != tile_id_origin
@@ -75,6 +79,7 @@ class TestGrid:
         row, col = berlin_grid.parse_tile_id(tile_id_origin)
         assert row >= 0
         assert col >= 0
+
 
         # max coordinate (opposite corner)
         tile_id_max = berlin_grid.get_tile_id(
