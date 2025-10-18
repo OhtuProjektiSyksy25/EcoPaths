@@ -127,9 +127,7 @@ class RouteAlgorithm:
             lambda g: self._normalize_node(g.coords[-1])
         )
 
-        print(f"Split edge at {snapped_coord} into 2 parts: "
-              f"{split_edges.iloc[0].start_node} → {split_edges.iloc[0].end_node} "
-              f"and {split_edges.iloc[1].start_node} → {split_edges.iloc[1].end_node}")
+        print(f"Split edge at {snapped_coord}")
 
         return snapped_coord, split_edges
 
