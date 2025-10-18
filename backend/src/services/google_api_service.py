@@ -50,6 +50,7 @@ class GoogleAPIService:
                 json=payload,
                 params=params,
                 headers=headers,
+                timeout=10
             )
             response.raise_for_status()
             return response.json()
