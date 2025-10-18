@@ -4,7 +4,7 @@ Service that computes routes and returns them as GeoJSON LineStrings.
 import geopandas as gpd
 from shapely.geometry import LineString, Polygon
 from core.edge_enricher import EdgeEnricher
-from core.algorithm.route_algorithm import RouteAlgorithm
+from core.route_algorithm import RouteAlgorithm
 from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
@@ -40,8 +40,10 @@ class RouteService:
 
         buffer = self._create_buffer(
             origin_gdf, destination_gdf, buffer_m=1000)
-        tile_ids = self.edges[self.edges.intersects(
-            buffer)]["tile_id"].unique()
+
+        # unique tile_id inside bufferzone
+        # tile_ids = self.edges[self.edges.intersects(
+        #     buffer)]["tile_id"].unique()
 
         # PLACEHOLDER when cached + new tiles is ready in redis/redis handler layer
         # edges_subset = self._get_tile_edges(tile_ids)

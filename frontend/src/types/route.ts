@@ -1,20 +1,18 @@
-// src/types/route.ts
-
 /**
- * Represents a location selected by the user, including full address, coordinates, 
- * and optional city name.
+ * Represents a user-selected location, including full address, coordinates,
+ * and optionally the city name.
  */
 export interface LockedLocation {
   full_address: string;
   geometry: {
     coordinates: [number, number];
   };
-  city?: string; // optional city name
+  city?: string;
 }
 
 /**
  * Properties attached to a single route feature.
- * Includes optional route type and other metadata.
+ * Includes optional route type and any additional metadata.
  */
 export interface RouteFeatureProperties {
   route_type?: "fastest" | "best_aq" | "balanced";
@@ -22,7 +20,7 @@ export interface RouteFeatureProperties {
 }
 
 /**
- * A single GeoJSON Feature representing part of a route.
+ * A single GeoJSON Feature representing a segment or part of a route.
  */
 export interface RouteFeature {
   type: "Feature";
@@ -34,7 +32,7 @@ export interface RouteFeature {
 }
 
 /**
- * A GeoJSON FeatureCollection representing the full route.
+ * A GeoJSON FeatureCollection representing a complete route.
  */
 export interface RouteGeoJSON {
   type: "FeatureCollection";
@@ -42,16 +40,19 @@ export interface RouteGeoJSON {
 }
 
 /**
- * Return type for useRoute hook.
- * Includes route GeoJSON, loading state, error message, and optional summaries.
+ * Return type for the `useRoute` hook.
+ * Contains route GeoJSON, loading state, error message, and optional route summaries.
  */
 export interface UseRouteResult {
   routes: Record<string, RouteGeoJSON> | null;
-  summaries: Record<string, RouteSummary> | null; // ei undefined
+  summaries: Record<string, RouteSummary> | null;
   loading: boolean;
   error: string | null;
 }
 
+/**
+ * Summary information for a route, e.g., length, estimated travel time, and average air quality.
+ */
 export interface RouteSummary {
   total_length: number;
   time_estimate: string;

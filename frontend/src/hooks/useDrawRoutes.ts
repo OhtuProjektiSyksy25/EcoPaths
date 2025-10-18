@@ -11,11 +11,15 @@ const ROUTE_COLORS: Record<string, string> = {
 };
 
 /**
- * Custom hook that draws multiple routes (fastest, best_aq, balanced)
- * on a Mapbox map, each with a distinct color and style.
+ * Custom React hook to draw multiple routes on a Mapbox map.
  *
- * @param map - Mapbox map instance
- * @param routes - Object containing named GeoJSON routes
+ * Supports different route types (fastest, best_aq, balanced),
+ * each rendered with a distinct color and line style.
+ * Automatically removes previous route layers on update or unmount.
+ *
+ * @param map - Mapbox GL JS map instance. If null, hook does nothing.
+ * @param routes - Record mapping route type keys to GeoJSON FeatureCollections.
+ *                 Each GeoJSON FeatureCollection represents a route.
  */
 export function useDrawRoutes(map: mapboxgl.Map | null, routes: RoutesRecord | null) {
   useEffect(() => {

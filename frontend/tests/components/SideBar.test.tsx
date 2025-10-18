@@ -28,7 +28,13 @@ describe("SideBar", () => {
   Checks that sidebar title, From input field and To input field are rendered
   */
   test("renders sidebar title, From input field and To input field", () => {
-    render(<SideBar onFromSelect={mockOnFromSelect} onToSelect={mockOnToSelect} />);
+    render(
+  <SideBar 
+    onFromSelect={mockOnFromSelect} 
+    onToSelect={mockOnToSelect} 
+    summaries={null}
+  />
+);
 
     const title = screen.getByText("Where would you like to go?");
     const fromInput = screen.getByPlaceholderText("Start location");
@@ -43,7 +49,13 @@ describe("SideBar", () => {
   Checks that focusing on From input box shows "Your location" suggestion
   */
   test("shows 'Your location' when from input is clicked on", async () => {
-    render(<SideBar onFromSelect={mockOnFromSelect} onToSelect={mockOnToSelect} />);
+    render(
+  <SideBar 
+    onFromSelect={mockOnFromSelect} 
+    onToSelect={mockOnToSelect} 
+    summaries={null}
+  />
+);
 
     const fromInput = screen.getByPlaceholderText("Start location");
     fireEvent.focus(fromInput);
@@ -57,7 +69,13 @@ describe("SideBar", () => {
   Checks that clicking "Your location" calls getCurrentLocation from the geolocation hook
   */
   test("clicking 'Your location' calls getCurrentLocation", async () => {
-    render(<SideBar onFromSelect={mockOnFromSelect} onToSelect={mockOnToSelect} />);
+    render(
+  <SideBar 
+    onFromSelect={mockOnFromSelect} 
+    onToSelect={mockOnToSelect} 
+    summaries={null}
+  />
+);
 
     const fromInput = screen.getByPlaceholderText("Start location");
     fireEvent.focus(fromInput);

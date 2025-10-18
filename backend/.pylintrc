@@ -11,7 +11,7 @@ disable=too-few-public-methods
 indent-string='    '
 max-line-length=100
 max-module-lines=1000
-good-names=i,j,k,ex,Run,_
+good-names=i,j,k,ex,Run,_,G
 
 [REFACTORING]
 max-args=5

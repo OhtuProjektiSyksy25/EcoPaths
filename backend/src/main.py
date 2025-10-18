@@ -158,8 +158,6 @@ async def getroute(request: Request):
     route_service = request.app.state.route_service
     response = route_service.get_route(origin_gdf, destination_gdf)
 
-    print(response)
-
     return JSONResponse(content=response)
 
 
