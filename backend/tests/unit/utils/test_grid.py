@@ -31,12 +31,12 @@ class TestGrid:
         assert len(grid_gdf) > 0
 
         # Check expected columns
-        expected_columns = {"tile_id", "row", "col", "geometry", "center_lon", "center_lat"}
+        expected_columns = {"tile_id", "row", "col",
+                            "geometry", "center_lon", "center_lat"}
         missing = expected_columns - set(grid_gdf.columns)
         assert not missing, f"Missing columns: {missing}"
 
-        # Check CRS is set
-        assert grid_gdf.crs is not None
+        assert grid_gdf.crs is not None, "Grid CRS is missing"
 
     def test_tile_id_parsing(self, berlin_grid):
         """Test internal tile ID parsing."""

@@ -40,29 +40,29 @@ describe("SideBar", () => {
   });
 
   /*
-  Checks that focusing on From input box shows "Your location" suggestion
+  Checks that focusing on From input box shows "Use my current location" suggestion
   */
-  test("shows 'Your location' when from input is clicked on", async () => {
+  test("shows 'Use my current location' when from input is clicked on", async () => {
     render(<SideBar onFromSelect={mockOnFromSelect} onToSelect={mockOnToSelect} />);
 
     const fromInput = screen.getByPlaceholderText("Start location");
     fireEvent.focus(fromInput);
 
     await waitFor(() => {
-      expect(screen.getByText("Your location")).toBeInTheDocument();
+      expect(screen.getByText("Use my current location")).toBeInTheDocument();
     });
   });
 
   /*
-  Checks that clicking "Your location" calls getCurrentLocation from the geolocation hook
+  Checks that clicking "Use my current location" calls getCurrentLocation from the geolocation hook
   */
-  test("clicking 'Your location' calls getCurrentLocation", async () => {
+  test("clicking 'Use my current location' calls getCurrentLocation", async () => {
     render(<SideBar onFromSelect={mockOnFromSelect} onToSelect={mockOnToSelect} />);
 
     const fromInput = screen.getByPlaceholderText("Start location");
     fireEvent.focus(fromInput);
 
-    const locationSuggestion = await screen.findByText("Your location");
+    const locationSuggestion = await screen.findByText("Use my current location");
     fireEvent.click(locationSuggestion);
 
     expect(mockGetCurrentLocation).toHaveBeenCalledTimes(1);
