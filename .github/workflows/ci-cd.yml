@@ -90,11 +90,11 @@ jobs:
         run: mkdir -p coverage_reports/backend/
 
       - name: Lint code
-        run: poetry run pylint src
+        run: poetry run pylint src preprocessor
 
       - name: Run tests with coverage
         run: |
-          poetry run pytest --cov=src --cov-report=term-missing \
+          poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing \
             --cov-report=xml:../coverage_reports/backend/coverage.xml tests
           poetry run coverage html -d ../coverage_reports/backend/htmlcov
 
