@@ -153,9 +153,11 @@ class RouteService:
 
 
     def edge_fetcher(self, tile_ids: list): #rename function?
-        """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
-           that were not already present in redis. Creates and returns a GeoDataFrame of all the edges
-           contained in tiles specified in tile_ids
+        """Checks redis for tile_id hits according to tile_ids. 
+            Saves enriched tiles/edges to redis
+            that were not already present in redis.
+            Creates and returns a GeoDataFrame of all the edges
+            contained in tiles specified in tile_ids
 
         Args:
             tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
@@ -169,6 +171,8 @@ class RouteService:
             route_ready_gdf.to_file("edgestemp.geojson", driver="GeoJSON")
             return route_ready_gdf
         #error handling needed
+
+        return None
 
 
 class RouteServiceFactory:
@@ -191,7 +195,7 @@ class RouteServiceFactory:
         """
         try:
             model = EdgeEnricher(area)
-            edges = model.get_enriched_edges()
+            edges = model.load_all_edges()
             # tiles = model.get_tiles()
             area_config = model.area_config
         except FileNotFoundError as e:

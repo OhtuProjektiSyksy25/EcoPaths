@@ -71,7 +71,7 @@ class RedisUtils:
             if not redis.exists(tile_id):
                 pruned_tile_ids.append(tile_id)
         return pruned_tile_ids
-    
+
     @staticmethod
     def get_gdf_by_list_of_keys(tile_ids:list, redis):
         """Returns a GeoDataFrame consisting of edges found in redis
@@ -91,7 +91,8 @@ class RedisUtils:
             new_geojson = redis.get_geojson(tile_id)
             if not new_geojson:
                 print(f"Error, redis could not find value for key: {tile_id} ")
-                #Add function to handle key expiring during other tile_id enriching -> if not found given tile is routed to edgeenritcher(?)
+                #Add function to handle key expiring during other tile_id enriching
+                # -> if not found given tile is routed to edgeenritcher(?)
                 continue
             features.extend(new_geojson.get("features", []))
 
@@ -99,9 +100,9 @@ class RedisUtils:
             return False
         gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:4326")
         return gdf
-    
+
     @staticmethod
-    def edge_enricher_to_redis_handler(self, tile_ids:list, redis):
+    def edge_enricher_to_redis_handler(tile_ids:list, redis):
         """Sends tiles to EdgeEnricher and saves returned gdf to redis
 
         Args:
@@ -112,7 +113,10 @@ class RedisUtils:
             True: if saving is succesful
             False: if saving is not succesful
         """
-        gdf = EdgeEnricher.enrich_tiles(tile_ids)
+        # create EdgeEnricher instance
+        enricher = EdgeEnricher()
+        # send tile_ids to EdgeEnricher and get enriched gdf
+        gdf = enricher.enrich_tiles(tile_ids)
         #add check when EdgeEnricher is finished
         if RedisUtils.save_gdf(gdf, redis):
             return True

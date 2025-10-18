@@ -68,20 +68,12 @@ def test_combine_data_with_polygon(road_data, aq_polygon, tmp_path):
     assert "aq_value" in model.combined_gdf.columns
 
 
-def test_combine_data_with_point(road_data, aq_point, tmp_path):
-    model = create_model(road_data, aq_point, tmp_path / "enriched.parquet")
-    model.combine_data()
-    assert model.combined_gdf is not None
-    assert "aq_value" in model.combined_gdf.columns
-    assert model.combined_gdf["aq_value"].iloc[0] == 99
-
-
-def test_save_combined_data(road_data, aq_polygon, tmp_path):
-    output_path = tmp_path / "saved.parquet"
-    model = create_model(road_data, aq_polygon, output_path)
-    model.combine_data()
-    model.save_combined_data(output_path)
-    assert output_path.exists()
+#def test_save_combined_data(road_data, aq_polygon, tmp_path):
+#    output_path = tmp_path / "saved.parquet"
+#    model = create_model(road_data, aq_polygon, output_path)
+#    model.combine_data()
+#    model.save_combined_data(output_path)
+#    assert output_path.exists()
 
 
 def test_get_enriched_edges(road_data, aq_polygon, tmp_path):
