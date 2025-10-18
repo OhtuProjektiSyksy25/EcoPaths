@@ -1,7 +1,6 @@
 """
 Utility module for handling, saving and fetching of GeoDataFrame/geojson data to and from redis
-    CRS IS SET ONLY FOR BERLIN
-
+CRS ONLY BERLIN CURRENTLY
 """
 import geopandas as gpd
 #from core.edge_enricher import EdgeEnricher
@@ -24,7 +23,7 @@ class RedisUtils:
             dictionary: key: tile_id, value: GeoDataFrame
 
         """
-        grouped_by_id = dict(gdf.groupby("tile_id"))
+        grouped_by_id = {dict_key: group for dict_key, group in gdf.groupby("tile_id")} # pylint: disable=unnecessary-comprehension
         return grouped_by_id
 
     @staticmethod
