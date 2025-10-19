@@ -1,17 +1,27 @@
 // src/api/routeApi.ts
-import { LockedLocation, RouteGeoJSON } from "../types/route";
+import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
+
+export interface RouteApiResponse {
+  routes: Record<string, RouteGeoJSON>;
+  summaries: Record<string, RouteSummary>;
+}
 
 /**
- * Sends a POST request to the backend to compute a route between two locked locations.
+ * Computes a route between two locked locations using the backend.
  *
- * Constructs a GeoJSON FeatureCollection with "start" and "end" points and posts it to `/getroute`.
+ * Creates a GeoJSON FeatureCollection containing two points: "start" and "end",
+ * and sends it via a POST request to the `/getroute` endpoint.
  *
- * @param fromLocked - The starting location with coordinates and address
- * @param toLocked - The destination location with coordinates and address
- * @returns A Promise resolving to a GeoJSON FeatureCollection representing the computed route
+ * @param fromLocked - The starting location, with coordinates and address
+ * @param toLocked - The destination location, with coordinates and address
+ * @returns A Promise that resolves to a `RouteApiResponse` object,
+ *          containing both the route geometry and route summary
  * @throws Error if the server responds with a non-OK status
  */
-export async function fetchRoute(fromLocked: LockedLocation, toLocked: LockedLocation): Promise<RouteGeoJSON> {
+export async function fetchRoute(
+  fromLocked: LockedLocation, 
+  toLocked: LockedLocation
+): Promise<RouteApiResponse> {
   const geojson = {
     type: "FeatureCollection",
     features: [
@@ -44,5 +54,8 @@ export async function fetchRoute(fromLocked: LockedLocation, toLocked: LockedLoc
     throw new Error(`Server error: ${response.status}`);
   }
 
-  return await response.json();
+  return (await response.json()) as RouteApiResponse;
 }
+
+
+ 

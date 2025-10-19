@@ -1,22 +1,26 @@
 /**
- * Represents a location selected by the user, including full address and coordinates.
- *
- * @property full_address - Human-readable address string
- * @property geometry - GeoJSON-style geometry object with coordinates [longitude, latitude]
+ * Represents a user-selected location, including full address, coordinates,
+ * and optionally the city name.
  */
 export interface LockedLocation {
   full_address: string;
   geometry: {
     coordinates: [number, number];
   };
+  city?: string;
 }
 
 /**
- * A single GeoJSON Feature representing part of a route.
- *
- * @property type - Always "Feature"
- * @property geometry - Geometry object containing type and coordinates
- * @property properties - Optional metadata associated with the feature
+ * Properties attached to a single route feature.
+ * Includes optional route type and any additional metadata.
+ */
+export interface RouteFeatureProperties {
+  route_type?: "fastest" | "best_aq" | "balanced";
+  [key: string]: any; // allow extra metadata
+}
+
+/**
+ * A single GeoJSON Feature representing a segment or part of a route.
  */
 export interface RouteFeature {
   type: "Feature";
@@ -24,16 +28,33 @@ export interface RouteFeature {
     type: string;
     coordinates: any;
   };
-  properties?: Record<string, any>;
+  properties?: RouteFeatureProperties;
 }
 
 /**
- * A GeoJSON FeatureCollection representing the full route.
- *
- * @property type - Always "FeatureCollection"
- * @property features - Array of route features (typically one LineString)
+ * A GeoJSON FeatureCollection representing a complete route.
  */
 export interface RouteGeoJSON {
   type: "FeatureCollection";
   features: RouteFeature[];
+}
+
+/**
+ * Return type for the `useRoute` hook.
+ * Contains route GeoJSON, loading state, error message, and optional route summaries.
+ */
+export interface UseRouteResult {
+  routes: Record<string, RouteGeoJSON> | null;
+  summaries: Record<string, RouteSummary> | null;
+  loading: boolean;
+  error: string | null;
+}
+
+/**
+ * Summary information for a route, e.g., length, estimated travel time, and average air quality.
+ */
+export interface RouteSummary {
+  total_length: number;
+  time_estimate: string;
+  aq_average: number;
 }
