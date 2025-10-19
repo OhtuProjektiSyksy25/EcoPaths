@@ -28,6 +28,11 @@ spec:
                 configMapKeyRef:
                   name: ecopaths-config
                   key: DB_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ecopaths-upstash-redis
+                  key: REDIS_URL
           resources:
             limits:
               memory: "1Gi"
