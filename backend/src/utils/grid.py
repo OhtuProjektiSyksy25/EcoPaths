@@ -127,6 +127,9 @@ class Grid:
         # Creates grid
         grid_gdf = self.create_grid()
 
+        if str(grid_gdf.crs) != self.area_config.crs:
+            grid_gdf = grid_gdf.to_crs(self.area_config.crs)
+
         # Convert coordinates to meters: same as grid
         x, y = self.to_meters.transform(lon, lat)
         point = Point(x, y)

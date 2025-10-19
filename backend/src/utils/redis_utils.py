@@ -3,7 +3,7 @@ Utility module for handling, saving and fetching of GeoDataFrame/geojson data to
 CRS ONLY BERLIN CURRENTLY
 """
 import geopandas as gpd
-#from core.edge_enricher import EdgeEnricher
+from core.edge_enricher import EdgeEnricher
 
 
 
@@ -100,21 +100,21 @@ class RedisUtils:
         gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:25833")
         return gdf
 
-    #@staticmethod
-    #def edge_enricher_to_redis_handler(self, tile_ids: list, redis):
-    #    """Sends tiles to EdgeEnricher and saves returned gdf to redis
-#
-#        Args:
-#            tile_ids (list): List of tile_ids to be enritched
-#            redis (_type_): Redis object
-#
-#        Returns:
-#            True: if saving is succesful
-#            False: if saving is not succesful
-#        """
-        #gdf = EdgeEnricher.enrich_tiles(tile_ids)
-        # add check when EdgeEnricher is finished
-        #if RedisUtils.save_gdf(gdf, redis):
-        #    return True
+    @staticmethod
+    def edge_enricher_to_redis_handler(tile_ids: list, redis):
+        """Sends tiles to EdgeEnricher and saves returned gdf to redis
 
-        #return False
+        Args:
+            tile_ids (list): List of tile_ids to be enritched
+            redis (_type_): Redis object
+
+        Returns:
+            True: if saving is succesful
+            False: if saving is not succesful
+        """
+        current_enricher = EdgeEnricher()
+        gdf = current_enricher.enrich_tiles(tile_ids)
+        #add check when EdgeEnricher is finished
+        if RedisUtils.save_gdf(gdf, redis):
+            return True
+        return False

@@ -9,7 +9,7 @@ from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
 from utils.route_summary import summarize_route
-#from utils.redis_utils import RedisUtils
+from utils.redis_utils import RedisUtils
 
 
 class RouteService:
@@ -43,22 +43,20 @@ class RouteService:
             origin_gdf, destination_gdf, buffer_m=1000)
 
         # unique tile_id inside bufferzone
-        # tile_ids = self.edges[self.edges.intersects(
-        #     buffer)]["tile_id"].unique()
+        tile_ids = self.edges[self.edges.intersects(
+            buffer)]["tile_id"].unique()
 
         # PLACEHOLDER when cached + new tiles is ready in redis/redis handler layer
-        # edges_subset = self._get_tile_edges(tile_ids)
+        edges_subset = self._get_tile_edges(tile_ids)
         # algorithm = RouteAlgorithm(edges_subset)
 
         # Filter edges based on buffer
-        # edges_subset = self.edges[self.edges.intersects(buffer)].copy()
-
-        edges_subset = self.edges[self.edges.intersects(buffer)].copy()
+        #edges_subset = self.edges[self.edges.intersects(buffer)].copy()
         algorithm = RouteAlgorithm(edges_subset)
 
         # example for balanced route
         edges_subset["combined_score"] = (
-            0.3 * edges_subset["length_m"] + 0.7 * edges_subset["aq_value"]
+            0.3 * edges_subset["length_m"] + 0.7 * edges_subset["aqi"]
         )
 
         # mode: weight column
@@ -110,29 +108,30 @@ class RouteService:
         line = LineString([origin_point, destination_point])
         return line.buffer(buffer_m)
 
-    #def edge_fetcher(self, tile_ids: list):  # rename function?
-    #    """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
-#       that were not already present in redis.
-    #       Creates and returns a GeoDataFrame of all the edges
-    #       contained in tiles specified in tile_ids
-    #
-    #    Args:
-    #        tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
-#
-    #    Returns:
-#            GeoDataFrame: GeoDataFrame
-#        """
-#        return True
-        #non_existing_tile_ids = RedisUtils.prune_found_ids(
-        #    tile_ids, self.redis)
-        #if RedisUtils.edge_enricher_to_redis_handler(
-        #        non_existing_tile_ids,
-        #        self.redis
-        #    ):
-        #    route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(
-        #        tile_ids, self.redis)
-        #    return route_ready_gdf
-        # error handling needed
+    def _get_tile_edges(self, tile_ids: list):  # rename function?
+        """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
+       that were not already present in redis.
+           Creates and returns a GeoDataFrame of all the edges
+           contained in tiles specified in tile_ids
+    
+        Args:
+            tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
+
+        Returns:
+            GeoDataFrame: GeoDataFrame
+        """
+        non_existing_tile_ids = RedisUtils.prune_found_ids(
+            tile_ids, self.redis)
+        if RedisUtils.edge_enricher_to_redis_handler(
+                non_existing_tile_ids,
+                self.redis
+            ):
+            route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(
+                tile_ids, self.redis)
+            return route_ready_gdf
+        #error handling needed
+
+        return None
 
 
 class RouteServiceFactory:
@@ -155,7 +154,8 @@ class RouteServiceFactory:
         """
         try:
             model = EdgeEnricher(area)
-            edges = model.get_enriched_edges()
+            edges = model.load_all_edges()
+            # tiles = model.get_tiles()
             area_config = model.area_config
         except FileNotFoundError as e:
             raise FileNotFoundError(
