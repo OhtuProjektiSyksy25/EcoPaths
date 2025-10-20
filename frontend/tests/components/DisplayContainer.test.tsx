@@ -1,6 +1,6 @@
 /*
 DisplayContainer.test.tsx tests the DisplayContainer component which displays 
-a label and value pair for showing information like walking time estimates.
+information such as route type, time estimate, total length, and air quality average.
 */
 
 import { render, screen } from '@testing-library/react';
