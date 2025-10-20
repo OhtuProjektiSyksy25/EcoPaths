@@ -62,7 +62,7 @@ class RouteService:
         # mode: weight column
         route_modes = {
             "fastest": "length_m",
-            "best_aq": "aq_value",
+            "best_aq": "aqi",
             "balanced": "combined_score"
         }
 
