@@ -2,20 +2,23 @@
 import pytest
 import geopandas as gpd
 from shapely.geometry import LineString, Point
-from src.services.route_service import RouteService, RouteServiceFactory
+from src.services.route_service import RouteService
 
 
 @pytest.fixture
 def sample_edges():
+    """Create sample edges with correct columns."""
     lines = [
         LineString([(0, 0), (1, 1)]),
-        LineString([(1, 1), (2, 2)])
+        LineString([(1, 1), (2, 2)]),
+        LineString([(2, 2), (3, 3)])
     ]
     return gpd.GeoDataFrame({
         "geometry": lines,
-        "length_m": [1.414, 1.414],
-        "aq_value": [10, 5],
-        "tile_id": [1, 1]
+        "edge_id": ["e1", "e2", "e3"],
+        "length_m": [141.4, 141.4, 141.4],
+        "aqi": [10, 20, 30],
+        "tile_id": ["r1_c1", "r1_c1", "r2_c2"]
     }, crs="EPSG:3067")
 
 
@@ -43,3 +46,22 @@ def test_create_buffer(route_service):
 #     assert "summaries" in result
 #     assert all(mode in result["routes"]
 #                for mode in ["fastest", "best_aq", "balanced"])
+
+
+def test_route_service_initialization(sample_edges):
+    """Test RouteService initializes correctly."""
+    service = RouteService(sample_edges)
+
+    assert service.edges is not None
+    assert len(service.edges) == 3
+    assert service.redis is not None
+    assert "tile_id" in service.edges.columns
+
+
+def test_route_service_has_required_columns(sample_edges):
+    """Test that edges have all required columns."""
+    service = RouteService(sample_edges)
+
+    required_columns = ["geometry", "edge_id", "length_m", "aqi", "tile_id"]
+    for col in required_columns:
+        assert col in service.edges.columns
