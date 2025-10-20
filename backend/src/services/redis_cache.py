@@ -204,4 +204,3 @@ class RedisCache:
         except (redis.RedisError, TypeError, ValueError) as e:
             logger.error("Failed to set cache key '%s': %s", key, e)
             return False
-

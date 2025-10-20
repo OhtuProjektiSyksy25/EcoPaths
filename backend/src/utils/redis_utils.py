@@ -6,7 +6,6 @@ import geopandas as gpd
 from core.edge_enricher import EdgeEnricher
 
 
-
 class RedisUtils:
     """
     A utility class for interacting with redis,
@@ -23,7 +22,8 @@ class RedisUtils:
             dictionary: key: tile_id, value: GeoDataFrame
 
         """
-        grouped_by_id = {dict_key: group for dict_key, group in gdf.groupby("tile_id")} # pylint: disable=unnecessary-comprehension
+        grouped_by_id = {dict_key: group for dict_key, group in gdf.groupby(  # pylint: disable=unnecessary-comprehension
+            "tile_id")}  # pylint: disable=unnecessary-comprehension
         return grouped_by_id
 
     @staticmethod
@@ -114,7 +114,7 @@ class RedisUtils:
         """
         current_enricher = EdgeEnricher()
         gdf = current_enricher.enrich_tiles(tile_ids)
-        #add check when EdgeEnricher is finished
+        # add check when EdgeEnricher is finished
         if RedisUtils.save_gdf(gdf, redis):
             return True
         return False

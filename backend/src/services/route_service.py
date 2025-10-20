@@ -40,7 +40,7 @@ class RouteService:
         """
 
         buffer = self._create_buffer(
-            origin_gdf, destination_gdf, buffer_m=1000)
+            origin_gdf, destination_gdf, buffer_m=500)
 
         # unique tile_id inside bufferzone
         tile_ids = self.edges[self.edges.intersects(
@@ -51,7 +51,7 @@ class RouteService:
         # algorithm = RouteAlgorithm(edges_subset)
 
         # Filter edges based on buffer
-        #edges_subset = self.edges[self.edges.intersects(buffer)].copy()
+        # edges_subset = self.edges[self.edges.intersects(buffer)].copy()
         algorithm = RouteAlgorithm(edges_subset)
 
         # example for balanced route
@@ -113,7 +113,7 @@ class RouteService:
        that were not already present in redis.
            Creates and returns a GeoDataFrame of all the edges
            contained in tiles specified in tile_ids
-    
+
         Args:
             tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
 
@@ -123,13 +123,13 @@ class RouteService:
         non_existing_tile_ids = RedisUtils.prune_found_ids(
             tile_ids, self.redis)
         if RedisUtils.edge_enricher_to_redis_handler(
-                non_existing_tile_ids,
-                self.redis
-            ):
+            non_existing_tile_ids,
+            self.redis
+        ):
             route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(
                 tile_ids, self.redis)
             return route_ready_gdf
-        #error handling needed
+        # error handling needed
 
         return None
 

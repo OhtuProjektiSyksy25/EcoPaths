@@ -2,7 +2,7 @@
 import pytest
 import geopandas as gpd
 from shapely.geometry import LineString, Point
-from src.services.route_service import RouteService
+from src.services.route_service import RouteService, RouteServiceFactory
 
 
 @pytest.fixture
@@ -32,10 +32,13 @@ def test_create_buffer(route_service):
     assert buffer.area > 0
 
 
-def test_get_route(route_service):
-    origin = gpd.GeoDataFrame(geometry=[Point(0.1, 0.1)], crs="EPSG:3067")
-    destination = gpd.GeoDataFrame(geometry=[Point(1.9, 1.9)], crs="EPSG:3067")
-    result = route_service.get_route(origin, destination)
+def test_get_route():
+    routeservice2, _ = RouteServiceFactory.from_area("berlin")
+    origin = gpd.GeoDataFrame(
+        geometry=[Point(388150.1200319922, 5816784.541973761)], crs="EPSG:25833")
+    destination = gpd.GeoDataFrame(
+        geometry=[Point(388623.8279341213, 5819672.614198001)], crs="EPSG:25833")
+    result = routeservice2.get_route(origin, destination)
     assert "routes" in result
     assert "summaries" in result
     assert all(mode in result["routes"]

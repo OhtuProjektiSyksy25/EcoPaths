@@ -110,7 +110,6 @@ class EdgeEnricher:
             self.combined_gdf = self.road_gdf.merge(
                 aq_agg, on="edge_id", how="left")
 
-
     def get_enriched_edges(self, overwrite: bool = False) -> gpd.GeoDataFrame:
         """
         Return the most relevant network data.
@@ -140,8 +139,6 @@ class EdgeEnricher:
         print("No AQ data available. Returning original road network.")
         return self.road_gdf
 
-
-
     def load_edges_for_tiles(self, tile_ids: list[str]) -> gpd.GeoDataFrame:
         """Load edges for requested tiles."""
 
@@ -166,7 +163,6 @@ class EdgeEnricher:
         # return filtered edges as gdf
         return edges_gdf
 
-
     def enrich_tiles(self, tile_ids: list[str]) -> gpd.GeoDataFrame:
         """Enrich edges with air quality data."""
 
@@ -182,13 +178,13 @@ class EdgeEnricher:
 
         print(f"Loaded {len(edges_gdf)} edges")
 
-
         # fetch AQ data from Google API
         google_api_service = GoogleAPIService()
-        aq_gdf = google_api_service.get_aq_data_for_tiles(tile_ids, area=self.area)
+        aq_gdf = google_api_service.get_aq_data_for_tiles(
+            tile_ids, area=self.area)
 
         if aq_gdf.empty:
-            print("No AQ data from API. Returning edges without enrichment." )
+            print("No AQ data from API. Returning edges without enrichment.")
             edges_gdf["aqi"] = None
             return edges_gdf
 
@@ -197,7 +193,6 @@ class EdgeEnricher:
         # check CRS
         if edges_gdf.crs != aq_gdf.crs:
             aq_gdf = aq_gdf.to_crs(edges_gdf.crs)
-
 
         # spatial join --> enrich edges with AQ data
         enriched_gdf = gpd.sjoin(
@@ -208,8 +203,8 @@ class EdgeEnricher:
         )
 
         # clean enriched data
-        enriched_gdf = enriched_gdf.drop(columns=["index_right"], errors="ignore")
-
+        enriched_gdf = enriched_gdf.drop(
+            columns=["index_right"], errors="ignore")
 
         if "tile_id_left" in enriched_gdf.columns:
             enriched_gdf = enriched_gdf.rename(columns={
@@ -217,13 +212,10 @@ class EdgeEnricher:
                 "tile_id_right": "aq_tile_id"
             })
 
-
         print(f"Enriched edges count: {len(enriched_gdf)}")
 
         # return enriched gdf
         return enriched_gdf
-
-
 
     def load_all_edges(self) -> gpd.GeoDataFrame:
         """Load all edges"""

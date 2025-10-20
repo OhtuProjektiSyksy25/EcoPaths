@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import Mock, patch
 from src.services.google_api_service import GoogleAPIService
 
+
 class TestGoogleAPIServices:
     """Unit tests for Google API service."""
     @pytest.fixture
@@ -61,7 +62,6 @@ class TestGoogleAPIServices:
         assert result["regionCode"] == "de"
         assert result["indexes"][0]["aqi"] == 45
 
-
         mock_post.assert_called_once()
         call_args = mock_post.call_args
 
@@ -69,4 +69,5 @@ class TestGoogleAPIServices:
             "location": {"latitude": 52.52, "longitude": 13.405}
         }
         assert call_args.kwargs["params"] == {"key": "test_api_key"}
-        assert call_args.kwargs["headers"] == {"Content-Type": "application/json"}
+        assert call_args.kwargs["headers"] == {
+            "Content-Type": "application/json"}

@@ -32,7 +32,8 @@ class TestGrid:
         assert len(grid_gdf) > 0
 
         # Check expected columns
-        expected_columns = {"tile_id", "row", "col", "geometry", "center_lon", "center_lat"}
+        expected_columns = {"tile_id", "row", "col",
+                            "geometry", "center_lon", "center_lat"}
         missing = expected_columns - set(grid_gdf.columns)
         assert not missing, f"Missing columns: {missing}"
 
@@ -50,15 +51,12 @@ class TestGrid:
         center_lon = (berlin_config.bbox[0] + berlin_config.bbox[2]) / 2
         center_lat = (berlin_config.bbox[1] + berlin_config.bbox[3]) / 2
 
-
         tile_id_center = berlin_grid.get_tile_id(center_lon, center_lat)
-
 
         tile_id_origin = berlin_grid.get_tile_id(
             berlin_config.bbox[0],
             berlin_config.bbox[1]
         )
-
 
         # center and origin should be different tiles
         assert tile_id_center != tile_id_origin
@@ -79,7 +77,6 @@ class TestGrid:
         row, col = berlin_grid.parse_tile_id(tile_id_origin)
         assert row >= 0
         assert col >= 0
-
 
         # max coordinate (opposite corner)
         tile_id_max = berlin_grid.get_tile_id(

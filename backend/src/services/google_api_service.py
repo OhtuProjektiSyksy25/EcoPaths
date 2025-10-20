@@ -16,6 +16,7 @@ class GoogleAPIService:
     """
     Service for interacting with the Google API.
     """
+
     def __init__(self):
         """
         Initializes the GoogleAPIService with the API key.
@@ -27,8 +28,6 @@ class GoogleAPIService:
 
         # Endpoint for current conditions
         self.endpoint = "https://airquality.googleapis.com/v1/currentConditions:lookup"
-
-
 
     def get_current_conditions(
         self,
@@ -62,9 +61,6 @@ class GoogleAPIService:
         except requests.RequestException as e:
             print(f"Error fetching data from Google API: {e}")
             return None
-
-
-
 
     def get_aq_data_for_tiles(self, tile_ids: list[str], area: str) -> gpd.GeoDataFrame:
         """

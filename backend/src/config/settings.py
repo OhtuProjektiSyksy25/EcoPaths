@@ -66,6 +66,7 @@ class AreaConfig:
         self.grid_file_parquet = self.output_dir / f"{self.area}_grid.parquet"
         self.grid_file_geojson = self.output_dir / f"{self.area}_grid.geojson"
 
+
 class RedisConfig:
     """
     Configuration class for Redis connection settings.
