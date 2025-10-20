@@ -5,8 +5,8 @@ import sys
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from services.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
