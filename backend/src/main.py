@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import os
 import sys
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -77,8 +77,8 @@ async def berlin():
     return {"coordinates": [13.404954, 52.520008]}
 
 
-@app.get("/api/geocode-forward/{value}")
-async def geocode_forward(value: str):
+@app.get("/api/geocode-forward/{value:path}")
+async def geocode_forward(value: str = Path(...)):
     """api endpoint to return a list of suggested addresses based on given value
 
     Args:
