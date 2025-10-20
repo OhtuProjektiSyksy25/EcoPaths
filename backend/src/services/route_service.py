@@ -9,6 +9,7 @@ from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
 from utils.route_summary import summarize_route
+#from utils.redis_utils import RedisUtils
 
 
 class RouteService:
@@ -102,11 +103,36 @@ class RouteService:
         Returns:
             Polygon: A polygon representing the buffered area around the route line.
         """
+
         origin_point = origin_gdf.geometry.iloc[0]
         destination_point = destination_gdf.geometry.iloc[0]
 
         line = LineString([origin_point, destination_point])
         return line.buffer(buffer_m)
+
+    #def edge_fetcher(self, tile_ids: list):  # rename function?
+    #    """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
+#       that were not already present in redis.
+    #       Creates and returns a GeoDataFrame of all the edges
+    #       contained in tiles specified in tile_ids
+    #
+    #    Args:
+    #        tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
+#
+    #    Returns:
+#            GeoDataFrame: GeoDataFrame
+#        """
+#        return True
+        #non_existing_tile_ids = RedisUtils.prune_found_ids(
+        #    tile_ids, self.redis)
+        #if RedisUtils.edge_enricher_to_redis_handler(
+        #        non_existing_tile_ids,
+        #        self.redis
+        #    ):
+        #    route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(
+        #        tile_ids, self.redis)
+        #    return route_ready_gdf
+        # error handling needed
 
 
 class RouteServiceFactory:

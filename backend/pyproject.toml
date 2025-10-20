@@ -34,6 +34,7 @@ autopep8 = "^2.3.2"
 robotframework = "^7.0"
 invoke = "^2.2.0"
 pytest-cov = "^7.0.0"
+fakeredis = "^2.32.0"
 
 [build-system]
 requires = ["poetry-core"]
