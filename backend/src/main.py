@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from services.route_service import RouteServiceFactory
 from services.geo_transformer import GeoTransformer
+from fastapi import Path
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
@@ -77,8 +78,8 @@ async def berlin():
     return {"coordinates": [13.404954, 52.520008]}
 
 
-@app.get("/api/geocode-forward/{value}")
-async def geocode_forward(value: str):
+@app.get("/api/geocode-forward/{value:path}")
+async def geocode_forward(value: str = Path(...)):
     """api endpoint to return a list of suggested addresses based on given value
 
     Args:
@@ -87,6 +88,8 @@ async def geocode_forward(value: str):
     Returns:
         photon_suggestions: list of json objects or an empty list
     """
+    print("HELLO ABT TO FAIL LOL")
+    print(value)
     if len(value) < 3:
         return []
 
@@ -107,6 +110,7 @@ async def geocode_forward(value: str):
             if suggestion_data.get(field):
                 full_address += f"{suggestion_data.get(field)} "
         feature["full_address"] = full_address
+    print("HELLO")
     return photon_suggestions
 
 
