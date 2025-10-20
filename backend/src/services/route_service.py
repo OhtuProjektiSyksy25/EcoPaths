@@ -166,4 +166,3 @@ class RouteServiceFactory:
             ) from e
 
         return RouteService(edges), area_config
-
