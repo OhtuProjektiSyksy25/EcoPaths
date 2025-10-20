@@ -28,9 +28,12 @@ def format_walk_time(length_m: float) -> str:
     minutes = int((seconds % 3600) // 60)
     remaining_seconds = int(seconds % 60)
 
+    if remaining_seconds > 30:
+        minutes += 1
+
     if hours > 0:
         return f"{hours}h {minutes} min"
-    return f"{minutes} min {remaining_seconds} s"
+    return f"{minutes} min"
 
 
 def calculate_total_length(route: Union[gpd.GeoDataFrame, dict]) -> float:
@@ -87,13 +90,14 @@ def summarize_route(route: Union[gpd.GeoDataFrame, dict]) -> dict:
         route (GeoDataFrame or FeatureCollection): Route represented as edge-level geometry.
 
     Returns:
-        dict: Summary containing 'length_m', 'aq_average', and 'time_estimate'.
+        dict: Summary containing 'total_length', 'aq_average', and 'time_estimate'.
     """
     length_m = calculate_total_length(route)
-    aq_avg = calculate_aq_average(route)
+    total_length = round(length_m/1000, 2)
+    aq_avg = round(calculate_aq_average(route), 0)
     time_estimate = format_walk_time(length_m)
     return {
-        "length_m": length_m,
+        "total_length": total_length,
         "time_estimate": time_estimate,
         "aq_average": aq_avg
     }

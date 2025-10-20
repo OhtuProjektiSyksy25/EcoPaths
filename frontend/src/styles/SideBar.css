@@ -43,16 +43,41 @@
   content: "⋮";
 }
 
-.DisplayContainer {
+.best-aq-container {
   display: flex;
   gap: 8px;
-  padding: 32px;
-  background-color: rgba(17, 212, 82, 0.3);
+  padding: 16px;
+  background-color: rgba(17, 212, 82, 0.4);
   color: rgb(34, 34, 34);
   border-radius: 12px;
-  font-size: 18px;
-  font-weight: 600;
+  font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #11d452;
+  border: 2px solid #11d45240;
+  margin-top: 16px;
+}
+
+.balanced-route-container {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  background-color: #b8ffd3;
+  color: rgb(0, 255, 200);
+  border-radius: 12px;
+  font-family: Public Sans, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #00ff9540;
+  margin-top: 16px;
+}
+
+.fastest-route-container {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  background-color: #5cabff40;
+  color: rgb(34, 34, 34);
+  border-radius: 12px;
+  font-family: Public Sans, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #5cabff40;
   margin-top: 16px;
 }
