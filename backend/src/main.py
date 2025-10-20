@@ -88,8 +88,6 @@ async def geocode_forward(value: str = Path(...)):
     Returns:
         photon_suggestions: list of json objects or an empty list
     """
-    print("HELLO ABT TO FAIL LOL")
-    print(value)
     if len(value) < 3:
         return []
 
@@ -110,7 +108,6 @@ async def geocode_forward(value: str = Path(...)):
             if suggestion_data.get(field):
                 full_address += f"{suggestion_data.get(field)} "
         feature["full_address"] = full_address
-    print("HELLO")
     return photon_suggestions
 
 
