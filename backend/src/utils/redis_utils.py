@@ -86,19 +86,19 @@ class RedisUtils:
             : False if no valid features were found in Redis
         """
         features = []
+        expired_tiles = []
         for tile_id in tile_ids:
             new_geojson = redis.get_geojson(tile_id)
             if not new_geojson:
                 print(f"Error, redis could not find value for key: {tile_id} ")
-                # Add function to handle key expiring during other tile_id enriching ->
-                # if not found given tile is routed to edgeenritcher(?)
+                expired_tiles.append(tile_id)
                 continue
             features.extend(new_geojson.get("features", []))
 
         if len(features) == 0:
-            return False
+            return False, expired_tiles
         gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:25833")
-        return gdf
+        return gdf, expired_tiles
 
     @staticmethod
     def edge_enricher_to_redis_handler(tile_ids: list, redis):

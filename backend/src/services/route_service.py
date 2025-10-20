@@ -2,6 +2,7 @@
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import LineString, Polygon
 from core.edge_enricher import EdgeEnricher
 from core.route_algorithm import RouteAlgorithm
@@ -108,7 +109,7 @@ class RouteService:
         line = LineString([origin_point, destination_point])
         return line.buffer(buffer_m)
 
-    def _get_tile_edges(self, tile_ids: list):  # rename function?
+    def _get_tile_edges(self, tile_ids: list):
         """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
        that were not already present in redis.
            Creates and returns a GeoDataFrame of all the edges
@@ -122,15 +123,29 @@ class RouteService:
         """
         non_existing_tile_ids = RedisUtils.prune_found_ids(
             tile_ids, self.redis)
-        if RedisUtils.edge_enricher_to_redis_handler(
-            non_existing_tile_ids,
-            self.redis
-        ):
-            route_ready_gdf = RedisUtils.get_gdf_by_list_of_keys(
-                tile_ids, self.redis)
-            return route_ready_gdf
-        # error handling needed
+        existing_tile_ids = list(set(tile_ids)-set(non_existing_tile_ids))
 
+        all_gdfs = []
+
+        if len(existing_tile_ids) > 0:
+            found_gdf, expired_tiles = RedisUtils.get_gdf_by_list_of_keys(
+                existing_tile_ids, self.redis)
+            non_existing_tile_ids = list(
+                set(non_existing_tile_ids + expired_tiles))
+            if found_gdf is not False:
+                all_gdfs.append(found_gdf)
+
+        if len(non_existing_tile_ids) > 0:
+            RedisUtils.edge_enricher_to_redis_handler(
+                non_existing_tile_ids, self.redis)
+            new_gdf, _ = RedisUtils.get_gdf_by_list_of_keys(
+                non_existing_tile_ids, self.redis)
+            if new_gdf is not False:
+                all_gdfs.append(new_gdf)
+
+        if len(all_gdfs) > 0:
+            ready_gdf = pd.concat(all_gdfs, ignore_index=True)
+            return ready_gdf
         return None
 
 
