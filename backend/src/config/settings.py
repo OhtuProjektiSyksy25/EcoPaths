@@ -67,18 +67,14 @@ class RedisConfig:
     Configuration class for Redis connection settings.
     """
 
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0,
-                 default_expire: int = 3600):
-        """Initialize Redis configuration.
-
-        Args:
-            host (str, optional): Redis host. Defaults to "localhost".
-            port (int, optional): Redis port. Defaults to 6379.
-            db (int, optional): Redis database number. Defaults to 0.
-            default_expire (int, optional): Default expiration time in seconds. Defaults to 3600.
+    def __init__(self):
         """
-        self.host = os.getenv("REDIS_HOST", host)
-        self.port = int(os.getenv("REDIS_PORT", port))
-        self.db = int(os.getenv("REDIS_DB", db))
+        Initialize Redis configuration.
+        """
+        self.url = os.getenv("REDIS_URL")
+        self.host = os.getenv("REDIS_HOST", "localhost")
+        self.port = int(os.getenv("REDIS_PORT", "6379"))
+        self.db = int(os.getenv("REDIS_DB", "0"))
         self.default_expire = int(
-            os.getenv("REDIS_DEFAULT_EXPIRE", default_expire))
+            os.getenv("REDIS_DEFAULT_EXPIRE", "3600")
+        )

@@ -33,14 +33,21 @@ class RedisCache:
         self.default_expire = default_expire or config.default_expire
 
         try:
-            self.client = redis.Redis(
-                host=host, port=port, db=db, decode_responses=True)
-            self.client.ping()
-            logger.info("Connected to redis at %s:%s", host, port)
+            if config.url:
+                self.client = redis.from_url(config.url, decode_responses=True)
+                self.client.ping()
+                url_without_credentials = config.url.split('@')[-1]
+                logger.info("Connected to redis at %s", url_without_credentials)
+            else:
+                self.client = redis.Redis(
+                    host=host, port=port, db=db, decode_responses=True)
+                self.client.ping()
+                logger.info("Connected to redis at %s:%s", host, port)
 
         except redis.ConnectionError as e:
             logger.error("Failed to connect to redis: %s", e)
             self.client = None
+
 
     def set_geojson(self, key, geojson_data, expire=None):
         """
