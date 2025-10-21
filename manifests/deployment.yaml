@@ -22,10 +22,21 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          env:
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecopaths-config
+                  key: DB_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ecopaths-upstash-redis
+                  key: REDIS_URL
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "1Gi"
+              cpu: "1000m"
             requests:
               memory: "128Mi"
               cpu: "50m"

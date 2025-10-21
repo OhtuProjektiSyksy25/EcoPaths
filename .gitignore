@@ -36,3 +36,7 @@ node_modules/
 
 # Redis
 backend/dump.rdb
+
+
+# OpenShift
+manifests/configmap.yaml

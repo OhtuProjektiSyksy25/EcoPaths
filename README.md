@@ -104,13 +104,15 @@ Press **Ctrl+C** to stop both servers.
 
 
 
+
+
 ### Run Backend and Frontend seperatly
 
 > **Note:** Make sure the backend virtual environment is activated and always run `invoke` commands from the root directory. See [Notes / Tips](#notes--tips) for full instructions.
 
 #### Start only backend
 ```bash
-invoke run_backend
+invoke run-backend
 ```
 
 > Backend runs in development mode (`uvicorn src.main:app --reload`).  
@@ -119,7 +121,7 @@ invoke run_backend
 
 #### Start only frontend
 ```bash
-invoke run_frontend
+invoke run-frontend
 ```
 
 > Frontend runs in development mode (`npm start`).  
@@ -135,13 +137,13 @@ invoke run_frontend
 ### Backend tests
 Run backend unit tests with coverage:
 ```bash
-invoke test_backend
+invoke test-backend
 ```
 
 ### Frontend tests
 Run frontend unit tests with coverage (currently not available):
 ```bash
-invoke test_frontend
+invoke test-frontend
 ```
 
 ### Full coverage
@@ -201,9 +203,10 @@ npm run test:robot:headless
 
 
 
+
 ## Documentation
 
-- [Product backlog](https://github.com/orgs/OhtuProjektiSyksy25/projects/1)  
+- [Product backlog](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/1)  
 - [Sprint task board](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/4)
 
 ## License

@@ -1,17 +1,18 @@
-""" FastAPI application """
+"""FastAPI application entry point"""
+from contextlib import asynccontextmanager
 import os
 import sys
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from services.route_service import RouteService
+from services.geo_transformer import GeoTransformer
+from services.route_service import RouteServiceFactory
 
-
-app = FastAPI()
-origins = [
-    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi/",
+# === CORS configuration ===
+ALLOWED_ORIGINS = [
+    "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
@@ -21,27 +22,49 @@ origins = [
     "http://172.25.211.59:3000"
 ]
 
+# === App initialization ===
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """
+    FastAPI lifespan handler that initializes application state on startup.
+
+    Sets up shared services such as RouteService and AreaConfig.
+    """
+    selected_area = "berlin"
+
+    route_service, area_config = RouteServiceFactory.from_area(selected_area)
+
+    application.state.route_service = route_service
+    application.state.area_config = area_config
+
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Add project root to PYTHONPATH for imports
-# Ensures modules are found in all environments
+# === Add project root to PYTHONPATH ===
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
+# === Mount static files if available ===
+STATIC_DIR = "build/static"
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-if os.path.isdir("build/static"):
-    app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
-route_service = RouteService(area="berlin")
-
+# === Routes ===
 
 @app.get("/berlin")
 async def berlin():
@@ -54,8 +77,8 @@ async def berlin():
     return {"coordinates": [13.404954, 52.520008]}
 
 
-@app.get("/api/geocode-forward/{value}")
-async def geocode_forward(value: str):
+@app.get("/api/geocode-forward/{value:path}")
+async def geocode_forward(value: str = Path(...)):
     """api endpoint to return a list of suggested addresses based on given value
 
     Args:
@@ -66,6 +89,7 @@ async def geocode_forward(value: str):
     """
     if len(value) < 3:
         return []
+
     photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4"
     try:
         async with httpx.AsyncClient() as client:
@@ -73,6 +97,7 @@ async def geocode_forward(value: str):
             photon_suggestions = response.json()
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
+        return []
 
     for feature in photon_suggestions.get("features", []):
         suggestion_data = feature.get("properties", {})
@@ -85,26 +110,55 @@ async def geocode_forward(value: str):
     return photon_suggestions
 
 
-@app.get("/getroute/{from_coords}/{to_coords}")
-def getroute(from_coords: str, to_coords: str):
-    """Returns optimal route according to from_coords and to_coords
+@app.post("/getroute")
+async def getroute(request: Request):
+    """
+    API endpoint for computing multiple route options between two GeoJSON Point features.
 
-    Args:
-        from_coords (str): route start coordinates as string seperated by ,
-        to_coords (str): route end coordinates as string seperated by ,
+    Expects a GeoJSON FeatureCollection with exactly two features:
+    - One with properties.role = "start"
+    - One with properties.role = "end"
 
     Returns:
-        dict: GeoJSON Feature of the route
+        dict: {
+            "routes": {
+                "fastest": GeoJSON FeatureCollection,
+                "best_aq": GeoJSON FeatureCollection,
+                "balanced": GeoJSON FeatureCollection
+            },
+            "summaries": {
+                "fastest": {...},
+                "best_aq": {...},
+                "balanced": {...}
+            }
+        }
     """
-    from_lon, from_lat = map(float, from_coords.split(","))
-    to_lon, to_lat = map(float, to_coords.split(","))
+    data = await request.json()
+    features = data.get("features", [])
 
-    route = route_service.get_route(
-        (from_lon, from_lat),
-        (to_lon, to_lat)
-    )
+    if len(features) != 2:
+        return JSONResponse(status_code=400, content={"error": "GeoJSON must contain two features"})
 
-    return {"route": route}
+    start_feature = next(
+        (f for f in features if f["properties"].get("role") == "start"), None)
+    end_feature = next(
+        (f for f in features if f["properties"].get("role") == "end"), None)
+
+    if not start_feature or not end_feature:
+        return JSONResponse(status_code=400, content={"error": "Missing start or end feature"})
+
+    area_config = request.app.state.area_config
+    target_crs = area_config.crs
+
+    origin_gdf = GeoTransformer.geojson_to_projected_gdf(
+        start_feature["geometry"], target_crs)
+    destination_gdf = GeoTransformer.geojson_to_projected_gdf(
+        end_feature["geometry"], target_crs)
+
+    route_service = request.app.state.route_service
+    response = route_service.get_route(origin_gdf, destination_gdf)
+
+    return JSONResponse(content=response)
 
 
 @app.get("/{full_path:path}")

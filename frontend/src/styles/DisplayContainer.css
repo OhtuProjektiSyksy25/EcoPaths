@@ -1,0 +1,26 @@
+.route_type {
+    display: flex;
+    flex-direction: row;
+    font-size: 15px;
+    color: #61896f;
+    font-weight: 300;
+}
+
+.time-estimate {
+    display: flex;
+    flex-direction: row;
+    font-size: 22px;
+    color: #111813;
+    font-weight: 600;
+    padding-bottom: 3px;
+    padding-top: 3px;
+}
+
+.additional-info {
+    display: flex;
+    flex-direction: row;
+    font-size: 15px;
+    color: #61896f;
+    font-weight: 300;
+    gap: 8px;
+}

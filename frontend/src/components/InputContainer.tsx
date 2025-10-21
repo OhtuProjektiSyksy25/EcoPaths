@@ -6,6 +6,8 @@ Props:
 	-onChange: callback function called with updated value on value change
   -suggestoins: list of address suggestions
   -onSelect: callback function called with chosen suggestion
+  -onFocus: optional callback when input is focused
+  -onBlur: optional callback when input loses focus
 */
 import React, {useState, useEffect, useRef} from "react";
 
@@ -15,6 +17,8 @@ interface InputContainerProps {
   onChange: (value:string) => void;
   suggestions: any[];
   onSelect: (place: any) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 const InputContainer: React.FC<InputContainerProps> = ({
@@ -22,18 +26,27 @@ const InputContainer: React.FC<InputContainerProps> = ({
   value,
   onChange,
   suggestions,
-  onSelect
-  
+  onSelect,
+  onFocus,
+  onBlur
+
   }) => {
 
 const [isOpen, setIsOpen] = useState(false)
 const containerRef = useRef<HTMLDivElement | null>(null);
+const inputSelected = useRef(false);
 
 useEffect(() => {
   /*
   useEffect for updating isOpen useState when suggestion updates
   */
-(!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
+  if (inputSelected.current) {
+    inputSelected.current = false;
+    setIsOpen(false);
+    return;
+  }
+
+  (!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
 
 },[suggestions])
 
@@ -54,14 +67,20 @@ useEffect(() => {
   }, []);
 
 
-  return (
+ return (
     <div className="InputContainer" ref={containerRef}>
       <input
       type="text"
       value={value}
       onChange={(e)=> onChange(e.target.value)}
       placeholder={placeholder}
-      onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+      onFocus={() => {
+        suggestions.length > 0 && inputSelected.current === false && setIsOpen(true);
+        onFocus?.();
+      }}
+      onBlur={() => {
+        onBlur?.();
+      }}
 			/>
       {isOpen && suggestions?.length && (
         <ul className="originul">
@@ -73,6 +92,7 @@ useEffect(() => {
             onChange(s.full_address)
             if (onSelect) onSelect(s)
             setIsOpen(false)
+            inputSelected.current = true;
           }}>
             {s.full_address}
           </li>

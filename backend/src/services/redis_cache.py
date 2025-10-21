@@ -33,14 +33,21 @@ class RedisCache:
         self.default_expire = default_expire or config.default_expire
 
         try:
-            self.client = redis.Redis(
-                host=host, port=port, db=db, decode_responses=True)
-            self.client.ping()
-            logger.info("Connected to redis at %s:%s", host, port)
+            if config.url:
+                self.client = redis.from_url(config.url, decode_responses=True)
+                self.client.ping()
+                url_without_credentials = config.url.split('@')[-1]
+                logger.info("Connected to redis at %s", url_without_credentials)
+            else:
+                self.client = redis.Redis(
+                    host=host, port=port, db=db, decode_responses=True)
+                self.client.ping()
+                logger.info("Connected to redis at %s:%s", host, port)
 
         except redis.ConnectionError as e:
             logger.error("Failed to connect to redis: %s", e)
             self.client = None
+
 
     def set_geojson(self, key, geojson_data, expire=None):
         """
@@ -182,4 +189,25 @@ class RedisCache:
                 "Failed to check existence of cache key '%s': %s", key, e)
             return False
 
-# needs generate_route_key method
+    def set_direct(self, key, value, expire=None):
+        """
+        Set a regular (non-GeoJSON) value in the cache directly
+
+        Args:
+            key: The key to set.
+            value: The value to set.
+            expire: The expiration time in seconds.
+        """
+        if not self.client:
+            logger.warning("Redis is not connected. Cannot set value.")
+            print("Redis is not connected. Cannot set value.")
+            return False
+
+        try:
+            expire_time = expire if expire is not None else self.default_expire
+            self.client.set(key, value, ex=expire_time)
+            print(f"Cached value with key '{key}'")
+            return True
+        except (redis.RedisError, TypeError, ValueError) as e:
+            logger.error("Failed to set cache key '%s': %s", key, e)
+            return False

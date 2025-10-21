@@ -1,121 +1,183 @@
 """
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
-
-from shapely.geometry import mapping
-from core.compute_model import ComputeModel
-from core.algorithm.route_algorithm import RouteAlgorithm
+import geopandas as gpd
+import pandas as pd
+from shapely.geometry import LineString, Polygon
+from core.edge_enricher import EdgeEnricher
+from core.route_algorithm import RouteAlgorithm
+from config.settings import AreaConfig
 from services.redis_cache import RedisCache
-
-# Cache key template now includes origin and destination coordinates
-CACHE_KEY_TEMPLATE = "route_{area}_{from_lon}_{from_lat}_{to_lon}_{to_lat}"
+from services.geo_transformer import GeoTransformer
+from utils.route_summary import summarize_route
+from utils.redis_utils import RedisUtils
 
 
 class RouteService:
     """
     Service for computing optimal routes and returning them as GeoJSON Features.
-
-    Attributes:
-        area (str): Name of the area (lowercased).
-        compute_model (ComputeModel): Instance of ComputeModel to get edge data.
     """
 
-    def __init__(self, area: str = "berlin"):
+    def __init__(self, edges: gpd.GeoDataFrame, redis=None):
         """
-        Initialize RouteService with a specific area.
+        Initialize the RouteService.
 
         Args:
-            area (str): Name of the area (default "berlin").
+            edges (gpd.GeoDataFrame): GeoDataFrame containing road network edges.
+            redis (RedisCache, optional): Redis cache instance for caching routes.
         """
-        self.area = area.lower()
-        self.compute_model = ComputeModel(area=self.area)
-        self.redis = RedisCache()
+        self.edges = edges
+        self.redis = redis or RedisCache()
 
-    def get_route(self, origin: tuple, destination: tuple) -> dict:
-        """
-        Compute the optimal route between two points as a GeoJSON Feature.
+    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
+        """Gets route to destination from origin.
 
         Args:
-            origin (tuple): Starting point as (lon, lat)
-            destination (tuple): Ending point as (lon, lat)
+            origin_gdf (gpd.GeoDataFrame): GeoDataFrame containing the origin point.
+            destination_gdf (gpd.GeoDataFrame): GeoDataFrame containing the destination point.
 
         Returns:
-            dict: GeoJSON Feature representing the route, e.g.
-                {
-                    "type": "Feature",
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": [[13.404954, 52.520008], [13.4062, 52.521]]
-                    },
-                    "properties": {}
-                }
+            dict: GeoJSON Feature representing the computed route.
         """
 
-        # Generate a unique cache key for this route
-        # example: route_berlin_13.404954_52.520008_13.4062_52.521
-        cache_key = CACHE_KEY_TEMPLATE.format(
-            area=self.area,
-            from_lon=origin[0],
-            from_lat=origin[1],
-            to_lon=destination[0],
-            to_lat=destination[1]
+        buffer = self._create_buffer(
+            origin_gdf, destination_gdf, buffer_m=500)
+
+        # unique tile_id inside bufferzone
+        tile_ids = self.edges[self.edges.intersects(
+            buffer)]["tile_id"].unique()
+
+        # PLACEHOLDER when cached + new tiles is ready in redis/redis handler layer
+        edges_subset = self._get_tile_edges(tile_ids)
+        # algorithm = RouteAlgorithm(edges_subset)
+
+        # Filter edges based on buffer
+        # edges_subset = self.edges[self.edges.intersects(buffer)].copy()
+        algorithm = RouteAlgorithm(edges_subset)
+
+        # example for balanced route
+        edges_subset["combined_score"] = (
+            0.3 * edges_subset["length_m"] + 0.7 * edges_subset["aqi"]
         )
 
-        # Try to fetch the route from cache first
-        cached_route = self.redis.get(cache_key)
-        if cached_route:
-            return cached_route
-
-        # If not in cache, compute the edges from ComputeModel
-        edges = self.compute_model.get_data_for_algorithm()
-
-        algorithm = RouteAlgorithm(edges)
-
-#        algorithm = RouteAlgorithm(edges)
-        route_gdf = algorithm.calculate(origin, destination)
-
-        # Ensure the route is in EPSG:4326
-        if route_gdf.crs is None or route_gdf.crs.to_string() != "EPSG:4326":
-            route_gdf = route_gdf.to_crs("EPSG:4326")
-
-        # Merge all geometries into a single LineString
-        unified_geom = route_gdf.geometry.union_all()
-
-        # calculate time estimate
-        length_m = route_gdf.to_crs("EPSG:3857").geometry.length.sum()
-        time_estimate_formatted = self._calculate_time_estimate(length_m)
-
-        # Create GeoJSON Feature
-        geojson_feature = {
-            "type": "Feature",
-            "geometry": mapping(unified_geom),
-            "properties": {
-                "time_estimate": time_estimate_formatted,
-                "length_m": length_m
-            }
+        # mode: weight column
+        route_modes = {
+            "fastest": "length_m",
+            "best_aq": "aqi",
+            "balanced": "combined_score"
         }
-        # Save the completed route to Redis cache
-        self.redis.set(cache_key, geojson_feature)
 
-        return geojson_feature
+        routes = {}
+        summaries = {}
 
-    def _calculate_time_estimate(self, length_m: float) -> str:
+        for mode, weight in route_modes.items():
+            route_gdf = algorithm.calculate_path(
+                origin_gdf, destination_gdf, weight=weight)
+            route_gdf["mode"] = mode
+
+            summaries[mode] = summarize_route(route_gdf)
+
+            props = [col for col in route_gdf.columns if col != "geometry"]
+            routes[mode] = GeoTransformer.gdf_to_feature_collection(
+                route_gdf, property_keys=props
+            )
+
+        response = {
+            "routes": routes,
+            "summaries": summaries
+        }
+
+        return response
+
+    def _create_buffer(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
+                       buffer_m: float = 400) -> Polygon:
         """
-        Calculate formatted time estimate from distance.
+        Creates a buffer polygon around a straight line between origin and destination points.
 
         Args:
-            length_m (float): Distance in meters
+            origin_gdf (GeoDataFrame): GeoDataFrame with a single Point geometry (start).
+            destination_gdf (GeoDataFrame): GeoDataFrame with a single Point geometry (end).
+            buffer_m (float, optional): Buffer radius in meters around the line. Defaults to 400.
 
         Returns:
-            str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s")
+            Polygon: A polygon representing the buffered area around the route line.
         """
-        avg_speed_mps = 1.4  # 1.4 meters per second (walking speed)
-        seconds = length_m / avg_speed_mps
 
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        remaining_seconds = int(seconds % 60)
+        origin_point = origin_gdf.geometry.iloc[0]
+        destination_point = destination_gdf.geometry.iloc[0]
 
-        if hours > 0:
-            return f"{hours}h {minutes} min"
-        return f"{minutes} min {remaining_seconds} s"
+        line = LineString([origin_point, destination_point])
+        return line.buffer(buffer_m)
+
+    def _get_tile_edges(self, tile_ids: list):
+        """Checks redis for tile_id hits according to tile_ids. Saves enriched tiles/edges to redis
+       that were not already present in redis.
+           Creates and returns a GeoDataFrame of all the edges
+           contained in tiles specified in tile_ids
+
+        Args:
+            tile_ids (list): List of tile_id that are used to pick edges for returned GeoDataFrame
+
+        Returns:
+            GeoDataFrame: GeoDataFrame
+        """
+        non_existing_tile_ids = RedisUtils.prune_found_ids(
+            tile_ids, self.redis)
+        existing_tile_ids = list(set(tile_ids)-set(non_existing_tile_ids))
+
+        all_gdfs = []
+
+        if len(existing_tile_ids) > 0:
+            found_gdf, expired_tiles = RedisUtils.get_gdf_by_list_of_keys(
+                existing_tile_ids, self.redis)
+            non_existing_tile_ids = list(
+                set(non_existing_tile_ids + expired_tiles))
+            if found_gdf is not False:
+                all_gdfs.append(found_gdf)
+
+        if len(non_existing_tile_ids) > 0:
+            RedisUtils.edge_enricher_to_redis_handler(
+                non_existing_tile_ids, self.redis)
+            new_gdf, _ = RedisUtils.get_gdf_by_list_of_keys(
+                non_existing_tile_ids, self.redis)
+            if new_gdf is not False:
+                all_gdfs.append(new_gdf)
+
+        if len(all_gdfs) > 0:
+            ready_gdf = pd.concat(all_gdfs, ignore_index=True)
+            return ready_gdf
+        return None
+
+
+class RouteServiceFactory:
+    """
+    Factory class for creating RouteService instances based on area name.
+
+    This class loads the appropriate road network data for the given area
+    and returns a configured RouteService instance.
+    """
+    @staticmethod
+    def from_area(area: str) -> tuple[RouteService, AreaConfig]:
+        """
+        Create a RouteService instance for a specific area.
+
+        Args:
+            area (str): Name of the area (e.g., "berlin").
+
+        Returns:
+            RouteService: A service instance initialized with the area's road network.
+        """
+        try:
+            model = EdgeEnricher(area)
+            edges = model.load_all_edges()
+            # tiles = model.get_tiles()
+            area_config = model.area_config
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f"\nRouteServiceFactory failed: edges file for area '{area}' not found.\n"
+                f"Expected file: {e.filename}\n"
+                f"Please run the preprocessing step to generate the required file.\n"
+                f"Example: `invoke preprocess-osm --area={area}`\n"
+            ) from e
+
+        return RouteService(edges), area_config

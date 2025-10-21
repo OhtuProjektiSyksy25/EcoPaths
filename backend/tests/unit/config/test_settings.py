@@ -1,37 +1,41 @@
 import pytest
 from pathlib import Path
-from config.settings import AreaConfig
-
-@pytest.mark.parametrize("area, bbox, pbf_name, output_name", [
-    ("la", [-118.33, 33.93, -118.20, 34.10], "socal-latest.osm.pbf", "la_edges.parquet"),
-    ("berlin", [13.0884, 52.3383, 13.7611, 52.6755], "berlin-latest.osm.pbf", "berlin_edges.parquet"),
-])
-def test_area_config_values(area, bbox, pbf_name, output_name):
-    config = AreaConfig(area)
-
-    assert config.area == area
-    assert config.bbox == bbox
-
-    assert isinstance(config.pbf_file, Path)
-    assert isinstance(config.output_file, Path)
-
-    assert config.pbf_file.is_absolute()
-    assert config.output_file.is_absolute()
-
-    assert config.pbf_file.name == pbf_name
-    assert config.output_file.name == output_name
-
-    assert "preprocessor/data" in str(config.pbf_file)
-    assert "data" in str(config.output_file)
+from src.config.settings import AreaConfig
 
 
-def test_area_config_case_insensitive():
-    config = AreaConfig("LA")
+def test_valid_area_berlin():
+    config = AreaConfig("berlin")
+    assert config.area == "berlin"
+    assert config.bbox == [13.300, 52.4525, 13.510, 52.5875]
+    assert config.crs == "EPSG:25833"
+    assert config.pbf_url.endswith("berlin-latest.osm.pbf")
+    assert config.pbf_file.name == "berlin-latest.osm.pbf"
+    assert config.edges_output_file.name == "berlin_edges.parquet"
+    assert config.data_dir.exists()
+    assert config.output_dir.exists()
+
+
+def test_valid_area_la():
+    config = AreaConfig("la")
     assert config.area == "la"
-    assert config.pbf_file.name == "socal-latest.osm.pbf"
+    assert config.bbox == [-118.30, 33.95, -118.083, 34.13]
+    assert config.crs == "EPSG:2229"
+    assert config.pbf_url.endswith("socal-latest.osm.pbf")
+    assert config.pbf_file.name == "la-latest.osm.pbf"
+    assert config.edges_output_file.name == "la_edges.parquet"
 
 
-def test_area_config_unknown_area_raises():
-    with pytest.raises(ValueError, match="Unknown area"):
-        AreaConfig("tokyo")
+def test_valid_area_helsinki():
+    config = AreaConfig("helsinki")
+    assert config.area == "helsinki"
+    assert config.bbox == [24.80, 60.13, 25.20, 60.30]
+    assert config.crs == "EPSG:3067"
+    assert config.pbf_url.endswith("finland-latest.osm.pbf")
+    assert config.pbf_file.name == "helsinki-latest.osm.pbf"
+    assert config.edges_output_file.name == "helsinki_edges.parquet"
 
+
+def test_invalid_area_raises():
+    with pytest.raises(ValueError) as excinfo:
+        AreaConfig("london")
+    assert "Unknown area: london" in str(excinfo.value)
