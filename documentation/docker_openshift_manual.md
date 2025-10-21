@@ -13,7 +13,7 @@ The build and deployment process is already automated through the project’s CI
 2. Build the image for **OpenShift deployment**:
 
 ```bash
-docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
+docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg GOOGLE_API_KEY=<GOOGLE_API_KEY> -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
 ```
 
 > **Note:** When running this image locally, the map component might not render correctly. The map component will render properly when the image deployed to OpenShift. 
@@ -21,7 +21,7 @@ docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT
 To **test the application locally** with the map component, use this command instead:
 
 ```bash
-docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg REACT_APP_API_URL=http://localhost:8000 -t <IMAGE_NAME> .
+docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg GOOGLE_API_KEY=<GOOGLE_API_KEY> --build-arg REACT_APP_API_URL=http://localhost:8000 -t <IMAGE_NAME> .
 ```
 
 > [!CAUTION]
