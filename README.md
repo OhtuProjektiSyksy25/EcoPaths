@@ -104,6 +104,8 @@ Press **Ctrl+C** to stop both servers.
 
 
 
+
+
 ### Run Backend and Frontend seperatly
 
 > **Note:** Make sure the backend virtual environment is activated and always run `invoke` commands from the root directory. See [Notes / Tips](#notes--tips) for full instructions.
@@ -198,6 +200,7 @@ npm run test:robot:headless
 
 - **Stopping servers/tests:**  
   Use standard interruption *Ctrl+C* to cleanly stop any running development servers or test processes.
+
 
 
 

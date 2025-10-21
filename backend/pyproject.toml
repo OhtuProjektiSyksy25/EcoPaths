@@ -25,6 +25,7 @@ redis = "^6.4.0"
 networkx = "3.4"
 shapely = "^2.1.2"
 folium = "^0.20.0"
+python-dotenv = "^1.1.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"

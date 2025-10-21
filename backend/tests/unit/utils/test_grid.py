@@ -8,6 +8,7 @@ class TestGrid:
     @pytest.fixture
     def berlin_grid(self):
         """Create Berlin grid instance."""
+        """Create Berlin grid instance."""
         area_config = AreaConfig("berlin")
         return Grid(area_config)
 
@@ -36,7 +37,8 @@ class TestGrid:
         missing = expected_columns - set(grid_gdf.columns)
         assert not missing, f"Missing columns: {missing}"
 
-        assert grid_gdf.crs is not None, "Grid CRS is missing"
+        # Check CRS is set
+        assert grid_gdf.crs is not None
 
     def test_tile_id_parsing(self, berlin_grid):
         """Test internal tile ID parsing."""

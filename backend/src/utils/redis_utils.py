@@ -3,8 +3,7 @@ Utility module for handling, saving and fetching of GeoDataFrame/geojson data to
 CRS ONLY BERLIN CURRENTLY
 """
 import geopandas as gpd
-#from core.edge_enricher import EdgeEnricher
-
+from core.edge_enricher import EdgeEnricher
 
 
 class RedisUtils:
@@ -23,7 +22,8 @@ class RedisUtils:
             dictionary: key: tile_id, value: GeoDataFrame
 
         """
-        grouped_by_id = {dict_key: group for dict_key, group in gdf.groupby("tile_id")} # pylint: disable=unnecessary-comprehension
+        grouped_by_id = {dict_key: group for dict_key, group in gdf.groupby(  # pylint: disable=unnecessary-comprehension
+            "tile_id")}  # pylint: disable=unnecessary-comprehension
         return grouped_by_id
 
     @staticmethod
@@ -86,35 +86,35 @@ class RedisUtils:
             : False if no valid features were found in Redis
         """
         features = []
+        expired_tiles = []
         for tile_id in tile_ids:
             new_geojson = redis.get_geojson(tile_id)
             if not new_geojson:
                 print(f"Error, redis could not find value for key: {tile_id} ")
-                # Add function to handle key expiring during other tile_id enriching ->
-                # if not found given tile is routed to edgeenritcher(?)
+                expired_tiles.append(tile_id)
                 continue
             features.extend(new_geojson.get("features", []))
 
         if len(features) == 0:
-            return False
+            return False, expired_tiles
         gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:25833")
-        return gdf
+        return gdf, expired_tiles
 
-    #@staticmethod
-    #def edge_enricher_to_redis_handler(self, tile_ids: list, redis):
-    #    """Sends tiles to EdgeEnricher and saves returned gdf to redis
-#
-#        Args:
-#            tile_ids (list): List of tile_ids to be enritched
-#            redis (_type_): Redis object
-#
-#        Returns:
-#            True: if saving is succesful
-#            False: if saving is not succesful
-#        """
-        #gdf = EdgeEnricher.enrich_tiles(tile_ids)
+    @staticmethod
+    def edge_enricher_to_redis_handler(tile_ids: list, redis):
+        """Sends tiles to EdgeEnricher and saves returned gdf to redis
+
+        Args:
+            tile_ids (list): List of tile_ids to be enritched
+            redis (_type_): Redis object
+
+        Returns:
+            True: if saving is succesful
+            False: if saving is not succesful
+        """
+        current_enricher = EdgeEnricher()
+        gdf = current_enricher.enrich_tiles(tile_ids)
         # add check when EdgeEnricher is finished
-        #if RedisUtils.save_gdf(gdf, redis):
-        #    return True
-
-        #return False
+        if RedisUtils.save_gdf(gdf, redis):
+            return True
+        return False

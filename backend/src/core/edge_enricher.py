@@ -2,7 +2,8 @@
 
 from pathlib import Path
 import geopandas as gpd
-from src.config.settings import AreaConfig
+from config.settings import AreaConfig
+from services.google_api_service import GoogleAPIService
 
 
 class EdgeEnricher:
@@ -91,17 +92,7 @@ class EdgeEnricher:
             )
             self.combined_gdf = self.combined_gdf.drop(
                 columns=["index_right"], errors="ignore")
-        # Otherwise, fallback to nearest-point join
-        elif any("Point" in g for g in geom_types):
-            print("No polygons detected. Performing nearest join (point-based AQ data).")
-            self.combined_gdf = gpd.sjoin_nearest(
-                self.road_gdf,
-                self.air_quality_gdf,
-                how="left",
-                distance_col="distance_to_aq"
-            )
-            self.combined_gdf = self.combined_gdf.drop(
-                columns=["index_right"], errors="ignore")
+
         else:
             print("Unsupported AQ geometry type. No join performed.")
             self.combined_gdf = None
@@ -118,19 +109,6 @@ class EdgeEnricher:
                 ["aq_value"]].mean()
             self.combined_gdf = self.road_gdf.merge(
                 aq_agg, on="edge_id", how="left")
-
-    def save_combined_data(self, output_path: Path):
-        """
-        Save the combined dataset to a Parquet file.
-
-        Parameters:
-            output_path (Path): Destination path for the output file.
-        """
-        if self.combined_gdf is not None:
-            self.combined_gdf.to_parquet(output_path)
-            print(f"Combined data saved to: {output_path}")
-        else:
-            print("No combined data to save.")
 
     def get_enriched_edges(self, overwrite: bool = False) -> gpd.GeoDataFrame:
         """
@@ -154,9 +132,102 @@ class EdgeEnricher:
 
         if self.air_quality_gdf is not None:
             self.combine_data()
-            self.save_combined_data(enriched_path)
+#            self.save_combined_data(enriched_path)
             print("Returning newly combined road and air quality network.")
             return self.combined_gdf
 
         print("No AQ data available. Returning original road network.")
         return self.road_gdf
+
+    def load_edges_for_tiles(self, tile_ids: list[str]) -> gpd.GeoDataFrame:
+        """Load edges for requested tiles."""
+
+        # path to edges file
+        edge_path = Path(self.config.edges_output_file)
+        if not edge_path.exists():
+            raise FileNotFoundError(
+                f"Road network file not found for area '{self.area}'.\n"
+                f"Expected file: {edge_path}\n"
+                f"Please run preprocessing: `invoke preprocess-osm --area={self.area}`"
+            )
+
+        # load all edges
+        edges_gdf = gpd.read_parquet(edge_path)
+
+        # filter for requested tile_ids
+        if "tile_id" in edges_gdf.columns:
+            edges_gdf = edges_gdf[edges_gdf["tile_id"].isin(tile_ids)]
+        else:
+            print("tile_id column not found in edges data")
+
+        # return filtered edges as gdf
+        return edges_gdf
+
+    def enrich_tiles(self, tile_ids: list[str]) -> gpd.GeoDataFrame:
+        """Enrich edges with air quality data."""
+
+        # receive tile_ids list from caller
+        print(f"EdgeEnricher: Enriching {len(tile_ids)} tiles")
+
+        # load edges for specific tiles
+        edges_gdf = self.load_edges_for_tiles(tile_ids)
+
+        if edges_gdf.empty:
+            print(f"No edges found for tiles: {tile_ids}")
+            return edges_gdf
+
+        print(f"Loaded {len(edges_gdf)} edges")
+
+        # fetch AQ data from Google API
+        google_api_service = GoogleAPIService()
+        aq_gdf = google_api_service.get_aq_data_for_tiles(
+            tile_ids, area=self.area)
+
+        if aq_gdf.empty:
+            print("No AQ data from API. Returning edges without enrichment.")
+            edges_gdf["aqi"] = None
+            return edges_gdf
+
+        print(f"Retrieved AQ data for {len(tile_ids)} tiles")
+
+        # check CRS
+        if edges_gdf.crs != aq_gdf.crs:
+            aq_gdf = aq_gdf.to_crs(edges_gdf.crs)
+
+        # spatial join --> enrich edges with AQ data
+        enriched_gdf = gpd.sjoin(
+            edges_gdf,
+            aq_gdf[["tile_id", "aqi", "geometry"]],
+            how="left",
+            predicate="intersects"
+        )
+
+        # clean enriched data
+        enriched_gdf = enriched_gdf.drop(
+            columns=["index_right"], errors="ignore")
+
+        if "tile_id_left" in enriched_gdf.columns:
+            enriched_gdf = enriched_gdf.rename(columns={
+                "tile_id_left": "tile_id",
+                "tile_id_right": "aq_tile_id"
+            })
+
+        print(f"Enriched edges count: {len(enriched_gdf)}")
+
+        # return enriched gdf
+        return enriched_gdf
+
+    def load_all_edges(self) -> gpd.GeoDataFrame:
+        """Load all edges"""
+
+        # path to edges file
+        edge_path = Path(self.config.edges_output_file)
+        # check if file exists
+        if not edge_path.exists():
+            raise FileNotFoundError(
+                f"Road network file not found for area '{self.area}'.\n"
+                f"Expected file: {edge_path}"
+            )
+
+        # load and return all edges for RouteServiceFactory
+        return gpd.read_parquet(edge_path)
