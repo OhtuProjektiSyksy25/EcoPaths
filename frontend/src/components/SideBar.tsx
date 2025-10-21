@@ -196,13 +196,38 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
 
         {children}
 
-      {summaries?.fastest && !children && (
-        <DisplayContainer
-          label="Walking Time"
-          value={summaries.fastest.time_estimate}
-        />
-      )}
-      </div>
+      {summaries && !children && (
+        <>
+          <div className="best-aq-container">
+            <DisplayContainer
+              route_type="Best Air Quality"
+              time_estimate={summaries.best_aq.time_estimate}
+              total_length={summaries.best_aq.total_length}
+              aq_average={summaries.best_aq.aq_average}
+            />
+          </div>
+
+          <div className="balanced-route-container">
+            <DisplayContainer
+              route_type="Balanced Route"
+              time_estimate={summaries.balanced.time_estimate}
+              total_length={summaries.balanced.total_length}
+              aq_average={summaries.balanced.aq_average}
+            />
+          </div>
+
+          <div className="fastest-route-container">
+            <DisplayContainer
+              route_type="Fastest Route"
+              time_estimate={summaries.fastest.time_estimate}
+              total_length={summaries.fastest.total_length}
+              aq_average={summaries.fastest.aq_average}
+            />
+          </div>
+        </>
+
+        )}
+        </div>
     </div>
   );
 };

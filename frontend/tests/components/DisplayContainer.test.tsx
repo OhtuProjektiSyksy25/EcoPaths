@@ -1,69 +1,87 @@
 /*
 DisplayContainer.test.tsx tests the DisplayContainer component which displays 
-a label and value pair for showing information like walking time estimates.
+information such as route type, time estimate, total length, and air quality average.
 */
 
 import { render, screen } from '@testing-library/react';
 import DisplayContainer from '../../src/components/DisplayContainer';
 
 describe('DisplayContainer', () => {
-  test('renders label and value correctly', () => {
-    
-    const testLabel = 'Walking Time';
-    const testValue = '15 minutes';
+  test('renders all props correctly', () => {
 
-   
-    render(<DisplayContainer label={testLabel} value={testValue} />);
+    const testRouteType = 'Best Air Quality';
+    const testTimeEstimate = '15 minutes';
+    const testTotalLength = 2.5;
+    const testAQAverage = 42;
 
-   
-    expect(screen.getByText('Walking Time :')).toBeInTheDocument();
+    render(<DisplayContainer
+      route_type={testRouteType}
+      time_estimate={testTimeEstimate}
+      total_length={testTotalLength}
+      aq_average={testAQAverage}
+      />
+    );
+
+    expect(screen.getByText('Best Air Quality')).toBeInTheDocument();
     expect(screen.getByText('15 minutes')).toBeInTheDocument();
+    expect(screen.getByText('2.5 km')).toBeInTheDocument();
+    expect(screen.getByText('AQI 42')).toBeInTheDocument();
   });
 
-  test('renders with different props', () => {
-    
-    const testLabel = 'Distance';
-    const testValue = '1.2 km';
+  test('renders with different values', () => {
 
-    
-    render(<DisplayContainer label={testLabel} value={testValue} />);
+    const testRouteType = 'Balanced Route';
+    const testTimeEstimate = '20 minutes';
+    const testTotalLength = 3;
+    const testAQAverage = 50;
 
-    
-    expect(screen.getByText('Distance :')).toBeInTheDocument();
-    expect(screen.getByText('1.2 km')).toBeInTheDocument();
+    render(<DisplayContainer
+      route_type={testRouteType}
+      time_estimate={testTimeEstimate}
+      total_length={testTotalLength}
+      aq_average={testAQAverage}
+      />
+    );
+
+    expect(screen.getByText('Balanced Route')).toBeInTheDocument();
+    expect(screen.getByText('20 minutes')).toBeInTheDocument();
+    expect(screen.getByText('3 km')).toBeInTheDocument();
+    expect(screen.getByText('AQI 50')).toBeInTheDocument();
   });
 
-  test('renders N/A when no value provided', () => {
-    
-    const testLabel = 'Estimate';
-    const testValue = 'N/A';
-
-   
-    render(<DisplayContainer label={testLabel} value={testValue} />);
-
-    
-    expect(screen.getByText('Estimate :')).toBeInTheDocument();
-    expect(screen.getByText('N/A')).toBeInTheDocument();
-  });
   test('can find correct css elements on page', () => {
     // Arrange
-    const testLabel = 'Test Label';
-    const testValue = 'Test Value';
+    const testRouteType = 'Fastest Route';
+    const testTimeEstimate = '12 minutes';
+    const testTotalLength = 1.8;
+    const testAQAverage = 50;
 
     // Act
-    const { container } = render(<DisplayContainer label={testLabel} value={testValue} />);
+    const { container } = render(
+                            <DisplayContainer
+                            route_type={testRouteType}
+                            time_estimate={testTimeEstimate}
+                            total_length={testTotalLength}
+                            aq_average={testAQAverage}
+                            />
+                          );
 
     // Assert
     const displayContainer = container.querySelector('.DisplayContainer');
-    expect(displayContainer).toBeInTheDocument();
+    const routeType = container.querySelector('.route_type');
+    const timeEstimate = container.querySelector('.time_estimate');
+    const totalLength = container.querySelector('.total_length');
+    const aqAverage = container.querySelector('.aq_average');
 
-    const labelSpan = container.querySelector('.label');
-    expect(labelSpan).toBeInTheDocument();
-    expect(labelSpan).toHaveTextContent('Test Label :');
-    
-    const valueSpan = container.querySelector('.value');
-    expect(valueSpan).toBeInTheDocument();
-    expect(valueSpan).toHaveTextContent('Test Value');
+    expect(displayContainer).toBeInTheDocument();
+    expect(container.querySelector('.route-type')).toBeInTheDocument();
+    expect(container.querySelector('.time-estimate')).toBeInTheDocument();
+    expect(container.querySelector('.additional-info')).toBeInTheDocument();
+
+    expect(routeType).toHaveTextContent('Fastest Route');
+    expect(timeEstimate).toHaveTextContent('12 minutes');
+    expect(totalLength).toHaveTextContent('1.8 km');
+    expect(aqAverage).toHaveTextContent('AQI 50');
   });
 
 });

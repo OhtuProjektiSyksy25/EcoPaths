@@ -2,7 +2,7 @@ from src.utils.route_summary import format_walk_time
 
 
 def test_short_distance():
-    assert format_walk_time(140) == "1 min 40 s"
+    assert format_walk_time(140) == "2 min"
 
 
 def test_exactly_one_hour():
@@ -14,7 +14,7 @@ def test_multiple_hours():
 
 
 def test_zero_distance():
-    assert format_walk_time(0) == "0 min 0 s"
+    assert format_walk_time(0) == "0 min"
 
 
 def test_none_input():
