@@ -34,6 +34,9 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 
 WORKDIR /app
 
+ARG GOOGLE_API_KEY
+ENV GOOGLE_API_KEY=$GOOGLE_API_KEY
+
 COPY backend/pyproject.toml backend/poetry.lock* ./
 
 RUN poetry install --no-interaction --no-ansi --no-root
