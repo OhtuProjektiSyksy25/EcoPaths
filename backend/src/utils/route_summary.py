@@ -65,21 +65,21 @@ def calculate_aq_average(route: Union[gpd.GeoDataFrame, dict]) -> float | None:
         route (GeoDataFrame or FeatureCollection): Route represented as edge-level geometry.
 
     Returns:
-        float | None: Average AQ value, or None if no values are available.
+        float | None: Average AQI, or None if no values are available.
     """
     if isinstance(route, gpd.GeoDataFrame):
-        aq_values = route["aq_value"].dropna(
-        ).tolist() if "aq_value" in route else []
+        aqi_values = route["aqi"].dropna(
+        ).tolist() if "aqi" in route else []
     elif isinstance(route, dict) and route.get("type") == "FeatureCollection":
-        aq_values = [
-            f["properties"]["aq_value"]
+        aqi_values = [
+            f["properties"]["aqi"]
             for f in route["features"]
-            if "aq_value" in f["properties"] and f["properties"]["aq_value"] is not None
+            if "aqi" in f["properties"] and f["properties"]["aqi"] is not None
         ]
     else:
         raise ValueError("Unsupported route format")
 
-    return sum(aq_values) / len(aq_values) if aq_values else None
+    return sum(aqi_values) / len(aqi_values) if aqi_values else None
 
 
 def summarize_route(route: Union[gpd.GeoDataFrame, dict]) -> dict:
