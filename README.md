@@ -34,19 +34,19 @@ The project is done in collaboration with MegaSense Oy.
 
 3. **Set up `.env` file for frontend**
 
-- Copy the example file to `.env`:
-
-```bash
-cp .env_example .env
-```
-
-- Edit `.env` with your own values:
-```bash 
-REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
-REACT_APP_API_URL=http://localhost:8000
-REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11
-
-```
+   - Copy the example file to `.env`:
+   
+   ```bash
+   cp .env_example .env
+   ```
+   
+   - Edit `.env` with your own values:
+   ```bash 
+   REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
+   REACT_APP_API_URL=http://localhost:8000
+   REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11
+   
+   ```
 
 > **Note:**
 > 
@@ -77,6 +77,72 @@ REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11
    ```bash
    poetry install
    ```
+
+4. **Set up `.env` file for backend**
+
+   - Copy the example file to `.env`:
+   ```bash
+     cp env_example.py .env
+   ```
+   - Edit `.env` with your own values:
+   ```bash
+     GOOGLE_API_KEY=your_api_key_here  
+     DB_HOST=localhost  
+     DB_PORT=5432  
+     DB_USER=postgres  
+     DB_PASSWORD=your_password  
+     DB_NAME=ecopaths
+   ```
+These values must match your local PostgreSQL setup and any external API keys you use.
+
+### Database Setup
+
+   EcoPaths uses a PostGIS-backed spatial database to store enriched edge and grid data. All database interactions go through the `DatabaseClient`.
+
+#### Prerequisites
+
+- PostgreSQL with PostGIS extension installed
+
+#### Local Setup
+
+1. **Create a PostgreSQL database with PostGIS enabled**
+
+   Make sure your PostgreSQL server is running before executing any database tasks. 
+   You can use the default name `ecopaths`, or configure your own connection settings in the `.env` file.
+    > **Linux (systemd):**
+    > ```bash
+    > sudo systemctl start postgresql
+    > ```
+    >
+    > **macOS (Homebrew):**
+    > ```bash
+    > brew services start postgresql
+    > ```
+    >
+    > You can test the connection with:
+    > ```bash
+    > psql -U postgres -d ecopaths
+    > ```
+
+2. **Verify PostGIS is active**
+   ```sql
+   SELECT PostGIS_Version();
+   ```
+
+3. **Populate the database**
+   Make sure you're in the project root directory (`EcoPaths/`).
+
+   Then run the following command to load grid and edge data into the PostGIS database:
+     ```bash
+     invoke populate-database --area=testarea
+     ```
+      You can replace `testarea` with any configured area name found in `AREA_SETTINGS`.
+
+> **Note:**
+> - All database interactions go through the `DatabaseClient`
+> - Saving to the database is currently done manually via the `invoke populate-database` task
+> - `testarea` is preconfigured for quick local testing
+> - Make sure the backend virtual environment is activated and always run `invoke` commands from the root directory. See [Notes / Tips](#notes--tips) for full instructions.
 
 ## Startup
 
@@ -208,6 +274,7 @@ npm run test:robot:headless
 
 - [Product backlog](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/1)  
 - [Sprint task board](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/4)
+
 
 ## License
 
