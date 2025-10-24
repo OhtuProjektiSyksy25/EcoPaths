@@ -3,15 +3,14 @@ Download and process OpenStreetMap data into a cleaned road network.
 """
 
 import warnings
-from pathlib import Path
-import requests
 import geopandas as gpd
 from pyrosm import OSM
 from shapely.geometry import Point, LineString, MultiLineString, GeometryCollection
 from shapely.ops import split
 from shapely.errors import TopologicalError
-from src.config.settings import AreaConfig
-from src.utils.grid import Grid
+from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
+from src.database.db_client import DatabaseClient
+from .osm_downloader import OSMDownloader
 
 
 class OSMPreprocessor:
@@ -21,8 +20,8 @@ class OSMPreprocessor:
 
     This class supports area-specific configurations, bounding box filtering, 
     and network type selection.
-    The output is saved as a Parquet file containing 
-    simplified geometries and basic attributes.
+    It does not handle data persistence; saving
+    to a database should be done using DatabaseClient.
     """
 
     def __init__(self, area: str = "berlin", network_type: str = "walking"):
@@ -35,65 +34,38 @@ class OSMPreprocessor:
 
         Sets up paths, bounding box, CRS, and download URL for the selected area.
         """
-        self.config = AreaConfig(area)
-        self.area = self.config.area
-        self.pbf_path = self.config.pbf_file
-        self.output_path = self.config.edges_output_file
-        self.pbf_url = self.config.pbf_url
-        self.bbox = self.config.bbox
-        self.crs = self.config.crs
+        self.area_name = area.lower()
         self.network_type = network_type
-
-    def download_pbf_if_missing(self):
-        """
-        Download the OSM PBF file from the configured URL if it does not exist locally.
-
-        Raises:
-            ValueError: If no download URL is provided.
-            requests.HTTPError: If the download fails.
-        """
-
-        if self.pbf_path.exists():
-            return
-        if not self.pbf_url:
-            raise ValueError(
-                "PBF file is missing and no download URL is provided!")
-
-        print(f"Downloading PBF from: {self.pbf_url}")
-        response = requests.get(self.pbf_url, timeout=10, stream=True)
-        response.raise_for_status()
-        with self.pbf_path.open("wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        print("Download completed.")
+        self.downloader = OSMDownloader(self.area_name)
+        self.area_config = self.downloader.area_config
+        self.crs = self.area_config.crs
 
     def extract_edges(self):
         """
         Extract, process, and save road network edges for the configured area.
 
         Workflow:
-        - Downloads PBF file if missing
-        - Loads OSM network data and prepares geometries
-        - Loads or generates spatial tile grid
-        - Splits edges by tile boundaries and assigns tile IDs
-        - Cleans and filters edge geometries
-        - Saves final edge dataset to disk
+        - Load OSM data via OSMDownloader
+        - Prepare graph and geometries
+        - Load spatial tile grid from database
+        - Assign tile IDs to edges
+        - Clean and filter geometries
 
         Returns:
-            GeoDataFrame: Final processed edge data with tile assignments and attributes.
+            GeoDataFrame: Processed edges with tile assignments and relevant attributes,
+                        ready to be saved to a database.
         """
         warnings.filterwarnings(
             "ignore", category=FutureWarning, module="pyrosm")
 
-        self.download_pbf_if_missing()
-        osm = OSM(str(self.pbf_path), bounding_box=self.bbox)
-        graph = self._prepare_graph(osm)
-        grid = self._load_or_create_grid()
+        osm = self.downloader.get_osm_instance()
+        edges_gdf = self._prepare_graph(osm)
+        grid = self._load_grid()
         print("Preparing edges...")
-        graph = self._assign_tiles(graph, grid)
-        graph = self._clean_geometry(graph)
-        self._save_graph(graph)
-        return graph
+        edges_gdf = self._assign_tiles(edges_gdf, grid)
+        edges_gdf = self._clean_geometry(edges_gdf)
+
+        return edges_gdf
 
     def _prepare_graph(self, osm: OSM) -> gpd.GeoDataFrame:
         """
@@ -111,6 +83,9 @@ class OSMPreprocessor:
             GeoDataFrame: Preprocessed edge geometries in target CRS.
         """
         graph = osm.get_network(network_type=self.network_type)
+        if graph is None or graph.empty:
+            raise ValueError(
+                f"No '{self.network_type}' network edges found for area '{self.area_name}'. ")
         graph = graph.to_crs(self.crs)
         graph = graph.explode(index_parts=False).reset_index(drop=True)
 
@@ -141,23 +116,18 @@ class OSMPreprocessor:
             return LineString([geom, geom])  # zero-length line
         return geom.convex_hull if hasattr(geom, "convex_hull") else geom
 
-    def _load_or_create_grid(self):
+    def _load_grid(self) -> gpd.GeoDataFrame:
         """
-        Load existing spatial tile grid or generate a new one.
+        Load spatial tile grid for the current area from the database.
 
-        - If grid file exists, loads it from disk (GeoJSON format)
-        - Otherwise, creates a new grid using configured tile size and bounding box
+        Uses the DatabaseClient to query the grid table corresponding to the configured area.
+        This replaces file-based grid loading and ensures consistency with database-stored tiles.
 
         Returns:
-            GeoDataFrame: Grid tiles with tile IDs and geometry.
+            GeoDataFrame: Grid tiles with tile_id and geometry for the current area.
         """
-        grid_path = Path(self.config.grid_file_parquet)
-        if not grid_path.exists():
-            print("Grid file missing. Generating automatically.")
-            grid = Grid(self.config).create_grid()
-        else:
-            grid = gpd.read_parquet(grid_path)
-        return grid
+        db = DatabaseClient()
+        return db.load_grid(self.area_name)
 
     def _assign_tiles(self, edges: gpd.GeoDataFrame, grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
@@ -216,18 +186,17 @@ class OSMPreprocessor:
         - Normalizes geometries to LineStrings
         - Computes edge lengths in meters
         - Assigns unique edge IDs
-        - Retains selected attributes (e.g. highway)
+        - Retains base and network-specific extra attributes
 
         Args:
             gdf (GeoDataFrame): Edge data after tile assignment.
 
         Returns:
-            GeoDataFrame: Cleaned edge data with geometry, length, and attributes.
+            GeoDataFrame: Cleaned edge data with selected columns.
 
         Raises:
             ValueError: If resulting geometries are empty or invalid.
         """
-
         gdf = gdf.copy()
 
         allowed_access = [None, "yes", "permissive"]
@@ -242,28 +211,14 @@ class OSMPreprocessor:
         gdf["length_m"] = gdf.geometry.length.round(2)
         gdf["edge_id"] = range(len(gdf))
 
-        selected_attributes = [col for col in [
-            "highway"] if col in gdf.columns]
-        columns = ["edge_id", "tile_id", "geometry",
-                   "length_m"] + selected_attributes
+        columns = BASE_COLUMNS + EXTRA_COLUMNS.get(self.network_type, [])
+
+        for col in columns:
+            if col not in gdf.columns:
+                gdf[col] = None
 
         if gdf.empty or gdf.geometry.is_empty.any():
             raise ValueError(
                 "Geometry cleaning resulted in empty or invalid edges.")
 
         return gdf[columns]
-
-    def _save_graph(self, graph):
-        """
-        Save the processed road network to a Parquet file.
-
-        Args:
-            graph (GeoDataFrame): Cleaned edge data.
-
-        Raises:
-            ValueError: If the graph contains empty geometries.
-        """
-        if graph.empty or graph.geometry.is_empty.any():
-            raise ValueError("Cannot save: graph contains empty geometries.")
-        graph.to_parquet(self.output_path)
-        print(f"Saved {len(graph)} edges to {self.output_path}")

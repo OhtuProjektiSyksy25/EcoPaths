@@ -1,17 +1,15 @@
 """Module for enriching road network edges with air quality data."""
 
-from pathlib import Path
 import geopandas as gpd
 from config.settings import AreaConfig
 from services.google_api_service import GoogleAPIService
+from database.db_client import DatabaseClient
 
 
 class EdgeEnricher:
     """
-    EdgeEnricher handles spatial data for environmental routing and analysis.
-
-    It loads preprocessed road network data and optionally combines it with air quality data.
-    Designed to work immediately with road data, and extend easily when air quality data is added.
+    EdgeEnricher handles loading road network edges from the database
+    and optionally combining them with air quality (AQ) data.
     """
 
     def __init__(self, area: str = "berlin"):
@@ -23,211 +21,127 @@ class EdgeEnricher:
         """
         self.config = AreaConfig(area)
         self.area = area
-        self.road_gdf = None
-        self.air_quality_gdf = None
-        self.combined_gdf = None
+        self.db_client = DatabaseClient()
 
-    @property
-    def area_config(self) -> AreaConfig:
+        # Initialize attributes to hold data during enrichment workflow
+        self.edges_gdf: gpd.GeoDataFrame | None = None
+        self.aq_gdf: gpd.GeoDataFrame | None = None
+        self.enriched_gdf: gpd.GeoDataFrame | None = None
+
+    def get_enriched_tiles(
+        self,
+        tile_ids: list[int],
+        network_type: str = "walking"
+    ) -> gpd.GeoDataFrame:
         """
-        Exposes the AreaConfig instance used by this enricher.
+        Load edges and AQ data for given tiles, enrich edges, and return.
+
+        Args:
+            tile_ids (list[int]): List of tile IDs to process.
+            network_type (str): Type of network ('walking', 'cycling', 'driving').
 
         Returns:
-            AreaConfig: Configuration object for the selected area.
+            GeoDataFrame: Road network edges enriched with AQ data (if available).
         """
-        return self.config
+        # Load edges and AQ data for the tiles
+        self.edges_gdf = self.load_edges_from_db(tile_ids, network_type)
+        self.aq_gdf = self.load_aq_tiles(tile_ids)
 
-    def load_data(self):
+        # Perform enrichment
+        self.enriched_gdf = self.enrich_data(
+            edges=self.edges_gdf, aq=self.aq_gdf
+        )
+        return self.enriched_gdf
+
+    def load_edges_from_db(
+        self,
+        tile_ids: list[int],
+        network_type: str = "walking"
+    ) -> gpd.GeoDataFrame:
         """
-        Load road network and air quality data from files.
+        Load edges for the given area/network type and specific tile IDs from PostGIS.
 
-        Verifies that the configured paths are valid before attempting to read.
-        """
-        edge_path = Path(self.config.edges_output_file)
-        if not edge_path.exists():
-            raise FileNotFoundError(
-                f"Road network file not found for area '{self.area}'.\n"
-                f"Expected file: {edge_path}\n"
-                f"Please run preprocessing: `invoke preprocess-osm --area={self.area}`"
-            )
-
-        self.road_gdf = gpd.read_parquet(edge_path)
-
-        aq_path = Path(self.config.aq_output_file)
-        if aq_path.exists() and aq_path.stat().st_size > 0:
-            try:
-                self.air_quality_gdf = gpd.read_file(aq_path)
-            except Exception as e:  # pylint: disable=W0718
-                print(f"Failed to read air quality data: {e}")
-                self.air_quality_gdf = None
-        else:
-            print("Air quality file not found or empty. Skipping AQ data.")
-            self.air_quality_gdf = None
-
-    def combine_data(self):
-        """
-        Combine road network with air quality data.
-
-        Uses polygon intersection as the primary method. If the AQ data consists of points only,
-        it falls back to nearest-point join.
-
-        Aggregation of multiple AQ matches per edge is always performed (mean of numeric cols).
-        """
-        if self.air_quality_gdf is None:
-            print("Air quality data not loaded, skipping combination.")
-            self.combined_gdf = None
-            return
-
-        geom_types = set(self.air_quality_gdf.geom_type)
-        print(f"Detected AQ geometry types: {geom_types}")
-
-        # Use polygon intersection if any polygons exist
-        if any("Polygon" in g for g in geom_types):
-            print("Performing intersection join (polygon-based AQ data).")
-            self.combined_gdf = gpd.sjoin(
-                self.road_gdf,
-                self.air_quality_gdf,
-                how="left",
-                predicate="intersects"
-            )
-            self.combined_gdf = self.combined_gdf.drop(
-                columns=["index_right"], errors="ignore")
-
-        else:
-            print("Unsupported AQ geometry type. No join performed.")
-            self.combined_gdf = None
-            return
-
-        # handle potential duplicates (multiple AQ features per edge)
-        if self.combined_gdf is not None and "edge_id" in self.combined_gdf.columns:
-            dup_count = self.combined_gdf.duplicated(subset="edge_id").sum()
-            if dup_count > 0:
-                print(
-                    f"Found {dup_count} duplicate edges. Aggregating aq_value (mean).")
-
-            aq_agg = self.combined_gdf.groupby("edge_id", as_index=False)[
-                ["aq_value"]].mean()
-            self.combined_gdf = self.road_gdf.merge(
-                aq_agg, on="edge_id", how="left")
-
-    def get_enriched_edges(self, overwrite: bool = False) -> gpd.GeoDataFrame:
-        """
-        Return the most relevant network data.
-
-        If enriched data file exists, load and return it.
-        If not, generate it by combining road and AQ data, save it, and return.
+        Args:
+            tile_ids (list[int]): List of tile IDs to load.
+            network_type (str): Type of network ('walking', 'cycling', 'driving').
 
         Returns:
-            GeoDataFrame: Road network with or without air quality data.
+            GeoDataFrame: Edges for the specified tiles and network type.
         """
-        self.load_data()
+        table_name = f"edges_{self.area}_{network_type}"
+        print(
+            f"Loading edges from database table '{table_name}' for tiles: {tile_ids}...")
+        return self.db_client.load_edges_for_tiles(
+            area=self.area, network_type=network_type, tile_ids=tile_ids
+        )
 
-        enriched_path = self.config.enriched_output_file
+    def load_aq_tiles(self, tile_ids: list[int]) -> gpd.GeoDataFrame:
+        """
+        Fetch AQ data for the specified tiles using Google API.
 
-        if enriched_path.exists() and not overwrite:
-            print("Enriched data file found. Loading from disk.")
-            return gpd.read_parquet(enriched_path)
+        Args:
+            tile_ids (list[int]): List of tile IDs to fetch.
 
-        print("Enriched data file not found or overwrite requested. Generating now...")
-
-        if self.air_quality_gdf is not None:
-            self.combine_data()
-#            self.save_combined_data(enriched_path)
-            print("Returning newly combined road and air quality network.")
-            return self.combined_gdf
-
-        print("No AQ data available. Returning original road network.")
-        return self.road_gdf
-
-    def load_edges_for_tiles(self, tile_ids: list[str]) -> gpd.GeoDataFrame:
-        """Load edges for requested tiles."""
-
-        # path to edges file
-        edge_path = Path(self.config.edges_output_file)
-        if not edge_path.exists():
-            raise FileNotFoundError(
-                f"Road network file not found for area '{self.area}'.\n"
-                f"Expected file: {edge_path}\n"
-                f"Please run preprocessing: `invoke preprocess-osm --area={self.area}`"
-            )
-
-        # load all edges
-        edges_gdf = gpd.read_parquet(edge_path)
-
-        # filter for requested tile_ids
-        if "tile_id" in edges_gdf.columns:
-            edges_gdf = edges_gdf[edges_gdf["tile_id"].isin(tile_ids)]
-        else:
-            print("tile_id column not found in edges data")
-
-        # return filtered edges as gdf
-        return edges_gdf
-
-    def enrich_tiles(self, tile_ids: list[str]) -> gpd.GeoDataFrame:
-        """Enrich edges with air quality data."""
-
-        # receive tile_ids list from caller
-        print(f"EdgeEnricher: Enriching {len(tile_ids)} tiles")
-
-        # load edges for specific tiles
-        edges_gdf = self.load_edges_for_tiles(tile_ids)
-
-        if edges_gdf.empty:
-            print(f"No edges found for tiles: {tile_ids}")
-            return edges_gdf
-
-        print(f"Loaded {len(edges_gdf)} edges")
-
-        # fetch AQ data from Google API
+        Returns:
+            GeoDataFrame: AQ data for the tiles, or empty GeoDataFrame if none.
+        """
         google_api_service = GoogleAPIService()
         aq_gdf = google_api_service.get_aq_data_for_tiles(
-            tile_ids, area=self.area)
+            tile_ids, area=self.area
+        )
 
         if aq_gdf.empty:
             print("No AQ data from API. Returning edges without enrichment.")
-            edges_gdf["aqi"] = None
-            return edges_gdf
+            return gpd.GeoDataFrame(columns=["tile_id", "aqi", "geometry"], crs=self.edges_gdf.crs)
+
+        if aq_gdf.crs != self.edges_gdf.crs:
+            aq_gdf = aq_gdf.to_crs(self.edges_gdf.crs)
 
         print(f"Retrieved AQ data for {len(tile_ids)} tiles")
+        return aq_gdf
 
-        # check CRS
-        if edges_gdf.crs != aq_gdf.crs:
-            aq_gdf = aq_gdf.to_crs(edges_gdf.crs)
+    def enrich_data(
+        self,
+        edges: gpd.GeoDataFrame,
+        aq: gpd.GeoDataFrame
+    ) -> gpd.GeoDataFrame:
+        """
+        Combine road network with air quality data.
 
-        # spatial join --> enrich edges with AQ data
-        enriched_gdf = gpd.sjoin(
-            edges_gdf,
-            aq_gdf[["tile_id", "aqi", "geometry"]],
-            how="left",
-            predicate="intersects"
-        )
+        Uses polygon intersection as the primary method.
 
-        # clean enriched data
-        enriched_gdf = enriched_gdf.drop(
-            columns=["index_right"], errors="ignore")
+        Args:
+            edges (GeoDataFrame): Road network edges.
+            aq (GeoDataFrame): Air quality polygons.
 
-        if "tile_id_left" in enriched_gdf.columns:
-            enriched_gdf = enriched_gdf.rename(columns={
-                "tile_id_left": "tile_id",
-                "tile_id_right": "aq_tile_id"
-            })
+        Returns:
+            GeoDataFrame: Enriched edges with AQ values.
+        """
+        if aq.empty:
+            print("AQ data empty. Returning original edges.")
+            return edges
 
-        print(f"Enriched edges count: {len(enriched_gdf)}")
+        geom_types = set(aq.geom_type)
+        if any("Polygon" in g for g in geom_types):
+            print("Performing spatial join (polygon-based AQ data).")
+            enriched = gpd.sjoin(
+                edges,
+                aq[["tile_id", "aqi", "geometry"]],
+                how="left",
+                predicate="intersects"
+            ).drop(columns=["index_right"], errors="ignore")
 
-        # return enriched gdf
-        return enriched_gdf
+            # Aggregate duplicates if multiple AQ features overlap the same edge
+            if "edge_id" in enriched.columns:
+                dup_count = enriched.duplicated(subset="edge_id").sum()
+                if dup_count > 0:
+                    print(
+                        f"Found {dup_count} duplicate edges. Aggregating AQ values.")
+                aq_agg = enriched.groupby("edge_id", as_index=False)[
+                    ["aqi"]].mean()
+                enriched = edges.merge(aq_agg, on="edge_id", how="left")
 
-    def load_all_edges(self) -> gpd.GeoDataFrame:
-        """Load all edges"""
+            return enriched
 
-        # path to edges file
-        edge_path = Path(self.config.edges_output_file)
-        # check if file exists
-        if not edge_path.exists():
-            raise FileNotFoundError(
-                f"Road network file not found for area '{self.area}'.\n"
-                f"Expected file: {edge_path}"
-            )
-
-        # load and return all edges for RouteServiceFactory
-        return gpd.read_parquet(edge_path)
+        print("Unsupported AQ geometry type. Returning original edges.")
+        return edges
