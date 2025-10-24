@@ -5,13 +5,13 @@ coverage:
   status:
     project:
       default:
-        target: 40%
-#        threshold: 5%
+        target: 60%
+        threshold: 5%
         if_not_found: success
     patch:
       default:
-        target: 40%
-#        threshold: 5%
+        target: 60%
+        threshold: 5%
 
 
 comment:

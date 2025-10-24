@@ -53,7 +53,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage_reports/frontend/lcov.info
-          fail_ci_if_error: 
+          fail_ci_if_error: true
 
 
   ### 2. BACKEND
