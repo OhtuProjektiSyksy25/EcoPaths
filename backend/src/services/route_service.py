@@ -63,7 +63,6 @@ class RouteService:
         self.redis = RedisCache()
         self.db_client = DatabaseClient()
         self.edge_enricher = EdgeEnricher(area)
-        self._edges_cache = None  # for test_helper
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
         """Main entrypoint: compute route and return routes + summaries.
@@ -171,8 +170,3 @@ class RouteService:
             )
 
         return {"routes": results, "summaries": summaries}
-
-    # Test helper
-    def set_edges_for_testing(self, gdf: gpd.GeoDataFrame):
-        """Allow injecting fake edges for testing."""
-        self._edges_cache = gdf

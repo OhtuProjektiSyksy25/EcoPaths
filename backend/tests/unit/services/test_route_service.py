@@ -55,18 +55,6 @@ def test_create_buffer(route_service):
     assert buffer.area > 0
 
 
-def test_set_edges_for_testing(route_service):
-    gdf = gpd.GeoDataFrame({
-        "geometry": [LineString([(0, 0), (1, 1)])],
-        "edge_id": ["e1"],
-        "length_m": [100],
-        "aqi": [20],
-        "tile_id": [101]
-    }, crs="EPSG:25833")
-    route_service.set_edges_for_testing(gdf)
-    assert route_service._edges_cache.equals(gdf)
-
-
 def test_compute_routes_structure(route_service):
     edges = gpd.GeoDataFrame({
         "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
