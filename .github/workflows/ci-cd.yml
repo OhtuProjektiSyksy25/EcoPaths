@@ -136,7 +136,9 @@ jobs:
   docker:
     name: Docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.ref_name == 'dev'
+    if: >
+      (github.event_name == 'push' && github.ref_name == 'main') ||
+      (github.event_name == 'pull_request' && github.base_ref == 'dev')
     needs: [frontend, backend]
 
     steps:
