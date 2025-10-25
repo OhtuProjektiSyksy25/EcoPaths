@@ -7,3 +7,4 @@ resources:
   - manifests/imagestream.yaml
   - manifests/deployment.yaml
   - manifests/configmap.yaml
+  - manifests/populate_db.yaml

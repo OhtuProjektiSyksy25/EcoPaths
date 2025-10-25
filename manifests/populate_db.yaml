@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ecopaths-populate-db
+spec:
+  template:
+    spec:
+      containers:
+        - name: populate-db
+          image: image-registry.openshift-image-registry.svc:5000/ohtuprojekti-staging/ecopaths:staging
+          imagePullPolicy: Always
+          workingDir: /app/backend
+          command: ["poetry", "run", "invoke", "-r", "/app", "populate-database", "--area=berlin"]
+          env:
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecopaths-config
+                  key: DB_URL
+            - name: PYTHONPATH
+              value: /app:/app/backend:/app/backend/src
+      restartPolicy: OnFailure

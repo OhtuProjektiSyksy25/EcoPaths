@@ -34,20 +34,23 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 
 WORKDIR /app
 
-ARG GOOGLE_API_KEY
-ENV GOOGLE_API_KEY=$GOOGLE_API_KEY
+RUN mkdir -p backend
 
-COPY backend/pyproject.toml backend/poetry.lock* ./
+COPY backend/pyproject.toml backend/poetry.lock* ./backend/
 
-RUN poetry install --no-interaction --no-ansi --no-root
+RUN cd backend && poetry install --no-interaction --no-ansi --no-root --with dev
 
-COPY backend/ ./
+COPY backend/ ./backend/
 
-COPY --from=frontend /app/build ./build
+COPY tasks.py ./tasks.py
+
+COPY --from=frontend /app/build ./backend/build
 
 RUN chmod -R a+rwX /app
 
-ENV PYTHONPATH="${PYTHONPATH}:/app/src"
+ENV PYTHONPATH="${PYTHONPATH}:/app:/app/backend/src"
+
+WORKDIR /app/backend
 
 EXPOSE 8000
 

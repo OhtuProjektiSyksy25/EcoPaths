@@ -96,10 +96,15 @@ class DatabaseConfig:
     user: str = os.getenv("DB_USER", "postgres")
     password: str = os.getenv("DB_PASSWORD", "postgres")
     dbname: str = os.getenv("DB_NAME", "ecopaths")
+    url: str = os.getenv("DB_URL")
 
     @property
     def connection_string(self) -> str:
         """Return SQLAlchemy/PostGIS-compatible connection string."""
+
+        if self.url:
+            return self.url
+
         return (
             f"postgresql+psycopg2://{self.user}:{self.password}"
             f"@{self.host}:{self.port}/{self.dbname}"
