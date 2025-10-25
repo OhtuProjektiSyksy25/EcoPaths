@@ -113,7 +113,7 @@ class RedisUtils:
             False: if saving is not succesful
         """
         current_enricher = EdgeEnricher()
-        gdf = current_enricher.enrich_tiles(tile_ids)
+        gdf = current_enricher.get_enriched_tiles(tile_ids)
         # add check when EdgeEnricher is finished
         if RedisUtils.save_gdf(gdf, redis):
             return True

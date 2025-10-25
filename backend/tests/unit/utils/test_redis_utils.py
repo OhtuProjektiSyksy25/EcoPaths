@@ -62,7 +62,7 @@ class TestRedisUtils:
         expected_tile_ids = sample_gdf["tile_id"].unique()
 
         for tile_id in expected_tile_ids:
-            stored_value,_ = RedisUtils.get_gdf_by_list_of_keys(
+            stored_value, _ = RedisUtils.get_gdf_by_list_of_keys(
                 [tile_id], fake_redis)
             origin_value = sample_gdf[sample_gdf["tile_id"] == tile_id]
             assert stored_value is not None

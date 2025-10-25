@@ -5,8 +5,8 @@ import os
 import requests
 import geopandas as gpd
 from dotenv import load_dotenv
-from utils.grid import Grid
 from config.settings import AreaConfig
+from database.db_client import DatabaseClient
 
 
 load_dotenv()
@@ -69,10 +69,8 @@ class GoogleAPIService:
         # load area config
         area_config = AreaConfig(area)
         # create grid instance
-        grid = Grid(area_config)
-
-        # will load grid from file if it exists
-        grid_gdf = grid.create_grid()
+        db = DatabaseClient()
+        grid_gdf = db.load_grid(area)
 
         # filter to requested tiles and create a copy
         tiles = grid_gdf[grid_gdf["tile_id"].isin(tile_ids)].copy()
