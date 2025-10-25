@@ -149,6 +149,10 @@ class RouteService:
 
     def _compute_routes(self, edges, origin_gdf, destination_gdf):
         """Compute multiple route variants and summaries."""
+
+        edges["length_m"] = pd.to_numeric(edges["length_m"], errors="coerce").fillna(0)
+        edges["aqi"] = pd.to_numeric(edges["aqi"], errors="coerce").fillna(0)
+
         edges["combined_score"] = 0.5 * edges["length_m"] + 0.5 * edges["aqi"]
 
         modes = {

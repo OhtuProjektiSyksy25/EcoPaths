@@ -61,45 +61,6 @@ def clean(c):
     c.run("rm -rf coverage_reports/backend/")
     print("Removed backend test artifacts and coverage reports")
 
-# ========================
-# Grid generation
-# ========================
-
-@task
-def create_grid(c, area=None):
-    """
-    Create a grid for the specified area.
-    """
-    if area is None:
-        print("Error: --area parameter is required")
-        print("Usage: inv create-grid --area=<city>")
-        return
-
-    print(f"Creating grid for {area}...")
-
-    with c.cd("backend"):
-        c.run(f"""
-poetry run python -c "
-from src.utils.grid import Grid
-from src.config.settings import AreaConfig
-
-try:
-    config = AreaConfig('{area}')
-    grid = Grid(config)
-    
-    # Check if grid already exists
-    if config.grid_file.exists():
-        print('Grid already exists.')
-    
-    grid_gdf = grid.create_grid()
-    print(f'Loaded {{len(grid_gdf)}} tiles')
-    print(f'File: {{config.grid_file}}')
-    
-except ValueError as e:
-    print(f'Error: {{e}}')
-    print('Area not available. Check available areas in settings.py.')
-"
-        """, warn=True)
 
 # ========================
 # Higher-level convenience tasks
@@ -198,39 +159,67 @@ def populate_database(c, area: str, network_type: str = "walking", overwrite_edg
     grid_table = f"grid_{area.lower()}"
     edge_table = f"edges_{area.lower()}_{network_type.lower()}"
 
-    # GRID
-    if db_client.table_exists(grid_table):
-        if not overwrite_grid:
-            print(f"Grid table '{grid_table}' already exists. Skipping grid creation.")
-            print("To overwrite, use: --overwrite-grid")
-        else:
-            print(f"Overwriting existing grid in table '{grid_table}'...")
-            settings = get_settings(area)
-            grid = Grid(settings.area)
-            grid_gdf = grid.create_grid()
-            db_client.save_grid(grid_gdf, area=area, if_exists="replace")
+        # GRID
+    settings = get_settings(area)
+    grid = Grid(settings.area)
+    grid_gdf = grid.create_grid()
+
+    if db_client.table_exists(grid_table) and not overwrite_grid:
+        print(f"Grid table '{grid_table}' already exists. Skipping (use --overwrite-grid to force).")
     else:
-        print(f"Creating new grid for area '{area}'...")
-        settings = get_settings(area)
-        grid = Grid(settings.area)
-        grid_gdf = grid.create_grid()
-        db_client.save_grid(grid_gdf, area=area, if_exists="fail")
+        action = "Overwriting" if overwrite_grid else "Creating"
+        print(f"{action} grid for area '{area}'...")
+        db_client.save_grid(grid_gdf, area=area, if_exists="replace" if overwrite_grid else "fail")
 
     # EDGES
-    if db_client.table_exists(edge_table):
-        if not overwrite_edges:
-            print(f"Edge table '{edge_table}' already exists. Skipping edge extraction.")
-            print("To overwrite, use: --overwrite-edges")
-        else:
-            print(f"Overwriting edge data in table '{edge_table}'...")
-            preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-            edges_gdf = preprocessor.extract_edges()
-            db_client.save_edges(edges_gdf, area=area, network_type=network_type, if_exists="replace")
+    if db_client.table_exists(edge_table) and not overwrite_edges:
+        print(f"Edge table '{edge_table}' already exists. Skipping (use --overwrite-edges to force).")
     else:
-        print(f"Creating edge data for table '{edge_table}'...")
+        action = "Overwriting" if overwrite_edges else "Creating"
+        print(f"{action} edge data for table '{edge_table}'...")
         preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-        edges_gdf = preprocessor.extract_edges()
-        db_client.save_edges(edges_gdf, area=area, network_type=network_type, if_exists="fail")
+        preprocessor.extract_edges() 
 
     print(f"Database population complete for area '{area}', network type '{network_type}'.")
 
+@task
+def drop_table(c, table_name: str):
+    """
+    Drop a specific table from the database.
+
+    Usage:
+        inv drop-table --table-name=edges_berlin_walking
+    """
+    from backend.src.database.db_client import DatabaseClient
+
+    db = DatabaseClient()
+    db.drop_table(table_name)
+
+
+@task
+def drop_area(c, area: str, network_type: str):
+    """
+    Drop all tables for a given area and repopulate the database.
+
+    Usage:
+        inv reset-area --area=berlin --network-type=walking
+    """
+    from backend.src.database.db_client import DatabaseClient
+
+    db = DatabaseClient()
+
+    edge_table = f"edges_{area.lower()}_{network_type.lower()}"
+    grid_table = f"grid_{area.lower()}"
+    node_table = f"nodes_{area.lower()}_{network_type.lower()}"
+
+    print(f"Dropping tables for area '{area}' ({network_type})...")
+    db.drop_table(edge_table, schema="public")
+    db.drop_table(grid_table, schema="public")
+    db.drop_table(node_table, schema="public")
+
+
+    print(f"Drop completed for area '{area}' ({network_type})")
+
+    db.table_exists(edge_table)
+    db.table_exists(grid_table)
+    db.table_exists(node_table)
