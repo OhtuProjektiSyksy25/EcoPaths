@@ -162,3 +162,4 @@ jobs:
           build-args: |
             REACT_APP_MAPBOX_TOKEN=${{ secrets.REACT_APP_MAPBOX_TOKEN }}
             REACT_APP_MAPBOX_STYLE=${{ secrets.REACT_APP_MAPBOX_STYLE }}
+            GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}

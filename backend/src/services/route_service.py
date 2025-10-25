@@ -9,8 +9,8 @@ from core.route_algorithm import RouteAlgorithm
 from config.settings import AreaConfig
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
+from services.redis_service import RedisService
 from utils.route_summary import summarize_route
-from utils.redis_utils import RedisUtils
 
 
 class RouteService:
@@ -121,14 +121,14 @@ class RouteService:
         Returns:
             GeoDataFrame: GeoDataFrame
         """
-        non_existing_tile_ids = RedisUtils.prune_found_ids(
+        non_existing_tile_ids = RedisService.prune_found_ids(
             tile_ids, self.redis)
         existing_tile_ids = list(set(tile_ids)-set(non_existing_tile_ids))
 
         all_gdfs = []
 
         if len(existing_tile_ids) > 0:
-            found_gdf, expired_tiles = RedisUtils.get_gdf_by_list_of_keys(
+            found_gdf, expired_tiles = RedisService.get_gdf_by_list_of_keys(
                 existing_tile_ids, self.redis)
             non_existing_tile_ids = list(
                 set(non_existing_tile_ids + expired_tiles))
@@ -136,9 +136,9 @@ class RouteService:
                 all_gdfs.append(found_gdf)
 
         if len(non_existing_tile_ids) > 0:
-            RedisUtils.edge_enricher_to_redis_handler(
+            RedisService.edge_enricher_to_redis_handler(
                 non_existing_tile_ids, self.redis)
-            new_gdf, _ = RedisUtils.get_gdf_by_list_of_keys(
+            new_gdf, _ = RedisService.get_gdf_by_list_of_keys(
                 non_existing_tile_ids, self.redis)
             if new_gdf is not False:
                 all_gdfs.append(new_gdf)
