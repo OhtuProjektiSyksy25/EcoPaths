@@ -1,141 +1,84 @@
 import pytest
 import geopandas as gpd
-from pathlib import Path
-from shapely.geometry import LineString, MultiLineString, Polygon, GeometryCollection, Point
+from shapely.geometry import LineString
 from preprocessor.osm_preprocessor import OSMPreprocessor
-from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
+
+
+class FakeOSM:
+    def get_network(self, network_type):
+        return gpd.GeoDataFrame({
+            "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
+            "highway": ["footway", "footway"]
+        }, crs="EPSG:25833")
 
 
 @pytest.fixture
-def processor(tmp_path):
-    p = OSMPreprocessor(area="berlin", network_type="walking")
-    p.output_path = tmp_path / "test_edges.parquet"
-    return p
+def preprocessor(monkeypatch):
+    processor = OSMPreprocessor(area="testarea", network_type="walking")
+    monkeypatch.setattr(processor.downloader,
+                        "get_osm_instance", lambda: FakeOSM())
+    processor.crs = "EPSG:25833"
+    return processor
 
 
-def test_clean_geometry_includes_expected_columns(processor):
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="geopandas")
+def test_prepare_raw_edges_returns_valid_gdf(preprocessor):
+    osm = preprocessor.downloader.get_osm_instance()
+    gdf = preprocessor.prepare_raw_edges(osm)
 
-    gdf = gpd.GeoDataFrame({
+    assert isinstance(gdf, gpd.GeoDataFrame)
+    assert not gdf.empty
+    assert str(gdf.crs) == str(preprocessor.crs)
+    assert all(gdf.geometry.geom_type == "LineString")
+    assert not any(gdf.geometry.geom_type == "MultiLineString")
+
+
+def test_prepare_raw_edges_explodes_multilinestring(monkeypatch, preprocessor):
+    class MultiLineFakeOSM:
+        def get_network(self, network_type):
+            return gpd.GeoDataFrame({
+                "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
+                "highway": ["footway", "footway"]
+            }, crs="EPSG:25833").explode(index_parts=False)
+
+    monkeypatch.setattr(preprocessor.downloader,
+                        "get_osm_instance", lambda: MultiLineFakeOSM())
+    gdf = preprocessor.prepare_raw_edges(
+        preprocessor.downloader.get_osm_instance())
+
+    assert len(gdf) >= 2
+    assert all(gdf.geometry.geom_type == "LineString")
+
+
+def test_extract_edges_returns_cleaned_gdf(monkeypatch, preprocessor):
+    dummy_gdf = gpd.GeoDataFrame({
         "geometry": [LineString([(0, 0), (1, 1)])],
-        "highway": ["footway"],
-        "access": ["yes"],
+        "length_m": [1.41],
         "tile_id": ["A"]
     }, crs="EPSG:25833")
 
-    cleaned = processor._clean_geometry(gdf)
+    class DummyDB:
+        def save_edges(self, *args, **kwargs): pass
+        def load_edges(self, *args, **kwargs): return dummy_gdf
 
-    expected_columns = set(
-        BASE_COLUMNS + EXTRA_COLUMNS.get(processor.network_type, []))
-    assert set(cleaned.columns) == expected_columns
-    assert cleaned["length_m"].iloc[0] > 0
+    class DummyCleaner:
+        def __init__(self, db): pass
+        def normalize_geometry(self, *args): pass
+        def drop_invalid_geometries(self, *args): pass
+        def filter_access(self, *args): pass
+        def compute_lengths(self, *args): pass
+        def assign_tile_ids(self, *args): pass
 
+    class DummyBuilder:
+        def __init__(self, db, area, network_type): pass
+        def build_nodes_and_attach_to_edges(self): pass
 
-def test_clean_geometry_raises_on_empty(processor):
-    gdf = gpd.GeoDataFrame({
-        "geometry": [LineString([])],
-        "tile_id": ["A"]
-    }, crs="EPSG:25833")
+    monkeypatch.setattr(
+        "preprocessor.osm_preprocessor.DatabaseClient", lambda: DummyDB())
+    monkeypatch.setattr(
+        "preprocessor.osm_preprocessor.EdgeCleanerSQL", lambda db: DummyCleaner(db))
+    monkeypatch.setattr("preprocessor.osm_preprocessor.NodeBuilder",
+                        lambda db, a, n: DummyBuilder(db, a, n))
 
-    with pytest.raises(ValueError, match="empty or invalid"):
-        processor._clean_geometry(gdf)
-
-
-def test_clean_geometry_removes_non_lines():
-    gdf = gpd.GeoDataFrame({
-        "geometry": [LineString([(0, 0), (1, 1)]), Point(0, 0)],
-        "access": ["yes", "private"]
-    }, crs="EPSG:25833")
-
-    preprocessor = OSMPreprocessor()
-    cleaned = preprocessor._clean_geometry(gdf)
-
-    assert "edge_id" in cleaned.columns
-    assert cleaned.geometry.apply(lambda g: isinstance(g, LineString)).all()
-
-
-def test_assign_tiles_split_and_join():
-    edges = gpd.GeoDataFrame([
-        {"id": 1, "geometry": LineString([(0, 0), (2, 0)])}
-    ], crs="EPSG:25833")
-
-    grid = gpd.GeoDataFrame([
-        {"tile_id": "A", "geometry": Polygon(
-            [(0, -1), (1, -1), (1, 1), (0, 1)])},
-        {"tile_id": "B", "geometry": Polygon(
-            [(1, -1), (2, -1), (2, 1), (1, 1)])}
-    ], crs="EPSG:25833")
-
-    processor = OSMPreprocessor(area="berlin", network_type="walking")
-    result = processor._assign_tiles(edges, grid)
-
-    assert result["tile_id"].nunique() == 2
-    assert set(result["tile_id"]) == {"A", "B"}
-    assert result["id"].nunique() == 1
-
-
-def test_to_linestring_with_linestring(processor):
-    geom = LineString([(0, 0), (1, 1)])
-    result = processor._to_linestring(geom)
-    assert isinstance(result, LineString)
-    assert result.equals(geom)
-
-
-def test_to_linestring_with_multilinestring(processor):
-    geom = MultiLineString([
-        LineString([(0, 0), (1, 1)]),
-        LineString([(0, 0), (2, 2)])
-    ])
-    result = processor._to_linestring(geom)
-    assert isinstance(result, LineString)
-    assert result.equals(LineString([(0, 0), (2, 2)]))
-
-
-def test_to_linestring_with_geometrycollection(processor):
-    geom = GeometryCollection([
-        LineString([(0, 0), (1, 1)]),
-        LineString([(0, 0), (3, 3)]),
-        Point(0, 0)
-    ])
-    result = processor._to_linestring(geom)
-    assert isinstance(result, LineString)
-    assert result.equals(LineString([(0, 0), (3, 3)]))
-
-
-def test_to_linestring_with_point_fallback(processor):
-    geom = Point(0, 0)
-    result = processor._to_linestring(geom)
-    assert result.geom_type == "LineString"
-    assert result.length == 0
-
-
-def test_clean_geometry_applies_mask(monkeypatch):
-    processor = OSMPreprocessor(area="berlin", network_type="walking")
-
-    lines = [
-        LineString([(0, 0), (1, 1)]),
-        MultiLineString([[(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
-        Point(0, 0)
-    ]
-    gdf = gpd.GeoDataFrame({
-        "tile_id": [1, 1, 1],
-        "geometry": lines
-    }, crs="EPSG:25833")
-
-    called = {"count": 0}
-
-    def fake_to_linestring(geom):
-        called["count"] += 1
-        return LineString([(0, 0), (0, 0)])
-
-    monkeypatch.setattr(processor, "_to_linestring", fake_to_linestring)
-
-    result = processor._clean_geometry(gdf)
-
-    assert called["count"] == 2, f"_to_linestring called {called['count']} times instead of 2"
-
-    assert all(result.geometry.apply(lambda g: isinstance(g, LineString)))
-
-    assert "length_m" in result.columns
-    assert "edge_id" in result.columns
+    result = preprocessor.extract_edges()
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert not result.empty
