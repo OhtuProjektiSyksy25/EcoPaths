@@ -1,6 +1,6 @@
 import subprocess
 import signal
- 
+import socket
 from invoke import task
 import geopandas as gpd
 from pathlib import Path
@@ -102,9 +102,18 @@ def run_frontend(c):
 
 @task
 def run_redis(c):
-    """Start Redis server locally"""
-    c.run("redis-server", pty=True)
+    """Start Redis server locally (only if not already running)"""
+    if is_redis_running():
+        print("Redis is already running.")
+    else:
+        print("Starting Redis server...")
+        c.run("redis-server", pty=True)
 
+def is_redis_running(host="127.0.0.1", port=6379):
+    """Return True if Redis port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        return sock.connect_ex((host, port)) == 0
+    
 @task
 def run_all(c):
     """Run both backend, frontend and Redis in development mode"""
@@ -113,7 +122,13 @@ def run_all(c):
     print("Frontend: http://localhost:3000")
     print("Redis: redis://localhost:6379")
 
-    redis_proc = subprocess.Popen(["redis-server"])
+    redis_proc = None
+    if is_redis_running():
+        print("Redis already running.")
+    else:
+        print("Starting Redis...")
+        redis_proc = subprocess.Popen(["redis-server"])
+
     backend_proc = subprocess.Popen(
         ["poetry", "run", "uvicorn", "src.main:app", "--reload"],
         cwd="backend"
@@ -129,9 +144,11 @@ def run_all(c):
     except KeyboardInterrupt:
         print("\nStopping development environment...")
         for proc in [frontend_proc, backend_proc, redis_proc]:
-            proc.send_signal(signal.SIGINT)
-            proc.wait()
+            if proc is not None:
+                proc.send_signal(signal.SIGINT)
+                proc.wait()
         print("Development environment stopped.")
+
 
 
 # ========================
@@ -139,7 +156,33 @@ def run_all(c):
 # ========================
 
 @task
-def populate_database(c, area: str, network_type: str = "walking", overwrite_edges=False, overwrite_grid=False):
+def reset_and_populate_area(c, area: str, network_type: str):
+    """
+    Drop all tables for a given area and repopulate the database from scratch.
+
+    Usage:
+        inv reset-and-populate-area --area=berlin --network-type=walking
+    """
+    reset_area(c, area, network_type)
+    create_all_tables(c, area, network_type)
+    populate_database(c, area, network_type, overwrite_edges=True, overwrite_grid=True)
+
+
+@task
+def create_all_tables(c, area: str, network_type: str):
+    """
+    Create all ORM-defined tables for a specific area and network type.
+
+    Usage:
+        inv create-all-tables --area=berlin --network-type=walking
+    """
+    from backend.src.database.db_client import DatabaseClient
+    db = DatabaseClient()
+    db.create_tables_for_area(area, network_type)
+
+
+@task
+def populate_database(c, area: str, network_type: str, overwrite_edges=False, overwrite_grid=False):
     """
     Create necessary tables and populate the database with grid and edge data for a specific area.
 
@@ -154,12 +197,14 @@ def populate_database(c, area: str, network_type: str = "walking", overwrite_edg
     print(f"Starting database population for area: '{area}', network type: '{network_type}'")
 
     db_client = DatabaseClient()
-    db_client.create_tables_for_area(area, network_type)
 
     grid_table = f"grid_{area.lower()}"
     edge_table = f"edges_{area.lower()}_{network_type.lower()}"
 
-        # GRID
+    if not db_client.table_exists(edge_table):
+        raise RuntimeError(f"Edge table '{edge_table}' does not exist. Run 'create-all-tables' first.")
+
+    # GRID
     settings = get_settings(area)
     grid = Grid(settings.area)
     grid_gdf = grid.create_grid()
@@ -197,7 +242,7 @@ def drop_table(c, table_name: str):
 
 
 @task
-def drop_area(c, area: str, network_type: str):
+def reset_area(c, area: str, network_type: str):
     """
     Drop all tables for a given area and repopulate the database.
 
@@ -205,21 +250,15 @@ def drop_area(c, area: str, network_type: str):
         inv reset-area --area=berlin --network-type=walking
     """
     from backend.src.database.db_client import DatabaseClient
-
     db = DatabaseClient()
 
-    edge_table = f"edges_{area.lower()}_{network_type.lower()}"
-    grid_table = f"grid_{area.lower()}"
-    node_table = f"nodes_{area.lower()}_{network_type.lower()}"
+    tables = [
+        f"edges_{area.lower()}_{network_type.lower()}",
+        f"grid_{area.lower()}",
+        f"nodes_{area.lower()}_{network_type.lower()}"
+    ]
 
-    print(f"Dropping tables for area '{area}' ({network_type})...")
-    db.drop_table(edge_table, schema="public")
-    db.drop_table(grid_table, schema="public")
-    db.drop_table(node_table, schema="public")
-
-
-    print(f"Drop completed for area '{area}' ({network_type})")
-
-    db.table_exists(edge_table)
-    db.table_exists(grid_table)
-    db.table_exists(node_table)
+    for table in tables:
+        if db.table_exists(table):
+            print(f"Dropping table: {table}")
+            db.drop_table(table)
