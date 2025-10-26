@@ -65,6 +65,16 @@ def test_class_reuse_returns_same_class(mock_area_config):
     assert cls1 is cls2
 
 
+def test_get_class_from_registry_returns_none_for_unknown_class():
+    from src.database.db_models import _get_class_from_registry
+
+    class DummyBase(DeclarativeBase):
+        pass
+
+    result = _get_class_from_registry(DummyBase, "NonExistentClass")
+    assert result is None
+
+
 def teardown_module(module):
     """Clear TempBase registry to avoid SAWarnings after tests."""
     if hasattr(TempBase, "registry"):

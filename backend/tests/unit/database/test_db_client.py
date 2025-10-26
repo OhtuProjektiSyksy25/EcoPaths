@@ -181,10 +181,10 @@ class TestDatabaseClient:
 
             # With tile_ids
             self.db.load_edges_for_tiles(
-                self.area, self.network_type, tile_ids=[1, 2])
+                self.area, self.network_type, tile_ids=["1", "2"])
             args, kwargs = mock_read.call_args
             assert "WHERE tile_id = ANY" in args[0]
-            assert kwargs["params"]["tile_ids"] == [1, 2]
+            assert kwargs["params"]["tile_ids"] == ["1", "2"]
 
     def test_get_tile_ids_by_buffer(self):
         """Verify get_tile_ids_by_buffer returns correct tile IDs."""
@@ -214,3 +214,45 @@ class TestDatabaseClient:
             mock_begin.return_value.__enter__.return_value = mock_conn
             self.db.drop_table("test_table")
             mock_conn.execute.assert_called_once()
+
+    def test_get_nodes_by_tile_ids_empty_list_returns_empty_gdf(self):
+        """Return empty GeoDataFrame when tile_ids list is empty."""
+        result = self.db.get_nodes_by_tile_ids(
+            self.area, self.network_type, [])
+        assert isinstance(result, gpd.GeoDataFrame)
+        assert result.empty
+        assert list(result.columns) == ["node_id", "geometry", "tile_id"]
+
+    @patch("src.database.db_client.gpd.read_postgis")
+    def test_get_nodes_by_tile_ids_calls_read_postgis(self, mock_read_postgis):
+        """Call gpd.read_postgis with correct query and params."""
+        from shapely.geometry import Point
+
+        mock_gdf = gpd.GeoDataFrame(
+            {
+                "node_id": [1, 2],
+                "geometry": [Point(0, 0), Point(1, 1)],
+                "tile_id": ["123", "456"],
+            },
+            geometry="geometry",
+        )
+        mock_read_postgis.return_value = mock_gdf
+
+        result = self.db.get_nodes_by_tile_ids(
+            self.area, self.network_type, ["123", "456"])
+
+        assert isinstance(result, gpd.GeoDataFrame)
+        assert len(result) == 2
+        mock_read_postgis.assert_called_once()
+
+        called_query = mock_read_postgis.call_args[0][0]
+        called_params = mock_read_postgis.call_args[1]["params"]
+        assert f"FROM nodes_{self.area}_{self.network_type}" in called_query
+        assert called_params == {"tile_ids": ["123", "456"]}
+
+    @patch("src.database.db_client.gpd.read_postgis", side_effect=Exception("DB error"))
+    def test_get_nodes_by_tile_ids_raises_runtime_error(self, mock_read_postgis):
+        """Raise RuntimeError if read_postgis fails."""
+        with pytest.raises(RuntimeError) as excinfo:
+            self.db.get_nodes_by_tile_ids(self.area, self.network_type, ["1"])
+        assert "Failed to load nodes" in str(excinfo.value)

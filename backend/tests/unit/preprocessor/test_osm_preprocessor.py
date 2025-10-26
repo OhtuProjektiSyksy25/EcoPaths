@@ -49,36 +49,22 @@ def test_prepare_raw_edges_explodes_multilinestring(monkeypatch, preprocessor):
     assert all(gdf.geometry.geom_type == "LineString")
 
 
-def test_extract_edges_returns_cleaned_gdf(monkeypatch, preprocessor):
-    dummy_gdf = gpd.GeoDataFrame({
+def test_filter_to_selected_columns_filters_correctly(preprocessor):
+    gdf = gpd.GeoDataFrame({
         "geometry": [LineString([(0, 0), (1, 1)])],
-        "length_m": [1.41],
-        "tile_id": ["A"]
+        "highway": ["footway"],
+        "access": ["yes"],
+        "bicycle": ["no"],
+        "tile_id": ["A1"],
+        "length_m": [123.45],
+        "extra_column": ["drop me"]
     }, crs="EPSG:25833")
 
-    class DummyDB:
-        def save_edges(self, *args, **kwargs): pass
-        def load_edges(self, *args, **kwargs): return dummy_gdf
+    filtered = preprocessor.filter_to_selected_columns(gdf, "walking")
 
-    class DummyCleaner:
-        def __init__(self, db): pass
-        def normalize_geometry(self, *args): pass
-        def drop_invalid_geometries(self, *args): pass
-        def filter_access(self, *args): pass
-        def compute_lengths(self, *args): pass
-        def assign_tile_ids(self, *args): pass
+    assert isinstance(filtered, gpd.GeoDataFrame)
 
-    class DummyBuilder:
-        def __init__(self, db, area, network_type): pass
-        def build_nodes_and_attach_to_edges(self): pass
+    assert filtered.geometry.name == "geometry"
 
-    monkeypatch.setattr(
-        "preprocessor.osm_preprocessor.DatabaseClient", lambda: DummyDB())
-    monkeypatch.setattr(
-        "preprocessor.osm_preprocessor.EdgeCleanerSQL", lambda db: DummyCleaner(db))
-    monkeypatch.setattr("preprocessor.osm_preprocessor.NodeBuilder",
-                        lambda db, a, n: DummyBuilder(db, a, n))
-
-    result = preprocessor.extract_edges()
-    assert isinstance(result, gpd.GeoDataFrame)
-    assert not result.empty
+    expected_columns = {"geometry", "tile_id", "length_m", "access"}
+    assert set(filtered.columns) == expected_columns

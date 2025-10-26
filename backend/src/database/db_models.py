@@ -96,7 +96,7 @@ def create_grid_class(area_name: str, base=Base) -> type:
     attrs = {
         "__tablename__": f"grid_{area_name.lower()}",
         "__table_args__": {"extend_existing": True},
-        "tile_id": Column(Integer, primary_key=True),
+        "tile_id": Column(String, primary_key=True),
         "geometry": Column(Geometry("POLYGON", srid=srid)),
     }
 
@@ -129,6 +129,7 @@ def create_node_class(area_name: str, network_type: str, base=Base) -> type:
         "__table_args__": {"extend_existing": True},
         "node_id": Column(Integer, primary_key=True),
         "geometry": Column(Geometry("POINT", srid=srid)),
+        "tile_id": Column(String),
     }
 
     return type(class_name, (base,), attrs)

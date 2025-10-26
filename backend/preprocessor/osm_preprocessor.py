@@ -6,6 +6,7 @@ import warnings
 import geopandas as gpd
 from pyrosm import OSM
 from src.database.db_client import DatabaseClient
+from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 from .edge_cleaner_sql import EdgeCleanerSQL
 from .osm_downloader import OSMDownloader
 from .node_builder import NodeBuilder
@@ -55,27 +56,26 @@ class OSMPreprocessor:
         # Step 1–2: Load and prepare raw edges
         osm = self.downloader.get_osm_instance()
         edges_gdf = self.prepare_raw_edges(osm)
+        edges_gdf = self.filter_to_selected_columns(
+            edges_gdf, self.network_type)
 
         # Step 3: Save to database
         db = DatabaseClient()
         db.save_edges(edges_gdf, self.area,
-                      self.network_type, if_exists="replace")
+                      self.network_type, if_exists="append")
 
         # Step 4: Clean and enrich via SQL
         cleaner = EdgeCleanerSQL(db)
-        cleaner.normalize_geometry(self.area, self.network_type)
-        cleaner.drop_invalid_geometries(self.area, self.network_type)
-        cleaner.filter_access(self.area, self.network_type)
-        cleaner.compute_lengths(self.area, self.network_type)
-        cleaner.assign_tile_ids(self.area, self.network_type)
+        cleaner.run_full_cleaning(self.area, self.network_type)
 
         builder = NodeBuilder(db, self.area, self.network_type)
         builder.build_nodes_and_attach_to_edges()
 
+        cleaner.remove_disconnected_edges(self.area, self.network_type)
+        builder.remove_unused_nodes()
+
         print(
             f"Edge preprocessing complete for '{self.area}' ({self.network_type})")
-        cleaned_gdf = db.load_edges(self.area, self.network_type)
-        return cleaned_gdf
 
     def prepare_raw_edges(self, osm: OSM) -> gpd.GeoDataFrame:
         """
@@ -99,3 +99,26 @@ class OSMPreprocessor:
         edges_raw = edges_raw.to_crs(self.crs)
         edges_raw = edges_raw.explode(index_parts=False).reset_index(drop=True)
         return edges_raw
+
+    def filter_to_selected_columns(self, gdf, network_type):
+        """
+        Filters a GeoDataFrame to include only columns defined 
+        in the ORM model for the given network type.
+
+        Args:
+            gdf (GeoDataFrame): The input GeoDataFrame containing raw edge data.
+            network_type (str): The type of network 
+            ('walking', 'cycling', 'driving') used to determine extra columns.
+
+        Returns:
+            GeoDataFrame: A filtered GeoDataFrame containing only the selected columns.
+        """
+
+        selected = BASE_COLUMNS + EXTRA_COLUMNS.get(network_type, [])
+
+        if "geometry" not in selected:
+            selected.append("geometry")
+
+        filtered = gdf[[col for col in selected if col in gdf.columns]]
+
+        return filtered.set_geometry("geometry")

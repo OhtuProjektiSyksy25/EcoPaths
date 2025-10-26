@@ -9,7 +9,7 @@ BASE_COLUMNS = ["edge_id", "tile_id", "geometry",
                 "from_node", "to_node", "length_m"]
 
 EXTRA_COLUMNS = {
-    "walking": ["highway"],
-    "cycling": ["highway"],
-    "driving": ["highway", "lanes", "maxspeed"]
+    "walking": ["access"],
+    "cycling": ["access"],
+    "driving": ["access", "highway", "lanes", "maxspeed"]
 }

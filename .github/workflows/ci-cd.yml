@@ -63,6 +63,27 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgis/postgis:15-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecopaths_test
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: ecopaths_test
+      TEST_AREA: testarea
+      NETWORK_TYPE: walking
 
 
     steps:
@@ -85,6 +106,18 @@ jobs:
 
       - name: Install backend dependencies
         run: poetry install
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Enable PostGIS
+        run: |
+          psql postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME \
+          -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/

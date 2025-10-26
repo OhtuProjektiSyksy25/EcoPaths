@@ -128,6 +128,10 @@ class DatabaseClient:
                 CREATE INDEX IF NOT EXISTS idx_nodes_{area}_{network_type}_geometry
                 ON nodes_{area}_{network_type} USING GIST (geometry);
             """))
+            conn.execute(text(f"""
+                CREATE INDEX IF NOT EXISTS idx_nodes_{area}_{network_type}_tile_id
+                ON nodes_{area}_{network_type} (tile_id);
+            """))
 
     def save_edges(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -321,6 +325,43 @@ class DatabaseClient:
 
         intersecting = grid_gdf[grid_gdf.intersects(buffer_geom)]
         return intersecting["tile_id"].unique().tolist()
+
+    def get_nodes_by_tile_ids(
+        self, area: str, network_type: str, tile_ids: list[str]
+    ) -> gpd.GeoDataFrame:
+        """
+        Fetch nodes from the database that belong to the given tile_ids.
+
+        Args:
+            area (str): Area name (e.g., 'berlin').
+            network_type (str): Network type (e.g., 'walking').
+            tile_ids (list[str]): List of tile identifiers as strings.
+
+        Returns:
+            GeoDataFrame: Nodes with geometry and attributes.
+        """
+        if not tile_ids:
+            return gpd.GeoDataFrame(columns=["node_id", "geometry", "tile_id"])
+
+        table_name = f"nodes_{area.lower()}_{network_type.lower()}"
+        query = f"""
+            SELECT * FROM {table_name}
+            WHERE tile_id = ANY(%(tile_ids)s)
+        """
+        params = {"tile_ids": tile_ids}
+
+        try:
+            return gpd.read_postgis(
+                query,
+                con=self.engine,
+                geom_col="geometry",
+                params=params
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load nodes for area '{area}', "
+                f"network '{network_type}', tile_ids {tile_ids}: {e}"
+            ) from e
 
     def table_exists(self, table_name: str, schema: str = "public") -> bool:
         """
