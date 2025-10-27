@@ -63,7 +63,6 @@ jobs:
     defaults:
       run:
         working-directory: backend
-
     services:
       postgres:
         image: postgis/postgis:15-3.4
@@ -71,20 +70,18 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: ecopaths_test
-        ports:
-          - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d ecopaths_test"
+          --health-cmd "pg_isready -U postgres -d postgres"
           --health-interval 5s
           --health-timeout 5s
-          --health-retries 20
+          --health-retries 30
 
     env:
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: ecopaths_test
+      DB_USER_TEST: postgres
+      DB_PASSWORD_TEST: postgres
+      DB_NAME_TEST: ecopaths_test
       TEST_AREA: testarea
       NETWORK_TYPE: walking
 
@@ -109,23 +106,17 @@ jobs:
       - name: Install backend dependencies
         run: poetry install
 
-      - name: Wait for PostgreSQL to become ready
+      - name: Wait for PostgreSQL
         run: |
-          echo "Waiting for PostgreSQL to be ready..."
-          for i in {1..60}; do
-            if pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME; then
-              echo "PostgreSQL is ready!"
-              break
-            fi
-            echo "Waiting for PostgreSQL... ($i/60)"
+          echo "Sleeping 10s to give PostgreSQL time to settle..."
+          sleep 10
+          for i in {1..30}; do
+            pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST && exit 0
+            echo "Waiting for PostgreSQL..."
             sleep 2
           done
-
-      - name: Ensure PostGIS is enabled
-        run: |
-          echo "Ensuring PostGIS extension is enabled..."
-          psql "postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" \
-            -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+          echo "PostgreSQL did not start in time."
+          exit 1
 
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
