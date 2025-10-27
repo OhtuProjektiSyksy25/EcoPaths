@@ -116,5 +116,5 @@ class RedisService:
         gdf = current_enricher.enrich_tiles(tile_ids)
         # add check when EdgeEnricher is finished
         if RedisService.save_gdf(gdf, redis):
-            return True
+            return gdf
         return False
