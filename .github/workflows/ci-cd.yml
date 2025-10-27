@@ -80,7 +80,7 @@ jobs:
 
     env:
       ENV: test
-      DB_HOST: postgres
+      DB_HOST: 127.0.0.1
       DB_PORT: 5432
       DB_USER_TEST: postgres
       DB_PASSWORD_TEST: postgres
@@ -136,6 +136,7 @@ jobs:
       - name: Run tests with coverage
         env:
           ENV: test
+          DB_HOST: 127.0.0.1
         run: |
           poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing \
             --cov-report=xml:../coverage_reports/backend/coverage.xml tests
