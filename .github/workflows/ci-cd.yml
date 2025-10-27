@@ -77,6 +77,7 @@ jobs:
           --health-retries 30
 
     env:
+      ENV: test
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER_TEST: postgres
@@ -105,6 +106,16 @@ jobs:
 
       - name: Install backend dependencies
         run: poetry install
+
+      - name: Confirm PostgreSQL is ready
+        run: |
+          for i in {1..10}; do
+            pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST && exit 0
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "::error::PostgreSQL is not ready for tests."
+          exit 1
 
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
