@@ -75,8 +75,7 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
-        volumes:
-          - ./backend/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+
     env:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -106,18 +105,6 @@ jobs:
 
       - name: Install backend dependencies
         run: poetry install
-
-      - name: Wait for PostgreSQL
-        run: |
-          echo "Sleeping 10s to give PostgreSQL time to settle..."
-          sleep 10
-          for i in {1..30}; do
-            pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST && exit 0
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
-          echo "PostgreSQL did not start in time."
-          exit 1
 
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
