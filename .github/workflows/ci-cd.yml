@@ -66,6 +66,8 @@ jobs:
     services:
       postgres:
         image: kartoza/postgis:15-3.4
+        ports:
+        - 5432:5432
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -112,15 +114,15 @@ jobs:
 
       - name: Confirm PostgreSQL is ready
         run: |
-          echo "Testing PostgreSQL connection..."
+          echo "Waiting for PostgreSQL to accept TCP connections..."
           export PGPASSWORD=$DB_PASSWORD_TEST
-          for i in {1..10}; do
-            pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER_TEST" && break
-            echo "Waiting for PostgreSQL..."
+          for i in {1..20}; do
+            pg_isready -h 127.0.0.1 -p $DB_PORT -U $DB_USER_TEST && break
+            echo "Still waiting..."
             sleep 2
           done
           echo "Trying psql connection..."
-          psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER_TEST" -d "$DB_NAME_TEST" -c '\l' || {
+          psql -h 127.0.0.1 -p $DB_PORT -U $DB_USER_TEST -d $DB_NAME_TEST -c '\l' || {
             echo "::error::psql connection failed"
             exit 1
           }
