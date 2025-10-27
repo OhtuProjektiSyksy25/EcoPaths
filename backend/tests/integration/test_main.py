@@ -9,12 +9,15 @@ from fastapi.testclient import TestClient
 from src.main import app
 from unittest.mock import Mock
 
+
 class MockAreaConfig:
     """Create mock area config"""
+
     def __init__(self):
         self.bbox = [13.30, 52.46, 13.51, 52.59]
         self.crs = "EPSG:25833"
         self.area = "berlin"
+
 
 @pytest.fixture
 def setup_mock_lifespan():
@@ -23,6 +26,7 @@ def setup_mock_lifespan():
     app.state.route_service = Mock()
 
     yield
+
 
 client = TestClient(app)
 
