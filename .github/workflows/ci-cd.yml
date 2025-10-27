@@ -75,7 +75,8 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
-
+        volumes:
+          - ./backend/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     env:
       DB_HOST: postgres
       DB_PORT: 5432
