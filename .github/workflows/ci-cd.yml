@@ -112,33 +112,18 @@ jobs:
 
       - name: Confirm PostgreSQL is ready
         run: |
-          pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST
-
-      - name: Confirm PostgreSQL is ready with env
-        env:
-          ENV: test
-          DB_HOST: postgres
-          DB_PORT: 5432
-          DB_USER_TEST: postgres
-          DB_PASSWORD_TEST: postgres
-          DB_NAME_TEST: ecopaths_test
-          TEST_AREA: testarea
-          NETWORK_TYPE: walking
-        run: |
-          pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST
-
-      - name: Confirm PostgreSQL is ready
-        run: |
-          echo "DB_HOST=$DB_HOST"
-          echo "DB_PORT=$DB_PORT"
-          echo "DB_USER_TEST=$DB_USER_TEST"
+          echo "Testing PostgreSQL connection..."
+          export PGPASSWORD=$DB_PASSWORD_TEST
           for i in {1..10}; do
-            pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST && exit 0
+            pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER_TEST" && break
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
-          echo "::error::PostgreSQL is not ready for tests."
-          exit 1
+          echo "Trying psql connection..."
+          psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER_TEST" -d "$DB_NAME_TEST" -c '\l' || {
+            echo "::error::psql connection failed"
+            exit 1
+          }
 
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
