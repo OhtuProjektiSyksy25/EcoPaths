@@ -76,6 +76,15 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+    env:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER_TEST: postgres
+      DB_PASSWORD_TEST: postgres
+      DB_NAME_TEST: ecopaths_test
+      TEST_AREA: testarea
+      NETWORK_TYPE: walking
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -97,23 +106,15 @@ jobs:
       - name: Install backend dependencies
         run: poetry install
 
-      - name: Load .env.test
-        run: |
-          if [ -f .env.test ]; then
-            set -a
-            source .env.test
-            set +a
-          else
-            echo ".env.test not found!"
-            exit 1
-          fi
-
       - name: Wait for PostgreSQL
         run: |
-          until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do
+          for i in {1..30}; do
+            pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST && exit 0
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
+          echo "PostgreSQL did not start in time."
+          exit 1
 
       - name: Enable PostGIS
         run: |
