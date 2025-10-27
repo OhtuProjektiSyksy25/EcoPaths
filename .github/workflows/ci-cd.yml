@@ -109,6 +109,9 @@ jobs:
 
       - name: Confirm PostgreSQL is ready
         run: |
+          echo "DB_HOST=$DB_HOST"
+          echo "DB_PORT=$DB_PORT"
+          echo "DB_USER_TEST=$DB_USER_TEST"
           for i in {1..10}; do
             pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST && exit 0
             echo "Waiting for PostgreSQL..."
@@ -124,6 +127,8 @@ jobs:
         run: poetry run pylint src preprocessor
 
       - name: Run tests with coverage
+        env:
+          ENV: test
         run: |
           poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing \
             --cov-report=xml:../coverage_reports/backend/coverage.xml tests
