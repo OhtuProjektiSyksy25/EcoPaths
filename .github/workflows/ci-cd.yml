@@ -116,11 +116,6 @@ jobs:
           echo "PostgreSQL did not start in time."
           exit 1
 
-      - name: Enable PostGIS
-        run: |
-          psql postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME \
-          -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
 
