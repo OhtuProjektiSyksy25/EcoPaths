@@ -65,7 +65,7 @@ jobs:
         working-directory: backend
     services:
       postgres:
-        image: postgis/postgis:15-3.4
+        image: kartoza/postgis:15-3.4
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
