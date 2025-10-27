@@ -90,21 +90,16 @@ def test_get_tile_edges(sample_edges):
     with patch("services.route_service.RedisService.prune_found_ids",
                 return_value=["r2_c2"]) as mock_prune, \
          patch("services.route_service.RedisService.get_gdf_by_list_of_keys") as mock_get_gdf, \
-         patch("services.route_service.RedisService.edge_enricher_to_redis_handler") as mock_enrich:
+         patch("services.route_service.RedisService.edge_enricher_to_redis_handler", 
+               return_value = new_gdf) as mock_enrich:
 
-        mock_get_gdf.side_effect = [
-            (existing_gdf, []),
-            (new_gdf, [])
-        ]
-        mock_enrich.return_value = True
+        mock_get_gdf.return_value = (existing_gdf, [])
 
         result = route_service._get_tile_edges(tile_ids)
-
         assert isinstance(result, gpd.GeoDataFrame)
-        print(result["tile_id"])
         assert set(result["tile_id"]) == {"r1_c1", "r1_c1", "r2_c2"}
         assert set(result["edge_id"]) == {"e1", "e2", "e4"}
 
         mock_prune.assert_called_once_with(tile_ids, redis_mock)
         mock_enrich.assert_called_once_with(["r2_c2"], redis_mock)
-        assert mock_get_gdf.call_count == 2
+        assert mock_get_gdf.call_count == 1
