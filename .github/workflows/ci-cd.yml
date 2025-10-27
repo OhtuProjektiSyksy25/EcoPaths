@@ -71,10 +71,10 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: ecopaths_test
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
+          --health-cmd "pg_isready -U postgres -d ecopaths_test"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 20
 
     env:
       DB_HOST: postgres
