@@ -133,37 +133,46 @@ class NodeBuilder:
         print(f"Removing unused nodes from '{node_table}' using table swap...")
 
         with self.db.engine.begin() as conn:
-            # Create a new temporary table with only used nodes
             conn.execute(text(f"""
                 CREATE TABLE {tmp_table} AS
                 SELECT n.*
                 FROM {node_table} n
                 JOIN (
-                    SELECT from_node AS node_id FROM {edge_table}
+                    SELECT from_node AS node_id FROM {edge_table} WHERE from_node IS NOT NULL
                     UNION
-                    SELECT to_node AS node_id FROM {edge_table}
+                    SELECT to_node AS node_id FROM {edge_table} WHERE to_node IS NOT NULL
                 ) used_nodes
                 ON n.node_id = used_nodes.node_id;
             """))
 
-            # Drop old node table
-            conn.execute(text(f"DROP TABLE {node_table};"))
-
-            # Rename temporary table to original name
+            conn.execute(text(f"DROP TABLE {node_table} CASCADE;"))
             conn.execute(
                 text(f"ALTER TABLE {tmp_table} RENAME TO {node_table};"))
 
             conn.execute(text(f"""
-                CREATE INDEX idx_nodes_{self.area}_{self.network_type}_node_id
+                CREATE INDEX IF NOT EXISTS idx_nodes_{self.area}_{self.network_type}_node_id
                 ON {node_table} (node_id);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX idx_nodes_{self.area}_{self.network_type}_geometry
+
+                CREATE INDEX IF NOT EXISTS idx_nodes_{self.area}_{self.network_type}_geometry
                 ON {node_table} USING GIST (geometry);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX idx_nodes_{self.area}_{self.network_type}_tile_id
+
+                CREATE INDEX IF NOT EXISTS idx_nodes_{self.area}_{self.network_type}_tile_id
                 ON {node_table} (tile_id);
             """))
+
         print(f"""Unused nodes removed successfully.
-        Table '{node_table}' now contains only referenced nodes.""")
+              Table '{node_table}' now contains only referenced nodes.""")
+
+    def assign_tile_ids(self):
+        """Assign tile_id to nodes via spatial join with grid."""
+        print(f"Assigning tile_id to {self.node_table}...")
+        query = f"""
+            ALTER TABLE {self.node_table}
+            ADD COLUMN IF NOT EXISTS tile_id INTEGER;
+
+            UPDATE {self.node_table} n
+            SET tile_id = g.tile_id
+            FROM grid_{self.area} g
+            WHERE ST_Intersects(n.geometry, g.geometry);
+        """
+        self.db.execute(query)

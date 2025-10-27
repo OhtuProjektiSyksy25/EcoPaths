@@ -73,6 +73,7 @@ class OSMPreprocessor:
 
         cleaner.remove_disconnected_edges(self.area, self.network_type)
         builder.remove_unused_nodes()
+        builder.assign_tile_ids()
 
         print(
             f"Edge preprocessing complete for '{self.area}' ({self.network_type})")

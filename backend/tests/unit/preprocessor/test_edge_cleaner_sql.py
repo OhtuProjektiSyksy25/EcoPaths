@@ -12,15 +12,26 @@ class TestEdgeCleaner:
         cls.area = "testarea"
         cls.network_type = "walking"
         cls.table = f"edges_{cls.area}_{cls.network_type}"
+        cls.node_table = f"nodes_{cls.area}_{cls.network_type}"
+        cls.grid_table = f"grid_{cls.area}"
 
-        # Puhdas testitaulu
-        cls.db.execute(f"DROP TABLE IF EXISTS {cls.table} CASCADE;")
+        cls.db.create_tables_for_area(cls.area, cls.network_type)
+
+        for t in [cls.table, cls.node_table, cls.grid_table]:
+            cls.db.execute(f"DELETE FROM {t};")
+
+        cls.db.execute(f"""
+            INSERT INTO {cls.grid_table} (tile_id, geometry)
+            VALUES 
+                (1, ST_MakeEnvelope(0,0,1.5,1.5,25833)),
+                (2, ST_MakeEnvelope(1.5,1.5,3,3,25833));
+        """)
 
         gdf = gpd.GeoDataFrame({
             "edge_id": [1, 2, 3, 4, 5],
             "access": ["yes", "private", "permissive", "no", None],
             "length_m": [None] * 5,
-            "tile_id": [None] * 5,
+            "tile_id": ["A", "B", "C", "D", "E"],
             "geometry": [
                 LineString([(0, 0), (1, 1)]),
                 LineString([(1, 1), (2, 2)]),
@@ -31,14 +42,15 @@ class TestEdgeCleaner:
             ]
         }, geometry="geometry", crs="EPSG:25833")
 
-        # Tallennetaan testitauluun
         gdf.to_postgis(cls.table, cls.db.engine,
                        if_exists="replace", index=False)
+
         cls.cleaner = EdgeCleanerSQL(cls.db)
 
     @classmethod
     def teardown_class(cls):
-        cls.db.execute(f"DROP TABLE IF EXISTS {cls.table} CASCADE;")
+        for t in [cls.table, cls.node_table, cls.grid_table]:
+            cls.db.execute(f"DROP TABLE IF EXISTS {t} CASCADE;")
 
     def test_filter_access(self):
         self.cleaner.filter_access(self.area, self.network_type)
@@ -68,6 +80,7 @@ class TestEdgeCleaner:
             "edge_id": [1, 2],
             "from_node": [100, 101],
             "to_node": [101, 102],
+            "tile_id": ["A", "B"],
             "geometry": [
                 LineString([(0, 0), (1, 1)]),
                 LineString([(1, 1), (2, 2)])
@@ -147,7 +160,6 @@ class TestEdgeCleaner:
                 row.geometry) or tile_geom.equals(row.geometry)
 
     def test_edge_split_gets_correct_tile_ids(self):
-
         gdf_edges = gpd.GeoDataFrame({
             "edge_id": [1],
             "from_node": [100],

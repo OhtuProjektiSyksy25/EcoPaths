@@ -54,7 +54,10 @@ class AreaConfig:
         """
         self.area = area.lower()
         if self.area not in AREA_SETTINGS:
-            raise ValueError(f"Unknown area: {self.area}")
+            if self.area.startswith("test"):
+                AREA_SETTINGS[self.area] = AREA_SETTINGS.get("testarea", {})
+            else:
+                raise ValueError(f"Unknown area: {self.area}")
 
         settings = AREA_SETTINGS[self.area]
         self.bbox = settings["bbox"]
@@ -84,7 +87,9 @@ class RedisConfig:
         self.default_expire = int(os.getenv("REDIS_DEFAULT_EXPIRE", "3600"))
 
 
-load_dotenv()
+# Load .env.test for tests, otherwise normal .env
+ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
+load_dotenv(dotenv_path=ENV_FILE)
 
 
 @dataclass
@@ -93,17 +98,33 @@ class DatabaseConfig:
 
     host: str = os.getenv("DB_HOST", "localhost")
     port: int = int(os.getenv("DB_PORT", "5432"))
-    user: str = os.getenv("DB_USER", "postgres")
-    password: str = os.getenv("DB_PASSWORD", "postgres")
-    dbname: str = os.getenv("DB_NAME", "ecopaths")
+
+    user: str = (
+        os.getenv("DB_USER_TEST")
+        if os.getenv("ENV") == "test"
+        else os.getenv("DB_USER", "postgres")
+    )
+    password: str = (
+        os.getenv("DB_PASSWORD_TEST")
+        if os.getenv("ENV") == "test"
+        else os.getenv("DB_PASSWORD", "postgres")
+    )
+    dbname: str = (
+        os.getenv("DB_NAME_TEST")
+        if os.getenv("ENV") == "test"
+        else os.getenv("DB_NAME", "ecopaths")
+    )
 
     @property
     def connection_string(self) -> str:
-        """Return SQLAlchemy/PostGIS-compatible connection string."""
-        return (
+        """Return SQLAlchemy-compatible PostgreSQL connection string."""
+        conn = (
             f"postgresql+psycopg2://{self.user}:{self.password}"
             f"@{self.host}:{self.port}/{self.dbname}"
         )
+        if os.getenv("ENV") == "test":
+            assert "test" in self.dbname.lower(), "Not in test database"
+        return conn
 
 
 class Settings:

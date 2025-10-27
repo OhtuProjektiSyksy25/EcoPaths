@@ -34,11 +34,16 @@ def lint_backend(c):
 def test_backend(c):
     """Run backend unit tests with coverage tracking"""
     with c.cd("backend"):
+        env = {"ENV": "test"}
         c.run(
             "poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing "
-            "--cov-report=xml:../coverage_reports/backend/coverage.xml tests"
+            "--cov-report=xml:../coverage_reports/backend/coverage.xml tests",
+            env=env,
         )
-        c.run("poetry run coverage html -d ../coverage_reports/backend/htmlcov")
+        c.run(
+            "poetry run coverage html -d ../coverage_reports/backend/htmlcov",
+            env=env,
+        )
     print("Backend coverage reports generated in coverage_reports/backend/")
 
 
@@ -262,3 +267,4 @@ def reset_area(c, area: str, network_type: str):
         if db.table_exists(table):
             print(f"Dropping table: {table}")
             db.drop_table(table)
+

@@ -26,7 +26,7 @@ class EdgeCleanerSQL:
         Run all SQL-based edge cleaning steps for a given area and network type.
 
         This method performs a full cleaning pipeline on the edge table, including:
-        - Geometry normalization (e.g. converting MultiLineString, 
+        - Geometry normalization (e.g. converting MultiLineString,
           GeometryCollection, Point → LineString)
         - Removal of invalid or empty geometries
         - Filtering out edges with restricted access
@@ -144,8 +144,8 @@ class EdgeCleanerSQL:
 
             # Get all column names from original table except edge_id, tile_id, geometry
             result = conn.execute(text(f"""
-                SELECT column_name 
-                FROM information_schema.columns 
+                SELECT column_name
+                FROM information_schema.columns
                 WHERE table_name = '{edge_table}';
             """))
             all_columns = [row[0] for row in result.fetchall()]
@@ -198,7 +198,7 @@ class EdgeCleanerSQL:
         keeping only the largest connected component.
 
         Uses:
-        - GeoPandas for reading/writing spatial data safely
+        - GeoPandas for spatial data handling
         - igraph for fast connected-component analysis
         Suitable for large graphs (e.g. 500k+ edges).
         """
@@ -207,6 +207,7 @@ class EdgeCleanerSQL:
         tmp_table = f"{table}_cleaned_tmp"
         print(f"Removing disconnected edges from '{table}' using igraph...")
 
+        # Load edges from database
         edges = gpd.read_postgis(
             f"SELECT * FROM {table};",
             self.engine,
@@ -215,23 +216,56 @@ class EdgeCleanerSQL:
         )
         print(f"  Loaded {len(edges):,} edges from database")
 
+        # Drop rows with missing node references
+        edges = edges.dropna(subset=["from_node", "to_node"])
+
+        # Build node index and mapping
         node_ids = pd.Index(
-            pd.concat([edges["from_node"], edges["to_node"]]).unique())
+            pd.concat([edges["from_node"], edges["to_node"]]).unique()).dropna()
         node_map = pd.Series(range(len(node_ids)), index=node_ids)
+
+        # Build undirected graph
         g = ig.Graph(edges=list(
             zip(node_map[edges["from_node"]], node_map[edges["to_node"]])), directed=False)
-        largest_comp = g.components().giant()
+        components = g.components()
+        largest_comp = components.giant()
+        print(
+            f"  Found {len(components)} components. Largest has {len(largest_comp.vs)} nodes.")
+
+        # Filter edges belonging to largest component
         keep_nodes_set = set(node_ids[largest_comp.vs.indices])
-        keep_edges = edges[edges["from_node"].isin(
-            keep_nodes_set) & edges["to_node"].isin(keep_nodes_set)]
-        keep_edges = keep_edges.set_crs(get_settings(area).area.crs)
+        keep_edges = edges[
+            edges["from_node"].isin(keep_nodes_set) &
+            edges["to_node"].isin(keep_nodes_set)
+        ].set_crs(get_settings(area).area.crs)
         print(
             f"  Keeping {len(keep_edges):,} edges ({len(keep_edges)/len(edges):.1%} of total)")
 
+        # Write cleaned edges to database
         with self.engine.begin() as conn:
             keep_edges.to_postgis(
                 tmp_table, conn, if_exists="replace", index=False)
-            conn.execute(text(f"DROP TABLE {table};"))
+
+            # Drop original table and replace
+            conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE;"))
             conn.execute(text(f"ALTER TABLE {tmp_table} RENAME TO {table};"))
+
+            # Recreate indexes
+            conn.execute(text(f"""
+                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_edge_id
+                ON {table} (edge_id);
+
+                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_tile_id
+                ON {table} (tile_id);
+
+                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_geometry
+                ON {table} USING GIST (geometry);
+
+                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_from_node
+                ON {table} (from_node);
+
+                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_to_node
+                ON {table} (to_node);
+            """))
 
         print("  Disconnected edges removed successfully.")

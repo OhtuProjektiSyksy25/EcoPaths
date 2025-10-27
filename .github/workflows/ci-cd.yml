@@ -76,16 +76,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-    env:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: ecopaths_test
-      TEST_AREA: testarea
-      NETWORK_TYPE: walking
-
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -106,6 +96,17 @@ jobs:
 
       - name: Install backend dependencies
         run: poetry install
+
+      - name: Load .env.test
+        run: |
+          if [ -f .env.test ]; then
+            set -a
+            source .env.test
+            set +a
+          else
+            echo ".env.test not found!"
+            exit 1
+          fi
 
       - name: Wait for PostgreSQL
         run: |
