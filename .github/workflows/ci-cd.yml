@@ -107,6 +107,26 @@ jobs:
       - name: Install backend dependencies
         run: poetry install
 
+      - name: Check running containers
+        run: docker ps
+
+      - name: Confirm PostgreSQL is ready
+        run: |
+          pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST
+
+      - name: Confirm PostgreSQL is ready with env
+        env:
+          ENV: test
+          DB_HOST: postgres
+          DB_PORT: 5432
+          DB_USER_TEST: postgres
+          DB_PASSWORD_TEST: postgres
+          DB_NAME_TEST: ecopaths_test
+          TEST_AREA: testarea
+          NETWORK_TYPE: walking
+        run: |
+          pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER_TEST
+
       - name: Confirm PostgreSQL is ready
         run: |
           echo "DB_HOST=$DB_HOST"
