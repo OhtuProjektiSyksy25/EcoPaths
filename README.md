@@ -42,17 +42,17 @@ The project is done in collaboration with MegaSense Oy.
    
    Edit `.env` with your own values:
 
-   ```bash 
+   ```env 
    REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
    REACT_APP_API_URL=http://localhost:8000
    REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11
    ```
 
-> **Note:**
-> 
-> - Keep this file secret if it contains sensitive tokens.
-> - You may also set these variables directly in your shell environment.
-> - See [.env_example](https://github.com/OhtuProjektiSyksy25/EcoPaths/blob/dev/frontend/.env_example) for details.
+   > **Note:**
+   > 
+   > - Keep this file secret if it contains sensitive tokens.
+   > - You may also set these variables directly in your shell environment.
+   > - See [.env_example](https://github.com/OhtuProjektiSyksy25/EcoPaths/blob/dev/frontend/.env_example) for details.
 
 
 ### Backend setup
@@ -114,13 +114,13 @@ The project is done in collaboration with MegaSense Oy.
 
    In `backend/`, create `.env.test`:
    ```env
-      DB_HOST=127.0.0.1
-      DB_PORT=5432
-      DB_USER_TEST=pathplanner
-      DB_PASSWORD_TEST=sekret
-      DB_NAME_TEST=ecopaths_test
-      TEST_AREA=testarea
-      NETWORK_TYPE=walking
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_USER_TEST=pathplanner
+   DB_PASSWORD_TEST=sekret
+   DB_NAME_TEST=ecopaths_test
+   TEST_AREA=testarea
+   NETWORK_TYPE=walking
    ```
 
 
