@@ -88,7 +88,7 @@ The project is done in collaboration with MegaSense Oy.
 
    Edit `.env` with your own values:
 
-   ```bash
+   ```env
    GOOGLE_API_KEY=your_google_api_key_here
    DB_HOST=localhost
    DB_PORT=5432
@@ -156,7 +156,9 @@ If you want to populate a different area or rerun table setup:
       invoke reset-and-populate-area --area=your_area --network-type=walking
       ```
 
-These commands will drop and create all tables related to given area, download and process OpenStreetMap data, generate the edge and grid layers, and store them in the configured database. You can replace `your_area` with any area defined in `AREA_SETTINGS`.
+These commands will drop and create all tables related to given area, download and process OpenStreetMap data, generate the edge and grid layers, and store them in the configured database. 
+
+You can replace `your_area` with any area defined in `AREA_SETTINGS`.
 
 
 > **Note:**
