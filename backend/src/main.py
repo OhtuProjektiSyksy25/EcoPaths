@@ -78,8 +78,10 @@ async def berlin():
 
 
 @app.get("/api/geocode-forward/{value:path}")
-async def geocode_forward(value: str = Path(...)):
-    """api endpoint to return a list of suggested addresses based on given value
+async def geocode_forward(request: Request, value: str = Path(...)):
+    """
+    API endpoint to return a list of suggested addresses based on given value,
+    limited to the selected area's bounding box.
 
     Args:
         value (str): current address search value
@@ -90,7 +92,12 @@ async def geocode_forward(value: str = Path(...)):
     if len(value) < 3:
         return []
 
-    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4"
+    area_config = request.app.state.area_config
+    bbox = area_config.bbox
+    bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
+
+    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
+
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
