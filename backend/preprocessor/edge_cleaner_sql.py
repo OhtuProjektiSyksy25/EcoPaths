@@ -224,19 +224,28 @@ class EdgeCleanerSQL:
             pd.concat([edges["from_node"], edges["to_node"]]).unique()).dropna()
         node_map = pd.Series(range(len(node_ids)), index=node_ids)
 
+        # Filter edges that are not in main network
+        edges = edges[
+            edges["from_node"].isin(node_map.index) &
+            edges["to_node"].isin(node_map.index)
+        ]
+
         # Build undirected graph
         g = ig.Graph(edges=list(
             zip(node_map[edges["from_node"]], node_map[edges["to_node"]])), directed=False)
         components = g.components()
-        largest_comp = components.giant()
+        membership = components.membership
+        node_id_to_comp = pd.Series(membership, index=node_ids)
+
+        largest_comp_id = max(set(membership), key=membership.count)
         print(
-            f"  Found {len(components)} components. Largest has {len(largest_comp.vs)} nodes.")
+            f""" Found {len(components)} components. 
+        Largest has {membership.count(largest_comp_id)} nodes.""")
 
         # Filter edges belonging to largest component
-        keep_nodes_set = set(node_ids[largest_comp.vs.indices])
         keep_edges = edges[
-            edges["from_node"].isin(keep_nodes_set) &
-            edges["to_node"].isin(keep_nodes_set)
+            (edges["from_node"].map(node_id_to_comp) == largest_comp_id) &
+            (edges["to_node"].map(node_id_to_comp) == largest_comp_id)
         ].set_crs(get_settings(area).area.crs)
         print(
             f"  Keeping {len(keep_edges):,} edges ({len(keep_edges)/len(edges):.1%} of total)")

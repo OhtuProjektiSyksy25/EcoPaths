@@ -137,12 +137,11 @@ class NodeBuilder:
                 CREATE TABLE {tmp_table} AS
                 SELECT n.*
                 FROM {node_table} n
-                JOIN (
-                    SELECT from_node AS node_id FROM {edge_table} WHERE from_node IS NOT NULL
+                WHERE n.node_id IN (
+                    SELECT from_node FROM {edge_table} WHERE from_node IS NOT NULL
                     UNION
-                    SELECT to_node AS node_id FROM {edge_table} WHERE to_node IS NOT NULL
-                ) used_nodes
-                ON n.node_id = used_nodes.node_id;
+                    SELECT to_node FROM {edge_table} WHERE to_node IS NOT NULL
+                );
             """))
 
             conn.execute(text(f"DROP TABLE {node_table} CASCADE;"))
@@ -160,8 +159,7 @@ class NodeBuilder:
                 ON {node_table} (tile_id);
             """))
 
-        print(f"""Unused nodes removed successfully.
-              Table '{node_table}' now contains only referenced nodes.""")
+        print("Unused nodes removed successfully.")
 
     def assign_tile_ids(self):
         """Assign tile_id to nodes via spatial join with grid."""

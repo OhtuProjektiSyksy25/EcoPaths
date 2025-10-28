@@ -1,4 +1,5 @@
 import pytest
+import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
 from preprocessor.node_builder import NodeBuilder
@@ -97,12 +98,15 @@ class TestNodeBuilder:
             VALUES (999, ST_SetSRID(ST_MakePoint(10, 10), 25833), NULL);
         """)
 
-        count_before = self._count(self.node_table)
+        all_nodes_before = pd.read_sql(
+            f"SELECT node_id FROM {self.node_table};", self.db.engine)
+        assert 999 in set(all_nodes_before["node_id"])
 
         self.builder.remove_unused_nodes()
-        count_after = self._count(self.node_table)
 
-        assert count_after == count_before - 1
+        all_nodes_after = pd.read_sql(
+            f"SELECT node_id FROM {self.node_table};", self.db.engine)
+        assert 999 not in set(all_nodes_after["node_id"])
 
         result = self.db.execute(f"""
             SELECT n.node_id

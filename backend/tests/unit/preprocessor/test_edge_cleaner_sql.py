@@ -77,21 +77,26 @@ class TestEdgeCleaner:
     def test_remove_disconnected_edges_keeps_connected(self):
         self.db.execute(f"DROP TABLE IF EXISTS {self.table} CASCADE;")
         gdf = gpd.GeoDataFrame({
-            "edge_id": [1, 2],
-            "from_node": [100, 101],
-            "to_node": [101, 102],
-            "tile_id": ["A", "B"],
+            "edge_id": [1, 2, 3, 4, 5, 6],
+            "from_node": [100, 101, 102, 999, 2000, 2001],
+            "to_node": [101, 102, 103, 998, 2001, 2002],
+            "tile_id": ["A", "B", "C", "D", "E", "F"],
             "geometry": [
                 LineString([(0, 0), (1, 1)]),
-                LineString([(1, 1), (2, 2)])
+                LineString([(1, 1), (2, 2)]),
+                LineString([(2, 2), (3, 3)]),
+                LineString([(10, 10), (11, 11)]),
+                LineString([(20, 20), (21, 21)]),
+                LineString([(21, 21), (22, 22)])
             ]
         }, geometry="geometry", crs="EPSG:25833")
         gdf.to_postgis(self.table, self.db.engine,
                        if_exists="replace", index=False)
 
         self.cleaner.remove_disconnected_edges(self.area, self.network_type)
+
         count = self.db.execute(f"SELECT COUNT(*) FROM {self.table}").scalar()
-        assert count == 2
+        assert count == 3
 
     def test_drop_invalid_geometries_removes_invalid_rows(self):
         self.db.execute(f"DROP TABLE IF EXISTS {self.table} CASCADE;")
