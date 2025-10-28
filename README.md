@@ -153,7 +153,7 @@ If you want to populate a different area or rerun table setup:
       ```
       To target the test database:
       ```bash
-      invoke reset-and-populate-area --area=your_area --network-type=walking
+      ENV=test invoke reset-and-populate-area --area=testarea --network-type=walking
       ```
 
 These commands will drop and create all tables related to given area, download and process OpenStreetMap data, generate the edge and grid layers, and store them in the configured database. 
