@@ -3,7 +3,7 @@ import geopandas as gpd
 from pathlib import Path
 from shapely.geometry import LineString, MultiLineString, Polygon, GeometryCollection, Point
 from preprocessor.osm_preprocessor import OSMPreprocessor
-from shapely.geometry import box
+from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 
 
 @pytest.fixture
@@ -11,12 +11,6 @@ def processor(tmp_path):
     p = OSMPreprocessor(area="berlin", network_type="walking")
     p.output_path = tmp_path / "test_edges.parquet"
     return p
-
-
-def test_download_pbf_if_missing_skips_if_exists(processor):
-    processor.pbf_path.touch()
-    processor.download_pbf_if_missing()
-    assert processor.pbf_path.exists()
 
 
 def test_clean_geometry_includes_expected_columns(processor):
@@ -32,8 +26,9 @@ def test_clean_geometry_includes_expected_columns(processor):
 
     cleaned = processor._clean_geometry(gdf)
 
-    assert set(cleaned.columns) == {
-        "edge_id", "tile_id", "geometry", "length_m", "highway"}
+    expected_columns = set(
+        BASE_COLUMNS + EXTRA_COLUMNS.get(processor.network_type, []))
+    assert set(cleaned.columns) == expected_columns
     assert cleaned["length_m"].iloc[0] > 0
 
 
@@ -47,17 +42,17 @@ def test_clean_geometry_raises_on_empty(processor):
         processor._clean_geometry(gdf)
 
 
-def test_save_graph_creates_parquet(processor):
+def test_clean_geometry_removes_non_lines():
     gdf = gpd.GeoDataFrame({
-        "geometry": [LineString([(0, 0), (1, 1)])],
-        "length_m": [1.414],
-        "edge_id": [0]
+        "geometry": [LineString([(0, 0), (1, 1)]), Point(0, 0)],
+        "access": ["yes", "private"]
     }, crs="EPSG:25833")
 
-    processor._save_graph(gdf)
-    assert processor.output_path.exists()
-    loaded = gpd.read_parquet(processor.output_path)
-    assert "edge_id" in loaded.columns
+    preprocessor = OSMPreprocessor()
+    cleaned = preprocessor._clean_geometry(gdf)
+
+    assert "edge_id" in cleaned.columns
+    assert cleaned.geometry.apply(lambda g: isinstance(g, LineString)).all()
 
 
 def test_assign_tiles_split_and_join():

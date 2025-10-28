@@ -1,9 +1,10 @@
 import subprocess
 import signal
+ 
 from invoke import task
-from shapely import area, box
 import geopandas as gpd
 from pathlib import Path
+
 
 # ========================
 # Code formatting & linting
@@ -110,7 +111,7 @@ def coverage(c):
     print("All tests completed and coverage reports generated.")
 
 
-@task(pre=[test_backend, lint_backend])
+@task(pre=[lint_backend, test_backend])
 def check_backend(c):
     """Run lint and unit tests with coverage"""
     print("Backend checked.")
@@ -139,12 +140,19 @@ def run_frontend(c):
         c.run("npm start", pty=True)
 
 @task
+def run_redis(c):
+    """Start Redis server locally"""
+    c.run("redis-server", pty=True)
+
+@task
 def run_all(c):
-    """Run both backend and frontend in development mode"""
+    """Run both backend, frontend and Redis in development mode"""
     print("Starting full development environment...")
     print("Backend: http://127.0.0.1:8000")
     print("Frontend: http://localhost:3000")
+    print("Redis: redis://localhost:6379")
 
+    redis_proc = subprocess.Popen(["redis-server"])
     backend_proc = subprocess.Popen(
         ["poetry", "run", "uvicorn", "src.main:app", "--reload"],
         cwd="backend"
@@ -159,118 +167,70 @@ def run_all(c):
         frontend_proc.wait()
     except KeyboardInterrupt:
         print("\nStopping development environment...")
-        backend_proc.send_signal(signal.SIGINT)
-        frontend_proc.send_signal(signal.SIGINT)
-        backend_proc.wait()
-        frontend_proc.wait()
+        for proc in [frontend_proc, backend_proc, redis_proc]:
+            proc.send_signal(signal.SIGINT)
+            proc.wait()
         print("Development environment stopped.")
 
 
 # ========================
-# OSM Preprocessor tasks
+# OSM Preprocessor and database tasks
 # ========================
-# Default area is 'berlin', network type is 'walking'
-# invoke preprocess-osm --help for options 
-# example usage: invoke preprocess-osm
 
 @task
-def preprocess_osm(c, area="berlin", network="walking", overwrite=False):
-    """Run OSM preprocessing for a given area and network type"""
+def populate_database(c, area: str, network_type: str = "walking", overwrite_edges=False, overwrite_grid=False):
+    """
+    Create necessary tables and populate the database with grid and edge data for a specific area.
+
+    Usage:
+        inv populate-database --area=berlin --network-type=walking --overwrite-edges --overwrite-grid
+    """
+    from backend.src.database.db_client import DatabaseClient
     from backend.preprocessor.osm_preprocessor import OSMPreprocessor
-    from backend.src.config.settings import AreaConfig
+    from backend.src.config.settings import get_settings
+    from backend.src.utils.grid import Grid
 
-    print(f"Preprocessing area '{area}' with network '{network}'...")
-    config = AreaConfig(area)
-    processor = OSMPreprocessor(area=area, network_type=network)
-    output_path = config.edges_output_file
+    print(f"Starting database population for area: '{area}', network type: '{network_type}'")
 
-    if output_path.exists() and not overwrite:
-        print(f"File already exists: {output_path}. Use --overwrite to regenerate.")
-        return
+    db_client = DatabaseClient()
+    db_client.create_tables_for_area(area, network_type)
 
-    graph = processor.extract_edges()
-    return graph
+    grid_table = f"grid_{area.lower()}"
+    edge_table = f"edges_{area.lower()}_{network_type.lower()}"
 
-# ========================
-# Edge enricher tasks
-# ========================
+    # GRID
+    if db_client.table_exists(grid_table):
+        if not overwrite_grid:
+            print(f"Grid table '{grid_table}' already exists. Skipping grid creation.")
+            print("To overwrite, use: --overwrite-grid")
+        else:
+            print(f"Overwriting existing grid in table '{grid_table}'...")
+            settings = get_settings(area)
+            grid = Grid(settings.area)
+            grid_gdf = grid.create_grid()
+            db_client.save_grid(grid_gdf, area=area, if_exists="replace")
+    else:
+        print(f"Creating new grid for area '{area}'...")
+        settings = get_settings(area)
+        grid = Grid(settings.area)
+        grid_gdf = grid.create_grid()
+        db_client.save_grid(grid_gdf, area=area, if_exists="fail")
 
-@task
-def enrich_edges(c, area="berlin", overwrite=False):
-    """Run EdgeEnricher and export enriched edges to file"""
-    from backend.src.core.edge_enricher import EdgeEnricher
+    # EDGES
+    if db_client.table_exists(edge_table):
+        if not overwrite_edges:
+            print(f"Edge table '{edge_table}' already exists. Skipping edge extraction.")
+            print("To overwrite, use: --overwrite-edges")
+        else:
+            print(f"Overwriting edge data in table '{edge_table}'...")
+            preprocessor = OSMPreprocessor(area=area, network_type=network_type)
+            edges_gdf = preprocessor.extract_edges()
+            db_client.save_edges(edges_gdf, area=area, network_type=network_type, if_exists="replace")
+    else:
+        print(f"Creating edge data for table '{edge_table}'...")
+        preprocessor = OSMPreprocessor(area=area, network_type=network_type)
+        edges_gdf = preprocessor.extract_edges()
+        db_client.save_edges(edges_gdf, area=area, network_type=network_type, if_exists="fail")
 
-    model = EdgeEnricher(area)
-    model.get_enriched_edges(overwrite=overwrite)
-
-# ========================
-# Mock AQ data generation tasks
-# ========================
-
-@task
-def generate_aq_data(c, area="berlin", overwrite=False):
-    """
-    Generate synthetic air quality data as a 500x500m grid over the road network area.
-    """
-    import geopandas as gpd
-    import numpy as np
-    from shapely.geometry import box
-    from backend.src.config.settings import AreaConfig
-
-    config = AreaConfig(area)
-    output_path = config.aq_output_file
-
-    if output_path.exists() and not overwrite:
-        print(f"AQ file already exists: {output_path}. Use --overwrite to regenerate.")
-        return
-
-    print(f"Generating synthetic AQ data for '{area}'...")
-
-    # Load road network and get bounding box
-    road_gdf = gpd.read_parquet(config.edges_output_file)
-    minx, miny, maxx, maxy = road_gdf.total_bounds
-
-    # Create grid
-    cell_size = 500
-    x_coords = np.arange(minx, maxx, cell_size)
-    y_coords = np.arange(miny, maxy, cell_size)
-
-    polygons = []
-    aq_values = []
-
-    for x in x_coords:
-        for y in y_coords:
-            polygons.append(box(x, y, x + cell_size, y + cell_size))
-            aq_values.append(np.random.randint(20, 100))
-
-    aq_gdf = gpd.GeoDataFrame({
-        "aq_value": aq_values,
-        "geometry": polygons
-    }, crs=config.crs)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    aq_gdf.to_file(output_path, driver="GeoJSON")
-
-    print(f"AQ data saved to: {output_path}")
-
-
-@task
-def convert_parquet(c, input_path, output_path=None, overwrite=False):
-    """Convert a Parquet file to GeoPackage format."""
-    input_path = Path(input_path)
-    output_path = Path(output_path) if output_path else input_path.with_suffix(".gpkg")
-
-    if not input_path.exists():
-        print(f"Input file not found: {input_path}")
-        return
-
-    if output_path.exists() and not overwrite:
-        print(f"GeoPackage already exists: {output_path}. Use --overwrite to regenerate.")
-        return
-
-    print(f"Converting {input_path.name} → {output_path.name}...")
-    gdf = gpd.read_parquet(input_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    gdf.to_file(output_path, driver="GPKG")
-    print(f"Saved to GeoPackage: {output_path}")
+    print(f"Database population complete for area '{area}', network type '{network_type}'.")
 
