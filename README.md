@@ -131,7 +131,7 @@ The project is done in collaboration with MegaSense Oy.
 3. **Create test enviroment file**
    To ensure the test database is created with correct settings, create a `.env.test` file in the backend/ directory:
    ``` env
-   DB_HOST=localhost
+   DB_HOST=127.0.0.1
    DB_PORT=5432
    DB_USER_TEST=postgres
    DB_PASSWORD_TEST=postgres

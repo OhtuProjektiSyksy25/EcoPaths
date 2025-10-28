@@ -107,7 +107,7 @@ def run_frontend(c):
 
 @task
 def run_redis(c):
-    """Start Redis server locally (only if not already running)"""
+    """Start Redis server locally"""
     if is_redis_running():
         print("Redis is already running.")
     else:
@@ -249,7 +249,7 @@ def drop_table(c, table_name: str):
 @task
 def reset_area(c, area: str, network_type: str):
     """
-    Drop all tables for a given area and repopulate the database.
+    Drop all tables for a given area.
 
     Usage:
         inv reset-area --area=berlin --network-type=walking
