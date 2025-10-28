@@ -1,0 +1,21 @@
+services:
+  db:
+    image: kartoza/postgis:15-3.4
+    container_name: my_postgis
+    restart: always
+    env_file:
+      - ./backend/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "pathplanner"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+
+

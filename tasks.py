@@ -1,3 +1,4 @@
+import os
 import subprocess
 import signal
 import socket
@@ -121,11 +122,19 @@ def is_redis_running(host="127.0.0.1", port=6379):
     
 @task
 def run_all(c):
-    """Run both backend, frontend and Redis in development mode"""
+    """Run both backend, frontend, Redis and database in development mode"""
+    db_user = os.getenv("DB_USER_TEST", "pathplanner")
+    db_name = os.getenv("DB_NAME_TEST", "ecopaths_test")
+
     print("Starting full development environment...")
     print("Backend: http://127.0.0.1:8000")
     print("Frontend: http://localhost:3000")
     print("Redis: redis://localhost:6379")
+    print(f"Database: postgresql://{db_user}@localhost:5432/{db_name}")
+
+    # Start Docker Compose
+    print("Starting Docker containers...")
+    c.run("docker compose up -d", pty=True)
 
     redis_proc = None
     if is_redis_running():

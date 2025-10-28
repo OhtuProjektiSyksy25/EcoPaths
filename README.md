@@ -92,12 +92,12 @@ The project is done in collaboration with MegaSense Oy.
    GOOGLE_API_KEY=your_google_api_key_here
    DB_HOST=localhost
    DB_PORT=5432
-   DB_USER=your_postgres_username
-   DB_PASSWORD=your_postgres_password
+   DB_USER=pathplanner
+   DB_PASSWORD=sekret
    DB_NAME=ecopaths
    ```
 
-   These values must match your local PostgreSQL setup and any external API keys you use.
+   These values must match your Docker PostgreSQL setup and any external API keys you use.
 
 ### Database Setup
 
@@ -105,70 +105,64 @@ The project is done in collaboration with MegaSense Oy.
 
 #### Prerequisites
 
-- PostgreSQL with PostGIS extension installed
+- Docker and Docker Compose installed
+- `.env` and `.env.test` configured in backend/
 
-#### Local Setup
+####  Docker-Based Setup
 
-1. **Start PostgreSQL service**
+1. **Create test environment file**
 
-   Make sure your PostgreSQL server is running before executing any database tasks. 
-   You can use the default name `ecopaths`, or configure your own connection settings in the `.env` file.
-    > **Linux:**
-    > ```bash
-    > sudo systemctl start postgresql
-    > ```
-    >
-    > **macOS:**
-    > ```bash
-    > brew services start postgresql
-    > ```
+   In `backend/`, create `.env.test`:
+   ```env
+      DB_HOST=127.0.0.1
+      DB_PORT=5432
+      DB_USER_TEST=pathplanner
+      DB_PASSWORD_TEST=sekret
+      DB_NAME_TEST=ecopaths_test
+      TEST_AREA=testarea
+      NETWORK_TYPE=walking
+   ```
 
-2. **Veriry connection**
+
+2. **Start Docker and initialize databases**
+
+   From the project root (EcoPaths/), run:
    ```bash
-   psql -U <DB_USER> -d <DB_NAME>
+   bash setup.sh
    ```
+This script will:
 
-3. **Create test enviroment file**
-   To ensure the test database is created with correct settings, create a `.env.test` file in the backend/ directory:
-   ``` env
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_USER_TEST=postgres
-   DB_PASSWORD_TEST=postgres
-   DB_NAME_TEST=ecopaths_test
-   TEST_AREA=testarea
-   NETWORK_TYPE=walking
-   ```
-   
-4. **Run the database setup script**
+   - Start the Docker container
 
-   To initialize both development and test databases locally, run:
+   - Wait for PostgreSQL to be ready
 
-   From the backend directory, run:
-   ```bash
-   bash setup_databases.sh
-   ```
-This script loads `.env` and `.env.test` if available, and creates both databases with PostGIS extensions.
+   - Populate the development database (ecopaths) with default area berlin
+
+   - Populate the test database (ecopaths_test) with default area testarea
 
 
-### Populate the database
+### Populate the Database manually
 
-   To load grid and edge data into the PostGIS database:
-
+If you want to populate a different area or rerun table setup:
    1. **Navigate to the project root directory `(EcoPaths/)`.**
 
-   2. **Run the following commands:**
+   2. **Run the invoke task**
+
       ```bash
-      invoke reset-and-populate-area --area=testarea --network-type=walking
+      invoke reset-and-populate-area --area=your_area --network-type=walking
       ```
-This command will create all tables related to given area, download and process OpenStreetMap data, generate the edge and grid layers, and store them in the configured database. You can replace `testarea` with any area defined in `AREA_SETTINGS`.
+      To target the test database:
+      ```bash
+      invoke reset-and-populate-area --area=your_area --network-type=walking
+      ```
+
+These commands will drop and create all tables related to given area, download and process OpenStreetMap data, generate the edge and grid layers, and store them in the configured database. You can replace `your_area` with any area defined in `AREA_SETTINGS`.
 
 
 > **Note:**
 > - All database operations use `DatabaseClient`
 > - Test database is isolated from production
 > - `testarea` is preconfigured for quick testing
-> - Saving to the database is done manually via the `invoke populate-database` task
 > - Make sure the backend virtual environment is activated and always run `invoke` commands from the root directory. See [Notes / Tips](#notes--tips) for full instructions.
 
 ## Startup

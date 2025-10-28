@@ -88,8 +88,14 @@ class RedisConfig:
 
 
 # Load .env.test for tests, otherwise normal .env
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
-load_dotenv(dotenv_path=ENV_FILE)
+ENV_PATH = os.path.join(BASE_DIR, "..", "..", ENV_FILE)
+
+if not os.path.exists(ENV_PATH):
+    raise FileNotFoundError(f"Environment file not found: {ENV_PATH}")
+
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 
 @dataclass
@@ -102,12 +108,12 @@ class DatabaseConfig:
     user: str = (
         os.getenv("DB_USER_TEST")
         if os.getenv("ENV") == "test"
-        else os.getenv("DB_USER", "postgres")
+        else os.getenv("DB_USER", "pathplanner")
     )
     password: str = (
         os.getenv("DB_PASSWORD_TEST")
         if os.getenv("ENV") == "test"
-        else os.getenv("DB_PASSWORD", "postgres")
+        else os.getenv("DB_PASSWORD", "sekret")
     )
     dbname: str = (
         os.getenv("DB_NAME_TEST")
@@ -118,13 +124,17 @@ class DatabaseConfig:
     @property
     def connection_string(self) -> str:
         """Return SQLAlchemy-compatible PostgreSQL connection string."""
-        conn = (
+        if not self.dbname:
+            raise ValueError(
+                "Database name is not set. Check your .env or .env.test file.")
+
+        if os.getenv("ENV") == "test":
+            assert "test" in self.dbname.lower(), "Not in test database"
+
+        return (
             f"postgresql+psycopg2://{self.user}:{self.password}"
             f"@{self.host}:{self.port}/{self.dbname}"
         )
-        if os.getenv("ENV") == "test":
-            assert "test" in self.dbname.lower(), "Not in test database"
-        return conn
 
 
 class Settings:

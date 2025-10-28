@@ -69,24 +69,14 @@ jobs:
         ports:
         - 5432:5432
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: ecopaths_test
+          POSTGRES_USER: pathplanner
+          POSTGRES_PASSWORD: sekret
+          POSTGRES_DB: ecopaths
         options: >-
-          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-cmd="pg_isready -U pathplanner -d ecopaths"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
-
-    env:
-      ENV: test
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_USER_TEST: postgres
-      DB_PASSWORD_TEST: postgres
-      DB_NAME_TEST: ecopaths_test
-      TEST_AREA: testarea
-      NETWORK_TYPE: walking
 
     steps:
       - name: Checkout repository
@@ -112,20 +102,24 @@ jobs:
       - name: Check running containers
         run: docker ps
 
-      - name: Confirm PostgreSQL is ready
+      - name: Create test database and enable PostGIS
         run: |
-          echo "Waiting for PostgreSQL to accept TCP connections..."
-          export PGPASSWORD=$DB_PASSWORD_TEST
-          for i in {1..20}; do
-            pg_isready -h 127.0.0.1 -p $DB_PORT -U $DB_USER_TEST && break
-            echo "Still waiting..."
-            sleep 2
-          done
-          echo "Trying psql connection..."
-          psql -h 127.0.0.1 -p $DB_PORT -U $DB_USER_TEST -d $DB_NAME_TEST -c '\l' || {
-            echo "::error::psql connection failed"
-            exit 1
-          }
+          sudo apt-get install -y postgresql-client
+          export PGPASSWORD=sekret
+          psql -h localhost -U pathplanner -d postgres -c "CREATE DATABASE ecopaths_test;"
+          psql -h localhost -U pathplanner -d ecopaths_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+
+      - name: Create .env.test
+        run: |
+          cat <<EOF > .env.test
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_USER_TEST=pathplanner
+          DB_PASSWORD_TEST=sekret
+          DB_NAME_TEST=ecopaths_test
+          TEST_AREA=testarea
+          NETWORK_TYPE=walking
+          EOF
 
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
@@ -136,7 +130,6 @@ jobs:
       - name: Run tests with coverage
         env:
           ENV: test
-          DB_HOST: 127.0.0.1
         run: |
           poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing \
             --cov-report=xml:../coverage_reports/backend/coverage.xml tests
