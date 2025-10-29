@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from services.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
-from config.settings import config
+from config.settings import TEST_MODE
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
@@ -34,9 +34,9 @@ async def lifespan(application: FastAPI):
     Sets up shared services such as RouteService and AreaConfig.
     """
     selected_area = "berlin"
-    
-    if config.TEST_MODE:
-        print("⚠️  Running in TEST MODE - Using local air quality data")
+
+    if TEST_MODE:
+        print("Running in TEST MODE - Using local air quality data")
 
     route_service, area_config = RouteServiceFactory.from_area(selected_area)
 

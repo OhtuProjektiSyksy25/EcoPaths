@@ -1,4 +1,5 @@
 # config/settings.py
+# pylint: disable=invalid-name
 
 """
 Configuration settings for EcoPaths backend.
@@ -30,6 +31,8 @@ AREA_SETTINGS = {
     },
 }
 
+TEST_MODE_ENV = os.getenv("TEST_MODE", "false").lower()
+TEST_MODE = TEST_MODE_ENV in ("true")
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
