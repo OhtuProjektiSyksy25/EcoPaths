@@ -2,6 +2,7 @@
 from contextlib import asynccontextmanager
 import os
 import sys
+import time
 import httpx
 from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
@@ -140,6 +141,8 @@ async def getroute(request: Request):
             }
         }
     """
+    start_time = time.time()
+
     data = await request.json()
     features = data.get("features", [])
 
@@ -164,6 +167,9 @@ async def getroute(request: Request):
 
     route_service = request.app.state.route_service
     response = route_service.get_route(origin_gdf, destination_gdf)
+
+    duration = time.time() - start_time
+    print(f"/getroute took {duration:.3f} seconds")
 
     return JSONResponse(content=response)
 
