@@ -45,3 +45,4 @@ manifests/configmap.yaml
 test-results/
 playwright-report/
 e2e/playwright/.cache/
+.env.test
