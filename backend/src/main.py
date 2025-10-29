@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from services.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
+from config.settings import AREA_SETTINGS
+
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
     "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi",

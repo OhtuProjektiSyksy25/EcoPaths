@@ -1,7 +1,7 @@
 // src/components/MapComponent.tsx
 
 /*
-MapComponent.tsx renders a mapBox map currently centered on Berlin. 
+MapComponent.tsx renders a mapBox map. 
 If the mapbox fails it renders a leaflet map.
 It also manages markers for From and To locations and adjusts the map view based on their presence.
 */
@@ -10,23 +10,29 @@ import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { berlinCenter, initialMapZoom } from "../constants";
-import { useCoordinates } from "../hooks/useCoordinates";
 import { LocationButton } from "./LocationButton";
 import "../styles/MapComponent.css";
 import { useDrawRoutes } from "../hooks/useDrawRoutes";
 import { LockedLocation, RouteGeoJSON } from "../types"; 
 
+interface City {
+  name: string;
+  center: [number, number];
+  zoom: number;
+}
+
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
   toLocked: LockedLocation | null;
   routes: Record<string, RouteGeoJSON> | null;
+  selectedCity: City | null;
 }
 
 const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
+  selectedCity,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || "";
@@ -35,7 +41,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const currentCoordinates = useCoordinates();
   const userUsedLocationRef = useRef(false);
 
   useDrawRoutes(mapRef.current, routes as unknown as Record<string, GeoJSON.FeatureCollection>);
@@ -67,26 +72,39 @@ const MapComponent: React.FC<MapComponentProps> = ({
     /*
     Initializes the mapbox map if token is available, we have coordinates and the mapboxRef is set.
     */
-    if (!mapboxToken || !mapboxRef.current || !currentCoordinates) return;
+    if (!mapboxToken || !mapboxRef.current) return;
 
     mapboxgl.accessToken = mapboxToken;      
-  const coordsToUse: [number, number] = currentCoordinates
-        ? [currentCoordinates[0], currentCoordinates[1]]
-        : berlinCenter;
+
+    const initialCenter: [number, number] = [0, 20];
+    const initialZoom = 2;
+
     mapRef.current = new mapboxgl.Map({
       container: mapboxRef.current,
       style: mapboxStyle,
-      center: coordsToUse,
-      zoom: initialMapZoom,
+      center: initialCenter,
+      zoom: initialZoom,
     });
+
     mapRef.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
 
     return () => mapRef.current?.remove();
-  }, [mapboxToken, mapboxStyle, currentCoordinates]);
+  }, [mapboxToken, mapboxStyle]);
 
 
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || !selectedCity) return;
+
+    mapRef.current.flyTo({
+      center: selectedCity.center,
+      zoom: selectedCity.zoom,
+      duration: 2000,
+      essential: true,
+    });
+  }, [selectedCity]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
 
     fromMarkerRef.current?.remove()
     toMarkerRef.current?.remove()
@@ -102,22 +120,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       .setLngLat([toLocked.geometry.coordinates[0], toLocked.geometry.coordinates[1]])
       .addTo(mapRef.current)
     }    
-  },[fromLocked, toLocked])
-
-  useEffect(() => {
-    /*
-    Zooms the map to From location if only From is set.
-    */
-    if (!mapRef.current || !fromLocked?.geometry?.coordinates) return;
-    
-  if (fromLocked && (!toLocked || !toLocked.geometry?.coordinates)) {
-    mapRef.current.flyTo({
-      center: fromLocked.geometry.coordinates,
-      zoom: 15,
-      duration: 1500
-    });
-  }
-  }, [fromLocked, toLocked]);
+  },[fromLocked, toLocked]);
 
 
   useEffect(() => {
@@ -153,23 +156,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   }, [fromLocked, toLocked]);
 
 
-  useEffect(() => {
-    /*
-    Zooms the map to fit both From and To locations if both are set.
-    */
-    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
-
-    const bounds = new mapboxgl.LngLatBounds()
-      .extend(fromLocked.geometry.coordinates)
-      .extend(toLocked.geometry.coordinates);
-
-    mapRef.current.fitBounds(bounds, {
-      padding: 80,
-      duration: 1500
-    });
-  }, [fromLocked, toLocked]);
-
-
   if (mapboxToken) {
     return (
       <div style={{ position: "relative", height: "100%", width: "100%" }}>
@@ -190,8 +176,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   return (
     <div style={{ height: "100%", width: "100%" }}>
       <MapContainer
-        center={berlinCenter}
-        zoom={14}
+        center={selectedCity?.center || [0, 20]}
+        zoom={selectedCity ? 12 : 2} 
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
