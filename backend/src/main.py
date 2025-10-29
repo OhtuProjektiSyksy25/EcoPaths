@@ -68,6 +68,27 @@ if os.path.isdir(STATIC_DIR):
 
 # === Routes ===
 
+@app.get("/api/cities")
+async def get_cities():
+    cities = []
+    
+    for area_id, settings in AREA_SETTINGS.items():
+        # Skip testarea
+        if area_id == "testarea":
+            continue
+        
+        cities.append({
+            "id": area_id,
+            "name": settings.get("display_name", area_id.title()),
+            "bbox": settings["bbox"],
+            "focus_point": settings.get("focus_point"),
+            "zoom": 12
+        })
+    
+    return {"cities": cities}
+
+
+
 @app.get("/berlin")
 async def berlin():
     """Returns Berlin coordinates as JSON.
