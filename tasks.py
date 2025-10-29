@@ -120,6 +120,14 @@ def is_redis_running(host="127.0.0.1", port=6379):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         return sock.connect_ex((host, port)) == 0
     
+def is_container_running(name):
+    result = subprocess.run(
+        ["docker", "ps", "--filter", f"name={name}", "--filter", "status=running", "--format", "{{.Names}}"],
+        capture_output=True, text=True
+    )
+    return name in result.stdout.strip().split("\n")
+
+
 @task
 def run_all(c):
     """Run both backend, frontend, Redis and database in development mode"""
@@ -133,9 +141,15 @@ def run_all(c):
     print(f"Database: postgresql://{db_user}@localhost:5432/{db_name}")
 
     # Start Docker Compose
-    print("Starting Docker containers...")
-    c.run("docker compose up -d", pty=True)
+    container_name = "my_postgis"
 
+    if is_container_running(container_name):
+        print(f"Docker container '{container_name}' is already running.")
+    else:
+        print(f"Starting Docker container '{container_name}'...")
+        c.run("docker compose up -d", pty=True)
+
+    # Start Redis
     redis_proc = None
     if is_redis_running():
         print("Redis already running.")
