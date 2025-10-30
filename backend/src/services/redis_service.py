@@ -1,6 +1,5 @@
 """
 Utility module for handling, saving and fetching of GeoDataFrame/geojson data to and from redis
-CRS ONLY BERLIN CURRENTLY
 """
 import geopandas as gpd
 from core.edge_enricher import EdgeEnricher
@@ -27,7 +26,7 @@ class RedisService:
         return grouped_by_id
 
     @staticmethod
-    def save_gdf(gdf: gpd.GeoDataFrame, redis):
+    def save_gdf(gdf: gpd.GeoDataFrame, redis, area):
         """Groups given gdf by tile_id and saves each group to redis as 
         Key: tile_id, value: FeatureCollecion
 
@@ -42,7 +41,7 @@ class RedisService:
         tile_grouped_gdf_dict = RedisService.group_gdf_by_tile(gdf)
         failed_to_save = []
         for tile_id, current_gdf in tile_grouped_gdf_dict.items():
-            gdf = current_gdf.to_crs("EPSG:25833")
+            gdf = current_gdf.to_crs(area.crs)
             tile_grouped_featurecollection = gdf.to_json()
             attempt = redis.set_direct(
                 tile_id, tile_grouped_featurecollection, 3600)
@@ -72,7 +71,7 @@ class RedisService:
         return pruned_tile_ids
 
     @staticmethod
-    def get_gdf_by_list_of_keys(tile_ids: list, redis):
+    def get_gdf_by_list_of_keys(tile_ids: list, redis, area):
         """Returns a GeoDataFrame consisting of edges found in redis
            specified by list of tile_ids that are given as args
 
@@ -97,11 +96,11 @@ class RedisService:
 
         if len(features) == 0:
             return False, expired_tiles
-        gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:25833")
+        gdf = gpd.GeoDataFrame.from_features(features, crs=area.crs)
         return gdf, expired_tiles
 
     @staticmethod
-    def edge_enricher_to_redis_handler(tile_ids: list, redis):
+    def edge_enricher_to_redis_handler(tile_ids: list, redis, area):
         """Sends tiles to EdgeEnricher and saves returned gdf to redis
 
         Args:
@@ -115,6 +114,6 @@ class RedisService:
         current_enricher = EdgeEnricher()
         gdf = current_enricher.get_enriched_tiles(tile_ids)
         # add check when EdgeEnricher is finished
-        if RedisService.save_gdf(gdf, redis):
+        if RedisService.save_gdf(gdf, redis, area):
             return gdf
         return False

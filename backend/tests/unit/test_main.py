@@ -17,6 +17,7 @@ class MockAreaConfig:
         self.bbox = [13.30, 52.46, 13.51, 52.59]
         self.crs = "EPSG:25833"
         self.area = "berlin"
+        self.focus_point = [13.404954, 52.520008]
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ def setup_mock_lifespan():
 
 client = TestClient(app)
 
-
+@pytest.mark.usefixtures("setup_mock_lifespan")
 def test_berlin():
     """ Test if GET to /berlin status is 200
         and response has correct berlin coordinates.
