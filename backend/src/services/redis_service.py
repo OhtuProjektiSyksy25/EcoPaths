@@ -6,7 +6,7 @@ import geopandas as gpd
 from core.edge_enricher import EdgeEnricher
 
 
-class RedisUtils:
+class RedisService:
     """
     A utility class for interacting with redis,
     """
@@ -39,7 +39,7 @@ class RedisUtils:
             True: Returns True if saving is successful
             False: Returns False if saving is not succesful
         """
-        tile_grouped_gdf_dict = RedisUtils.group_gdf_by_tile(gdf)
+        tile_grouped_gdf_dict = RedisService.group_gdf_by_tile(gdf)
         failed_to_save = []
         for tile_id, current_gdf in tile_grouped_gdf_dict.items():
             gdf = current_gdf.to_crs("EPSG:25833")
@@ -115,6 +115,6 @@ class RedisUtils:
         current_enricher = EdgeEnricher()
         gdf = current_enricher.get_enriched_tiles(tile_ids)
         # add check when EdgeEnricher is finished
-        if RedisUtils.save_gdf(gdf, redis):
-            return True
+        if RedisService.save_gdf(gdf, redis):
+            return gdf
         return False

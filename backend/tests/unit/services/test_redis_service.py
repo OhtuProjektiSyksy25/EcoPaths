@@ -1,13 +1,13 @@
 import pytest
 import geopandas as gpd
 import fakeredis
-from src.utils.redis_utils import RedisUtils
+from src.services.redis_service import RedisService
 from shapely.geometry import LineString
 from services.redis_cache import RedisCache
 import pandas as pd
 
 
-class TestRedisUtils:
+class TestRedisService:
 
     @pytest.fixture
     def fake_redis(self):
@@ -39,7 +39,7 @@ class TestRedisUtils:
         return gdf
 
     def test_group_gdf_by_tile(self, sample_gdf):
-        result = RedisUtils.group_gdf_by_tile(sample_gdf)
+        result = RedisService.group_gdf_by_tile(sample_gdf)
         expected_mapping = {
             "r0_c2": [0, 2],
             "r1_c2": [1, 4],
@@ -55,14 +55,14 @@ class TestRedisUtils:
         """
         Tests if gdf can be saved to redis and fetched while maintaing all information.
         """
-        success = RedisUtils.save_gdf(sample_gdf, fake_redis)
+        success = RedisService.save_gdf(sample_gdf, fake_redis)
 
         assert success is True
 
         expected_tile_ids = sample_gdf["tile_id"].unique()
 
         for tile_id in expected_tile_ids:
-            stored_value, _ = RedisUtils.get_gdf_by_list_of_keys(
+            stored_value,_ = RedisService.get_gdf_by_list_of_keys(
                 [tile_id], fake_redis)
             origin_value = sample_gdf[sample_gdf["tile_id"] == tile_id]
             assert stored_value is not None
@@ -71,10 +71,10 @@ class TestRedisUtils:
 
     def test_prune_found_ids(self, sample_gdf, fake_redis):
         """ 
-        Test if "RedisUtils.prune_found_ids" returns a list of tile_ids with tile_ids that appear in redis removed
+        Test if "RedisService.prune_found_ids" returns a list of tile_ids with tile_ids that appear in redis removed
         """
-        success = RedisUtils.save_gdf(sample_gdf, fake_redis)
+        success = RedisService.save_gdf(sample_gdf, fake_redis)
         assert success is True
         ids_to_check = ["r6_c2", "r1_c3", "r1_c2"]
-        pruned_tile_ids = RedisUtils.prune_found_ids(ids_to_check, fake_redis)
+        pruned_tile_ids = RedisService.prune_found_ids(ids_to_check, fake_redis)
         assert pruned_tile_ids == ["r6_c2", "r1_c3"]
