@@ -127,7 +127,7 @@ class RouteService:
 
         if len(existing_tile_ids) > 0:
             found_gdf, expired_tiles = RedisService.get_gdf_by_list_of_keys(
-                existing_tile_ids, self.redis)
+                existing_tile_ids, self.redis, self.area_config)
             non_existing_tile_ids = list(
                 set(non_existing_tile_ids + expired_tiles))
             if found_gdf is not False:
@@ -135,7 +135,7 @@ class RouteService:
 
         if len(non_existing_tile_ids) > 0:
             new_gdf = RedisService.edge_enricher_to_redis_handler(
-                non_existing_tile_ids, self.redis)
+                non_existing_tile_ids, self.redis, self.area_config)
             if new_gdf is not False:
                 all_gdfs.append(new_gdf)
 

@@ -68,14 +68,16 @@ if os.path.isdir(STATIC_DIR):
 # === Routes ===
 
 @app.get("/berlin")
-async def berlin():
+async def berlin(request: Request):
     """Returns Berlin coordinates as JSON.
 
     Returns:
         dict: A dictionary containing the coordinates of Berlin with the format
               {"coordinates": [longitude, latitude]}.
     """
-    return {"coordinates": [13.404954, 52.520008]}
+    area_config = request.app.state.area_config
+    center = {"coordinates": area_config.focus_point}
+    return center
 
 
 @app.get("/api/geocode-forward/{value:path}")

@@ -16,7 +16,7 @@ class DummyRedisService:
         return []
 
     @staticmethod
-    def get_gdf_by_list_of_keys(tile_ids, redis):
+    def get_gdf_by_list_of_keys(tile_ids, redis, area):
         lines = [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])]
         gdf = gpd.GeoDataFrame({
             "geometry": lines,
@@ -28,7 +28,7 @@ class DummyRedisService:
         return gdf, []
 
     @staticmethod
-    def edge_enricher_to_redis_handler(tile_ids, redis):
+    def edge_enricher_to_redis_handler(tile_ids, redis, area):
         lines = [LineString([(3, 3), (4, 4)]), LineString([(4, 4), (5, 52)])]
         gdf = gpd.GeoDataFrame({
             "geometry": lines,
