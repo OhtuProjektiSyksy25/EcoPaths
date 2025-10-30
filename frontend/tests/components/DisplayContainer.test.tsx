@@ -4,7 +4,7 @@ information such as route type, time estimate, total length, and air quality ave
 */
 
 import { render, screen } from '@testing-library/react';
-import DisplayContainer from '../../src/components/DisplayContainer';
+import DisplayContainer from '../../src/components/RouteInfoCard';
 
 describe('DisplayContainer', () => {
   test('renders all props correctly', () => {

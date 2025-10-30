@@ -1,5 +1,5 @@
 /*
-DisplayContainer is a component that displays information, for example the walking time estimate to the user. 
+RouteInfoCard is a component that displays information, for example the walking time estimate to the user. 
 */
 
 import React from 'react';

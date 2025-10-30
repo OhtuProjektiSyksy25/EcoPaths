@@ -7,7 +7,7 @@ uses LocationButton to get user's current location and set it as "From" value
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import InputContainer from "./InputContainer";
 import { useGeolocation } from "../hooks/useGeolocationState";
-import DisplayContainer from "./DisplayContainer";
+import DisplayContainer from "./RouteInfoCard";
 import "../styles/SideBar.css";
 import { RouteSummary } from "@/types/route";
 
