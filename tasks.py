@@ -1,6 +1,7 @@
+import os
 import subprocess
 import signal
- 
+import socket
 from invoke import task
 import geopandas as gpd
 from pathlib import Path
@@ -34,11 +35,16 @@ def lint_backend(c):
 def test_backend(c):
     """Run backend unit tests with coverage tracking"""
     with c.cd("backend"):
+        env = {"ENV": "test"}
         c.run(
             "poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing "
-            "--cov-report=xml:../coverage_reports/backend/coverage.xml tests"
+            "--cov-report=xml:../coverage_reports/backend/coverage.xml tests",
+            env=env,
         )
-        c.run("poetry run coverage html -d ../coverage_reports/backend/htmlcov")
+        c.run(
+            "poetry run coverage html -d ../coverage_reports/backend/htmlcov",
+            env=env,
+        )
     print("Backend coverage reports generated in coverage_reports/backend/")
 
 
@@ -61,45 +67,6 @@ def clean(c):
     c.run("rm -rf coverage_reports/backend/")
     print("Removed backend test artifacts and coverage reports")
 
-# ========================
-# Grid generation
-# ========================
-
-@task
-def create_grid(c, area=None):
-    """
-    Create a grid for the specified area.
-    """
-    if area is None:
-        print("Error: --area parameter is required")
-        print("Usage: inv create-grid --area=<city>")
-        return
-
-    print(f"Creating grid for {area}...")
-
-    with c.cd("backend"):
-        c.run(f"""
-poetry run python -c "
-from src.utils.grid import Grid
-from src.config.settings import AreaConfig
-
-try:
-    config = AreaConfig('{area}')
-    grid = Grid(config)
-    
-    # Check if grid already exists
-    if config.grid_file.exists():
-        print('Grid already exists.')
-    
-    grid_gdf = grid.create_grid()
-    print(f'Loaded {{len(grid_gdf)}} tiles')
-    print(f'File: {{config.grid_file}}')
-    
-except ValueError as e:
-    print(f'Error: {{e}}')
-    print('Area not available. Check available areas in settings.py.')
-"
-        """, warn=True)
 
 # ========================
 # Higher-level convenience tasks
@@ -142,17 +109,54 @@ def run_frontend(c):
 @task
 def run_redis(c):
     """Start Redis server locally"""
-    c.run("redis-server", pty=True)
+    if is_redis_running():
+        print("Redis is already running.")
+    else:
+        print("Starting Redis server...")
+        c.run("redis-server", pty=True)
+
+def is_redis_running(host="127.0.0.1", port=6379):
+    """Return True if Redis port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        return sock.connect_ex((host, port)) == 0
+    
+def is_container_running(name):
+    result = subprocess.run(
+        ["docker", "ps", "--filter", f"name={name}", "--filter", "status=running", "--format", "{{.Names}}"],
+        capture_output=True, text=True
+    )
+    return name in result.stdout.strip().split("\n")
+
 
 @task
 def run_all(c):
-    """Run both backend, frontend and Redis in development mode"""
+    """Run both backend, frontend, Redis and database in development mode"""
+    db_user = os.getenv("DB_USER_TEST", "pathplanner")
+    db_name = os.getenv("DB_NAME_TEST", "ecopaths_test")
+
     print("Starting full development environment...")
     print("Backend: http://127.0.0.1:8000")
     print("Frontend: http://localhost:3000")
     print("Redis: redis://localhost:6379")
+    print(f"Database: postgresql://{db_user}@localhost:5432/{db_name}")
 
-    redis_proc = subprocess.Popen(["redis-server"])
+    # Start Docker Compose
+    container_name = "my_postgis"
+
+    if is_container_running(container_name):
+        print(f"Docker container '{container_name}' is already running.")
+    else:
+        print(f"Starting Docker container '{container_name}'...")
+        c.run("docker compose up -d", pty=True)
+
+    # Start Redis
+    redis_proc = None
+    if is_redis_running():
+        print("Redis already running.")
+    else:
+        print("Starting Redis...")
+        redis_proc = subprocess.Popen(["redis-server"])
+
     backend_proc = subprocess.Popen(
         ["poetry", "run", "uvicorn", "src.main:app", "--reload"],
         cwd="backend"
@@ -168,9 +172,11 @@ def run_all(c):
     except KeyboardInterrupt:
         print("\nStopping development environment...")
         for proc in [frontend_proc, backend_proc, redis_proc]:
-            proc.send_signal(signal.SIGINT)
-            proc.wait()
+            if proc is not None:
+                proc.send_signal(signal.SIGINT)
+                proc.wait()
         print("Development environment stopped.")
+
 
 
 # ========================
@@ -178,7 +184,33 @@ def run_all(c):
 # ========================
 
 @task
-def populate_database(c, area: str, network_type: str = "walking", overwrite_edges=False, overwrite_grid=False):
+def reset_and_populate_area(c, area: str, network_type: str):
+    """
+    Drop all tables for a given area and repopulate the database from scratch.
+
+    Usage:
+        inv reset-and-populate-area --area=berlin --network-type=walking
+    """
+    reset_area(c, area, network_type)
+    create_all_tables(c, area, network_type)
+    populate_database(c, area, network_type, overwrite_edges=True, overwrite_grid=True)
+
+
+@task
+def create_all_tables(c, area: str, network_type: str):
+    """
+    Create all ORM-defined tables for a specific area and network type.
+
+    Usage:
+        inv create-all-tables --area=berlin --network-type=walking
+    """
+    from backend.src.database.db_client import DatabaseClient
+    db = DatabaseClient()
+    db.create_tables_for_area(area, network_type)
+
+
+@task
+def populate_database(c, area: str, network_type: str, overwrite_edges=False, overwrite_grid=False):
     """
     Create necessary tables and populate the database with grid and edge data for a specific area.
 
@@ -193,44 +225,69 @@ def populate_database(c, area: str, network_type: str = "walking", overwrite_edg
     print(f"Starting database population for area: '{area}', network type: '{network_type}'")
 
     db_client = DatabaseClient()
-    db_client.create_tables_for_area(area, network_type)
 
     grid_table = f"grid_{area.lower()}"
     edge_table = f"edges_{area.lower()}_{network_type.lower()}"
 
+    if not db_client.table_exists(edge_table):
+        raise RuntimeError(f"Edge table '{edge_table}' does not exist. Run 'create-all-tables' first.")
+
     # GRID
-    if db_client.table_exists(grid_table):
-        if not overwrite_grid:
-            print(f"Grid table '{grid_table}' already exists. Skipping grid creation.")
-            print("To overwrite, use: --overwrite-grid")
-        else:
-            print(f"Overwriting existing grid in table '{grid_table}'...")
-            settings = get_settings(area)
-            grid = Grid(settings.area)
-            grid_gdf = grid.create_grid()
-            db_client.save_grid(grid_gdf, area=area, if_exists="replace")
+    settings = get_settings(area)
+    grid = Grid(settings.area)
+    grid_gdf = grid.create_grid()
+
+    if db_client.table_exists(grid_table) and not overwrite_grid:
+        print(f"Grid table '{grid_table}' already exists. Skipping (use --overwrite-grid to force).")
     else:
-        print(f"Creating new grid for area '{area}'...")
-        settings = get_settings(area)
-        grid = Grid(settings.area)
-        grid_gdf = grid.create_grid()
-        db_client.save_grid(grid_gdf, area=area, if_exists="fail")
+        action = "Overwriting" if overwrite_grid else "Creating"
+        print(f"{action} grid for area '{area}'...")
+        db_client.save_grid(grid_gdf, area=area, if_exists="replace" if overwrite_grid else "fail")
 
     # EDGES
-    if db_client.table_exists(edge_table):
-        if not overwrite_edges:
-            print(f"Edge table '{edge_table}' already exists. Skipping edge extraction.")
-            print("To overwrite, use: --overwrite-edges")
-        else:
-            print(f"Overwriting edge data in table '{edge_table}'...")
-            preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-            edges_gdf = preprocessor.extract_edges()
-            db_client.save_edges(edges_gdf, area=area, network_type=network_type, if_exists="replace")
+    if db_client.table_exists(edge_table) and not overwrite_edges:
+        print(f"Edge table '{edge_table}' already exists. Skipping (use --overwrite-edges to force).")
     else:
-        print(f"Creating edge data for table '{edge_table}'...")
+        action = "Overwriting" if overwrite_edges else "Creating"
+        print(f"{action} edge data for table '{edge_table}'...")
         preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-        edges_gdf = preprocessor.extract_edges()
-        db_client.save_edges(edges_gdf, area=area, network_type=network_type, if_exists="fail")
+        preprocessor.extract_edges() 
 
     print(f"Database population complete for area '{area}', network type '{network_type}'.")
+
+@task
+def drop_table(c, table_name: str):
+    """
+    Drop a specific table from the database.
+
+    Usage:
+        inv drop-table --table-name=edges_berlin_walking
+    """
+    from backend.src.database.db_client import DatabaseClient
+
+    db = DatabaseClient()
+    db.drop_table(table_name)
+
+
+@task
+def reset_area(c, area: str, network_type: str):
+    """
+    Drop all tables for a given area.
+
+    Usage:
+        inv reset-area --area=berlin --network-type=walking
+    """
+    from backend.src.database.db_client import DatabaseClient
+    db = DatabaseClient()
+
+    tables = [
+        f"edges_{area.lower()}_{network_type.lower()}",
+        f"grid_{area.lower()}",
+        f"nodes_{area.lower()}_{network_type.lower()}"
+    ]
+
+    for table in tables:
+        if db.table_exists(table):
+            print(f"Dropping table: {table}")
+            db.drop_table(table)
 

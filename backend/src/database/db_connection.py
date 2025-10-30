@@ -7,10 +7,10 @@ Handles engine creation, session setup, and environment loading.
 from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from config.settings import DatabaseConfig
 
-
+# ENVIRONMENT SETUP
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 dotenv_path = BASE_DIR / ".env"
 
@@ -20,29 +20,38 @@ if dotenv_path.exists():
 else:
     print(f"WARNING: .env not found at {dotenv_path}")
 
-Base = declarative_base()
+
+# DECLARATIVE BASE (SQLAlchemy 2.x)
+class Base(DeclarativeBase):
+    """Base class for all ORM models."""
 
 
-def get_engine():
+# ENGINE AND SESSION FACTORIES
+
+
+def get_engine(echo: bool = False):
     """
-    Create and return a SQLAlchemy engine using database configuration.
+    Create and return a SQLAlchemy Engine instance.
+
+    Args:
+        echo (bool, optional): If True, logs SQL statements. Defaults to False.
 
     Returns:
-        sqlalchemy.Engine: Engine connected to the configured database.
+        sqlalchemy.Engine: Configured database engine.
     """
     db_config = DatabaseConfig()
-    return create_engine(db_config.connection_string, echo=False)
+    return create_engine(db_config.connection_string, echo=echo, future=True)
 
 
 def get_session():
     """
-    Create and return a SQLAlchemy session factory.
+    Return a SQLAlchemy session factory bound to the engine.
 
     Returns:
-        sqlalchemy.orm.sessionmaker: Configured sessionmaker object.
+        sessionmaker: Configured SQLAlchemy sessionmaker.
     """
     engine = get_engine()
-    return sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return sessionmaker(bind=engine, expire_on_commit=False, future=True)
 
 
 def get_session_instance():

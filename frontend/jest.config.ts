@@ -6,8 +6,10 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
 
+  collectCoverage: true, 
+
   // Folders where Jest will look for tests
-  roots: ['<rootDir>/tests'],
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
 
   // Setup file to configure testing environment (e.g., jest-dom)
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
@@ -36,6 +38,7 @@ const config: Config = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
+    '!src/**/index.ts',
   ],
   coverageDirectory: '../coverage_reports/frontend',
   coverageThreshold: {
