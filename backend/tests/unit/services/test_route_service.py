@@ -29,7 +29,15 @@ class DummyRedisService:
 
     @staticmethod
     def edge_enricher_to_redis_handler(tile_ids, redis):
-        pass
+        lines = [LineString([(3, 3), (4, 4)]), LineString([(4, 4), (5, 52)])]
+        gdf = gpd.GeoDataFrame({
+            "geometry": lines,
+            "edge_id": ["e6", "e7"],
+            "length_m": [100, 150],
+            "aqi": [20, 40],
+            "tile_id": [103, 104]
+        }, crs="EPSG:25833")
+        return gdf
 
 
 @pytest.fixture
@@ -94,6 +102,16 @@ def test_get_tile_edges(monkeypatch):
     assert not edges.empty
     assert "edge_id" in edges.columns
 
+def test_get_tile_edges_with_existing_tiles(monkeypatch):
+    monkeypatch.setattr(
+        "src.services.route_service.RedisService", DummyRedisService)
+    monkeypatch.setattr(DummyRedisService, "prune_found_ids", lambda tiles, redis: [103, 104])
+    service = RouteService("berlin")
+    tile_ids = [101, 102, 103, 104]
+    edges = service._get_tile_edges(tile_ids)
+    assert isinstance(edges, gpd.GeoDataFrame)
+    assert not edges.empty
+    assert "edge_id" in edges.columns
 
 def test_compute_routes_single_edge(route_service):
     edge = gpd.GeoDataFrame({
