@@ -1,7 +1,7 @@
 # tests/unit/database/test_db_connection.py
 import pytest
 from unittest.mock import patch, MagicMock
-from sqlalchemy.orm import DeclarativeMeta
+from sqlalchemy.orm import DeclarativeBase
 from src.database import db_connection
 
 
@@ -13,8 +13,11 @@ def test_get_engine_returns_engine(mock_create_engine, mock_config):
     mock_create_engine.return_value = mock_engine
 
     engine = db_connection.get_engine()
-    mock_create_engine.assert_called_once_with(
-        "postgresql://user:pass@localhost/db", echo=False)
+    mock_create_engine.assert_called_once()
+
+    args, kwargs = mock_create_engine.call_args
+    assert args[0] == "postgresql://user:pass@localhost/db"
+    assert kwargs.get("echo") is False
     assert engine == mock_engine
 
 
@@ -38,4 +41,4 @@ def test_get_session_instance_returns_session(mock_session):
 
 
 def test_base_is_declarative():
-    assert isinstance(db_connection.Base, DeclarativeMeta)
+    assert issubclass(db_connection.Base, DeclarativeBase)

@@ -6,7 +6,6 @@ import pandas as pd
 from shapely.geometry import LineString, Polygon
 from config.settings import AreaConfig, get_settings
 from core.route_algorithm import RouteAlgorithm
-from core.edge_enricher import EdgeEnricher
 from database.db_client import DatabaseClient
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
@@ -49,7 +48,7 @@ class RouteService:
     as GeoJSON FeatureCollections with summaries.
     """
 
-    def __init__(self, area: str):
+    def __init__(self, area: str, network_type: str = "walking"):
         """
         Initialize the RouteService with dynamic tile loading.
 
@@ -62,7 +61,7 @@ class RouteService:
         self.area = area
         self.redis = RedisCache()
         self.db_client = DatabaseClient()
-        self.edge_enricher = EdgeEnricher(area)
+        self.network_type = network_type
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
         """Main entrypoint: compute route and return routes + summaries.
@@ -79,6 +78,9 @@ class RouteService:
 
         # Get edges for relevant tiles (Redis + enrich new tiles if needed)
         edges = self._get_tile_edges(tile_ids)
+
+        # Nodes_gdf from database
+        # nodes = self._get_nodes_from_db(tile_ids)
 
         if edges is None or edges.empty:
             raise RuntimeError("No edges found for requested route area.")
@@ -147,8 +149,25 @@ class RouteService:
 
         return None
 
+    def _get_nodes_from_db(self, tile_ids: list) -> gpd.GeoDataFrame:
+        """
+        Fetch nodes for the given tile_ids from the database.
+
+        Args:
+            tile_ids (list): List of tile_ids intersecting route buffer.
+
+        Returns:
+            GeoDataFrame: Nodes for requested tiles.
+        """
+        return self.db_client.get_nodes_by_tile_ids(
+            self.area_config.area,
+            self.network_type,
+            tile_ids
+        )
+
     def _compute_routes(self, edges, origin_gdf, destination_gdf):
         """Compute multiple route variants and summaries."""
+
         edges["combined_score"] = 0.5 * edges["length_m"] + 0.5 * edges["aqi"]
 
         modes = {

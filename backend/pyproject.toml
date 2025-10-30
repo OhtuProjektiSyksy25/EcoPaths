@@ -28,6 +28,7 @@ folium = "^0.20.0"
 python-dotenv = "^1.1.1"
 sqlalchemy = "^2.0.44"
 geoalchemy2 = "^0.18.0"
+python-igraph = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"

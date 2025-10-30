@@ -43,6 +43,7 @@ class EdgeEnricher:
         Returns:
             GeoDataFrame: Road network edges enriched with AQ data (if available).
         """
+        print(f"EdgeEnricher: Enriching {len(tile_ids)} tiles")
         # Load edges and AQ data for the tiles
         self.edges_gdf = self.load_edges_from_db(tile_ids, network_type)
         self.aq_gdf = self.load_aq_tiles(tile_ids)

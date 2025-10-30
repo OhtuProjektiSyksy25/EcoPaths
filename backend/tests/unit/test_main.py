@@ -11,7 +11,7 @@ from unittest.mock import Mock
 
 
 class MockAreaConfig:
-    """Create mock area config"""
+    """Create mock area config."""
 
     def __init__(self):
         self.bbox = [13.30, 52.46, 13.51, 52.59]
@@ -21,7 +21,7 @@ class MockAreaConfig:
 
 @pytest.fixture
 def setup_mock_lifespan():
-    """Set up mock lifespan"""
+    """Set up mock lifespan."""
     app.state.area_config = MockAreaConfig()
     app.state.route_service = Mock()
 
@@ -33,7 +33,7 @@ client = TestClient(app)
 
 def test_berlin():
     """ Test if GET to /berlin status is 200
-        and response has correct berlin coordinates    
+        and response has correct berlin coordinates.
     """
     response = client.get("/berlin")
     assert response.status_code == 200
@@ -43,7 +43,7 @@ def test_berlin():
 
 @pytest.fixture
 def create_index_html(tmp_path, monkeypatch):
-    """ Create a temporary build/index.html file for testing """
+    """Create a temporary build/index.html file for testing."""
     build_dir = tmp_path / "build"
     build_dir.mkdir()
     index_file = build_dir / "index.html"
@@ -54,7 +54,7 @@ def create_index_html(tmp_path, monkeypatch):
 
 @pytest.fixture
 def create_static_dir(tmp_path, monkeypatch):
-    """ Create a temporary build/static directory for testing """
+    """Create a temporary build/static directory for testing."""
     static_dir = tmp_path / "build" / "static"
     static_dir.mkdir(parents=True)
     monkeypatch.chdir(tmp_path)
@@ -63,7 +63,7 @@ def create_static_dir(tmp_path, monkeypatch):
 
 @pytest.mark.usefixtures("create_index_html")
 def test_spa_handler_serves_index_html():
-    """ Test if the catch-all route serves index.html """
+    """Test if the catch-all route serves index.html."""
     response = client.get("/some/random/path")
     assert response.status_code == 200
     assert response.text == "<html>SPA</html>"
@@ -94,7 +94,7 @@ def test_static_mount_present():
 
 
 def test_geocode_forward_too_short_value():
-    """ Test geocode_forward endpoint with too short value """
+    """Test geocode_forward endpoint with too short value."""
     response = client.get("/api/geocode-forward/al")
 
     assert response.status_code == 200
@@ -103,7 +103,7 @@ def test_geocode_forward_too_short_value():
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_geocode_forward_valid_value(monkeypatch):
-    """ Test geocode_forward endpoint with valid value """
+    """Test geocode_forward endpoint with valid value."""
     sample_response = {
         "features": [
             {
@@ -145,9 +145,80 @@ def test_geocode_forward_valid_value(monkeypatch):
     assert feature["full_address"] == "Unter den Linden Berlin "
 
 
-def test_geocode_forward_http_error(monkeypatch):
-    """ Test geocode_forward endpoint handling HTTP error """
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_geocode_forward_with_all_fields(monkeypatch):
+    """Test geocode_forward endpoint with all fields present in response."""
+    sample_response = {
+        "features": [
+            {
+                "properties": {
+                    "name": "Die Mitte",
+                    "street": "Alexanderplatz",
+                    "housenumber": "3",
+                    "city": "Berlin"
+                },
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [13.4132, 52.5219]
+                }
+            }
+        ]
+    }
 
+    async def mock_get(*args, **kwargs):
+        class MockResponse:
+            def json(self):
+                return sample_response
+
+        return MockResponse()
+
+    monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
+
+    response = client.get("/api/geocode-forward/unt")
+    suggestions = response.json()
+
+    assert response.status_code == 200
+
+    assert "features" in suggestions
+    assert len(suggestions["features"]) == 1
+
+    feature = suggestions["features"][0]
+
+    assert feature["properties"]["name"] == "Die Mitte"
+    assert feature["properties"]["street"] == "Alexanderplatz"
+    assert feature["properties"]["housenumber"] == "3"
+    assert feature["properties"]["city"] == "Berlin"
+    assert "full_address" in feature
+    assert feature["full_address"] == "Die Mitte Alexanderplatz 3 Berlin "
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_geocode_forward_outside_bbox(monkeypatch):
+    """Test geocode_forward endpoint with a value outside the bbox."""
+    sample_response = {
+        "features": []
+    }
+
+    async def mock_get(*args, **kwargs):
+        class MockResponse:
+            def json(self):
+                return sample_response
+
+        return MockResponse()
+
+    monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
+
+    response = client.get("/api/geocode-forward/mannerheimintie")
+    suggestions = response.json()
+
+    assert response.status_code == 200
+    assert "features" in suggestions
+    assert len(suggestions["features"]) == 0
+
+
+def test_geocode_forward_http_error(monkeypatch):
+    """Test geocode_forward endpoint handling HTTP error."""
     async def mock_get(*args, **kwargs):
         mock_request = Mock()
         mock_request.url = "fake-url"
@@ -162,3 +233,34 @@ def test_geocode_forward_http_error(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_geocode_forward_check_photon_url(monkeypatch):
+    """Test that the Photon URL is set correctly."""
+    test_photon_url = None
+
+    async def mock_get(self, url, *args, **kwargs):
+        nonlocal test_photon_url
+        test_photon_url = str(url)
+
+        class MockResponse:
+            def json(self):
+                return {"features": []}
+        return MockResponse()
+
+    monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
+
+    response = client.get("/api/geocode-forward/alexander")
+
+    assert response.status_code == 200
+    assert test_photon_url is not None
+
+    value = "alexander"
+    bbox_str = "13.3,52.46,13.51,52.59"
+
+    assert value in test_photon_url
+    assert bbox_str in test_photon_url
+    assert test_photon_url.startswith("https://photon.komoot.io/api/?q=")
+    assert test_photon_url.endswith(f"{value}&limit=4&bbox={bbox_str}")
+    assert test_photon_url == f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
