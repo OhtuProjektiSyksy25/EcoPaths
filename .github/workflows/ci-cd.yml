@@ -53,7 +53,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage_reports/frontend/lcov.info
-          fail_ci_if_error: 
+          fail_ci_if_error: true
 
 
   ### 2. BACKEND
@@ -63,7 +63,20 @@ jobs:
     defaults:
       run:
         working-directory: backend
-
+    services:
+      postgres:
+        image: kartoza/postgis:15-3.4
+        ports:
+        - 5432:5432
+        env:
+          POSTGRES_USER: pathplanner
+          POSTGRES_PASSWORD: sekret
+          POSTGRES_DB: ecopaths
+        options: >-
+          --health-cmd="pg_isready -U pathplanner -d ecopaths"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
 
     steps:
       - name: Checkout repository
@@ -86,6 +99,28 @@ jobs:
       - name: Install backend dependencies
         run: poetry install
 
+      - name: Check running containers
+        run: docker ps
+
+      - name: Create test database and enable PostGIS
+        run: |
+          sudo apt-get install -y postgresql-client
+          export PGPASSWORD=sekret
+          psql -h localhost -U pathplanner -d postgres -c "CREATE DATABASE ecopaths_test;"
+          psql -h localhost -U pathplanner -d ecopaths_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+
+      - name: Create .env.test
+        run: |
+          cat <<EOF > .env.test
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_USER_TEST=pathplanner
+          DB_PASSWORD_TEST=sekret
+          DB_NAME_TEST=ecopaths_test
+          TEST_AREA=testarea
+          NETWORK_TYPE=walking
+          EOF
+
       - name: Ensure coverage directory exists
         run: mkdir -p coverage_reports/backend/
 
@@ -93,6 +128,8 @@ jobs:
         run: poetry run pylint src preprocessor
 
       - name: Run tests with coverage
+        env:
+          ENV: test
         run: |
           poetry run pytest --cov=src --cov=preprocessor --cov-report=term-missing \
             --cov-report=xml:../coverage_reports/backend/coverage.xml tests
@@ -137,6 +174,7 @@ jobs:
     name: Docker
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref_name == 'main'
+    # if: github.event_name == 'pull_request' && github.base_ref == 'dev'
     needs: [frontend, backend]
 
     steps:

@@ -57,12 +57,6 @@ class Grid:
             gpd.GeoDataFrame: GeoDataFrame containing the grid tiles.
         """
 
-        # Load from existing file if available
-        if self.area_config.grid_file_parquet.exists():
-            return gpd.read_parquet(self.area_config.grid_file_parquet)
-        if self.area_config.grid_file_geojson.exists():
-            return gpd.read_file(self.area_config.grid_file_geojson)
-
         # Otherwise, create new grid
         print(f"Creating new grid for area '{self.area_config.area}'...")
 
@@ -93,25 +87,21 @@ class Grid:
             col += 1
 
         # Convert to GeoDataFrame
-        grid_gdf = gpd.GeoDataFrame(grid_cells, crs=self.area_config.crs)
+        grid_gdf = gpd.GeoDataFrame(
+            grid_cells, crs=self.area_config.crs)
 
         # Get center points for tiles
         grid_gdf['centroid'] = grid_gdf.geometry.centroid
 
         # Convert center points to lat/lon for API calls
-        grid_gdf['center_lon'], grid_gdf['center_lat'] = self.to_latlon.transform(
+        lon_arr, lat_arr = self.to_latlon.transform(
             grid_gdf['centroid'].x.values,
             grid_gdf['centroid'].y.values
         )
+        grid_gdf['center_lon'] = lon_arr
+        grid_gdf['center_lat'] = lat_arr
 
         grid_gdf = grid_gdf.drop(columns=['centroid'])
-
-        # Save to both formats
-        grid_gdf.to_parquet(self.area_config.grid_file_parquet, index=False)
-        grid_gdf.to_file(self.area_config.grid_file_geojson, driver="GeoJSON")
-
-        print(f" Grid saved to:{self.area_config.grid_file_parquet}")
-        print(f" and {self.area_config.grid_file_geojson}")
 
         return grid_gdf
 
@@ -135,7 +125,7 @@ class Grid:
         point = Point(x, y)
 
         # Find tile containing the point
-        found = grid_gdf[grid_gdf.intersects(point)]
+        found = grid_gdf.loc[grid_gdf.intersects(point)]
 
         if found.empty:
             raise ValueError(f"Point ({lon}, {lat}) not in grid bounds")
@@ -157,7 +147,7 @@ class Grid:
         grid_gdf = self.create_grid()
 
         # Find tile by ID
-        tile = grid_gdf[grid_gdf['tile_id'] == tile_id]
+        tile = grid_gdf.query("tile_id == @tile_id")
         if tile.empty:
             raise ValueError(f"Tile ID '{tile_id}' not found.")
 
