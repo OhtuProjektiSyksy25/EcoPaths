@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../styles/CitySelector.css";
+import { City } from "../types";
 
-
-interface City {
-  name: string;
-  center: [number, number];
-  zoom: number;
-}
 
 interface CitySelectorProps {
   onCitySelect: (city: City) => void;
@@ -19,32 +14,31 @@ export const CitySelector: React.FC<CitySelectorProps> = ({ onCitySelect }) => {
   const [selectedCity, setSelectedCity] = useState<string>("");
 
   
-  useEffect(() => {
-    const fetchCities = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cities`);
-        
-        if (!response.ok) {
-          throw new Error(`Backend returned ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setCities(data.cities);
-        setLoading(false);
-      } catch (error) {
-        console.error("Failed to load cities:", error);
-        setError("Could not load available cities. Please try again later.");
-
-        setCities([]);
-        setLoading(false);
+useEffect(() => {
+  const fetchCities = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cities`);
+      
+      if (!response.ok) {
+        throw new Error(`Backend returned ${response.status}`);
       }
-    };
+      
+      const data = await response.json();
+      setCities(data.cities || []);
+    } catch (error) {
+      console.error("Failed to load cities:", error);
+      setError("Could not load available cities. Please try again later.");
+      setCities([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchCities();
-  }, []);
+  fetchCities();
+}, []);
 
   const handleCityClick = (city: City) => {
-    setSelectedCity(city.name);
+    setSelectedCity(city.display_name);
     setTimeout(() => {
       onCitySelect(city);
     }, 200);
@@ -102,14 +96,13 @@ export const CitySelector: React.FC<CitySelectorProps> = ({ onCitySelect }) => {
         <div className="city-grid">
           {cities.map((city) => (
             <button
-              key={city.name}
+              key={city.display_name}
               className={`city-button ${
-                selectedCity === city.name ? "selected" : ""
+                selectedCity === city.display_name ? "selected" : ""
               }`}
               onClick={() => handleCityClick(city)}
             >
-              <span className="city-icon"></span>
-              <span className="city-name">{city.name}</span>
+              <span className="city-name">{city.display_name}</span>
             </button>
           ))}
         </div>

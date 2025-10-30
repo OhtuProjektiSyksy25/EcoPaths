@@ -2,6 +2,7 @@
 from contextlib import asynccontextmanager
 import os
 import sys
+import time
 import httpx
 from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,6 +71,9 @@ if os.path.isdir(STATIC_DIR):
 
 @app.get("/api/cities")
 async def get_cities():
+    """
+    API endpoint to return a list of available cities/areas.
+    """
     cities = []
     
     for area_id, settings in AREA_SETTINGS.items():
@@ -79,25 +83,13 @@ async def get_cities():
         
         cities.append({
             "id": area_id,
-            "name": settings.get("display_name", area_id.title()),
-            "bbox": settings["bbox"],
+            "display_name": settings.get("display_name", area_id.title()),
             "focus_point": settings.get("focus_point"),
             "zoom": 12
         })
-    
+
     return {"cities": cities}
 
-
-
-@app.get("/berlin")
-async def berlin():
-    """Returns Berlin coordinates as JSON.
-
-    Returns:
-        dict: A dictionary containing the coordinates of Berlin with the format
-              {"coordinates": [longitude, latitude]}.
-    """
-    return {"coordinates": [13.404954, 52.520008]}
 
 
 @app.get("/api/geocode-forward/{value:path}")
@@ -140,6 +132,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
     return photon_suggestions
 
 
+
 @app.post("/getroute")
 async def getroute(request: Request):
     """
@@ -163,6 +156,8 @@ async def getroute(request: Request):
             }
         }
     """
+    start_time = time.time()
+
     data = await request.json()
     features = data.get("features", [])
 
@@ -187,6 +182,9 @@ async def getroute(request: Request):
 
     route_service = request.app.state.route_service
     response = route_service.get_route(origin_gdf, destination_gdf)
+
+    duration = time.time() - start_time
+    print(f"/getroute took {duration:.3f} seconds")
 
     return JSONResponse(content=response)
 

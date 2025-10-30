@@ -15,11 +15,8 @@ import "../styles/MapComponent.css";
 import { useDrawRoutes } from "../hooks/useDrawRoutes";
 import { LockedLocation, RouteGeoJSON } from "../types"; 
 
-interface City {
-  name: string;
-  center: [number, number];
-  zoom: number;
-}
+import { City } from "../types";
+import { initialMapCenter, initialMapZoom } from "../constants";
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -64,7 +61,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current.flyTo({
       center: [coords.lng, coords.lat],
       zoom: 15,
-      duration: 1500,
+      duration: 1500
     });
   };
 
@@ -74,16 +71,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
     */
     if (!mapboxToken || !mapboxRef.current) return;
 
-    mapboxgl.accessToken = mapboxToken;      
-
-    const initialCenter: [number, number] = [0, 20];
-    const initialZoom = 2;
+    mapboxgl.accessToken = mapboxToken;
 
     mapRef.current = new mapboxgl.Map({
       container: mapboxRef.current,
       style: mapboxStyle,
-      center: initialCenter,
-      zoom: initialZoom,
+      center: initialMapCenter,
+      zoom: initialMapZoom,
     });
 
     mapRef.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
@@ -96,7 +90,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (!mapRef.current || !selectedCity) return;
 
     mapRef.current.flyTo({
-      center: selectedCity.center,
+      center: selectedCity.focus_point,
       zoom: selectedCity.zoom,
       duration: 2000,
       essential: true,
@@ -171,15 +165,15 @@ const MapComponent: React.FC<MapComponentProps> = ({
       </div>
     );
   }
- 
 
-  return (
-    <div style={{ height: "100%", width: "100%" }}>
-      <MapContainer
-        center={selectedCity?.center || [0, 20]}
-        zoom={selectedCity ? 12 : 2} 
-        style={{ height: "100%", width: "100%" }}
-      >
+
+return (
+  <div style={{ height: "100%", width: "100%" }}>
+    <MapContainer
+      center={selectedCity?.focus_point || initialMapCenter}
+      zoom={selectedCity?.zoom || initialMapZoom}
+      style={{ height: "100%", width: "100%" }}
+    >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

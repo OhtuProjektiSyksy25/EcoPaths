@@ -2,17 +2,19 @@
 import { useState, useEffect } from "react";
 import { fetchRoute } from "../api/routeApi";
 import { LockedLocation, RouteGeoJSON, UseRouteResult, RouteSummary } from "../types/route";
+import { City } from "../types";
 
 /**
  * Custom React hook for fetching multiple routes between two locked locations.
  *
  * @param fromLocked - Starting location with address, geometry and optional city
  * @param toLocked - Destination location with address, geometry and optional city
+ * @param selectedCity - The city context for the route
  * @returns An object containing all routes, loading state, error message, and summaries
  */
 export function useRoute(
   fromLocked: LockedLocation | null,
-  toLocked: LockedLocation | null
+  toLocked: LockedLocation | null,
 ): UseRouteResult {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -39,7 +41,7 @@ export function useRoute(
         console.error(err);
         setError(err.message);
         setRoutes(null);
-        setSummaries(summaries);
+        setSummaries(null);
       } finally {
         setLoading(false);
       }

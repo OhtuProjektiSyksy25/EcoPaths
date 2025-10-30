@@ -4,3 +4,11 @@
 export type { MbMap, Coords, Coordinates } from "./map";
 export type { LockedLocation, RouteFeature, RouteGeoJSON, UseRouteResult } from "./route";
 export type { ApiError, ApiResponse } from "./api";
+
+// Define and export the City data structure
+export interface City {
+  id: string;
+  display_name: string;
+  focus_point: [number, number];
+  zoom: number;
+}
