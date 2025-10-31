@@ -34,10 +34,6 @@ EXTRA_COLUMNS = {
         "highway",      # road type: motorway, primary, residential, etc.
         "lanes",        # number of lanes
         "maxspeed",     # speed limit (km/h)
-        "width",        # road width (meters)
-        "traffic",      # optional: vehicle count / traffic volume
         "surface",      # pavement type: asphalt, gravel, etc.
-        "tunnel",       # whether the road is in a tunnel
-        "covered"       # whether road is covered by roof/structure
     ]
 }

@@ -2,7 +2,7 @@
 Dynamic SQLAlchemy ORM models for spatial Edge, Grid, and Node tables.
 """
 
-from sqlalchemy import Column, Integer, String, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float
 from geoalchemy2 import Geometry
 from config.settings import AreaConfig
 from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
@@ -46,7 +46,7 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
 
     def column_for_name(name: str, srid: int) -> Column:
         column_map = {
-            "edge_id": Column(Integer, primary_key=True),
+            "edge_id": Column(Integer, primary_key=True, nullable=False),
             "tile_id": Column(String),
             "geometry": Column(Geometry("LINESTRING", srid=srid)),
             "length_m": Column(Float),
@@ -54,9 +54,6 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
             "to_node": Column(Integer),
             "lanes": Column(Integer),
             "maxspeed": Column(Integer),
-            "width": Column(Float),
-            "tunnel": Column(Boolean),
-            "covered": Column(Boolean),
             "traffic_influence": Column(Float),
             "landuse_influence": Column(Float),
             "env_influence": Column(Float),

@@ -162,7 +162,7 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"Saved {len(gdf)} edges to table '{table_name}'")
+        print(f"  Saved {len(gdf)} edges to table '{table_name}'")
 
     def save_grid(self, gdf: gpd.GeoDataFrame, area: str, if_exists="fail"):
         """
@@ -184,7 +184,7 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"Saved {len(gdf)} tiles to table '{table_name}'")
+        print(f"  Saved {len(gdf)} tiles to table '{table_name}'")
 
     def save_nodes(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -207,7 +207,7 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"Saved {len(gdf)} nodes to table '{table_name}'")
+        print(f"  Saved {len(gdf)} nodes to table '{table_name}'")
 
     def load_edges(self, area: str, network_type: str) -> gpd.GeoDataFrame:
         """

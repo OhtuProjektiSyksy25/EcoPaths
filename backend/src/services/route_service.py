@@ -85,7 +85,9 @@ class RouteService:
         if edges is None or edges.empty:
             raise RuntimeError("No edges found for requested route area.")
 
-        return self._compute_routes(edges, origin_gdf, destination_gdf)
+        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+
+        return self._compute_routes(edges_subset, origin_gdf, destination_gdf)
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """
