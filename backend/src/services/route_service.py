@@ -9,8 +9,8 @@ from core.route_algorithm import RouteAlgorithm
 from database.db_client import DatabaseClient
 from services.redis_cache import RedisCache
 from services.geo_transformer import GeoTransformer
+from services.redis_service import RedisService
 from utils.route_summary import summarize_route
-from utils.redis_utils import RedisUtils
 
 
 class RouteServiceFactory:
@@ -119,28 +119,23 @@ class RouteService:
         Returns:
             GeoDataFrame: Edges for requested tiles.
         """
-        # Prune tiles already in Redis
-        non_existing_tile_ids = RedisUtils.prune_found_ids(
+        non_existing_tile_ids = RedisService.prune_found_ids(
             tile_ids, self.redis)
         existing_tile_ids = list(set(tile_ids) - set(non_existing_tile_ids))
 
         all_gdfs = []
 
-        # Load existing tiles from Redis
-        if existing_tile_ids:
-            found_gdf, expired_tiles = RedisUtils.get_gdf_by_list_of_keys(
-                existing_tile_ids, self.redis)
+        if len(existing_tile_ids) > 0:
+            found_gdf, expired_tiles = RedisService.get_gdf_by_list_of_keys(
+                existing_tile_ids, self.redis, self.area_config)
             non_existing_tile_ids = list(
                 set(non_existing_tile_ids + expired_tiles))
             if found_gdf is not False:
                 all_gdfs.append(found_gdf)
 
-        # Enrich and save missing tiles
-        if non_existing_tile_ids:
-            RedisUtils.edge_enricher_to_redis_handler(
-                non_existing_tile_ids, self.redis)
-            new_gdf, _ = RedisUtils.get_gdf_by_list_of_keys(
-                non_existing_tile_ids, self.redis)
+        if len(non_existing_tile_ids) > 0:
+            new_gdf = RedisService.edge_enricher_to_redis_handler(
+                non_existing_tile_ids, self.redis, self.area_config)
             if new_gdf is not False:
                 all_gdfs.append(new_gdf)
 

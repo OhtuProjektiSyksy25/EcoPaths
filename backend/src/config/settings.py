@@ -72,6 +72,7 @@ class AreaConfig:
         self.pbf_url = settings["pbf_url"]
         self.crs = settings["crs"]
         self.tile_size_m = settings.get("tile_size_m", 500)
+        self.focus_point = settings["focus_point"]
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.pbf_data_dir = self.project_root / "preprocessor" / "data"

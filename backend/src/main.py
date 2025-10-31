@@ -90,6 +90,17 @@ async def get_cities():
 
     return {"cities": cities}
 
+@app.get("/berlin")
+async def berlin(request: Request):
+    """Returns Berlin coordinates as JSON.
+
+    Returns:
+        dict: A dictionary containing the coordinates of Berlin with the format
+              {"coordinates": [longitude, latitude]}.
+    """
+    area_config = request.app.state.area_config
+    center = {"coordinates": area_config.focus_point}
+    return center
 
 
 @app.get("/api/geocode-forward/{value:path}")
