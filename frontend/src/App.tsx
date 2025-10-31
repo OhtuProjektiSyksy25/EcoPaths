@@ -9,8 +9,9 @@ import CitySelector from "./components/CitySelector";
 import { useRoute } from "./hooks/useRoute";
 import { LockedLocation, City } from "./types";
 import "./styles/App.css";
-import CIcon from '@coreui/icons-react';
-import { cilArrowCircleBottom } from '@coreui/icons';
+import { LocateFixed, Locate, Globe } from "lucide-react";
+// import CIcon from '@coreui/icons-react';
+// import { cilMap } from '@coreui/icons';
 
 /**
  * Root component of the EcoPaths React application.
@@ -61,7 +62,7 @@ function App(): JSX.Element {
       {selectedCity && !showCitySelector && (
         <div className="city-dropdown-container">
           <button className="city-dropdown-button" onClick={handleChangeCity}>
-            <CIcon icon={cilArrowCircleBottom} className="map-icon" />
+             <Globe size={25} />
             {selectedCity.display_name}
           </button>
         </div>

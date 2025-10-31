@@ -35,7 +35,7 @@ async def lifespan(application: FastAPI):
 
     Sets up shared services such as RouteService and AreaConfig.
     """
-    selected_area = "berlin"
+    selected_area = "testarea"
 
     route_service, area_config = RouteServiceFactory.from_area(selected_area)
 
@@ -78,15 +78,15 @@ async def get_cities():
     
     for area_id, settings in AREA_SETTINGS.items():
         # Skip testarea
-        if area_id == "testarea":
-            continue
-        
+#        if area_id == "testarea":
+#            continue
+
         cities.append({
             "id": area_id,
             "display_name": settings.get("display_name", area_id.title()),
             "focus_point": settings.get("focus_point"),
             "zoom": 12
-        })
+            })
 
     return {"cities": cities}
 

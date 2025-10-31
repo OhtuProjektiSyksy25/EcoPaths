@@ -83,9 +83,15 @@
 }
 
 .loading-spinner {
-  font-family: 'Arial', sans-serif;
   text-align: center;
   padding: 60px 40px;
+}
+
+.loading-spinner p {
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  color: #666;
+  margin: 0;
 }
 
 .spinner {

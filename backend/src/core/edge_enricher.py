@@ -12,7 +12,7 @@ class EdgeEnricher:
     and optionally combining them with air quality (AQ) data.
     """
 
-    def __init__(self, area: str = "berlin"):
+    def __init__(self, area: str):
         """
         Initialize the model with a specific area.
 
