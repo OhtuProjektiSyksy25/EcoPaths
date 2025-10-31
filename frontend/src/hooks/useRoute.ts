@@ -2,14 +2,14 @@
 import { useState, useEffect } from "react";
 import { fetchRoute } from "../api/routeApi";
 import { LockedLocation, RouteGeoJSON, UseRouteResult, RouteSummary } from "../types/route";
-import { City } from "../types";
+import { Area } from "../types";
 
 /**
  * Custom React hook for fetching multiple routes between two locked locations.
  *
- * @param fromLocked - Starting location with address, geometry and optional city
- * @param toLocked - Destination location with address, geometry and optional city
- * @param selectedCity - The city context for the route
+ * @param fromLocked - Starting location with address, geometry and optional area
+ * @param toLocked - Destination location with address, geometry and optional area
+ * @param selectedArea - The area context for the route
  * @returns An object containing all routes, loading state, error message, and summaries
  */
 export function useRoute(

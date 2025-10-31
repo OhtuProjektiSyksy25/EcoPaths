@@ -5,9 +5,9 @@ It renders the header and the MapComponent.
 import { useState } from "react";
 import MapComponent from "./components/MapComponent";
 import SideBar from "./components/SideBar";
-import CitySelector from "./components/CitySelector";
+import AreaSelector from "./components/AreaSelector";
 import { useRoute } from "./hooks/useRoute";
-import { LockedLocation, City } from "./types";
+import { LockedLocation, Area } from "./types";
 import "./styles/App.css";
 import { LocateFixed, Locate, Globe } from "lucide-react";
 // import CIcon from '@coreui/icons-react';
@@ -19,36 +19,36 @@ import { LocateFixed, Locate, Globe } from "lucide-react";
  * Manages the state of selected start and end locations,
  * fetches the routes using a custom hook, and renders the UI including:
  * - Header
- * - CitySelector for choosing cities
+ * - AreaSelector for choosing areas
  * - RouteForm for selecting locations
  * - MapComponent for visualizing route options
  *
  * @returns JSX.Element representing the full application layout
  */
 function App(): JSX.Element {
-  // City selection state
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [showCitySelector, setShowCitySelector] = useState(true);
+  // Area selection state
+  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
+  const [showAreaSelector, setShowAreaSelector] = useState(true);
 
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
 
   const { routes, summaries, loading, error } = useRoute(fromLocked, toLocked);
 
-  // Handle city selection
-  const handleCitySelect = (city: City) => {
-    setSelectedCity(city);
-    setShowCitySelector(false); // Close popup after city is selected
-    
-    // Clear routes when changing city
+  // Handle area selection
+  const handleAreaSelect = (area: Area) => {
+    setSelectedArea(area);
+    setShowAreaSelector(false);
+
+    // Clear routes when changing area
     setFromLocked(null);
     setToLocked(null);
   };
 
-  // Handle changing city from dropdown
-  const handleChangeCity = () => {
-    setShowCitySelector(true);
-    // Clear routes after changing city
+  // Handle changing area from dropdown
+  const handleChangeArea = () => {
+    setShowAreaSelector(true);
+    // Clear routes after changing area
     setFromLocked(null);
     setToLocked(null);
   };
@@ -56,14 +56,14 @@ function App(): JSX.Element {
 
   return (
     <div className="App">
-      {showCitySelector && (
-        <CitySelector onCitySelect={handleCitySelect} />
+      {showAreaSelector && (
+        <AreaSelector onAreaSelect={handleAreaSelect} />
       )}
-      {selectedCity && !showCitySelector && (
-        <div className="city-dropdown-container">
-          <button className="city-dropdown-button" onClick={handleChangeCity}>
+      {selectedArea && !showAreaSelector && (
+        <div className="area-dropdown-container">
+          <button className="area-dropdown-button" onClick={handleChangeArea}>
              <Globe size={25} />
-            {selectedCity.display_name}
+            {selectedArea.display_name}
           </button>
         </div>
       )}
@@ -91,7 +91,7 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
-            selectedCity={selectedCity}
+            selectedArea={selectedArea}
           />
         </div>
       </main>

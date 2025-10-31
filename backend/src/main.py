@@ -42,6 +42,9 @@ async def lifespan(application: FastAPI):
     application.state.route_service = route_service
     application.state.area_config = area_config
 
+    # track selected area
+    application.state.selected_area = selected_area
+
     yield
 
 
@@ -69,26 +72,55 @@ if os.path.isdir(STATIC_DIR):
 
 # === Routes ===
 
-@app.get("/api/cities")
-async def get_cities():
+@app.get("/api/areas")
+async def get_areas():
     """
-    API endpoint to return a list of available cities/areas.
+    API endpoint to return a list of available areas.
     """
-    cities = []
-    
+    areas = []
+
     for area_id, settings in AREA_SETTINGS.items():
         # Skip testarea
 #        if area_id == "testarea":
 #            continue
 
-        cities.append({
+        areas.append({
             "id": area_id,
             "display_name": settings.get("display_name", area_id.title()),
             "focus_point": settings.get("focus_point"),
             "zoom": 12
             })
 
-    return {"cities": cities}
+    return {"areas": areas}
+
+# Endpoint to change selected area dynamically
+@app.post("/api/select-area/{area_id}")
+async def select_area(request: Request, area_id: str = Path(...)):
+    if area_id.lower() not in AREA_SETTINGS:
+        return JSONResponse(status_code=404, content={"error": "Area not found"})
+
+    try:
+        # Create new RouteService and AreaConfig for selected area
+        route_service, area_config = RouteServiceFactory.from_area(area_id.lower())
+
+        # Update application state
+        request.app.state.route_service = route_service
+        request.app.state.area_config = area_config
+        request.app.state.selected_area = area_id.lower()
+
+        print(f"Successfully switched to {area_id}")
+
+        return area_id.lower()
+
+
+    except Exception as e:
+        print(f"Failed to switch to {area_id}: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to switch to {area_id}: {str(e)}"}
+        )
+
+
 
 @app.get("/berlin")
 async def berlin(request: Request):

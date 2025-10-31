@@ -15,21 +15,21 @@ import "../styles/MapComponent.css";
 import { useDrawRoutes } from "../hooks/useDrawRoutes";
 import { LockedLocation, RouteGeoJSON } from "../types"; 
 
-import { City } from "../types";
+import { Area } from "../types";
 import { initialMapCenter, initialMapZoom } from "../constants";
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
   toLocked: LockedLocation | null;
   routes: Record<string, RouteGeoJSON> | null;
-  selectedCity: City | null;
+  selectedArea: Area | null;
 }
 
 const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
-  selectedCity,
+  selectedArea,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || "";
@@ -87,15 +87,15 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
 
   useEffect(() => {
-    if (!mapRef.current || !selectedCity) return;
+    if (!mapRef.current || !selectedArea) return;
 
     mapRef.current.flyTo({
-      center: selectedCity.focus_point,
-      zoom: selectedCity.zoom,
+      center: selectedArea.focus_point,
+      zoom: selectedArea.zoom,
       duration: 2000,
       essential: true,
     });
-  }, [selectedCity]);
+  }, [selectedArea]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -170,8 +170,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
 return (
   <div style={{ height: "100%", width: "100%" }}>
     <MapContainer
-      center={selectedCity?.focus_point || initialMapCenter}
-      zoom={selectedCity?.zoom || initialMapZoom}
+      center={selectedArea?.focus_point || initialMapCenter}
+      zoom={selectedArea?.zoom || initialMapZoom}
       style={{ height: "100%", width: "100%" }}
     >
         <TileLayer

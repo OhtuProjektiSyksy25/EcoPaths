@@ -1,4 +1,4 @@
-.city-selector-overlay {
+.area-selector-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -17,7 +17,7 @@
   to { opacity: 1; }
 }
 
-.city-selector-modal {
+.area-selector-modal {
   background: white;
   border-radius: 16px;
   padding: 40px;
@@ -26,7 +26,7 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-.city-selector-modal h2 {
+.area-selector-modal h2 {
   margin: 0;
   margin-bottom: 30px;
   color: #333;
@@ -36,7 +36,7 @@
   font-weight: 600;
 }
 
-.city-grid {
+.area-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
@@ -44,12 +44,12 @@
 }
 
 @media (max-width: 600px) {
-  .city-grid {
+  .area-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.city-button {
+.area-button {
   background: #f8f9fa;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
@@ -62,21 +62,21 @@
   gap: 10px;
 }
 
-.city-button:hover {
+.area-button:hover {
   border-color: #2bc654;
 }
 
-.city-button.selected {
-  background: #2196f3;
-  border-color: #1976d2;
+.area-button.selected {
+  background: #2bc654;
+  border-color: #2bc654;
   color: white;
 }
 
-.city-icon {
+.area-icon {
   font-size: 32px;
 }
 
-.city-name {
+.area-name {
   font-weight: 600;
   font-size: 18px;
   font-family: 'Arial', sans-serif;
