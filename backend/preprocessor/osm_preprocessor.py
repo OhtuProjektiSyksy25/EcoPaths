@@ -10,6 +10,8 @@ from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 from .edge_cleaner_sql import EdgeCleanerSQL
 from .osm_downloader import OSMDownloader
 from .node_builder import NodeBuilder
+from .traffic_influence import TrafficInfluenceBuilder
+from .env_influence import EnvInfluenceBuilder
 
 
 class OSMPreprocessor:
@@ -75,6 +77,12 @@ class OSMPreprocessor:
         builder.remove_unused_nodes()
         builder.assign_tile_ids()
 
+        tib = TrafficInfluenceBuilder(db, self.area)
+        tib.compute_cumulative_influence()
+
+        eib = EnvInfluenceBuilder(db, area=self.area)
+        eib.run()
+
         print(
             f"Edge preprocessing complete for '{self.area}' ({self.network_type})")
 
@@ -103,23 +111,22 @@ class OSMPreprocessor:
 
     def filter_to_selected_columns(self, gdf, network_type):
         """
-        Filters a GeoDataFrame to include only columns defined 
-        in the ORM model for the given network type.
-
-        Args:
-            gdf (GeoDataFrame): The input GeoDataFrame containing raw edge data.
-            network_type (str): The type of network 
-            ('walking', 'cycling', 'driving') used to determine extra columns.
-
-        Returns:
-            GeoDataFrame: A filtered GeoDataFrame containing only the selected columns.
+        Filters and ensures the GeoDataFrame includes all expected columns
+        defined for the given network type. Missing columns are added
+        with default None or type-appropriate placeholder values.
         """
-
         selected = BASE_COLUMNS + EXTRA_COLUMNS.get(network_type, [])
 
         if "geometry" not in selected:
             selected.append("geometry")
 
-        filtered = gdf[[col for col in selected if col in gdf.columns]]
+        filtered = gdf[[col for col in gdf.columns if col in selected]].copy()
+
+        for col in selected:
+            if col not in filtered.columns:
+                if col.endswith("_influence"):
+                    filtered[col] = 1.0
+                else:
+                    filtered[col] = None
 
         return filtered.set_geometry("geometry")

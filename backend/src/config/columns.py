@@ -1,15 +1,43 @@
 """
 Column definitions for dynamic Edge table creation.
 
-BASE_COLUMNS contains the default set of columns for all networks.
-EXTRA_COLUMNS defines additional columns specific to network types.
+BASE_COLUMNS: columns present in all networks
+EXTRA_COLUMNS: network-specific additional columns
 """
 
-BASE_COLUMNS = ["edge_id", "tile_id", "geometry",
-                "from_node", "to_node", "length_m"]
+# Base columns for all network tables
+BASE_COLUMNS = [
+    "edge_id",    # unique edge ID
+    "tile_id",    # ID of the spatial grid/tile the edge belongs to
+    "geometry",   # LineString geometry
+    "from_node",  # node placeholder (start point)
+    "to_node",    # node placeholder (end point)
+    "length_m"    # edge length in meters
+]
 
+# Network-specific additional columns
 EXTRA_COLUMNS = {
-    "walking": ["access"],
-    "cycling": ["access"],
-    "driving": ["access", "highway", "lanes", "maxspeed"]
+    "walking": [
+        "access",             # OSM access tag: 'yes', 'private', etc.
+        "traffic_influence",  # static traffic exposure weight
+        "landuse_influence",  # land use / green area influence
+        "env_influence"       # combined environmental influence
+    ],
+    "cycling": [
+        "access",
+        "traffic_influence",
+        "landuse_influence",
+        "env_influence"
+    ],
+    "driving": [
+        "access",       # OSM access tag: 'yes', 'private', etc.
+        "highway",      # road type: motorway, primary, residential, etc.
+        "lanes",        # number of lanes
+        "maxspeed",     # speed limit (km/h)
+        "width",        # road width (meters)
+        "traffic",      # optional: vehicle count / traffic volume
+        "surface",      # pavement type: asphalt, gravel, etc.
+        "tunnel",       # whether the road is in a tunnel
+        "covered"       # whether road is covered by roof/structure
+    ]
 }
