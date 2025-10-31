@@ -66,7 +66,6 @@ class OSMPreprocessor:
             edges_gdf, self.network_type)
         if self.network_type == "driving":
             edges_gdf = self.clean_maxspeed_column(edges_gdf)
-            edges_gdf = self.clean_width_column(edges_gdf)
 
         # Step 3: Save to database
         db = DatabaseClient()
@@ -169,22 +168,4 @@ class OSMPreprocessor:
             print(
                 f"maxspeed cleaned: {valid_count} valid, {null_count} set to NULL")
 
-        return gdf
-
-    def clean_width_column(self, gdf):
-        """
-        Cleans the 'width' column by extracting numeric values and converting to float.
-        Non-numeric or malformed values are replaced with None.
-        """
-        def parse_width(val):
-            try:
-                # Poista yksiköt kuten 'm', 'meters', jne.
-                if isinstance(val, str):
-                    val = val.strip().lower().replace("m", "").replace("meters", "").strip()
-                return float(val)
-            except (ValueError, TypeError):
-                return None
-
-        if "width" in gdf.columns:
-            gdf["width"] = gdf["width"].apply(parse_width).astype("float64")
         return gdf
