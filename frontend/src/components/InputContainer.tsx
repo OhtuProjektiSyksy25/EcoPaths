@@ -11,6 +11,17 @@ Props:
 */
 import React, {useState, useEffect, useRef} from "react";
 
+// Keys used by the backend to classify POIs (keep in sync with backend POI_KEYS)
+const POI_KEYS: Set<string> = new Set([
+  "amenity",
+  "tourism",
+  "shop",
+  "leisure",
+  "historic",
+  "office",
+  "craft",
+]);
+
 interface InputContainerProps {
   placeholder: string;
   value: string;
@@ -35,6 +46,21 @@ const InputContainer: React.FC<InputContainerProps> = ({
 const [isOpen, setIsOpen] = useState(false)
 const containerRef = useRef<HTMLDivElement | null>(null);
 const inputSelected = useRef(false);
+
+// Prepare suggestions so that POIs are shown after address suggestions
+const prepareSuggestions = (items: any[]) => {
+  if (!items || items.length === 0) return items;
+  const isPoi = (suggestion: any) => !!suggestion?.properties?.osm_key && POI_KEYS.has(suggestion.properties.osm_key);
+  // stable-ish sort: copy the array and sort by isPoi (false first)
+  return [...items].sort((a, b) => {
+    const aPoi = isPoi(a);
+    const bPoi = isPoi(b);
+    if (aPoi === bPoi) return 0;
+    return aPoi ? 1 : -1;
+  });
+};
+
+const sortedSuggestions = prepareSuggestions(suggestions);
 
 useEffect(() => {
   /*
@@ -94,6 +120,15 @@ useEffect(() => {
             setIsOpen(false)
             inputSelected.current = true;
           }}>
+            {/* POI icon: render a small marker when the suggestion is classified as a POI */}
+            {s?.properties?.osm_key && POI_KEYS.has(s.properties.osm_key) && (
+              <span className="poi-icon" aria-hidden="true" title="Point of interest" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 8}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#d33"/>
+                  <circle cx="12" cy="9" r="2.5" fill="#fff"/>
+                </svg>
+              </span>
+            )}
             {s.full_address}
           </li>
           ))}

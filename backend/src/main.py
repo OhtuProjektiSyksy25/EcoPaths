@@ -113,11 +113,11 @@ async def geocode_forward(value: str):
         # build a readable full_address/name for display
         name = suggestion_data.get("name") or ""
         fields = ["street", "housenumber", "city"]
-        addr = name
+        full_address = name
         for field in fields:
             if suggestion_data.get(field):
-                addr = (addr + " " + suggestion_data.get(field)).strip()
-        feature["full_address"] = addr
+                full_address = (full_address + " " + suggestion_data.get(field)).strip()
+        feature["full_address"] = full_address
 
         osm_key = suggestion_data.get("osm_key")
         # treat feature as POI when its osm_key indicates a point-of-interest
