@@ -5,7 +5,6 @@ from src.services.redis_service import RedisService
 from src.config.settings import get_settings
 from shapely.geometry import LineString
 from services.redis_cache import RedisCache
-from unittest.mock import patch, MagicMock
 import pandas as pd
 
 
@@ -86,26 +85,3 @@ class TestRedisService:
         pruned_tile_ids = RedisService.prune_found_ids(ids_to_check, fake_redis)
         assert pruned_tile_ids == ["r6_c2", "r1_c3"]
 
-    def test_edge_enricher_to_redis_handler(self, fake_redis, fake_area, sample_gdf):
-        """
-        Test that RedisService.edge_enricher_to_redis_handler correctly
-        calls edge_enricher and handles data correctly.
-        """
-        tile_ids = ["r0_c2", "r1_c2"]
-
-        with patch("src.services.redis_service.EdgeEnricher") as MockEdgeEnricher:
-            instance = MockEdgeEnricher.return_value
-            instance.get_enriched_tiles.return_value = sample_gdf
-            result = RedisService.edge_enricher_to_redis_handler(tile_ids, fake_redis, fake_area)
-
-            assert isinstance(result, gpd.GeoDataFrame)
-            assert pd.testing.assert_frame_equal(
-                result.reset_index(drop=True), sample_gdf.reset_index(drop=True)) is None
-
-            MockEdgeEnricher.assert_called_once_with(fake_area.area)
-            instance.get_enriched_tiles.assert_called_once_with(tile_ids)
-
-            for tile_id in sample_gdf["tile_id"].unique():
-                stored_value, _ = RedisService.get_gdf_by_list_of_keys(
-                    [tile_id], fake_redis, fake_area)
-                assert not stored_value.empty

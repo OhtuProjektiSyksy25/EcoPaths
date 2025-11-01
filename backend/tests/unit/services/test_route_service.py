@@ -3,6 +3,7 @@ import geopandas as gpd
 from shapely.geometry import LineString, Point
 from src.services.route_service import RouteService, RouteServiceFactory
 from src.config import settings
+from unittest.mock import patch
 
 
 class DummyDBClient:
@@ -38,6 +39,25 @@ class DummyRedisService:
             "tile_id": [103, 104]
         }, crs="EPSG:25833")
         return gdf
+    
+    @staticmethod
+    def save_gdf(gdf, redis, area):
+        return True
+    
+def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
+    gdf = gpd.GeoDataFrame({
+        "edge_id": [1, 2],
+        "geometry": [
+            LineString([(0, 0), (1, 1)]),
+            LineString([(1, 1), (2, 2)])
+        ],
+        "tile_id": ["t101", "t102"],
+        "length_m": [10, 10],
+        "from_node": [1, 2],
+        "to_node": [2, 3],
+        "aqi": [20.0, 40.0],
+    }, crs="EPSG:25833")
+    return gdf
 
 
 @pytest.fixture
@@ -46,7 +66,9 @@ def route_service(monkeypatch):
         "src.services.route_service.DatabaseClient", lambda: DummyDBClient())
     monkeypatch.setattr(
         "src.services.route_service.RedisService", DummyRedisService)
-    return RouteService(area="berlin")
+    monkeypatch.setattr(
+        "src.services.route_service.EdgeEnricher.get_enriched_tiles", dummy_get_enriched_tiles)
+    return RouteService("testarea")
 
 
 def test_factory_returns_service_and_config():
@@ -92,26 +114,31 @@ def test_get_route(route_service):
                for mode in ["fastest", "best_aq", "balanced"])
 
 
-def test_get_tile_edges(monkeypatch):
-    monkeypatch.setattr(
-        "src.services.route_service.RedisService", DummyRedisService)
-    service = RouteService("berlin")
-    tile_ids = [101]
-    edges = service._get_tile_edges(tile_ids)
-    assert isinstance(edges, gpd.GeoDataFrame)
-    assert not edges.empty
-    assert "edge_id" in edges.columns
+def test_get_tile_edges_no_existing_tiles(route_service):
+    with (
+        patch("src.services.route_service.RedisService.prune_found_ids", return_value=[]),
+        patch("src.services.route_service.RedisService.save_gdf", return_value=True) as mock_save
+    ):
+        tile_ids = [101, 102, 103, 104]
+        edges = route_service._get_tile_edges(tile_ids)
 
-def test_get_tile_edges_with_existing_tiles(monkeypatch):
-    monkeypatch.setattr(
-        "src.services.route_service.RedisService", DummyRedisService)
-    monkeypatch.setattr(DummyRedisService, "prune_found_ids", lambda tiles, redis: [103, 104])
-    service = RouteService("berlin")
-    tile_ids = [101, 102, 103, 104]
-    edges = service._get_tile_edges(tile_ids)
-    assert isinstance(edges, gpd.GeoDataFrame)
-    assert not edges.empty
-    assert "edge_id" in edges.columns
+        assert isinstance(edges, gpd.GeoDataFrame)
+        assert not edges.empty
+        assert "edge_id" in edges.columns
+        assert mock_save.call_count == 0
+
+
+def test_get_tile_edges_with_existing_tiles(route_service):
+    with (
+        patch("src.services.route_service.RedisService.prune_found_ids", return_value=[101]),
+        patch("src.services.route_service.RedisService.save_gdf", return_value=True) as mock_save
+    ):
+        tile_ids = [101, 102, 103, 104]
+        edges = route_service._get_tile_edges(tile_ids)
+        assert isinstance(edges, gpd.GeoDataFrame)
+        assert not edges.empty
+        assert "edge_id" in edges.columns
+        assert mock_save.call_count == 1
 
 def test_compute_routes_single_edge(route_service):
     edge = gpd.GeoDataFrame({

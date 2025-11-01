@@ -2,7 +2,6 @@
 Utility module for handling, saving and fetching of GeoDataFrame/geojson data to and from redis
 """
 import geopandas as gpd
-from core.edge_enricher import EdgeEnricher
 
 
 class RedisService:
