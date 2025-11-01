@@ -1,6 +1,6 @@
 """
-Optimized NodeBuilder with area-specific CRS handling for fast node table generation
-and edge enrichment with from_node / to_node references.
+Efficient NodeBuilder for generating node tables 
+and enriching edges with from/to references and tile IDs.
 """
 from sqlalchemy import text
 from src.database.db_client import DatabaseClient
@@ -10,12 +10,8 @@ from src.config.settings import get_settings
 class NodeBuilder:
     """
     Constructs a node table from edge geometries and attaches from_node and to_node
-    references to each edge, assuming all geometries are already in area-specific CRS.
-
-    Optimizations:
-    1. Precomputes start_geom and end_geom columns.
-    2. Uses GIST indexes for edges and nodes.
-    3. Avoids unnecessary CRS transformations.
+    references to each edge. Assumes geometries are in area-specific CRS and uses
+    precomputed start/end points, spatial indexes, and tile-based joins for performance.
     """
 
     def __init__(self, db_client: DatabaseClient, area: str, network_type: str):
@@ -57,7 +53,11 @@ class NodeBuilder:
         """)
 
     def build_nodes_and_attach_to_edges(self):
-        """Build node table and enrich edges with node references."""
+        """
+        Builds node table from edge endpoints and enriches edges with from_node and 
+        to_node references. Uses spatial joins with 1-meter tolerance and replaces 
+        the original edge table with enriched version.
+        """
         self.prepare_edge_geometry_columns()
 
         print(

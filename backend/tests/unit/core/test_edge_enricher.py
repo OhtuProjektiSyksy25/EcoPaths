@@ -1,87 +1,88 @@
 import pytest
 import geopandas as gpd
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, LineString
 from src.core.edge_enricher import EdgeEnricher
 
 
 class DummyDBClient:
-    def load_edges_for_tiles(self, area, network_type, tile_ids):
+    """Mock database client that returns fake edges for testing."""
+
+    def load_edges_for_tiles(self, area, network_type, tile_ids, include_columns=None):
         return gpd.GeoDataFrame({
             "edge_id": [1, 2],
-            "tile_id": [101, 102],
-            "geometry": [Point(0, 0), Point(1, 1)]
+            "tile_id": ["r1_c1", "r1_c2"],
+            "length_m": [100, 200],
+            "from_node": [10, 20],
+            "to_node": [11, 21],
+            "env_influence": [1.0, 1.5],
+            "geometry": [
+                LineString([(0, 0), (1, 1)]),
+                LineString([(1, 1), (2, 2)])
+            ],
         }, crs="EPSG:25833")
 
 
 class DummyGoogleAPIService:
+    """Mock Google API client returning fake AQ data."""
+
     def get_aq_data_for_tiles(self, tile_ids, area):
-        poly = Polygon([(-0.5, -0.5), (-0.5, 0.5), (0.5, 0.5), (0.5, -0.5)])
         return gpd.GeoDataFrame({
-            "tile_id": [101],
-            "aqi": [42],
-            "geometry": [poly]
+            "tile_id": ["r1_c1", "r1_c2"],
+            "raw_aqi": [30, 60],
+            "geometry": [
+                Polygon([(-0.5, -0.5), (-0.5, 0.5), (0.5, 0.5), (0.5, -0.5)]),
+                Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)])
+            ],
         }, crs="EPSG:25833")
 
 
 @pytest.fixture
 def enricher(monkeypatch):
+    """Fixture that patches dependencies and returns an EdgeEnricher instance."""
     monkeypatch.setattr(
         "src.core.edge_enricher.DatabaseClient", lambda: DummyDBClient())
     monkeypatch.setattr("src.core.edge_enricher.GoogleAPIService",
                         lambda: DummyGoogleAPIService())
-    return EdgeEnricher(area="berlin")
+    return EdgeEnricher(area="testarea")
 
 
 def test_load_edges_from_db(enricher):
-    edges = enricher.load_edges_from_db([101])
+    edges = enricher.load_edges_from_db(["r1_c1"])
     assert not edges.empty
     assert "edge_id" in edges.columns
-    assert len(edges) == 2
+    assert "env_influence" in edges.columns
+    assert edges.crs.to_string() == "EPSG:25833"
 
 
 def test_load_aq_tiles(enricher):
-    enricher.edges_gdf = enricher.load_edges_from_db([101])
-    aq = enricher.load_aq_tiles([101])
+    enricher.edges_gdf = enricher.load_edges_from_db(["r1_c1"])
+    aq = enricher.load_aq_tiles(["r1_c1"])
     assert not aq.empty
-    assert "aqi" in aq.columns
+    assert "raw_aqi" in aq.columns
     assert aq.crs == enricher.edges_gdf.crs
 
 
 def test_enrich_data(enricher):
-    enricher.edges_gdf = enricher.load_edges_from_db([101])
-    aq_gdf = enricher.load_aq_tiles([101])
-    enriched = enricher.enrich_data(enricher.edges_gdf, aq_gdf)
-    assert "aqi" in enriched.columns
-    assert enriched["aqi"].iloc[0] == 42
-
-
-def test_get_enriched_tiles(monkeypatch):
-    monkeypatch.setattr(
-        "src.core.edge_enricher.DatabaseClient", lambda: DummyDBClient())
-    monkeypatch.setattr("src.core.edge_enricher.GoogleAPIService",
-                        lambda: DummyGoogleAPIService())
-    enricher = EdgeEnricher(area="berlin")
-    enriched = enricher.get_enriched_tiles([101])
-    assert isinstance(enriched, gpd.GeoDataFrame)
-    assert "aqi" in enriched.columns
-
-
-def test_enrich_data_with_duplicates(monkeypatch):
-    monkeypatch.setattr(
-        "src.core.edge_enricher.DatabaseClient", lambda: DummyDBClient())
-    enricher = EdgeEnricher(area="berlin")
-    edges = gpd.GeoDataFrame({
-        "edge_id": [1, 1],
-        "tile_id": [101, 101],
-        "geometry": [Point(0, 0), Point(0.1, 0.1)]
-    }, crs="EPSG:25833")
-
-    aq = gpd.GeoDataFrame({
-        "tile_id": [101],
-        "aqi": [50],
-        "geometry": [Polygon([(-1, -1), (-1, 1), (1, 1), (1, -1)])]
-    }, crs="EPSG:25833")
-
+    edges = enricher.load_edges_from_db(["r1_c1", "r1_c2"])
+    aq = DummyGoogleAPIService().get_aq_data_for_tiles(
+        ["r1_c1", "r1_c2"], "testarea")
     enriched = enricher.enrich_data(edges, aq)
     assert "aqi" in enriched.columns
-    assert enriched["aqi"].notnull().all()
+    assert all(enriched["aqi"] > 0)
+    assert "raw_aqi" not in enriched.columns
+
+
+def test_enrich_data_with_empty_aq(enricher):
+    edges = enricher.load_edges_from_db(["r1_c1"])
+    empty_aq = gpd.GeoDataFrame(
+        columns=["tile_id", "raw_aqi", "geometry"], crs="EPSG:25833")
+    enriched = enricher.enrich_data(edges, empty_aq)
+    assert "aqi" not in enriched.columns
+    assert enriched.equals(edges)
+
+
+def test_get_enriched_tiles(enricher):
+    enriched = enricher.get_enriched_tiles(["r1_c1", "r1_c2"])
+    assert isinstance(enriched, gpd.GeoDataFrame)
+    assert not enriched.empty
+    assert "aqi" in enriched.columns
