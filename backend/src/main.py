@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from services.geo_transformer import GeoTransformer
+from utils.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
 # === CORS configuration ===
