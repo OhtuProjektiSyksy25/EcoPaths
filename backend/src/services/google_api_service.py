@@ -79,7 +79,7 @@ class GoogleAPIService:
         if tiles.empty:
             print(f"No tiles found for IDs: {tile_ids}.")
             return gpd.GeoDataFrame(
-                columns=["tile_id", "aqi", "geometry"],
+                columns=["tile_id", "raw_aqi", "geometry"],
                 crs=area_config.crs
             )
 
@@ -95,11 +95,11 @@ class GoogleAPIService:
             # parse AQI from response
             if aq_response:
                 indexes = aq_response.get("indexes", [])
-                aqi = indexes[0].get("aqi") if indexes else None
-                tiles.at[idx, "aqi"] = aqi
+                raw_aqi = indexes[0].get("aqi") if indexes else None
+                tiles.at[idx, "raw_aqi"] = raw_aqi
             else:
-                tiles.at[idx, "aqi"] = None
+                tiles.at[idx, "raw_aqi"] = None
 
         # return gdf with aqi data
-        result = tiles[["tile_id", "aqi", "geometry"]].copy()
+        result = tiles[["tile_id", "raw_aqi", "geometry"]].copy()
         return result
