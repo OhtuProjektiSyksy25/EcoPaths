@@ -45,17 +45,20 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
         return existing
 
     def column_for_name(name: str, srid: int) -> Column:
-        if name == "edge_id":
-            return Column(Integer, primary_key=True)
-        if name == "tile_id":
-            return Column(String)
-        if name == "geometry":
-            return Column(Geometry("LINESTRING", srid=srid))
-        if name == "length_m":
-            return Column(Float)
-        if name in ["from_node", "to_node"]:
-            return Column(Integer)
-        return Column(String)
+        column_map = {
+            "edge_id": Column(Integer, primary_key=True, nullable=False),
+            "tile_id": Column(String),
+            "geometry": Column(Geometry("LINESTRING", srid=srid)),
+            "length_m": Column(Float),
+            "from_node": Column(Integer),
+            "to_node": Column(Integer),
+            "lanes": Column(Integer),
+            "maxspeed": Column(Integer),
+            "traffic_influence": Column(Float),
+            "landuse_influence": Column(Float),
+            "env_influence": Column(Float),
+        }
+        return column_map.get(name, Column(String))
 
     area_config = AreaConfig(area_name)
     srid = int(area_config.crs.split(":")[-1])
