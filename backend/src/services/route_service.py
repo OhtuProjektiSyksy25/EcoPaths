@@ -6,11 +6,12 @@ import pandas as pd
 from shapely.geometry import LineString, Polygon
 from config.settings import AreaConfig, get_settings
 from core.route_algorithm import RouteAlgorithm
+from core.edge_enricher import EdgeEnricher
 from database.db_client import DatabaseClient
 from services.redis_cache import RedisCache
-from services.geo_transformer import GeoTransformer
 from services.redis_service import RedisService
 from utils.route_summary import summarize_route
+from utils.geo_transformer import GeoTransformer
 
 
 class RouteServiceFactory:
@@ -73,6 +74,7 @@ class RouteService:
         Returns:
             dict: GeoJSON FeatureCollection and route summaries.
         """
+
         buffer = self._create_buffer(origin_gdf, destination_gdf)
         tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
 
@@ -136,10 +138,19 @@ class RouteService:
                 all_gdfs.append(found_gdf)
 
         if len(non_existing_tile_ids) > 0:
-            new_gdf = RedisService.edge_enricher_to_redis_handler(
-                non_existing_tile_ids, self.redis, self.area_config)
-            if new_gdf is not False:
-                all_gdfs.append(new_gdf)
+            enricher = EdgeEnricher(area=self.area)
+            new_gdf = enricher.get_enriched_tiles(
+                non_existing_tile_ids, network_type=self.network_type)
+
+            if new_gdf is not False and new_gdf is not None and not new_gdf.empty:
+                saved = RedisService.save_gdf(
+                    new_gdf, self.redis, self.area_config)
+                if saved:
+                    all_gdfs.append(new_gdf)
+                else:
+                    print("Warning: Failed to save enriched tiles to Redis.")
+            else:
+                print("Warning: Enrichment failed or returned empty. Skipping save.")
 
         if all_gdfs:
             return pd.concat(all_gdfs, ignore_index=True)
