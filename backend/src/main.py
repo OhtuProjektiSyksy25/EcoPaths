@@ -2,14 +2,13 @@
 from contextlib import asynccontextmanager
 import os
 import sys
-import time
 import httpx
-from fastapi import FastAPI, Request, Path
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from services.geo_transformer import GeoTransformer
+from fastapi.responses import FileResponse, JSONResponse
 from services.route_service import RouteServiceFactory
+from services.geo_transformer import GeoTransformer
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
@@ -68,23 +67,19 @@ if os.path.isdir(STATIC_DIR):
 # === Routes ===
 
 @app.get("/berlin")
-async def berlin(request: Request):
+async def berlin():
     """Returns Berlin coordinates as JSON.
 
     Returns:
         dict: A dictionary containing the coordinates of Berlin with the format
               {"coordinates": [longitude, latitude]}.
     """
-    area_config = request.app.state.area_config
-    center = {"coordinates": area_config.focus_point}
-    return center
+    return {"coordinates": [13.404954, 52.520008]}
 
 
-@app.get("/api/geocode-forward/{value:path}")
-async def geocode_forward(request: Request, value: str = Path(...)):
-    """
-    API endpoint to return a list of suggested addresses based on given value,
-    limited to the selected area's bounding box.
+@app.get("/api/geocode-forward/{value}")
+async def geocode_forward(value: str):
+    """api endpoint to return a list of suggested addresses based on given value
 
     Args:
         value (str): current address search value
@@ -95,12 +90,8 @@ async def geocode_forward(request: Request, value: str = Path(...)):
     if len(value) < 3:
         return []
 
-    area_config = request.app.state.area_config
-    bbox = area_config.bbox
-    bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
-
-    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
-
+    # ask for a few more results so we can include 1-2 POIs among address suggestions
+    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=8"
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
@@ -109,14 +100,48 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []
 
-    for feature in photon_suggestions.get("features", []):
+    features = photon_suggestions.get("features", [])
+
+    # classify POIs using common osm keys
+    POI_KEYS = {"amenity", "tourism", "shop", "leisure", "historic", "office", "craft"}
+
+    poi_features = []
+    address_features = []
+
+    for feature in features:
         suggestion_data = feature.get("properties", {})
-        fields = ["name", "street", "housenumber", "city"]
-        full_address = ""
+        # build a readable full_address/name for display
+        name = suggestion_data.get("name") or ""
+        fields = ["street", "housenumber", "city"]
+        addr = name
         for field in fields:
             if suggestion_data.get(field):
-                full_address += f"{suggestion_data.get(field)} "
-        feature["full_address"] = full_address
+                addr = (addr + " " + suggestion_data.get(field)).strip()
+        feature["full_address"] = addr
+
+        osm_key = suggestion_data.get("osm_key")
+        # treat feature as POI when its osm_key indicates a point-of-interest
+        if osm_key in POI_KEYS:
+            poi_features.append(feature)
+        else:
+            address_features.append(feature)
+
+    # We do not compute or sort POIs by distance here.
+    # Keep POIs in the order Photon returned them and include up to 2 POIs after address suggestions.
+
+    # Compose final suggestions: keep up to 4 addresses and include up to 2 POIs
+    final_features = []
+    final_features.extend(address_features[:4])
+    # add 1-2 POIs after addresses
+    remaining_pois = poi_features[:2]
+    # if there are few addresses, allow POIs earlier
+    if len(final_features) < 2 and remaining_pois:
+        # interleave: put one POI in front if few addresses
+        final_features = remaining_pois[:1] + final_features
+        remaining_pois = remaining_pois[1:]
+    final_features.extend(remaining_pois)
+
+    photon_suggestions["features"] = final_features
     return photon_suggestions
 
 
@@ -143,8 +168,6 @@ async def getroute(request: Request):
             }
         }
     """
-    start_time = time.time()
-
     data = await request.json()
     features = data.get("features", [])
 
@@ -169,9 +192,6 @@ async def getroute(request: Request):
 
     route_service = request.app.state.route_service
     response = route_service.get_route(origin_gdf, destination_gdf)
-
-    duration = time.time() - start_time
-    print(f"/getroute took {duration:.3f} seconds")
 
     return JSONResponse(content=response)
 
