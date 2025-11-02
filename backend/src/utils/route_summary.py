@@ -56,7 +56,6 @@ def calculate_total_length(route: Union[gpd.GeoDataFrame, dict]) -> float:
         )
     raise ValueError("Unsupported route format")
 
-
 def calculate_aq_average(route: Union[gpd.GeoDataFrame, dict]) -> float | None:
     """
     Calculates the average air quality value along the route.
@@ -68,18 +67,35 @@ def calculate_aq_average(route: Union[gpd.GeoDataFrame, dict]) -> float | None:
         float | None: Average AQI, or None if no values are available.
     """
     if isinstance(route, gpd.GeoDataFrame):
-        aqi_values = route["aqi"].dropna(
-        ).tolist() if "aqi" in route else []
+        # collect (aqi, length_m) tuples
+        aqi_both = list(
+            zip(
+                route["aqi"].dropna().tolist(),
+                route["length_m"].dropna().tolist() if "length_m" in route else []
+            )
+        )
+
     elif isinstance(route, dict) and route.get("type") == "FeatureCollection":
-        aqi_values = [
-            f["properties"]["aqi"]
+        aqi_both = [
+            (f["properties"]["aqi"], f["properties"]["length_m"])
             for f in route["features"]
-            if "aqi" in f["properties"] and f["properties"]["aqi"] is not None
+            if (
+                "aqi" in f["properties"]
+                and "length_m" in f["properties"]
+                and f["properties"]["aqi"] is not None
+                and f["properties"]["length_m"] is not None
+            )
         ]
+
     else:
         raise ValueError("Unsupported route format")
 
-    return sum(aqi_values) / len(aqi_values) if aqi_values else None
+    total_length = sum(length for _, length in aqi_both)
+    if total_length == 0:
+        return None
+
+    weighted_avg = sum(aqi * length for aqi, length in aqi_both) / total_length
+    return weighted_avg
 
 
 def summarize_route(route: Union[gpd.GeoDataFrame, dict]) -> dict:

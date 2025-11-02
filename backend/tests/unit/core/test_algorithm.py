@@ -13,7 +13,8 @@ def simple_edges():
     return gpd.GeoDataFrame({
         "geometry": lines,
         "length_m": [1.414, 1.414],
-        "edge_id": [0, 1]
+        "edge_id": [0, 1],
+        "aqi": [67, 100]
     }, crs="EPSG:3067")
 
 
