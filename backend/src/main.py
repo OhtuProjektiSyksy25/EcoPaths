@@ -79,6 +79,7 @@ async def berlin(request: Request):
     center = {"coordinates": area_config.focus_point}
     return center
 
+
 @app.get("/get-area-config")
 async def get_area_config(request: Request):
     """Returns the area configuration as JSON.
@@ -97,6 +98,7 @@ async def get_area_config(request: Request):
         "focus_point": area_config.focus_point,
         "crs": area_config.crs
     }
+
 
 @app.get("/api/geocode-forward/{value:path}")
 async def geocode_forward(request: Request, value: str = Path(...)):

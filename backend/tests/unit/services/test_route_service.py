@@ -4,7 +4,6 @@ from shapely.geometry import LineString, Point
 from src.services.route_service import RouteService, RouteServiceFactory
 
 
-
 class DummyRedisService:
     @staticmethod
     def prune_found_ids(tile_ids, redis):

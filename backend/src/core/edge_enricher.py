@@ -77,6 +77,7 @@ class EdgeEnricher:
             "geometry",
             "tile_id",
             "length_m",
+            "normalized_length",
             "from_node",
             "to_node",
             "env_influence"
@@ -124,7 +125,7 @@ class EdgeEnricher:
     ) -> gpd.GeoDataFrame:
         """
         Combine road network with air quality data using tile_id-based join,
-        compute derived AQI cost for later routing use,
+        compute derived AQI and normalized AQI for later routing use,
         and remove raw AQI to comply with storage policy.
 
         Args:
@@ -154,6 +155,16 @@ class EdgeEnricher:
 
         # Compute derived AQI cost (scaled by environmental influence)
         enriched["aqi"] = enriched["raw_aqi"] * enriched["env_influence"]
+
+        # normalized_aqi is a derived feature used for routing algorithms.
+        # It scales AQI cost between 0–1 for consistent weighting.
+        min_aqi = enriched["aqi"].min()
+        max_aqi = enriched["aqi"].max()
+        if min_aqi == max_aqi:
+            enriched["normalized_aqi"] = 0.0
+        else:
+            enriched["normalized_aqi"] = (
+                enriched["aqi"] - min_aqi) / (max_aqi - min_aqi)
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained

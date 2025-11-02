@@ -30,14 +30,10 @@ const mockAreaConfig = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve(mockAreaConfig),
-    })
-  ) as jest.Mock;
+  jest.spyOn(global, 'fetch').mockResolvedValue({
+    ok: true,
+    json: async () => mockAreaConfig,
+  } as Response);
 });
 
 afterEach(() => {

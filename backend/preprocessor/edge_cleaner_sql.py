@@ -136,8 +136,7 @@ class EdgeCleanerSQL:
         grid_table = f"grid_{area.lower()}"
         split_table = f"{edge_table}_split"
 
-        print(
-            f"Splitting edges along tiles and assigning tile_id into '{split_table}'...")
+        print("Splitting edges along tiles...")
 
         with self.engine.begin() as conn:
             # Drop old split table if exists
@@ -179,7 +178,7 @@ class EdgeCleanerSQL:
             conn.execute(
                 text(f"ALTER TABLE {split_table} RENAME TO {edge_table};"))
 
-        print(f"Original edge table replaced by split table '{edge_table}'.")
+        print(f"Edge table '{edge_table}' is now splitted in tiles.")
 
     def compute_lengths(self, area: str, network_type: str):
         """
@@ -187,8 +186,15 @@ class EdgeCleanerSQL:
         """
         table = f"edges_{area.lower()}_{network_type.lower()}"
         query = f"""
+            WITH stats AS (
+                SELECT MAX(ST_Length(geometry)) AS max_len
+                FROM {table}
+            )
             UPDATE {table}
-            SET length_m = ROUND(ST_Length(geometry)::numeric, 2);
+            SET
+                length_m = ROUND(ST_Length(geometry)::numeric, 2),
+                normalized_length = ROUND((ST_Length(geometry)::numeric / stats.max_len::numeric), 4)
+            FROM stats;
         """
         with self.engine.begin() as conn:
             conn.execute(text(query))
