@@ -116,7 +116,6 @@ class EdgeEnricher:
         if aq_gdf.crs != self.edges_gdf.crs:
             aq_gdf = aq_gdf.to_crs(self.edges_gdf.crs)
 
-        print(f"Retrieved AQ data for {len(tile_ids)} tiles")
         return aq_gdf
 
     def enrich_data(
