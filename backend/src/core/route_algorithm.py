@@ -30,21 +30,23 @@ class RouteAlgorithm:
         self.edges_tree = STRtree(self.edges.geometry.to_list())
         print(f"Subset_edges count: {len(self.edges)}")
 
-    def calculate_path(self, origin_gdf, destination_gdf, weight="length_m", method="dijkstra"):
+    def calculate_path(self, origin_gdf, destination_gdf, balance_factor=1, method="dijkstra"):
         """
         Calculates the shortest path between origin and destination points.
 
         Args:
             origin_gdf (gpd.GeoDataFrame): GeoDataFrame with a Point geometry for origin.
             destination_gdf (gpd.GeoDataFrame): GeoDataFrame witha Point geometry for destination.
-            weight (str): Column name used as edge weight.
+            balance_factor (float): Float value between 0 and 1 that dictates how much the algorithm
+                                    consideres air quality when finding route. Lower values value
+                                    air quality more over distance. Defaults to 1.
             method (str): Routing algorithm to use ("dijkstra" or "astar").
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame containing the edges along the calculated route.
         """
         origin_node, destination_node, graph, extra_edges = self.prepare_graph_and_nodes(
-            origin_gdf, destination_gdf, weight
+            origin_gdf, destination_gdf, balance_factor=balance_factor
         )
 
         if origin_node not in graph or destination_node not in graph:
@@ -57,14 +59,16 @@ class RouteAlgorithm:
         print(f"Extracted {len(path_edges)} edges for final route")
         return path_edges
 
-    def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, weight):
+    def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, balance_factor=1):
         """
         Prepares graph and snapped nodes for routing.
 
         Args:
             origin_gdf (gpd.GeoDataFrame): Origin point.
             destination_gdf (gpd.GeoDataFrame): Destination point.
-            weight (str): Edge weight column.
+            balance_factor (float): Float value between 0 and 1 that dictates how much the algorithm
+                                    consideres air quality when finding route. Lower values value
+                                    air quality more over distance. Defaults to 1.
 
         Returns:
             tuple: origin_node, destination_node, graph, combined_edges
@@ -77,7 +81,7 @@ class RouteAlgorithm:
             destination_point)
 
         extra_edges = self._combine_edges([origin_splits, destination_splits])
-        graph = self.build_graph(weight=weight, edges_gdf=extra_edges)
+        graph = self.build_graph(balance_factor=balance_factor, edges_gdf=extra_edges)
 
         return origin_node, destination_node, graph, extra_edges
 
@@ -155,12 +159,14 @@ class RouteAlgorithm:
         nearest_idx = distances.idxmin()
         return self.edges.loc[nearest_idx]
 
-    def build_graph(self, weight="length_m", edges_gdf=None) -> nx.Graph:
+    def build_graph(self, balance_factor=1, edges_gdf=None) -> nx.Graph:
         """
         Builds a NetworkX graph from edge data.
 
         Args:
-            weight (str): Column name used as edge weight.
+            balance_factor (float): Float value between 0 and 1 that dictates how much the algorithm
+                                    consideres air quality when finding route. Lower values value
+                                    air quality more over distance. Defaults to 1.
             edges_gdf (gpd.GeoDataFrame, optional): Edge data to use. Defaults to self.edges.
 
         Returns:
@@ -169,10 +175,25 @@ class RouteAlgorithm:
         graph = nx.Graph()
         edges = edges_gdf if edges_gdf is not None else self.edges
 
+
         for _, row in edges.iterrows():
             start = self._normalize_node(row.start_node)
             end = self._normalize_node(row.end_node)
-            w = row.get(weight, row.geometry.length)
+
+            aqi = row.get("aqi", None)
+            length = row.get("length_m", row.geometry.length)
+            # balance_factor is used to balance the influence of aqi on the weight
+            # lower balance_factor values equate to weighing air quality more
+            # normalized_aq gets values between 0 and 1
+            if aqi is not None:
+                normalized_aq = min(aqi / 500, 1)
+                aq_multipler_balanced_weight = (
+                    balance_factor * length + (1 - balance_factor) * (length * normalized_aq)
+                    )
+                w = aq_multipler_balanced_weight if aqi is not None else length
+            else:
+                print("Error: Edge without AQI value")
+                w = length
             graph.add_edge(start, end, weight=w)
 
         return graph

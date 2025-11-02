@@ -81,3 +81,25 @@
   border: 2px solid #5cabff40;
   margin-top: 16px;
 }
+
+/* Add these styles to your existing SideBar.css */
+
+.balanced-route-container {
+  position: relative;
+  min-height: 120px; /* Adjust based on your DisplayContainer height */
+}
+
+.route-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}

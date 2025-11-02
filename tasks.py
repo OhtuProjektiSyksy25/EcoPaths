@@ -183,17 +183,50 @@ def run_all(c):
 # OSM Preprocessor and database tasks
 # ========================
 
+"""
+OSM Preprocessor tasks for managing database setup.
+
+Includes commands to:
+- Drop and recreate grid and edge tables
+- Populate edge data from OSM
+- Ensure consistent setup for walking and driving networks
+
+Usage:
+    inv reset-and-populate-area --area=berlin
+    inv create-all-tables --area=berlin --network-type=walking
+    inv populate-database --area=berlin --network-type=walking --overwrite-edges
+"""
+
+from backend.src.database.db_client import DatabaseClient
+
 @task
-def reset_and_populate_area(c, area: str, network_type: str):
+def reset_and_populate_area(c, area: str):
     """
-    Drop all tables for a given area and repopulate the database from scratch.
+    Main task to reset and repopulate all tables for a given area.
+
+    Steps:
+    - Drops grid and edge tables
+    - Recreates ORM tables
+    - Populates edge data from OSM
+    - Grid is created only once (shared across networks)
 
     Usage:
-        inv reset-and-populate-area --area=berlin --network-type=walking
+        inv reset-and-populate-area --area=berlin
     """
-    reset_area(c, area, network_type)
-    create_all_tables(c, area, network_type)
-    populate_database(c, area, network_type, overwrite_edges=True, overwrite_grid=True)
+    network_types = ["driving", "walking"]
+
+    reset_grid(c, area)
+
+    for i, network_type in enumerate(network_types):
+        reset_area(c, area, network_type)
+        create_all_tables(c, area, network_type)
+        fill_area_tables(
+            c,
+            area,
+            network_type,
+            overwrite_edges=True,
+            overwrite_grid=(i == 0)
+        )
 
 
 @task
@@ -210,7 +243,7 @@ def create_all_tables(c, area: str, network_type: str):
 
 
 @task
-def populate_database(c, area: str, network_type: str, overwrite_edges=False, overwrite_grid=False):
+def fill_area_tables(c, area: str, network_type: str, overwrite_edges=False, overwrite_grid=False):
     """
     Create necessary tables and populate the database with grid and edge data for a specific area.
 
@@ -238,7 +271,7 @@ def populate_database(c, area: str, network_type: str, overwrite_edges=False, ov
     grid_gdf = grid.create_grid()
 
     if db_client.table_exists(grid_table) and not overwrite_grid:
-        print(f"Grid table '{grid_table}' already exists. Skipping (use --overwrite-grid to force).")
+        print(f"Grid table '{grid_table}' already exists. Skipping..")
     else:
         action = "Overwriting" if overwrite_grid else "Creating"
         print(f"{action} grid for area '{area}'...")
@@ -246,7 +279,7 @@ def populate_database(c, area: str, network_type: str, overwrite_edges=False, ov
 
     # EDGES
     if db_client.table_exists(edge_table) and not overwrite_edges:
-        print(f"Edge table '{edge_table}' already exists. Skipping (use --overwrite-edges to force).")
+        print(f"Edge table '{edge_table}' already exists. Skipping..")
     else:
         action = "Overwriting" if overwrite_edges else "Creating"
         print(f"{action} edge data for table '{edge_table}'...")
@@ -282,7 +315,6 @@ def reset_area(c, area: str, network_type: str):
 
     tables = [
         f"edges_{area.lower()}_{network_type.lower()}",
-        f"grid_{area.lower()}",
         f"nodes_{area.lower()}_{network_type.lower()}"
     ]
 
@@ -291,3 +323,21 @@ def reset_area(c, area: str, network_type: str):
             print(f"Dropping table: {table}")
             db.drop_table(table)
 
+@task
+def reset_grid(c, area: str):
+    """
+    Drop grid table and its index for a given area.
+    """
+    db = DatabaseClient()
+    grid_table = f"grid_{area.lower()}"
+    grid_index = f"idx_{grid_table}_geometry"
+
+    if db.table_exists(grid_table):
+        print(f"Dropping table: {grid_table}")
+        db.drop_table(grid_table)
+
+    print(f"Dropping index: {grid_index}")
+    try:
+        db.execute(f"DROP INDEX IF EXISTS {grid_index};")
+    except Exception as e:
+        print(f"Warning: failed to drop index {grid_index}: {e}")

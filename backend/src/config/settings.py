@@ -19,24 +19,28 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
         "tile_size_m": 500,
+        "focus_point": [13.404954, 52.520008]
     },
     "la": {
         "bbox": [-118.28, 34.02, -118.24, 34.06],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
         "tile_size_m": 500,
+        "focus_point": [-118.2437, 34.0522]
     },
     "helsinki": {
         "bbox": [24.80, 60.13, 25.20, 60.30],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
+        "focus_point": [24.9384, 60.1699]
     },
     "testarea": {
         "bbox": [13.375, 52.50, 13.395, 52.52],  # small area in Berlin
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
         "tile_size_m": 500,
+        "focus_point": [13.385, 52.51]
     },
 }
 
@@ -64,6 +68,7 @@ class AreaConfig:
         self.pbf_url = settings["pbf_url"]
         self.crs = settings["crs"]
         self.tile_size_m = settings.get("tile_size_m", 500)
+        self.focus_point = settings["focus_point"]
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.pbf_data_dir = self.project_root / "preprocessor" / "data"
@@ -140,7 +145,7 @@ class DatabaseConfig:
 class Settings:
     """Unified access to all major config classes."""
 
-    def __init__(self, area: str = "berlin"):
+    def __init__(self, area: str):
         """
         Initialize all configuration sections.
 
@@ -150,6 +155,7 @@ class Settings:
         self.area = AreaConfig(area)
         self.redis = RedisConfig()
         self.db = DatabaseConfig()
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
 
 
 @lru_cache(maxsize=None)

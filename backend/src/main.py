@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from services.geo_transformer import GeoTransformer
+from utils.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
 # === CORS configuration ===
@@ -68,14 +68,36 @@ if os.path.isdir(STATIC_DIR):
 # === Routes ===
 
 @app.get("/berlin")
-async def berlin():
+async def berlin(request: Request):
     """Returns Berlin coordinates as JSON.
 
     Returns:
         dict: A dictionary containing the coordinates of Berlin with the format
               {"coordinates": [longitude, latitude]}.
     """
-    return {"coordinates": [13.404954, 52.520008]}
+    area_config = request.app.state.area_config
+    center = {"coordinates": area_config.focus_point}
+    return center
+
+
+@app.get("/get-area-config")
+async def get_area_config(request: Request):
+    """Returns the area configuration as JSON.
+
+    Returns:
+        dict: A dictionary containing the area configuration with the format:
+            - area (str): "area name".
+            - bbox (list[float]): [min_lon, min_lat, max_lon, max_lat].
+            - focus_point (list[float]): [longitude, latitude].
+            - crs (str): "crs".
+    """
+    area_config = request.app.state.area_config
+    return {
+        "area": area_config.area,
+        "bbox": area_config.bbox,
+        "focus_point": area_config.focus_point,
+        "crs": area_config.crs
+    }
 
 
 @app.get("/api/geocode-forward/{value:path}")

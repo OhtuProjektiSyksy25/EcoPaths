@@ -24,7 +24,14 @@ function App(): JSX.Element {
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
 
-  const { routes, summaries, loading, error } = useRoute(fromLocked, toLocked);
+  // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
+  const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
+
+  const { routes, summaries, loading, balancedLoading, error } = useRoute(
+    fromLocked, 
+    toLocked, 
+    balancedWeight
+  );
 
   return (
     <div className="App">
@@ -37,6 +44,10 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          balancedWeight={balancedWeight}
+          setBalancedWeight={setBalancedWeight}
+          loading={loading}
+          balancedLoading={balancedLoading}
         >
           {(loading || error) && (
             <div className="route-loading-message">

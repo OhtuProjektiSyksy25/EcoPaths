@@ -6,11 +6,12 @@ import pandas as pd
 from shapely.geometry import LineString, Polygon
 from config.settings import AreaConfig, get_settings
 from core.route_algorithm import RouteAlgorithm
+from core.edge_enricher import EdgeEnricher
 from database.db_client import DatabaseClient
 from services.redis_cache import RedisCache
-from services.geo_transformer import GeoTransformer
+from services.redis_service import RedisService
 from utils.route_summary import summarize_route
-from utils.redis_utils import RedisUtils
+from utils.geo_transformer import GeoTransformer
 
 
 class RouteServiceFactory:
@@ -64,26 +65,30 @@ class RouteService:
         self.network_type = network_type
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame, balanced_weight: float = 0.5) -> dict:
-            """Main entrypoint: compute route and return routes + summaries.
+        """
+        Main entrypoint: compute route and return routes + summaries.
 
             Args:
                 origin_gdf (GeoDataFrame): GeoDataFrame with origin point.
                 destination_gdf (GeoDataFrame): GeoDataFrame with destination point.
                 balanced_weight (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
 
-            Returns:
-                dict: GeoJSON FeatureCollection and route summaries.
-            """
-            buffer = self._create_buffer(origin_gdf, destination_gdf)
-            tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
+        Returns:
+            dict: GeoJSON FeatureCollection and route summaries.
+        """
 
-            # Get edges for relevant tiles (Redis + enrich new tiles if needed)
-            edges = self._get_tile_edges(tile_ids)
+        buffer = self._create_buffer(origin_gdf, destination_gdf)
+        tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
 
-            if edges is None or edges.empty:
-                raise RuntimeError("No edges found for requested route area.")
+        # Get edges for relevant tiles (Redis + enrich new tiles if needed)
+        edges = self._get_tile_edges(tile_ids)
 
-            return self._compute_routes(edges, origin_gdf, destination_gdf, balanced_weight)
+        if edges is None or edges.empty:
+            raise RuntimeError("No edges found for requested route area.")
+
+        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+
+        return self._compute_routes(edges_subset, origin_gdf, destination_gdf)
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """
@@ -117,30 +122,33 @@ class RouteService:
         Returns:
             GeoDataFrame: Edges for requested tiles.
         """
-        # Prune tiles already in Redis
-        non_existing_tile_ids = RedisUtils.prune_found_ids(
+        non_existing_tile_ids = RedisService.prune_found_ids(
             tile_ids, self.redis)
         existing_tile_ids = list(set(tile_ids) - set(non_existing_tile_ids))
 
         all_gdfs = []
-
-        # Load existing tiles from Redis
-        if existing_tile_ids:
-            found_gdf, expired_tiles = RedisUtils.get_gdf_by_list_of_keys(
-                existing_tile_ids, self.redis)
+        if len(existing_tile_ids) > 0:
+            found_gdf, expired_tiles = RedisService.get_gdf_by_list_of_keys(
+                existing_tile_ids, self.redis, self.area_config)
             non_existing_tile_ids = list(
                 set(non_existing_tile_ids + expired_tiles))
             if found_gdf is not False:
                 all_gdfs.append(found_gdf)
 
-        # Enrich and save missing tiles
-        if non_existing_tile_ids:
-            RedisUtils.edge_enricher_to_redis_handler(
-                non_existing_tile_ids, self.redis)
-            new_gdf, _ = RedisUtils.get_gdf_by_list_of_keys(
-                non_existing_tile_ids, self.redis)
-            if new_gdf is not False:
-                all_gdfs.append(new_gdf)
+        if len(non_existing_tile_ids) > 0:
+            enricher = EdgeEnricher(area=self.area)
+            new_gdf = enricher.get_enriched_tiles(
+                non_existing_tile_ids, network_type=self.network_type)
+
+            if new_gdf is not False and new_gdf is not None and not new_gdf.empty:
+                saved = RedisService.save_gdf(
+                    new_gdf, self.redis, self.area_config)
+                if saved:
+                    all_gdfs.append(new_gdf)
+                else:
+                    print("Warning: Failed to save enriched tiles to Redis.")
+            else:
+                print("Warning: Enrichment failed or returned empty. Skipping save.")
 
         if all_gdfs:
             return pd.concat(all_gdfs, ignore_index=True)
@@ -163,32 +171,21 @@ class RouteService:
             tile_ids
         )
 
-    def _compute_routes(self, edges, origin_gdf, destination_gdf, balanced_weight: float = 0.5):
-        """Compute multiple route variants and summaries.
-        
-        Args:
-            edges: GeoDataFrame with edge data
-            origin_gdf: GeoDataFrame with origin point
-            destination_gdf: GeoDataFrame with destination point
-            balanced_weight: Weight for balanced route (0.0 = fastest, 1.0 = best AQ)
-        """
-
-        # Calculate balanced score using the dynamic weight
-        # weight of 0 = all length (fastest), weight of 1 = all AQI (cleanest)
-        edges["combined_score"] = (1 - balanced_weight) * edges["length_m"] + balanced_weight * edges["aqi"]
+    def _compute_routes(self, edges, origin_gdf, destination_gdf, balanced_value=0.5):
+        """Compute multiple route variants and summaries."""
 
         modes = {
-            "fastest": "length_m",
-            "best_aq": "aqi",
-            "balanced": "combined_score"
+            "fastest": 1,
+            "best_aq": 0,
+            "balanced": balanced_value
         }
 
         algo = RouteAlgorithm(edges)
         results, summaries = {}, {}
 
-        for mode, weight in modes.items():
+        for mode, balance_factor in modes.items():
             gdf = algo.calculate_path(
-                origin_gdf, destination_gdf, weight=weight)
+                origin_gdf, destination_gdf, balance_factor=balance_factor)
             gdf["mode"] = mode
             summaries[mode] = summarize_route(gdf)
             results[mode] = GeoTransformer.gdf_to_feature_collection(

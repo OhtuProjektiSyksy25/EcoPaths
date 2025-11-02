@@ -26,13 +26,13 @@ class EdgeCleanerSQL:
         Run all SQL-based edge cleaning steps for a given area and network type.
 
         This method performs a full cleaning pipeline on the edge table, including:
-        - Geometry normalization (e.g. converting MultiLineString,
+        - Geometry normalization (e.g. converting MultiLineString, 
           GeometryCollection, Point → LineString)
         - Removal of invalid or empty geometries
         - Filtering out edges with restricted access
-        - Removing disconnected edges not part of the network
+        - Splitting edges along tile boundaries and assigning tile IDs
         - Computing edge lengths in meters
-        - Assigning tile IDs based on spatial intersection with grid
+        - Reassigning edge IDs
 
         Args:
             area (str): Name of the area (e.g. 'berlin')
@@ -48,8 +48,9 @@ class EdgeCleanerSQL:
         self.normalize_geometry(area, network_type)
         self.drop_invalid_geometries(area, network_type)
         self.compute_lengths(area, network_type)
+        self.assign_edge_ids(area, network_type)
 
-        print("Edge cleaning complete.")
+        print("Full edge cleaning complete.")
 
     def normalize_geometry(self, area: str, network_type: str):
         """
@@ -135,8 +136,7 @@ class EdgeCleanerSQL:
         grid_table = f"grid_{area.lower()}"
         split_table = f"{edge_table}_split"
 
-        print(
-            f"Splitting edges along tiles and assigning tile_id into '{split_table}'...")
+        print("Splitting edges along tiles...")
 
         with self.engine.begin() as conn:
             # Drop old split table if exists
@@ -178,7 +178,7 @@ class EdgeCleanerSQL:
             conn.execute(
                 text(f"ALTER TABLE {split_table} RENAME TO {edge_table};"))
 
-        print(f"Original edge table replaced by split table '{edge_table}'.")
+        print(f"Edge table '{edge_table}' is now splitted in tiles.")
 
     def compute_lengths(self, area: str, network_type: str):
         """
@@ -186,8 +186,15 @@ class EdgeCleanerSQL:
         """
         table = f"edges_{area.lower()}_{network_type.lower()}"
         query = f"""
+            WITH stats AS (
+                SELECT MAX(ST_Length(geometry)) AS max_len
+                FROM {table}
+            )
             UPDATE {table}
-            SET length_m = ROUND(ST_Length(geometry)::numeric, 2);
+            SET
+                length_m = ROUND(ST_Length(geometry)::numeric, 2),
+                normalized_length = ROUND((ST_Length(geometry)::numeric / stats.max_len::numeric), 4)
+            FROM stats;
         """
         with self.engine.begin() as conn:
             conn.execute(text(query))
@@ -197,10 +204,12 @@ class EdgeCleanerSQL:
         Remove all disconnected components from the edge table,
         keeping only the largest connected component.
 
+        This method is typically used for walking networks to ensure 
+        topological connectivity.
+
         Uses:
         - GeoPandas for spatial data handling
         - igraph for fast connected-component analysis
-        Suitable for large graphs (e.g. 500k+ edges).
         """
 
         table = f"edges_{area.lower()}_{network_type.lower()}"
@@ -278,3 +287,46 @@ class EdgeCleanerSQL:
             """))
 
         print("  Disconnected edges removed successfully.")
+
+    def assign_edge_ids(self, area: str, network_type: str):
+        """
+        Reassign edge_id values to cleaned edge table using row_number().
+        Ensures continuous and unique IDs after filtering and splitting.
+        """
+        table = f"edges_{area.lower()}_{network_type.lower()}"
+        tmp_table = f"{table}_reindexed"
+
+        print(f"Reassigning edge_id values for '{table}'...")
+
+        with self.engine.begin() as conn:
+            # Get all column names except edge_id
+            result = conn.execute(text(f"""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = '{table}';
+            """))
+            all_columns = [row[0] for row in result.fetchall()]
+            columns_to_copy = [col for col in all_columns if col != "edge_id"]
+            select_clause = ", ".join([f"{col}" for col in columns_to_copy])
+
+            # Create new table with fresh edge_id
+            conn.execute(text(f"DROP TABLE IF EXISTS {tmp_table};"))
+            conn.execute(text(f"""
+                CREATE TABLE {tmp_table} AS
+                SELECT
+                    row_number() OVER () AS edge_id,
+                    {select_clause}
+                FROM {table};
+            """))
+
+            # Replace original table
+            conn.execute(text(f"DROP TABLE {table};"))
+            conn.execute(text(f"ALTER TABLE {tmp_table} RENAME TO {table};"))
+
+            # Recreate indexes
+            conn.execute(text(f"""
+                CREATE INDEX idx_{table}_edge_id ON {table} (edge_id);
+                CREATE INDEX idx_{table}_geometry ON {table} USING GIST (geometry);
+            """))
+
+        print("  edge_id reassignment complete.")
