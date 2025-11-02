@@ -62,6 +62,9 @@ class DatabaseClient:
         ]
 
         for table_class in table_classes:
+            print(f"Creating table: {table_class.__tablename__}")
+            print("Columns:", [
+                  col.name for col in table_class.__table__.columns])
             table_class.__table__.create(           # pylint: disable=no-member
                 bind=self.engine, checkfirst=True)  # pylint: disable=no-member
 
@@ -272,9 +275,11 @@ class DatabaseClient:
         return gdf
 
     def load_edges_for_tiles(
-        self, area: str,
+        self,
+        area: str,
         network_type: str = "walking",
-        tile_ids: list[int] = None
+        tile_ids: list[int] = None,
+        include_columns: list[str] = None
     ) -> gpd.GeoDataFrame:
         """
         Load edges for a specific area/network type and optional list of tile IDs.
@@ -283,6 +288,7 @@ class DatabaseClient:
             area (str): Area name (e.g., 'berlin').
             network_type (str): Network type ('walking', 'cycling', 'driving').
             tile_ids (list[int], optional): If provided, only edges with these tile_ids are loaded.
+            include_columns (list[str], optional): If provided, only these columns are selected.
 
         Returns:
             GeoDataFrame: Edges from PostGIS matching the area, network type, and tile IDs.
@@ -290,14 +296,22 @@ class DatabaseClient:
             RuntimeError: If the edge table does not exist or query fails.
         """
         table_name = f"edges_{area}_{network_type}"
-        query = f"SELECT * FROM {table_name}"
 
+        # Build SELECT clause
+        if include_columns:
+            column_clause = ", ".join(include_columns)
+        else:
+            column_clause = "*"
+
+        query = f"SELECT {column_clause} FROM {table_name}"
         params = {}
+
+        # Add WHERE clause if tile_ids are provided
         if tile_ids:
             query += " WHERE tile_id = ANY(%(tile_ids)s)"
             params["tile_ids"] = tile_ids
 
-            print(f"Executing query: {query}")
+        print(f"Executing query: {query}")
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry", params=params)
         except Exception as e:

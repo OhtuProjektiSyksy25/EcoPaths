@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from services.geo_transformer import GeoTransformer
+from utils.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
 # === CORS configuration ===
@@ -79,6 +79,7 @@ async def berlin(request: Request):
     center = {"coordinates": area_config.focus_point}
     return center
 
+
 @app.get("/get-area-config")
 async def get_area_config(request: Request):
     """Returns the area configuration as JSON.
@@ -97,6 +98,7 @@ async def get_area_config(request: Request):
         "focus_point": area_config.focus_point,
         "crs": area_config.crs
     }
+
 
 @app.get("/api/geocode-forward/{value:path}")
 async def geocode_forward(request: Request, value: str = Path(...)):

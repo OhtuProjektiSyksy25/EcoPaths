@@ -9,9 +9,9 @@ from core.route_algorithm import RouteAlgorithm
 from core.edge_enricher import EdgeEnricher
 from database.db_client import DatabaseClient
 from services.redis_cache import RedisCache
-from services.geo_transformer import GeoTransformer
 from services.redis_service import RedisService
 from utils.route_summary import summarize_route
+from utils.geo_transformer import GeoTransformer
 
 
 class RouteServiceFactory:
@@ -74,6 +74,7 @@ class RouteService:
         Returns:
             dict: GeoJSON FeatureCollection and route summaries.
         """
+
         buffer = self._create_buffer(origin_gdf, destination_gdf)
         tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
 

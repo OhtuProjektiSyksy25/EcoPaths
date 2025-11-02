@@ -68,7 +68,7 @@ class TestRedisService:
         expected_tile_ids = sample_gdf["tile_id"].unique()
 
         for tile_id in expected_tile_ids:
-            stored_value,_ = RedisService.get_gdf_by_list_of_keys(
+            stored_value, _ = RedisService.get_gdf_by_list_of_keys(
                 [tile_id], fake_redis, fake_area)
             origin_value = sample_gdf[sample_gdf["tile_id"] == tile_id]
             assert stored_value is not None
@@ -82,6 +82,6 @@ class TestRedisService:
         success = RedisService.save_gdf(sample_gdf, fake_redis, fake_area)
         assert success is True
         ids_to_check = ["r6_c2", "r1_c3", "r1_c2"]
-        pruned_tile_ids = RedisService.prune_found_ids(ids_to_check, fake_redis)
+        pruned_tile_ids = RedisService.prune_found_ids(
+            ids_to_check, fake_redis)
         assert pruned_tile_ids == ["r6_c2", "r1_c3"]
-

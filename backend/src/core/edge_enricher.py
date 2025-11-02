@@ -62,6 +62,8 @@ class EdgeEnricher:
         """
         Load edges for the given area/network type and specific tile IDs from PostGIS.
 
+        Only includes relevant columns for enrichment and routing.
+
         Args:
             tile_ids (list[int]): List of tile IDs to load.
             network_type (str): Type of network ('walking', 'cycling', 'driving').
@@ -70,10 +72,23 @@ class EdgeEnricher:
             GeoDataFrame: Edges for the specified tiles and network type.
         """
         table_name = f"edges_{self.area}_{network_type}"
-        print(
-            f"Loading edges from database table '{table_name}' for tiles: {tile_ids}...")
+        columns = [
+            "edge_id",
+            "geometry",
+            "tile_id",
+            "length_m",
+            "normalized_length",
+            "from_node",
+            "to_node",
+            "env_influence"
+        ]
+        print(f"Loading edges from '{table_name}' for tiles: {tile_ids}...")
+
         return self.db_client.load_edges_for_tiles(
-            area=self.area, network_type=network_type, tile_ids=tile_ids
+            area=self.area,
+            network_type=network_type,
+            tile_ids=tile_ids,
+            include_columns=columns
         )
 
     def load_aq_tiles(self, tile_ids: list[int]) -> gpd.GeoDataFrame:
@@ -93,7 +108,10 @@ class EdgeEnricher:
 
         if aq_gdf.empty:
             print("No AQ data from API. Returning edges without enrichment.")
-            return gpd.GeoDataFrame(columns=["tile_id", "aqi", "geometry"], crs=self.edges_gdf.crs)
+            return gpd.GeoDataFrame(
+                columns=["tile_id", "raw_aqi", "geometry"],
+                crs=self.edges_gdf.crs
+            )
 
         if aq_gdf.crs != self.edges_gdf.crs:
             aq_gdf = aq_gdf.to_crs(self.edges_gdf.crs)
@@ -107,13 +125,13 @@ class EdgeEnricher:
         aq: gpd.GeoDataFrame
     ) -> gpd.GeoDataFrame:
         """
-        Combine road network with air quality data.
-
-        Uses polygon intersection as the primary method.
+        Combine road network with air quality data using tile_id-based join,
+        compute derived AQI and normalized AQI for later routing use,
+        and remove raw AQI to comply with storage policy.
 
         Args:
             edges (GeoDataFrame): Road network edges.
-            aq (GeoDataFrame): Air quality polygons.
+            aq (GeoDataFrame): Air quality data with tile_id and aqi.
 
         Returns:
             GeoDataFrame: Enriched edges with AQ values.
@@ -122,27 +140,36 @@ class EdgeEnricher:
             print("AQ data empty. Returning original edges.")
             return edges
 
-        geom_types = set(aq.geom_type)
-        if any("Polygon" in g for g in geom_types):
-            print("Performing spatial join (polygon-based AQ data).")
-            enriched = gpd.sjoin(
-                edges,
-                aq[["tile_id", "aqi", "geometry"]],
-                how="left",
-                predicate="intersects"
-            ).drop(columns=["index_right"], errors="ignore")
+        if "tile_id" not in aq.columns or "raw_aqi" not in aq.columns:
+            print("AQ data missing required columns. Returning original edges.")
+            return edges
 
-            # Aggregate duplicates if multiple AQ features overlap the same edge
-            if "edge_id" in enriched.columns:
-                dup_count = enriched.duplicated(subset="edge_id").sum()
-                if dup_count > 0:
-                    print(
-                        f"Found {dup_count} duplicate edges. Aggregating AQ values.")
-                aq_agg = enriched.groupby("edge_id", as_index=False)[
-                    ["aqi"]].mean()
-                enriched = edges.merge(aq_agg, on="edge_id", how="left")
+        print("Merging AQ data by tile_id.")
+        enriched = edges.merge(
+            aq[["tile_id", "raw_aqi"]],
+            on="tile_id",
+            how="left"
+        )
 
-            return enriched
+        # Fill missing AQI values with neutral baseline (e.g. 50)
+        enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
 
-        print("Unsupported AQ geometry type. Returning original edges.")
-        return edges
+        # Compute derived AQI cost (scaled by environmental influence)
+        enriched["aqi"] = enriched["raw_aqi"] * enriched["env_influence"]
+
+        # normalized_aqi is a derived feature used for routing algorithms.
+        # It scales AQI cost between 0–1 for consistent weighting.
+        min_aqi = enriched["aqi"].min()
+        max_aqi = enriched["aqi"].max()
+        if min_aqi == max_aqi:
+            enriched["normalized_aqi"] = 0.0
+        else:
+            enriched["normalized_aqi"] = (
+                enriched["aqi"] - min_aqi) / (max_aqi - min_aqi)
+
+        # Remove raw AQI to comply with Google API storage policy
+        # only derived values are retained
+        enriched = enriched.drop(columns=["raw_aqi"])
+
+        print("Enrichment complete.")
+        return enriched

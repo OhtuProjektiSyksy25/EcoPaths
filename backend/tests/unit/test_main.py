@@ -31,6 +31,7 @@ def setup_mock_lifespan():
 
 client = TestClient(app)
 
+
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_berlin():
     """ Test if GET to /berlin status is 200
