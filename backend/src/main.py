@@ -11,6 +11,10 @@ from fastapi.staticfiles import StaticFiles
 from utils.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
+
+# classify POIs using common osm keys
+poi_keys = {"amenity", "tourism", "shop", "leisure", "historic", "office", "craft"}
+
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
     "https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi",
@@ -110,7 +114,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         value (str): current address search value
 
     Returns:
-        photon_suggestions: list of json objects or an empty list
+        photon_suggestions: list of json objects (POIs first) or an empty list
     """
     if len(value) < 3:
         return []
@@ -119,7 +123,8 @@ async def geocode_forward(request: Request, value: str = Path(...)):
     bbox = area_config.bbox
     bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
 
-    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
+    #ask for a few more suggestions to get POIs as well
+    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=6&bbox={bbox_str}"
 
     try:
         async with httpx.AsyncClient() as client:
@@ -128,15 +133,41 @@ async def geocode_forward(request: Request, value: str = Path(...)):
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []
+    poi_features = []
+    address_features = []
 
     for feature in photon_suggestions.get("features", []):
         suggestion_data = feature.get("properties", {})
-        fields = ["name", "street", "housenumber", "city"]
-        full_address = ""
+        # build a readable full_address/name for display
+        name = suggestion_data.get("name") or ""
+        fields = ["street", "housenumber", "city"]
+        full_address = name
         for field in fields:
             if suggestion_data.get(field):
-                full_address += f"{suggestion_data.get(field)} "
+                #full_address += f"{suggestion_data.get(field)} "
+                full_address = (full_address + " " + suggestion_data.get(field)).strip()
         feature["full_address"] = full_address
+
+        osm_key = suggestion_data.get("osm_key")
+        # treat feature as POI when its osm_key indicates a point-of-interest
+        if osm_key in poi_keys:
+            poi_features.append(feature)
+        else:
+            address_features.append(feature)
+
+        # Compose final suggestions: keep up to 4 addresses and include up to 2 POIs
+        final_features = []
+        final_features.extend(address_features[:4])
+        # add 1-2 POIs after addresses
+        remaining_pois = poi_features[:2]
+        # if there are few addresses, allow POIs earlier
+        if len(final_features) < 2 and remaining_pois:
+        # interleave: put one POI in front if few addresses
+            final_features = remaining_pois[:1] + final_features
+            remaining_pois = remaining_pois[1:]
+        final_features.extend(remaining_pois)
+
+    photon_suggestions["features"] = final_features
     return photon_suggestions
 
 
