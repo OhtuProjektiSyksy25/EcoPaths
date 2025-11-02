@@ -128,7 +128,6 @@ class RouteService:
         existing_tile_ids = list(set(tile_ids) - set(non_existing_tile_ids))
 
         all_gdfs = []
-
         if len(existing_tile_ids) > 0:
             found_gdf, expired_tiles = RedisService.get_gdf_by_list_of_keys(
                 existing_tile_ids, self.redis, self.area_config)

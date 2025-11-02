@@ -31,6 +31,7 @@ def setup_mock_lifespan():
 
 client = TestClient(app)
 
+
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_berlin():
     """ Test if GET to /berlin status is 200
@@ -265,3 +266,18 @@ def test_geocode_forward_check_photon_url(monkeypatch):
     assert test_photon_url.startswith("https://photon.komoot.io/api/?q=")
     assert test_photon_url.endswith(f"{value}&limit=4&bbox={bbox_str}")
     assert test_photon_url == f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_get_area_config_returns_correct_data():
+    """Test that get_area_config returns the correct area configuration."""
+    response = client.get("/get-area-config")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["area"] == "berlin"
+    assert data["bbox"] == [13.30, 52.46, 13.51, 52.59]
+    assert data["focus_point"] == [13.404954, 52.520008]
+    assert data["crs"] == "EPSG:25833"

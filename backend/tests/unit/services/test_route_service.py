@@ -4,7 +4,6 @@ from shapely.geometry import LineString, Point
 from src.services.route_service import RouteService, RouteServiceFactory
 
 
-
 class DummyRedisService:
     @staticmethod
     def prune_found_ids(tile_ids, redis):
@@ -42,7 +41,6 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "aqi": [20.0, 40.0],
     }, crs="EPSG:25833")
     return gdf
-
 
 
 @pytest.fixture
