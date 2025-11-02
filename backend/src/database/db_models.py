@@ -50,6 +50,7 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
             "tile_id": Column(String),
             "geometry": Column(Geometry("LINESTRING", srid=srid)),
             "length_m": Column(Float),
+            "normalized_length": Column(Float),
             "from_node": Column(Integer),
             "to_node": Column(Integer),
             "lanes": Column(Integer),

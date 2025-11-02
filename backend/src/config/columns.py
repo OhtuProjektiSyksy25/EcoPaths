@@ -12,7 +12,8 @@ BASE_COLUMNS = [
     "geometry",   # LineString geometry
     "from_node",  # node placeholder (start point)
     "to_node",    # node placeholder (end point)
-    "length_m"    # edge length in meters
+    "length_m",    # edge length in meters
+    "normalized_length"  # normalized edge length
 ]
 
 # Network-specific additional columns

@@ -62,6 +62,9 @@ class DatabaseClient:
         ]
 
         for table_class in table_classes:
+            print(f"Creating table: {table_class.__tablename__}")
+            print("Columns:", [
+                  col.name for col in table_class.__table__.columns])
             table_class.__table__.create(           # pylint: disable=no-member
                 bind=self.engine, checkfirst=True)  # pylint: disable=no-member
 
