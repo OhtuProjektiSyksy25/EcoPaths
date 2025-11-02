@@ -11,4 +11,5 @@ export interface Area {
   display_name: string;
   focus_point: [number, number];
   zoom: number;
+  bbox: [number, number, number, number];
 }

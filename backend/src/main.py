@@ -81,27 +81,41 @@ async def get_areas():
 
     for area_id, settings in AREA_SETTINGS.items():
         # Skip testarea
-#        if area_id == "testarea":
-#            continue
+        #        if area_id == "testarea":
+        #            continue
 
         areas.append({
             "id": area_id,
             "display_name": settings.get("display_name", area_id.title()),
             "focus_point": settings.get("focus_point"),
-            "zoom": 12
-            })
+            "zoom": 12,
+            "bbox": settings.get("bbox"),
+        })
 
     return {"areas": areas}
 
 # Endpoint to change selected area dynamically
+
+
 @app.post("/api/select-area/{area_id}")
 async def select_area(request: Request, area_id: str = Path(...)):
+    """
+    API endpoint to change the selected area dynamically.
+    Args:
+        area_id (str): The ID of the area to select.
+        request (Request): FastAPI request object.
+    Returns:
+        dict: Success message with selected area ID
+    Raises:
+        HTTPException: 404 if area_id not found, 500 on server error
+    """
     if area_id.lower() not in AREA_SETTINGS:
         return JSONResponse(status_code=404, content={"error": "Area not found"})
 
     try:
         # Create new RouteService and AreaConfig for selected area
-        route_service, area_config = RouteServiceFactory.from_area(area_id.lower())
+        route_service, area_config = RouteServiceFactory.from_area(
+            area_id.lower())
 
         # Update application state
         request.app.state.route_service = route_service
@@ -112,14 +126,12 @@ async def select_area(request: Request, area_id: str = Path(...)):
 
         return area_id.lower()
 
-
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Failed to switch to {area_id}: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={"error": f"Failed to switch to {area_id}: {str(e)}"}
         )
-
 
 
 @app.get("/berlin")
@@ -173,7 +185,6 @@ async def geocode_forward(request: Request, value: str = Path(...)):
                 full_address += f"{suggestion_data.get(field)} "
         feature["full_address"] = full_address
     return photon_suggestions
-
 
 
 @app.post("/getroute")

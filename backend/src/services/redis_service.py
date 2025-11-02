@@ -111,7 +111,7 @@ class RedisService:
             True: if saving is succesful
             False: if saving is not succesful
         """
-        current_enricher = EdgeEnricher()
+        current_enricher = EdgeEnricher(area)
         gdf = current_enricher.get_enriched_tiles(tile_ids)
         # add check when EdgeEnricher is finished
         if RedisService.save_gdf(gdf, redis, area):

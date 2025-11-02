@@ -31,6 +31,7 @@ def setup_mock_lifespan():
 
 client = TestClient(app)
 
+
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_berlin():
     """ Test if GET to /berlin status is 200
@@ -266,6 +267,7 @@ def test_geocode_forward_check_photon_url(monkeypatch):
     assert test_photon_url.endswith(f"{value}&limit=4&bbox={bbox_str}")
     assert test_photon_url == f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
 
+
 class TestAreaEndpoints:
     """Tests for area selection endpoints."""
 
@@ -273,14 +275,14 @@ class TestAreaEndpoints:
     def test_get_areas_returns_areas_list(self):
         """Test GET /api/areas returns list of available areas."""
         response = client.get("/api/areas")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         assert "areas" in data
         assert isinstance(data["areas"], list)
         assert len(data["areas"]) > 0
-        
+
         # Check first area has required structure
         area = data["areas"][0]
         assert "id" in area
@@ -292,7 +294,7 @@ class TestAreaEndpoints:
     def test_select_area_valid(self):
         """Test POST /api/select-area/{area_id} with valid area."""
         response = client.post("/api/select-area/testarea")
-        
+
         assert response.status_code == 200
         assert response.json() == "testarea"
 
@@ -300,7 +302,7 @@ class TestAreaEndpoints:
     def test_select_area_invalid_returns_404(self):
         """Test POST /api/select-area/{area_id} with invalid area returns 404."""
         response = client.post("/api/select-area/invalid_area")
-        
+
         assert response.status_code == 404
         data = response.json()
         assert "error" in data
@@ -310,7 +312,7 @@ class TestAreaEndpoints:
     def test_select_area_case_insensitive(self):
         """Test area selection converts to lowercase."""
         response = client.post("/api/select-area/TESTAREA")
-        
+
         assert response.status_code == 200
         assert response.json() == "testarea"
 
@@ -319,14 +321,14 @@ class TestAreaEndpoints:
         """Test select_area handles exceptions with 500 error."""
         def mock_from_area(*args, **kwargs):
             raise Exception("Test error")
-        
+
         monkeypatch.setattr(
             "src.main.RouteServiceFactory.from_area",
             mock_from_area
         )
-        
+
         response = client.post("/api/select-area/testarea")
-        
+
         assert response.status_code == 500
         data = response.json()
         assert "error" in data

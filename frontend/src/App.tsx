@@ -77,6 +77,7 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          selectedArea={selectedArea}
         >
           {(loading || error) && (
             <div className="route-loading-message">

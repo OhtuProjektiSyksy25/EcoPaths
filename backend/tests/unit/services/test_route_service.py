@@ -102,16 +102,19 @@ def test_get_tile_edges(monkeypatch):
     assert not edges.empty
     assert "edge_id" in edges.columns
 
+
 def test_get_tile_edges_with_existing_tiles(monkeypatch):
     monkeypatch.setattr(
         "src.services.route_service.RedisService", DummyRedisService)
-    monkeypatch.setattr(DummyRedisService, "prune_found_ids", lambda tiles, redis: [103, 104])
+    monkeypatch.setattr(DummyRedisService, "prune_found_ids",
+                        lambda tiles, redis: [103, 104])
     service = RouteService("berlin")
     tile_ids = [101, 102, 103, 104]
     edges = service._get_tile_edges(tile_ids)
     assert isinstance(edges, gpd.GeoDataFrame)
     assert not edges.empty
     assert "edge_id" in edges.columns
+
 
 def test_compute_routes_single_edge(route_service):
     edge = gpd.GeoDataFrame({
