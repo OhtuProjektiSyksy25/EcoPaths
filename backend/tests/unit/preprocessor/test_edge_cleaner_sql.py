@@ -49,7 +49,8 @@ class TestEdgeCleaner:
             ]
         }, geometry="geometry", crs="EPSG:25833")
 
-        gdf.to_postgis(cls.edge_table, cls.db.engine, if_exists="append", index=False)
+        gdf.to_postgis(cls.edge_table, cls.db.engine,
+                       if_exists="append", index=False)
 
         cls.cleaner = EdgeCleanerSQL(cls.db)
 
@@ -96,10 +97,12 @@ class TestEdgeCleaner:
                 LineString([(21, 21), (22, 22)])
             ]
         }, geometry="geometry", crs="EPSG:25833")
-        gdf.to_postgis(self.edge_table, self.db.engine, if_exists="append", index=False)
+        gdf.to_postgis(self.edge_table, self.db.engine,
+                       if_exists="append", index=False)
 
         self.cleaner.remove_disconnected_edges(self.area, self.network_type)
-        count = self.db.execute(f"SELECT COUNT(*) FROM {self.edge_table}").scalar()
+        count = self.db.execute(
+            f"SELECT COUNT(*) FROM {self.edge_table}").scalar()
         assert count == 3
 
     def test_drop_invalid_geometries_removes_invalid_rows(self):
@@ -111,10 +114,12 @@ class TestEdgeCleaner:
                 loads("LINESTRING(0 0, 0 0)")  # degenerate but valid
             ]
         }, geometry="geometry", crs="EPSG:25833")
-        gdf.to_postgis(self.edge_table, self.db.engine, if_exists="append", index=False)
+        gdf.to_postgis(self.edge_table, self.db.engine,
+                       if_exists="append", index=False)
 
         self.cleaner.drop_invalid_geometries(self.area, self.network_type)
-        count = self.db.execute(f"SELECT COUNT(*) FROM {self.edge_table}").scalar()
+        count = self.db.execute(
+            f"SELECT COUNT(*) FROM {self.edge_table}").scalar()
         assert count >= 1
 
     def test_split_edges_by_tiles(self):
@@ -130,7 +135,8 @@ class TestEdgeCleaner:
                 LineString([(1, 1), (3, 3)])
             ]
         }, geometry="geometry", crs="EPSG:25833")
-        gdf_edges.to_postgis(self.edge_table, self.db.engine, if_exists="append", index=False)
+        gdf_edges.to_postgis(self.edge_table, self.db.engine,
+                             if_exists="append", index=False)
 
         gdf_grid = gpd.GeoDataFrame({
             "tile_id": [1, 2],
@@ -139,7 +145,8 @@ class TestEdgeCleaner:
                 LineString([(2, 0), (4, 0), (4, 2), (2, 2), (2, 0)]).envelope
             ]
         }, geometry="geometry", crs="EPSG:25833")
-        gdf_grid.to_postgis(self.grid_table, self.db.engine, if_exists="replace", index=False)
+        gdf_grid.to_postgis(self.grid_table, self.db.engine,
+                            if_exists="replace", index=False)
 
         self.cleaner.split_edges_by_tiles(self.area, self.network_type)
 
@@ -158,7 +165,8 @@ class TestEdgeCleaner:
             "to_node": [101],
             "geometry": [LineString([(0, 0), (3, 0)])]
         }, geometry="geometry", crs="EPSG:25833")
-        gdf_edges.to_postgis(self.edge_table, self.db.engine, if_exists="replace", index=False)
+        gdf_edges.to_postgis(self.edge_table, self.db.engine,
+                             if_exists="replace", index=False)
 
         gdf_grid = gpd.GeoDataFrame({
             "tile_id": [1, 2],
@@ -167,7 +175,8 @@ class TestEdgeCleaner:
                 LineString([(2, 0), (4, 0), (4, 2), (2, 2), (2, 0)]).envelope
             ]
         }, geometry="geometry", crs="EPSG:25833")
-        gdf_grid.to_postgis(self.grid_table, self.db.engine, if_exists="replace", index=False)
+        gdf_grid.to_postgis(self.grid_table, self.db.engine,
+                            if_exists="replace", index=False)
 
         self.cleaner.split_edges_by_tiles(self.area, self.network_type)
 
@@ -178,5 +187,7 @@ class TestEdgeCleaner:
         assert edges_after.tile_id.notnull().all()
 
         for _, row in edges_after.iterrows():
-            tile_geom = gdf_grid.loc[gdf_grid.tile_id == row.tile_id, "geometry"].iloc[0]
-            assert tile_geom.covers(row.geometry) or tile_geom.equals(row.geometry)
+            tile_geom = gdf_grid.loc[gdf_grid.tile_id ==
+                                     row.tile_id, "geometry"].iloc[0]
+            assert tile_geom.covers(
+                row.geometry) or tile_geom.equals(row.geometry)

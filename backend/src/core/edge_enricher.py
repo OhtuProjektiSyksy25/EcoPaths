@@ -162,7 +162,7 @@ class EdgeEnricher:
         min_aqi = enriched["aqi"].min()
         max_aqi = enriched["aqi"].max()
         if min_aqi == max_aqi:
-            enriched["normalized_aqi"] = 0.0  # tai 1.0, tai vaikka 0.5 — riippuu käyttötarkoituksesta
+            enriched["normalized_aqi"] = 0.0
         else:
             enriched["normalized_aqi"] = (
                 enriched["aqi"] - min_aqi) / (max_aqi - min_aqi)
