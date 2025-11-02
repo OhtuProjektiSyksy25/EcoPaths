@@ -63,29 +63,27 @@ class RouteService:
         self.db_client = DatabaseClient()
         self.network_type = network_type
 
-    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
-        """Main entrypoint: compute route and return routes + summaries.
+    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame, balanced_weight: float = 0.5) -> dict:
+            """Main entrypoint: compute route and return routes + summaries.
 
-        Args:
-            origin_gdf (GeoDataFrame): GeoDataFrame with origin point.
-            destination_gdf (GeoDataFrame): GeoDataFrame with destination point.
+            Args:
+                origin_gdf (GeoDataFrame): GeoDataFrame with origin point.
+                destination_gdf (GeoDataFrame): GeoDataFrame with destination point.
+                balanced_weight (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
 
-        Returns:
-            dict: GeoJSON FeatureCollection and route summaries.
-        """
-        buffer = self._create_buffer(origin_gdf, destination_gdf)
-        tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
+            Returns:
+                dict: GeoJSON FeatureCollection and route summaries.
+            """
+            buffer = self._create_buffer(origin_gdf, destination_gdf)
+            tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
 
-        # Get edges for relevant tiles (Redis + enrich new tiles if needed)
-        edges = self._get_tile_edges(tile_ids)
+            # Get edges for relevant tiles (Redis + enrich new tiles if needed)
+            edges = self._get_tile_edges(tile_ids)
 
-        # Nodes_gdf from database
-        # nodes = self._get_nodes_from_db(tile_ids)
+            if edges is None or edges.empty:
+                raise RuntimeError("No edges found for requested route area.")
 
-        if edges is None or edges.empty:
-            raise RuntimeError("No edges found for requested route area.")
-
-        return self._compute_routes(edges, origin_gdf, destination_gdf)
+            return self._compute_routes(edges, origin_gdf, destination_gdf, balanced_weight)
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """
@@ -165,10 +163,19 @@ class RouteService:
             tile_ids
         )
 
-    def _compute_routes(self, edges, origin_gdf, destination_gdf):
-        """Compute multiple route variants and summaries."""
+    def _compute_routes(self, edges, origin_gdf, destination_gdf, balanced_weight: float = 0.5):
+        """Compute multiple route variants and summaries.
+        
+        Args:
+            edges: GeoDataFrame with edge data
+            origin_gdf: GeoDataFrame with origin point
+            destination_gdf: GeoDataFrame with destination point
+            balanced_weight: Weight for balanced route (0.0 = fastest, 1.0 = best AQ)
+        """
 
-        edges["combined_score"] = 0.5 * edges["length_m"] + 0.5 * edges["aqi"]
+        # Calculate balanced score using the dynamic weight
+        # weight of 0 = all length (fastest), weight of 1 = all AQI (cleanest)
+        edges["combined_score"] = (1 - balanced_weight) * edges["length_m"] + balanced_weight * edges["aqi"]
 
         modes = {
             "fastest": "length_m",
