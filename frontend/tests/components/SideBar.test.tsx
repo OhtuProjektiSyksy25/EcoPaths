@@ -33,6 +33,7 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    selectedArea={null}
   />
 );
 
@@ -54,6 +55,7 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    selectedArea={null}
   />
 );
 
@@ -74,6 +76,7 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    selectedArea={null}
   />
 );
 
