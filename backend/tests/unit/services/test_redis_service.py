@@ -84,3 +84,4 @@ class TestRedisService:
         ids_to_check = ["r6_c2", "r1_c3", "r1_c2"]
         pruned_tile_ids = RedisService.prune_found_ids(ids_to_check, fake_redis)
         assert pruned_tile_ids == ["r6_c2", "r1_c3"]
+

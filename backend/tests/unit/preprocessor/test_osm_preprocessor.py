@@ -2,6 +2,7 @@ import pytest
 import geopandas as gpd
 from shapely.geometry import LineString
 from preprocessor.osm_preprocessor import OSMPreprocessor
+from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 
 
 class FakeOSM:
@@ -63,8 +64,17 @@ def test_filter_to_selected_columns_filters_correctly(preprocessor):
     filtered = preprocessor.filter_to_selected_columns(gdf, "walking")
 
     assert isinstance(filtered, gpd.GeoDataFrame)
-
     assert filtered.geometry.name == "geometry"
 
-    expected_columns = {"geometry", "tile_id", "length_m", "access"}
+    expected_columns = set(BASE_COLUMNS + EXTRA_COLUMNS["walking"])
+    expected_columns.add("geometry")
+
     assert set(filtered.columns) == expected_columns
+
+    for col in EXTRA_COLUMNS["walking"]:
+        if col.endswith("_influence"):
+            assert filtered[col].iloc[0] == 1.0
+
+    for col in BASE_COLUMNS:
+        if col not in gdf.columns and col != "geometry":
+            assert filtered[col].iloc[0] is None
