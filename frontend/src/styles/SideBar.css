@@ -47,39 +47,39 @@
   display: flex;
   gap: 8px;
   padding: 16px;
-  background-color: rgba(17, 212, 82, 0.4);
-  color: rgb(34, 34, 34);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #11d45240;
   margin-top: 16px;
+  background-color: rgba(0, 180, 45, 0.12);
+  border: 2px solid #019c2a;
+  color: #019c2a;
 }
 
 .balanced-route-container {
   display: flex;
   gap: 8px;
   padding: 16px;
-  background-color: #b8ffd3;
-  color: rgb(0, 255, 200);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #00ff9540;
   margin-top: 16px;
+  background-color: rgba(3, 224, 169, 0.12);
+  border: 2px solid #02c49a;
+  color: #02c49a;
 }
 
 .fastest-route-container {
   display: flex;
   gap: 8px;
   padding: 16px;
-  background-color: #5cabff40;
-  color: rgb(34, 34, 34);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #5cabff40;
   margin-top: 16px;
+  background-color: rgba(0, 81, 212, 0.12);
+  border: 2px solid #0051d4;
+  color: #0051d4;
 }
 
 .aqi-toggle-button {

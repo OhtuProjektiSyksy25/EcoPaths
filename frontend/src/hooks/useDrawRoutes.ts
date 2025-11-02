@@ -5,9 +5,9 @@ import mapboxgl from "mapbox-gl";
 type RoutesRecord = Record<string, GeoJSON.FeatureCollection>;
 
 const ROUTE_COLORS: Record<string, string> = {
-  fastest: "#007AFF",
-  best_aq: "#34C759",
-  balanced: "#FF9500",
+  fastest: "#003cff",
+  best_aq: "#01be30",
+  balanced: "#03e0a9",
 };
 
 /**
