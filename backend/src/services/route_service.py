@@ -171,13 +171,13 @@ class RouteService:
             tile_ids
         )
 
-    def _compute_routes(self, edges, origin_gdf, destination_gdf):
+    def _compute_routes(self, edges, origin_gdf, destination_gdf, balanced_value=0.5):
         """Compute multiple route variants and summaries."""
 
         modes = {
             "fastest": 1,
             "best_aq": 0,
-            "balanced": 0.5
+            "balanced": balanced_value
         }
 
         algo = RouteAlgorithm(edges)
