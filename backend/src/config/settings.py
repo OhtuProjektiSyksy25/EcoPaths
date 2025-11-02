@@ -149,7 +149,7 @@ class DatabaseConfig:
 class Settings:
     """Unified access to all major config classes."""
 
-    def __init__(self, area: str = "berlin"):
+    def __init__(self, area: str):
         """
         Initialize all configuration sections.
 
@@ -159,6 +159,7 @@ class Settings:
         self.area = AreaConfig(area)
         self.redis = RedisConfig()
         self.db = DatabaseConfig()
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
 
 
 @lru_cache(maxsize=None)

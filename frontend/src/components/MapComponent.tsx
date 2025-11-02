@@ -5,18 +5,19 @@ MapComponent.tsx renders a mapBox map.
 If the mapbox fails it renders a leaflet map.
 It also manages markers for From and To locations and adjusts the map view based on their presence.
 */
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { berlinCenter, initialMapZoom } from "../constants";
+import { LockedLocation, RouteGeoJSON } from "../types";
 import { LocationButton } from "./LocationButton";
-import "../styles/MapComponent.css";
+import { useCoordinates } from "../hooks/useCoordinates";
 import { useDrawRoutes } from "../hooks/useDrawRoutes";
-import { LockedLocation, RouteGeoJSON } from "../types"; 
+import { useHighlightChosenArea } from "../hooks/useHighlightChosenArea";
+import "../styles/MapComponent.css";
 
-import { Area } from "../types";
-import { initialMapCenter, initialMapZoom } from "../constants";
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -41,6 +42,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const userUsedLocationRef = useRef(false);
 
   useDrawRoutes(mapRef.current, routes as unknown as Record<string, GeoJSON.FeatureCollection>);
+  useHighlightChosenArea(mapRef.current);
 
   const handleLocationFound = (coords: { lat: number; lng: number }) => {
         /*

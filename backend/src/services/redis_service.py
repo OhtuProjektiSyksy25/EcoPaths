@@ -2,7 +2,6 @@
 Utility module for handling, saving and fetching of GeoDataFrame/geojson data to and from redis
 """
 import geopandas as gpd
-from core.edge_enricher import EdgeEnricher
 
 
 class RedisService:
@@ -98,22 +97,3 @@ class RedisService:
             return False, expired_tiles
         gdf = gpd.GeoDataFrame.from_features(features, crs=area.crs)
         return gdf, expired_tiles
-
-    @staticmethod
-    def edge_enricher_to_redis_handler(tile_ids: list, redis, area):
-        """Sends tiles to EdgeEnricher and saves returned gdf to redis
-
-        Args:
-            tile_ids (list): List of tile_ids to be enritched
-            redis (_type_): Redis object
-
-        Returns:
-            True: if saving is succesful
-            False: if saving is not succesful
-        """
-        current_enricher = EdgeEnricher(area)
-        gdf = current_enricher.get_enriched_tiles(tile_ids)
-        # add check when EdgeEnricher is finished
-        if RedisService.save_gdf(gdf, redis, area):
-            return gdf
-        return False

@@ -21,6 +21,9 @@ class TestNodeBuilder:
         if cls.area not in AREA_SETTINGS:
             AREA_SETTINGS[cls.area] = AREA_SETTINGS["testarea"]
 
+        for table in [cls.edge_table, cls.node_table, cls.grid_table]:
+            cls.db.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
+
         cls.db.create_tables_for_area(cls.area, cls.network_type)
 
         gdf = gpd.GeoDataFrame({

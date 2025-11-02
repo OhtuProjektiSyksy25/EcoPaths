@@ -268,68 +268,16 @@ def test_geocode_forward_check_photon_url(monkeypatch):
     assert test_photon_url == f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
 
 
-class TestAreaEndpoints:
-    """Tests for area selection endpoints."""
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_get_area_config_returns_correct_data():
+    """Test that get_area_config returns the correct area configuration."""
+    response = client.get("/get-area-config")
 
-    @pytest.mark.usefixtures("setup_mock_lifespan")
-    def test_get_areas_returns_areas_list(self):
-        """Test GET /api/areas returns list of available areas."""
-        response = client.get("/api/areas")
+    assert response.status_code == 200
 
-        assert response.status_code == 200
-        data = response.json()
+    data = response.json()
 
-        assert "areas" in data
-        assert isinstance(data["areas"], list)
-        assert len(data["areas"]) > 0
-
-        # Check first area has required structure
-        area = data["areas"][0]
-        assert "id" in area
-        assert "display_name" in area
-        assert "focus_point" in area
-        assert "zoom" in area
-
-    @pytest.mark.usefixtures("setup_mock_lifespan")
-    def test_select_area_valid(self):
-        """Test POST /api/select-area/{area_id} with valid area."""
-        response = client.post("/api/select-area/testarea")
-
-        assert response.status_code == 200
-        assert response.json() == "testarea"
-
-    @pytest.mark.usefixtures("setup_mock_lifespan")
-    def test_select_area_invalid_returns_404(self):
-        """Test POST /api/select-area/{area_id} with invalid area returns 404."""
-        response = client.post("/api/select-area/invalid_area")
-
-        assert response.status_code == 404
-        data = response.json()
-        assert "error" in data
-        assert "Area not found" in data["error"]
-
-    @pytest.mark.usefixtures("setup_mock_lifespan")
-    def test_select_area_case_insensitive(self):
-        """Test area selection converts to lowercase."""
-        response = client.post("/api/select-area/TESTAREA")
-
-        assert response.status_code == 200
-        assert response.json() == "testarea"
-
-    @pytest.mark.usefixtures("setup_mock_lifespan")
-    def test_select_area_exception_returns_500(self, monkeypatch):
-        """Test select_area handles exceptions with 500 error."""
-        def mock_from_area(*args, **kwargs):
-            raise Exception("Test error")
-
-        monkeypatch.setattr(
-            "src.main.RouteServiceFactory.from_area",
-            mock_from_area
-        )
-
-        response = client.post("/api/select-area/testarea")
-
-        assert response.status_code == 500
-        data = response.json()
-        assert "error" in data
-        assert "Failed to switch to testarea" in data["error"]
+    assert data["area"] == "berlin"
+    assert data["bbox"] == [13.30, 52.46, 13.51, 52.59]
+    assert data["focus_point"] == [13.404954, 52.520008]
+    assert data["crs"] == "EPSG:25833"

@@ -10,20 +10,21 @@ from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 from .edge_cleaner_sql import EdgeCleanerSQL
 from .osm_downloader import OSMDownloader
 from .node_builder import NodeBuilder
+from .traffic_influence import TrafficInfluenceBuilder
+from .env_influence import EnvInfluenceBuilder
 
 
 class OSMPreprocessor:
     """
-    Downloads and processes OpenStreetMap (OSM) data into a cleaned road network.
+    Downloads and processes OpenStreetMap (OSM) data into a cleaned and enriched road network.
 
     This class handles:
     - Area-specific configuration and bounding box setup
     - Downloading and parsing OSM PBF data
     - Converting raw network data into GeoDataFrame
     - Saving raw edges to the database
-    - Delegating cleaning to SQL-based EdgeCleanerSQL
-
-    Note: Node processing is not handled here.
+    - Cleaning and enriching edges via SQL
+    - Node generation and influence metrics for walking networks
     """
 
     def __init__(self, area: str, network_type: str):
@@ -49,6 +50,11 @@ class OSMPreprocessor:
         2. Convert to GeoDataFrame and normalize geometries
         3. Save raw edges to PostGIS
         4. Clean and enrich edges using SQL-based operations
+        5. If network type is 'walking':
+        - Build nodes and attach to edges
+        - Remove disconnected components
+        - Assign tile IDs
+        - Compute traffic and environmental influence
         """
         warnings.filterwarnings(
             "ignore", category=FutureWarning, module="pyrosm")
@@ -58,6 +64,8 @@ class OSMPreprocessor:
         edges_gdf = self.prepare_raw_edges(osm)
         edges_gdf = self.filter_to_selected_columns(
             edges_gdf, self.network_type)
+        if self.network_type == "driving":
+            edges_gdf = self.clean_maxspeed_column(edges_gdf)
 
         # Step 3: Save to database
         db = DatabaseClient()
@@ -68,12 +76,21 @@ class OSMPreprocessor:
         cleaner = EdgeCleanerSQL(db)
         cleaner.run_full_cleaning(self.area, self.network_type)
 
-        builder = NodeBuilder(db, self.area, self.network_type)
-        builder.build_nodes_and_attach_to_edges()
+        # Step 5
+        if self.network_type == "walking":
+            builder = NodeBuilder(db, self.area, self.network_type)
+            builder.build_nodes_and_attach_to_edges()
 
-        cleaner.remove_disconnected_edges(self.area, self.network_type)
-        builder.remove_unused_nodes()
-        builder.assign_tile_ids()
+            cleaner.remove_disconnected_edges(self.area, self.network_type)
+            builder.remove_unused_nodes()
+            builder.assign_tile_ids()
+
+            tib = TrafficInfluenceBuilder(db, self.area)
+            tib.compute_cumulative_influence_by_tile()
+            tib.summarize_influence_distribution()
+
+            eib = EnvInfluenceBuilder(db, area=self.area)
+            eib.run()
 
         print(
             f"Edge preprocessing complete for '{self.area}' ({self.network_type})")
@@ -99,27 +116,56 @@ class OSMPreprocessor:
 
         edges_raw = edges_raw.to_crs(self.crs)
         edges_raw = edges_raw.explode(index_parts=False).reset_index(drop=True)
+
+        edges_raw["edge_id"] = range(1, len(edges_raw) + 1)
+
         return edges_raw
 
     def filter_to_selected_columns(self, gdf, network_type):
         """
-        Filters a GeoDataFrame to include only columns defined 
-        in the ORM model for the given network type.
-
-        Args:
-            gdf (GeoDataFrame): The input GeoDataFrame containing raw edge data.
-            network_type (str): The type of network 
-            ('walking', 'cycling', 'driving') used to determine extra columns.
-
-        Returns:
-            GeoDataFrame: A filtered GeoDataFrame containing only the selected columns.
+        Filters and ensures the GeoDataFrame includes all expected columns
+        defined for the given network type. Missing columns are added
+        with default None or type-appropriate placeholder values.
         """
-
         selected = BASE_COLUMNS + EXTRA_COLUMNS.get(network_type, [])
 
         if "geometry" not in selected:
             selected.append("geometry")
 
-        filtered = gdf[[col for col in selected if col in gdf.columns]]
+        filtered = gdf[[col for col in gdf.columns if col in selected]].copy()
+
+        for col in selected:
+            if col not in filtered.columns:
+                if col.endswith("_influence"):
+                    filtered[col] = 1.0
+                else:
+                    filtered[col] = None
 
         return filtered.set_geometry("geometry")
+
+    def clean_maxspeed_column(self, gdf):
+        """
+        Cleans the 'maxspeed' column in a GeoDataFrame by retaining only numeric values.
+        Args:
+            gdf (GeoDataFrame): Input GeoDataFrame containing a 'maxspeed' column.
+
+        Returns:
+            GeoDataFrame: Modified GeoDataFrame with cleaned 'maxspeed' values (integers or None).
+        """
+        def parse_speed(val):
+            """Parses a speed value into an integer, or returns None if invalid."""
+            try:
+                return int(float(val))
+            except (ValueError, TypeError):
+                return None
+
+        if "maxspeed" in gdf.columns:
+            original_count = len(gdf)
+            gdf["maxspeed"] = gdf["maxspeed"].apply(
+                parse_speed).astype("Int64")
+            valid_count = gdf["maxspeed"].count()  # excludes None
+            null_count = original_count - valid_count
+            print(
+                f"maxspeed cleaned: {valid_count} valid, {null_count} set to NULL")
+
+        return gdf

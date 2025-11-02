@@ -16,7 +16,7 @@ coverage:
 
 comment:
   layout: "reach, diff, files"
-  behavior: default
+  behavior: hide
   require_changes: true
   branches: [main, dev]
   show_critical_paths: true
