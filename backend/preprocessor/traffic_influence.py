@@ -90,7 +90,10 @@ class TrafficInfluenceBuilder:
                                 + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
                                 + {highway_case_sql}
                             WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
-                                ({self.base_influence} * (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
+                                (
+                                    {self.base_influence} *
+                                    (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4)
+                                )
                                 + {self.lane_weight} * COALESCE(d.lanes, 2)
                                 + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
                                 + {highway_case_sql}
@@ -114,7 +117,10 @@ class TrafficInfluenceBuilder:
         result = self.db.execute(f"""
             SELECT
                 COUNT(*) FILTER (WHERE traffic_influence = 1.0) AS untouched,
-                COUNT(*) FILTER (WHERE traffic_influence > 1.0 AND traffic_influence < {self.max_influence + 1.0}) AS partial,
+                COUNT(*) FILTER (
+                    WHERE traffic_influence > 1.0
+                    AND traffic_influence < {self.max_influence + 1.0}
+                    ) AS partial,
                 COUNT(*) FILTER (WHERE traffic_influence = {self.max_influence + 1.0}) AS maxed
             FROM {self.walk_table};
         """)
