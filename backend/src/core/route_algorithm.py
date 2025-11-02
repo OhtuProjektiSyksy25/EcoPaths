@@ -187,7 +187,9 @@ class RouteAlgorithm:
             # normalized_aq gets values between 0 and 1
             if aqi is not None:
                 normalized_aq = min(aqi / 500, 1)
-                aq_multipler_balanced_weight = balance_factor * length + (1 - balance_factor) * (length * normalized_aq)
+                aq_multipler_balanced_weight = (
+                    balance_factor * length + (1 - balance_factor) * (length * normalized_aq)
+                    )
                 w = aq_multipler_balanced_weight if aqi is not None else length
             else:
                 print("Error: Edge without AQI value")
