@@ -33,6 +33,8 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    showAQIColors={false}
+    setShowAQIColors={jest.fn()}
   />
 );
 
@@ -54,6 +56,8 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    showAQIColors={false}
+    setShowAQIColors={jest.fn()}
   />
 );
 
@@ -73,7 +77,9 @@ describe("SideBar", () => {
   <SideBar 
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
-    summaries={null}
+    summaries={null}  
+    showAQIColors={false}
+    setShowAQIColors={jest.fn()}
   />
 );
 

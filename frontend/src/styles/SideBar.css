@@ -81,3 +81,30 @@
   border: 2px solid #5cabff40;
   margin-top: 16px;
 }
+
+.aqi-toggle-button {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.aqi-toggle-button button {
+  padding: 10px 18px;
+  background-color: #ffffff;
+  border: 2px solid #60B45A;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #333;
+  font-family: 'Public Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.aqi-toggle-button button:hover {
+  background-color: #e8f7ec;
+  border-color: #60B45A;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
