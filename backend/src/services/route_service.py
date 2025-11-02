@@ -172,23 +172,21 @@ class RouteService:
             tile_ids
         )
 
-    def _compute_routes(self, edges, origin_gdf, destination_gdf):
+    def _compute_routes(self, edges, origin_gdf, destination_gdf, balanced_value=0.5):
         """Compute multiple route variants and summaries."""
 
-        edges["combined_score"] = 0.5 * edges["length_m"] + 0.5 * edges["aqi"]
-
         modes = {
-            "fastest": "length_m",
-            "best_aq": "aqi",
-            "balanced": "combined_score"
+            "fastest": 1,
+            "best_aq": 0,
+            "balanced": balanced_value
         }
 
         algo = RouteAlgorithm(edges)
         results, summaries = {}, {}
 
-        for mode, weight in modes.items():
+        for mode, balance_factor in modes.items():
             gdf = algo.calculate_path(
-                origin_gdf, destination_gdf, weight=weight)
+                origin_gdf, destination_gdf, balance_factor=balance_factor)
             gdf["mode"] = mode
             summaries[mode] = summarize_route(gdf)
             results[mode] = GeoTransformer.gdf_to_feature_collection(
