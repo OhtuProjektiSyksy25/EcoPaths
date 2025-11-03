@@ -56,6 +56,7 @@ def calculate_total_length(route: Union[gpd.GeoDataFrame, dict]) -> float:
         )
     raise ValueError("Unsupported route format")
 
+
 def calculate_aq_average(route: Union[gpd.GeoDataFrame, dict]) -> float | None:
     """
     Calculates the average air quality value along the route.
@@ -71,7 +72,8 @@ def calculate_aq_average(route: Union[gpd.GeoDataFrame, dict]) -> float | None:
         aqi_both = list(
             zip(
                 route["aqi"].dropna().tolist(),
-                route["length_m"].dropna().tolist() if "length_m" in route else []
+                route["length_m"].dropna().tolist(
+                ) if "length_m" in route else []
             )
         )
 
