@@ -32,6 +32,7 @@ function App(): JSX.Element {
 
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
+  const [showAQIColors, setShowAQIColors] = useState(false);
 
   const { routes, summaries, loading, error } = useRoute(fromLocked, toLocked);
 
@@ -77,6 +78,8 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          showAQIColors={showAQIColors}
+          setShowAQIColors={setShowAQIColors}
           selectedArea={selectedArea}
         >
           {(loading || error) && (
@@ -92,6 +95,7 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
+            showAQIColors={showAQIColors} 
             selectedArea={selectedArea}
           />
         </div>

@@ -11,6 +11,10 @@ from fastapi.staticfiles import StaticFiles
 from utils.geo_transformer import GeoTransformer
 from services.route_service import RouteServiceFactory
 
+
+# classify POIs using common osm keys
+poi_keys = {"amenity", "tourism", "shop", "leisure", "historic", "office", "craft"}
+
 from config.settings import AREA_SETTINGS
 
 # === CORS configuration ===
@@ -68,6 +72,53 @@ if project_root not in sys.path:
 STATIC_DIR = "build/static"
 if os.path.isdir(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# --- Helper utilities for geocoding suggestions ---------------------------------
+def _build_full_address(properties: dict) -> str:
+    """Build a readable full_address from Photon properties.
+
+    Returns a string with a trailing space for compatibility with existing tests.
+    """
+    name = properties.get("name") or ""
+    parts = [name] + [
+        str(properties.get(field)).strip()
+        for field in ("street", "housenumber", "city")
+        if properties.get(field)
+    ]
+    full = " ".join(part for part in parts if part)
+    return full + " " if full else full
+
+
+def _compose_photon_suggestions(photon_suggestions: dict) -> dict:
+    """Classify Photon features into addresses and POIs and compose final list.
+
+    Keeps up to 4 addresses and up to 2 POIs (with a small interleave rule when
+    there are few addresses).
+    """
+    poi_features = []
+    address_features = []
+
+    for feature in photon_suggestions.get("features", []):
+        props = feature.get("properties", {})
+        feature["full_address"] = _build_full_address(props)
+        osm_key = props.get("osm_key")
+        if osm_key in poi_keys:
+            poi_features.append(feature)
+        else:
+            address_features.append(feature)
+
+    final_features = []
+    final_features.extend(address_features[:4])
+    remaining_pois = poi_features[:2]
+    if len(final_features) < 2 and remaining_pois:
+        final_features = remaining_pois[:1] + final_features
+        remaining_pois = remaining_pois[1:]
+    final_features.extend(remaining_pois)
+
+    photon_suggestions["features"] = final_features
+    return photon_suggestions
+
+# ------------------------------------------------------------------------------
 
 
 # === Routes ===
@@ -177,7 +228,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         value (str): current address search value
 
     Returns:
-        photon_suggestions: list of json objects or an empty list
+        photon_suggestions: list of json objects (POIs first) or an empty list
     """
     if len(value) < 3:
         return []
@@ -186,6 +237,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
     bbox = area_config.bbox
     bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
 
+    # ask Photon for suggestions (limit kept at 4 for compatibility with tests)
     photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
 
     try:
@@ -195,16 +247,8 @@ async def geocode_forward(request: Request, value: str = Path(...)):
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []
-
-    for feature in photon_suggestions.get("features", []):
-        suggestion_data = feature.get("properties", {})
-        fields = ["name", "street", "housenumber", "city"]
-        full_address = ""
-        for field in fields:
-            if suggestion_data.get(field):
-                full_address += f"{suggestion_data.get(field)} "
-        feature["full_address"] = full_address
-    return photon_suggestions
+    # Use helper to classify and compose final features (reduces local variables)
+    return _compose_photon_suggestions(photon_suggestions)
 
 
 @app.post("/getroute")

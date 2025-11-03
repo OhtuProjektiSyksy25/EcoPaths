@@ -34,6 +34,9 @@ export function useRoute(
       try {
         setLoading(true);
         setError(null);
+        setRoutes(null);
+        setSummaries(null);
+
         const { routes, summaries } = await fetchRoute(fromLocked, toLocked);
         setRoutes(routes);
         setSummaries(summaries);

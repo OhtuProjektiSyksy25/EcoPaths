@@ -23,6 +23,7 @@ interface MapComponentProps {
   fromLocked: LockedLocation | null;
   toLocked: LockedLocation | null;
   routes: Record<string, RouteGeoJSON> | null;
+  showAQIColors: boolean;
   selectedArea: Area | null;
 }
 
@@ -30,6 +31,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
+  showAQIColors, 
   selectedArea,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
@@ -41,7 +43,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
-  useDrawRoutes(mapRef.current, routes as unknown as Record<string, GeoJSON.FeatureCollection>);
+  useDrawRoutes(
+    mapRef.current,
+    routes as Record<string, GeoJSON.FeatureCollection>,
+    showAQIColors
+  );
   useHighlightChosenArea(mapRef.current);
 
   const handleLocationFound = (coords: { lat: number; lng: number }) => {
