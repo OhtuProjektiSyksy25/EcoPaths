@@ -33,6 +33,8 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    balancedWeight={undefined as any}
+    setBalancedWeight={undefined as any}
   />
 );
 
@@ -54,6 +56,8 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    balancedWeight={undefined as any}
+    setBalancedWeight={undefined as any}
   />
 );
 
@@ -74,6 +78,8 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
     summaries={null}
+    balancedWeight={undefined as any}
+    setBalancedWeight={undefined as any}
   />
 );
 
