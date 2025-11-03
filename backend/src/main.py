@@ -148,9 +148,10 @@ async def getroute(request: Request):
     Expects a GeoJSON FeatureCollection with exactly two features:
     - One with properties.role = "start"
     - One with properties.role = "end"
-    
+
     Optional body parameter:
-    - balanced_weight (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ). Defaults to 0.5.
+    - balanced_weight (float):
+    Weight for balanced route (0.0 = fastest, 1.0 = best AQ). Defaults to 0.5.
 
     Returns:
         dict: {
@@ -175,7 +176,7 @@ async def getroute(request: Request):
     # Validate balanced_weight
     if not isinstance(balanced_weight, (int, float)) or not 0 <= balanced_weight <= 1:
         return JSONResponse(
-            status_code=400, 
+            status_code=400,
             content={"error": "balanced_weight must be a number between 0 and 1"}
         )
 
@@ -199,7 +200,8 @@ async def getroute(request: Request):
         end_feature["geometry"], target_crs)
 
     route_service = request.app.state.route_service
-    response = route_service.get_route(origin_gdf, destination_gdf, balanced_weight)
+    response = route_service.get_route(
+        origin_gdf, destination_gdf, balanced_weight)
 
     duration = time.time() - start_time
     print(f"/getroute took {duration:.3f} seconds")

@@ -64,7 +64,8 @@ class RouteService:
         self.db_client = DatabaseClient()
         self.network_type = network_type
 
-    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame, balanced_weight: float = 0.5) -> dict:
+    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
+                  balanced_value: float = 0.5) -> dict:
         """
         Main entrypoint: compute route and return routes + summaries.
 
@@ -88,7 +89,7 @@ class RouteService:
 
         edges_subset = edges[edges.geometry.intersects(buffer)].copy()
 
-        return self._compute_routes(edges_subset, origin_gdf, destination_gdf)
+        return self._compute_routes(edges_subset, origin_gdf, destination_gdf, balanced_value)
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """
