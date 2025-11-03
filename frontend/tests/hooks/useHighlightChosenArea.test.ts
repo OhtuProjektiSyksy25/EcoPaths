@@ -110,7 +110,7 @@ describe("useHighlightChosenArea", () => {
         source: "polygon",
         paint: {
           "fill-color": "#666666",
-          "fill-opacity": 0.80,
+          "fill-opacity": 0.2,
         },
       })
     );
