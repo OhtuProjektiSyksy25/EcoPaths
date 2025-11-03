@@ -6,7 +6,7 @@ from src.services.route_service import RouteService, RouteServiceFactory
 
 class DummyRedisService:
     @staticmethod
-    def prune_found_ids(tile_ids, redis):
+    def prune_found_ids(tile_ids, redis, area_config):
         return [t for t in tile_ids if t.endswith("2")]
 
     @staticmethod
@@ -41,7 +41,6 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "aqi": [20.0, 40.0],
     }, crs="EPSG:25833")
     return gdf
-
 
 
 @pytest.fixture
@@ -87,7 +86,7 @@ def test_get_tile_edges_returns_expected_data(route_service):
 
 def test_prune_and_fetch_combines_correctly(monkeypatch, route_service):
     monkeypatch.setattr(DummyRedisService, "prune_found_ids",
-                        staticmethod(lambda ids, r: ["t102", "t103"]))
+                        staticmethod(lambda ids, r, a: ["t102", "t103"]))
     tile_ids = ["t101", "t102", "t103"]
     edges = route_service._get_tile_edges(tile_ids)
     assert not edges.empty
@@ -102,7 +101,7 @@ def test_save_to_redis_is_triggered(monkeypatch, route_service):
         return True
 
     monkeypatch.setattr(DummyRedisService, "prune_found_ids",
-                        staticmethod(lambda ids, r: ids))
+                        staticmethod(lambda ids, r, a: ids))
     monkeypatch.setattr(DummyRedisService, "save_gdf",
                         staticmethod(fake_save_gdf))
 
