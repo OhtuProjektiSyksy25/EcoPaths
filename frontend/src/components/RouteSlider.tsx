@@ -1,5 +1,10 @@
+/*
+RouteSlider.tsx renders a slider allowing users to customize their route preference
+*/
 import React, { useState } from "react";
 import "../styles/RouteSlider.css";
+import { CIcon } from '@coreui/icons-react';
+import { cilSpeedometer, cilLeaf } from '@coreui/icons';
 
 interface RouteSliderProps {
   value: number;
@@ -8,8 +13,7 @@ interface RouteSliderProps {
 }
 
 /**
- * Slider component for adjusting the balance between fastest and cleanest routes.
- * 
+ * RouteSlider component allows users to select their route preference
  * @param value - Current slider value (0 to 1, where 0 = fastest, 1 = best AQ)
  * @param onChange - Callback fired when user releases the slider
  * @param disabled - Whether the slider is disabled
@@ -17,27 +21,36 @@ interface RouteSliderProps {
 const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = false }) => {
   const [localValue, setLocalValue] = useState(value);
 
+  /* 
+  Called when user moves the slider 
+  */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalValue(parseFloat(e.target.value));
   };
 
+  /* 
+  Called when user releases the slider (mouse or touch) 
+  */
   const handleMouseUp = () => {
-    // Only trigger onChange when user releases the slider
     if (localValue !== value) {
       onChange(localValue);
     }
   };
-
+  /* 
+  Called when user releases the slider (mouse or touch) 
+  */
   const handleTouchEnd = () => {
-    // Handle touch devices
     if (localValue !== value) {
       onChange(localValue);
     }
   };
 
+  /* 
+  Determines the label to display based on the slider value 
+  */
   const getLabel = () => {
-    if (localValue < 0.33) return "Faster";
-    if (localValue > 0.67) return "Cleaner Air";
+    if (localValue < 0.33) return "Cleaner Air";
+    if (localValue > 0.67) return "Faster";
     return "Balanced";
   };
 
@@ -47,9 +60,12 @@ const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = f
         <span className="slider-label">Customize Your Route</span>
         <span className="slider-value-label">{getLabel()}</span>
       </div>
-      
+
       <div className="slider-wrapper">
-        <span className="slider-end-label">⚡ Fastest</span>
+        <span className="slider-end-label flex items-center gap-1">
+          <CIcon icon={cilLeaf} size="sm" />
+        </span>
+
         <input
           type="range"
           min="0"
@@ -62,7 +78,10 @@ const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = f
           disabled={disabled}
           className="route-slider"
         />
-        <span className="slider-end-label">🌿 Best Air</span>
+
+        <span className="slider-end-label flex items-center gap-1">
+          <CIcon icon={cilSpeedometer} size="sm" />
+        </span>
       </div>
     </div>
   );

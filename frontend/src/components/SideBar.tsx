@@ -1,9 +1,13 @@
+/*
+  SideBar component allows users to input start and destination locations,
+  view route summaries, and adjust route preferences via a slider.
+*/
+
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import InputContainer from "./InputContainer";
 import { useGeolocation } from "../hooks/useGeolocationState";
-import DisplayContainer from "./RouteInfoCard";
+import RouteInfoCard from "./RouteInfoCard";
 import RouteSlider from "./RouteSlider";
-import LoadingSpinner from "./LoadingSpinner";
 import "../styles/SideBar.css";
 import { RouteSummary } from "@/types/route";
 
@@ -185,7 +189,7 @@ const SideBar: React.FC<SideBarProps> = ({
         {summaries && !children && (
           <>
             <div className="best-aq-container">
-              <DisplayContainer
+              <RouteInfoCard
                 route_type="Best Air Quality"
                 time_estimate={summaries.best_aq.time_estimate}
                 total_length={summaries.best_aq.total_length}
@@ -194,7 +198,7 @@ const SideBar: React.FC<SideBarProps> = ({
             </div>
 
             <div className="fastest-route-container">
-              <DisplayContainer
+              <RouteInfoCard
                 route_type="Fastest Route"
                 time_estimate={summaries.fastest.time_estimate}
                 total_length={summaries.fastest.total_length}
@@ -205,10 +209,10 @@ const SideBar: React.FC<SideBarProps> = ({
             <div className="balanced-route-container">
               {balancedLoading ? (
                 <div className="route-loading-overlay">
-                  <LoadingSpinner size="small" text="Updating route..." />
+                  <h4>Getting route...</h4>
                 </div>
               ) : (
-                <DisplayContainer
+                <RouteInfoCard
                   route_type="Your Route"
                   time_estimate={summaries.balanced.time_estimate}
                   total_length={summaries.balanced.total_length}

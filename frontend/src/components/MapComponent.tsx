@@ -1,5 +1,3 @@
-// src/components/MapComponent.tsx
-
 /*
 MapComponent.tsx renders a mapBox map currently centered on Berlin. 
 If the mapbox fails it renders a leaflet map.
@@ -44,7 +42,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   useHighlightChosenArea(mapRef.current);
 
   const handleLocationFound = (coords: { lat: number; lng: number }) => {
-        /*
+    /*
     Centers the map on the user's current location and adds a dot marker to that location.
     */
     if (!mapRef.current || userUsedLocationRef.current) return;

@@ -57,11 +57,12 @@
 }
 
 .balanced-route-container {
+  position: relative;
   display: flex;
   gap: 8px;
   padding: 16px;
   background-color: #b8ffd3;
-  color: rgb(0, 255, 200);
+  color: rgb(0, 0, 0);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -80,13 +81,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 2px solid #5cabff40;
   margin-top: 16px;
-}
-
-/* Add these styles to your existing SideBar.css */
-
-.balanced-route-container {
-  position: relative;
-  min-height: 120px; /* Adjust based on your DisplayContainer height */
 }
 
 .route-loading-overlay {

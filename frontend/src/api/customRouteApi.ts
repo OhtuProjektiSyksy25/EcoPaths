@@ -1,4 +1,3 @@
-// src/api/customRouteApi.ts
 import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
 
 export interface CustomRouteResponse {
@@ -6,8 +5,8 @@ export interface CustomRouteResponse {
   summary: RouteSummary;
 }
 
-/**
- * Fetches a custom route based on user’s balance (0 = fastest, 1 = cleanest).
+  /*
+  Fetches a custom route based on user’s balance (0 = fastest, 1 = cleanest).
  */
 export async function fetchCustomRoute(
   fromLocked: LockedLocation,

@@ -1,4 +1,3 @@
-// src/api/routeApi.ts
 import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
 
 export interface RouteApiResponse {
@@ -45,8 +44,10 @@ export async function fetchRoute(
     ],
   };
 
-  // If a balanced weight is provided, append as a query param so the backend can
-  // produce a custom/balanced route. Weight expected in range 0..1.
+  /*
+  If a balanced weight is provided, append as a query param so the backend can
+  produce a custom/balanced route. Weight expected in range 0..1.
+  */
   const baseUrl = `${process.env.REACT_APP_API_URL}/getroute`;
   const url = typeof balancedWeight === "number"
     ? `${baseUrl}?balanced_weight=${encodeURIComponent(balancedWeight)}`
