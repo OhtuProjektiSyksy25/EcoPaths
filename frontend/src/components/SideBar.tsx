@@ -215,11 +215,6 @@ const SideBar: React.FC<SideBarProps> = ({
                 aq_average={summaries.fastest.aq_average}
               />
             </div>
-          <div className="aqi-toggle-button">
-            <button onClick={() => setShowAQIColors(!showAQIColors)}>
-              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
-            </button>
-          </div>
 
             <div className="balanced-route-container">
               {balancedLoading ? (
@@ -240,6 +235,12 @@ const SideBar: React.FC<SideBarProps> = ({
               onChange={setBalancedWeight}
               disabled={loading || balancedLoading}
             />
+
+          <div className="aqi-toggle-button">
+            <button onClick={() => setShowAQIColors(!showAQIColors)}>
+              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
+            </button>
+          </div>
           </>
         )}
       </div>
