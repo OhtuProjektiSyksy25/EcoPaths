@@ -27,5 +27,16 @@ INFLUENCE_WEIGHTS = {
             "tertiary": 0.1,
             "residential": 0.05
         }
+    },
+    "landuse": {
+        "BASE_BENEFIT": 1.0,
+        "MAX_BENEFIT": 5.0,
+        "LANDUSE_WEIGHTS": {
+            "forest": 2.0,
+            "grass": 1.0,
+            "meadow": 1.5,
+            "recreation_ground": 2.0,
+            "park": 3.0
+        }
     }
 }

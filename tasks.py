@@ -284,7 +284,7 @@ def fill_area_tables(c, area: str, network_type: str, overwrite_edges=False, ove
         action = "Overwriting" if overwrite_edges else "Creating"
         print(f"{action} edge data for table '{edge_table}'...")
         preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-        preprocessor.extract_edges() 
+        preprocessor.run() 
 
     print(f"Database population complete for area '{area}', network type '{network_type}'.")
 

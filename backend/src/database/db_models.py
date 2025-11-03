@@ -137,3 +137,39 @@ def create_node_class(area_name: str, network_type: str, base=Base) -> type:
     }
 
     return type(class_name, (base,), attrs)
+
+def create_landuse_class(area_name: str, base=Base) -> type:
+    """
+    Create a dynamic SQLAlchemy Landuse class for a specific area.
+
+    If a class with the same name already exists in the registry, it will be returned.
+
+    Args:
+        area_name (str): Name of the area (e.g., "berlin").
+        base (DeclarativeMeta, optional): SQLAlchemy base to use. Defaults to production Base.
+
+    Returns:
+        type: SQLAlchemy ORM class representing the landuse table.
+    """
+    class_name = f"Landuse_{area_name.lower()}"
+    existing = _get_class_from_registry(base, class_name)
+    if existing:
+        return existing
+
+    area_config = AreaConfig(area_name)
+    srid = int(area_config.crs.split(":")[-1])
+
+    attrs = {
+        "__tablename__": f"landuse_{area_name.lower()}",
+        "__table_args__": {"extend_existing": True},
+        # id / tag fields
+        "id": Column(Integer, primary_key=True, autoincrement=True),
+        "landuse": Column(String),          # e.g. 'forest', 'park'
+        "name": Column(String),             # optional OSM name
+         "geometry": Column(Geometry("POLYGON", srid=srid)),
+        # optional attributes for analysis
+        "area_m2": Column(Float),
+    }
+
+    return type(class_name, (base,), attrs)
+

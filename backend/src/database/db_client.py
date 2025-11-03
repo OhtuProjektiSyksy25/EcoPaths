@@ -136,6 +136,18 @@ class DatabaseClient:
                 ON nodes_{area}_{network_type} (tile_id);
             """))
 
+    def create_landuse_indexes(self, area: str):
+        with self.engine.begin() as conn:
+            conn.execute(text(f"""
+                CREATE INDEX IF NOT EXISTS idx_landuse_{area}_geometry
+                ON landuse_{area} USING GIST (geometry);
+            """))
+            conn.execute(text(f"""
+                CREATE INDEX IF NOT EXISTS idx_landuse_{area}_landuse
+                ON landuse_{area} (landuse);
+            """))
+
+
     def save_edges(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
         Save an edge GeoDataFrame to a PostGIS table.
@@ -212,6 +224,49 @@ class DatabaseClient:
         )
         print(f"  Saved {len(gdf)} nodes to table '{table_name}'")
 
+    def save_landuse(self, gdf: gpd.GeoDataFrame, area: str, if_exists="fail"):
+        """
+        Save a landuse GeoDataFrame to a PostGIS table.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame containing landuse polygons.
+                Must include at least columns 'landuse' and 'geometry'.
+            area (str): Area name, used in the table name.
+            if_exists (str, optional): How to behave if the table already exists.
+                Defaults to "fail". Other valid values: "replace", "append".
+
+        Raises:
+            ValueError: If the GeoDataFrame is empty or lacks geometry.
+        """
+        if gdf.empty:
+            raise ValueError("Cannot save empty landuse GeoDataFrame.")
+        if "geometry" not in gdf.columns:
+            raise ValueError("GeoDataFrame must have a 'geometry' column.")
+
+        table_name = f"landuse_{area.lower()}"
+
+        # Varmistetaan että on edes perusattribuutit mukana
+        if "landuse" not in gdf.columns:
+            gdf["landuse"] = None
+        if "name" not in gdf.columns:
+            gdf["name"] = None
+
+        # Lasketaan pinta-ala (automaattisesti oikeassa CRS:ssä)
+        if "area_m2" not in gdf.columns:
+            gdf["area_m2"] = gdf.geometry.area
+
+        # Tallennus PostGISiin
+        gdf.to_postgis(
+            name=table_name,
+            con=self.engine,
+            if_exists=if_exists,
+            index=False,
+            schema="public",
+        )
+
+        print(f"  Saved {len(gdf)} landuse polygons to table '{table_name}'")
+        self._create_landuse_indexes(area)
+
     def load_edges(self, area: str, network_type: str) -> gpd.GeoDataFrame:
         """
         Load all edges from the database for a given area and network type.
@@ -273,6 +328,31 @@ class DatabaseClient:
         gdf = gpd.read_postgis(query, con=self.engine, geom_col="geometry")
         print(f"Loaded {len(gdf)} nodes from table '{table_name}'")
         return gdf
+    
+    def load_landuse(self, area: str) -> gpd.GeoDataFrame:
+        """
+        Load landuse polygons from the database for a given area.
+
+        Args:
+            area (str): Area name (e.g., "berlin").
+
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame containing landuse polygons.
+
+        Raises:
+            RuntimeError: If table does not exist or query fails.
+        """
+        table_name = f"landuse_{area.lower()}"
+        query = f"SELECT * FROM {table_name}"
+        print(f"Loading landuse data from table: {table_name}")
+
+        try:
+            return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load landuse data for area '{area}': {e}"
+            ) from e
+
 
     def load_edges_for_tiles(
         self,
