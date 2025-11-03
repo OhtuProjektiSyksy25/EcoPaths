@@ -13,7 +13,8 @@ from services.route_service import RouteServiceFactory
 
 
 # classify POIs using common osm keys
-poi_keys = {"amenity", "tourism", "shop", "leisure", "historic", "office", "craft"}
+poi_keys = {"amenity", "tourism", "shop",
+            "leisure", "historic", "office", "craft"}
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
@@ -69,6 +70,8 @@ if os.path.isdir(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # --- Helper utilities for geocoding suggestions ---------------------------------
+
+
 def _build_full_address(properties: dict) -> str:
     """Build a readable full_address from Photon properties.
 
