@@ -48,24 +48,23 @@ class RouteAlgorithm:
         self.igraph.vs["x"] = nodes_gdf.geometry.x.tolist()
         self.igraph.vs["y"] = nodes_gdf.geometry.y.tolist()
         self.igraph.vs["tile_id"] = nodes_gdf["tile_id"].tolist()
-
         edges_gdf_filtered = edges_gdf[
             edges_gdf["from_node"].astype(str).isin(valid_vertices) &
             edges_gdf["to_node"].astype(str).isin(valid_vertices)
         ]
-
         self.edges_gdf_filtered = edges_gdf_filtered.copy()
+        edge_tuples = list(
+        zip(edges_gdf_filtered["from_node"].astype(str),
+            edges_gdf_filtered["to_node"].astype(str))
+        )
+        self.igraph.add_edges(edge_tuples)
+        self.igraph.es["gdf_edge_id"] = edges_gdf_filtered["edge_id"].tolist()
+        self.igraph.es["length_m"] = edges_gdf_filtered["length_m"].tolist()
+        self.igraph.es["aqi"] = edges_gdf_filtered["aqi"].tolist()
+        self.igraph.es["normalized_aqi"] = edges_gdf_filtered["normalized_aqi"].tolist()
+        self.igraph.es["weight"] = [0] * len(edges_gdf_filtered) # placeholder
 
-        for _, row in edges_gdf_filtered.iterrows():
-            self.igraph.add_edge(
-                str(row["from_node"]),
-                str(row["to_node"]),
-                gdf_edge_id=row["edge_id"],
-                length_m=row["length_m"],
-                aqi=row.get("aqi", 250),
-                normalized_aqi=row["normalized_aqi"],
-                weight=0#row["length_m"]*row.get("aqi", 250)
-            )
+
 
     def update_weights(self, balance_factor):
         """
