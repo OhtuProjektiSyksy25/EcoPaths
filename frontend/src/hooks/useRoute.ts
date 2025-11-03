@@ -28,12 +28,21 @@ export function useRoute(
       fromLocked.geometry?.coordinates &&
       toLocked.geometry?.coordinates;
 
-    if (!shouldFetch) return;
+    if (!shouldFetch) {
+      setRoutes(null);
+      setSummaries(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
     const getRoutes = async () => {
       try {
         setLoading(true);
         setError(null);
+        setRoutes(null);
+        setSummaries(null);
+
         const { routes, summaries } = await fetchRoute(fromLocked, toLocked);
         setRoutes(routes);
         setSummaries(summaries);

@@ -80,29 +80,29 @@ class TrafficInfluenceBuilder:
 
             query = f"""
             UPDATE {self.walk_table} w
-            SET traffic_influence = ROUND(CAST(
-                1.0 + LEAST({self.max_influence}, COALESCE((
-                    SELECT SUM(
-                        CASE
-                            WHEN ST_Distance(w.geometry, d.buffer_geom) <= 2 THEN
-                                {self.base_influence}
-                                + {self.lane_weight} * COALESCE(d.lanes, 2)
-                                + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
-                                + {highway_case_sql}
-                            WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
-                                (
-                                    {self.base_influence} *
-                                    (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4)
-                                )
-                                + {self.lane_weight} * COALESCE(d.lanes, 2)
-                                + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
-                                + {highway_case_sql}
-                            ELSE 0
-                        END
-                    )
-                    FROM temp_drive_buffers d
-                    WHERE ST_Intersects(w.geometry, d.buffer_geom)
-                ), 0)) AS numeric), 2)
+            SET traffic_influence = ROUND(
+                (1.0 + LEAST({self.max_influence}, COALESCE(
+                    LOG(1 + (
+                        SELECT SUM(
+                            CASE
+                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 2 THEN
+                                    {self.base_influence}
+                                    + {self.lane_weight} * COALESCE(d.lanes, 2)
+                                    + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
+                                    + {highway_case_sql}
+                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
+                                    ({self.base_influence} *
+                                    (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
+                                    + {self.lane_weight} * COALESCE(d.lanes, 2)
+                                    + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
+                                    + {highway_case_sql}
+                                ELSE 0
+                            END
+                        )
+                        FROM temp_drive_buffers d
+                        WHERE ST_Intersects(w.geometry, d.buffer_geom)
+                    )), 0))
+                )::numeric, 2)
             WHERE tile_id = '{tile_id}'
             AND EXISTS (
                 SELECT 1

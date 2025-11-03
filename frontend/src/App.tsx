@@ -32,6 +32,7 @@ function App(): JSX.Element {
 
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
+  const [showAQIColors, setShowAQIColors] = useState(false);
 
   const { routes, summaries, loading, error } = useRoute(fromLocked, toLocked);
 
@@ -47,10 +48,12 @@ function App(): JSX.Element {
 
   // Handle changing area from dropdown
   const handleChangeArea = () => {
-    setShowAreaSelector(true);
-    // Clear routes after changing area
+    // Clear locked locations FIRST (this clears routes & DisplayContainers)
     setFromLocked(null);
     setToLocked(null);
+    
+    // Then show area selector
+    setShowAreaSelector(true);
   };
 
 
@@ -85,6 +88,8 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          showAQIColors={showAQIColors}
+          setShowAQIColors={setShowAQIColors}
           selectedArea={selectedArea}
           onErrorChange={setLocationError}
         >
@@ -101,6 +106,7 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
+            showAQIColors={showAQIColors} 
             selectedArea={selectedArea}
           />
         </div>

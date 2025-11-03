@@ -16,17 +16,26 @@ interface SideBarProps {
   onFromSelect: (place: any) => void;
   onToSelect: (place: any) => void;
   summaries: Record<string, RouteSummary> | null;
+  showAQIColors: boolean;
+  setShowAQIColors: (value: boolean) => void;
   selectedArea: Area | null;
   onErrorChange?: (error: string | null) => void; 
   children?: React.ReactNode;
 }
 const SideBar: React.FC<SideBarProps> = ({
+  
   onFromSelect,
+ 
   onToSelect,
+ 
   summaries,
+ 
+  showAQIColors,
+  setShowAQIColors,
   selectedArea,
   onErrorChange,
   children
+
 }) => {
 
   const [from, setFrom] = useState<string>("")
@@ -193,6 +202,21 @@ const SideBar: React.FC<SideBarProps> = ({
   }
   }, 400)}
 
+  useEffect(() => {
+    // Clear inputs when area changes
+    if (selectedArea) {
+      setFrom("");
+      setTo("");
+      setFromSuggestions([]);
+      setToSuggestions([]);
+      setErrorMessage(null);
+    }
+  }, [selectedArea?.id]);
+
+  useEffect(() => {
+    // Notify parent when error changes (to disable area button)
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
 
   return (
     <div className="sidebar">
@@ -283,6 +307,11 @@ const SideBar: React.FC<SideBarProps> = ({
               total_length={summaries.fastest.total_length}
               aq_average={summaries.fastest.aq_average}
             />
+          </div>
+          <div className="aqi-toggle-button">
+            <button onClick={() => setShowAQIColors(!showAQIColors)}>
+              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
+            </button>
           </div>
         </>
 
