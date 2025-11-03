@@ -29,6 +29,7 @@ function App(): JSX.Element {
   // Area selection state
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
   const [showAreaSelector, setShowAreaSelector] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
@@ -48,10 +49,12 @@ function App(): JSX.Element {
 
   // Handle changing area from dropdown
   const handleChangeArea = () => {
-    setShowAreaSelector(true);
-    // Clear routes after changing area
+    // Clear locked locations FIRST (this clears routes & DisplayContainers)
     setFromLocked(null);
     setToLocked(null);
+    
+    // Then show area selector
+    setShowAreaSelector(true);
   };
 
 
@@ -62,7 +65,11 @@ function App(): JSX.Element {
       )}
       {selectedArea && !showAreaSelector && (
         <div className="area-dropdown-container">
-          <button className="area-dropdown-button" onClick={handleChangeArea}>
+          <button
+            className="area-dropdown-button"
+            onClick={handleChangeArea}
+            disabled={!!locationError}
+          >
              <Globe size={25} />
             {selectedArea.display_name}
           </button>
@@ -81,6 +88,7 @@ function App(): JSX.Element {
           showAQIColors={showAQIColors}
           setShowAQIColors={setShowAQIColors}
           selectedArea={selectedArea}
+          onErrorChange={setLocationError}
         >
           {(loading || error) && (
             <div className="route-loading-message">

@@ -38,16 +38,12 @@ async def lifespan(application: FastAPI):
     FastAPI lifespan handler that initializes application state on startup.
 
     Sets up shared services such as RouteService and AreaConfig.
+    No area is selected by default - user must choose one.
     """
-    selected_area = "testarea"
-
-    route_service, area_config = RouteServiceFactory.from_area(selected_area)
-
-    application.state.route_service = route_service
-    application.state.area_config = area_config
-
-    # track selected area
-    application.state.selected_area = selected_area
+    # Don't initialize any area - wait for user selection
+    application.state.route_service = None
+    application.state.area_config = None
+    application.state.selected_area = None
 
     yield
 
@@ -185,18 +181,6 @@ async def select_area(request: Request, area_id: str = Path(...)):
         )
 
 
-@app.get("/berlin")
-async def berlin(request: Request):
-    """Returns Berlin coordinates as JSON.
-
-    Returns:
-        dict: A dictionary containing the coordinates of Berlin with the format
-              {"coordinates": [longitude, latitude]}.
-    """
-    area_config = request.app.state.area_config
-    center = {"coordinates": area_config.focus_point}
-    return center
-
 
 @app.get("/get-area-config")
 async def get_area_config(request: Request):
@@ -210,6 +194,13 @@ async def get_area_config(request: Request):
             - crs (str): "crs".
     """
     area_config = request.app.state.area_config
+
+    if not area_config:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+        
     return {
         "area": area_config.area,
         "bbox": area_config.bbox,
@@ -234,6 +225,13 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         return []
 
     area_config = request.app.state.area_config
+    
+    if not area_config:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+
     bbox = area_config.bbox
     bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
 
@@ -274,6 +272,16 @@ async def getroute(request: Request):
             }
         }
     """
+
+    area_config = request.app.state.area_config
+    route_service = request.app.state.route_service
+    
+    if not area_config or not route_service:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+
     start_time = time.time()
 
     data = await request.json()

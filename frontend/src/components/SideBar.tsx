@@ -19,6 +19,7 @@ interface SideBarProps {
   showAQIColors: boolean;
   setShowAQIColors: (value: boolean) => void;
   selectedArea: Area | null;
+  onErrorChange?: (error: string | null) => void;
   children?: React.ReactNode;
 }
 const SideBar: React.FC<SideBarProps> = ({
@@ -27,7 +28,9 @@ const SideBar: React.FC<SideBarProps> = ({
   summaries,
   showAQIColors,
   setShowAQIColors,
-  selectedArea, children
+  selectedArea,
+  onErrorChange,
+  children
 }) => {
 
   const [from, setFrom] = useState<string>("")
@@ -191,6 +194,21 @@ const SideBar: React.FC<SideBarProps> = ({
   }
   }, 400)}
 
+  useEffect(() => {
+    // Clear inputs when area changes
+    if (selectedArea) {
+      setFrom("");
+      setTo("");
+      setFromSuggestions([]);
+      setToSuggestions([]);
+      setErrorMessage(null);
+    }
+  }, [selectedArea?.id]);
+
+  useEffect(() => {
+    // Notify parent when error changes (to disable area button)
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
 
   return (
     <div className="sidebar">
