@@ -124,7 +124,7 @@ class RouteService:
             GeoDataFrame: Edges for requested tiles.
         """
         non_existing_tile_ids = RedisService.prune_found_ids(
-            tile_ids, self.redis)
+            tile_ids, self.redis, self.area_config)
         existing_tile_ids = list(set(tile_ids) - set(non_existing_tile_ids))
 
         all_gdfs = []

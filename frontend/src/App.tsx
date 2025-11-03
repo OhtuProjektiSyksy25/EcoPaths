@@ -5,9 +5,12 @@ It renders the header and the MapComponent.
 import { useState } from "react";
 import MapComponent from "./components/MapComponent";
 import SideBar from "./components/SideBar";
+import AreaSelector from "./components/AreaSelector";
 import { useRoute } from "./hooks/useRoute";
-import { LockedLocation } from "./types";
+import { LockedLocation, Area } from "./types";
+import logo from "./assets/images/ecopaths_logo_no_text.jpg";
 import "./styles/App.css";
+import { Globe } from "lucide-react";
 
 /**
  * Root component of the EcoPaths React application.
@@ -15,12 +18,18 @@ import "./styles/App.css";
  * Manages the state of selected start and end locations,
  * fetches the routes using a custom hook, and renders the UI including:
  * - Header
+ * - AreaSelector for choosing areas
  * - RouteForm for selecting locations
  * - MapComponent for visualizing route options
  *
  * @returns JSX.Element representing the full application layout
  */
 function App(): JSX.Element {
+  // Area selection state
+  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
+  const [showAreaSelector, setShowAreaSelector] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
   const [showAQIColors, setShowAQIColors] = useState(false);
@@ -34,10 +43,51 @@ function App(): JSX.Element {
     balancedWeight
   );
 
+  // Handle area selection
+  const handleAreaSelect = (area: Area) => {
+    setSelectedArea(area);
+    setShowAreaSelector(false);
+
+    // Clear routes when changing area
+    setFromLocked(null);
+    setToLocked(null);
+  };
+
+  // Handle changing area from dropdown
+  const handleChangeArea = () => {
+    // Clear locked locations FIRST (this clears routes & DisplayContainers)
+    setFromLocked(null);
+    setToLocked(null);
+    
+    // Then show area selector
+    setShowAreaSelector(true);
+  };
+
+
   return (
     <div className="App">
+      {showAreaSelector && (
+        <AreaSelector onAreaSelect={handleAreaSelect} />
+      )}
+
       <header className="header">
-        <h1 className="title">EcoPaths</h1>
+        <div className="header-content">
+          <img src={logo} alt="EcoPaths Logo" className="app-logo" />
+          <h1 className="title">EcoPaths</h1>
+        </div>
+        {selectedArea && !showAreaSelector && (
+          <div className="area-dropdown-container">
+            <button
+              className="area-dropdown-button"
+              onClick={handleChangeArea}
+              disabled={!!locationError}
+            >
+            
+              <Globe size={25} />
+              {selectedArea.display_name}
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="main-container">
@@ -47,6 +97,8 @@ function App(): JSX.Element {
           summaries={summaries}
           showAQIColors={showAQIColors}
           setShowAQIColors={setShowAQIColors}
+          selectedArea={selectedArea}
+          onErrorChange={setLocationError}
           balancedWeight={balancedWeight}
           setBalancedWeight={setBalancedWeight}
           loading={loading}
@@ -66,6 +118,7 @@ function App(): JSX.Element {
             toLocked={toLocked}
             routes={routes}
             showAQIColors={showAQIColors} 
+            selectedArea={selectedArea}
           />
         </div>
       </main>

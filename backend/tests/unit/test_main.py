@@ -32,17 +32,6 @@ def setup_mock_lifespan():
 client = TestClient(app)
 
 
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_berlin():
-    """ Test if GET to /berlin status is 200
-        and response has correct berlin coordinates.
-    """
-    response = client.get("/berlin")
-    assert response.status_code == 200
-
-    assert response.json()["coordinates"] == [13.404954, 52.520008]
-
-
 @pytest.fixture
 def create_index_html(tmp_path, monkeypatch):
     """Create a temporary build/index.html file for testing."""

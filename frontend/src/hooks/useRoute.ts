@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
+import { Area } from "../types";
+
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
