@@ -123,6 +123,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );
@@ -139,6 +141,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );
@@ -178,6 +182,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );
@@ -193,6 +199,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );
@@ -213,6 +221,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={null}
       />
     );
@@ -226,6 +236,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={null}
       />
     );
@@ -259,6 +271,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );
@@ -274,6 +288,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );
@@ -319,6 +335,8 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
       />
     );

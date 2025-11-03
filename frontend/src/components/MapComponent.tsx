@@ -48,7 +48,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     routes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors
   );
-  useHighlightChosenArea(mapRef.current);
+  useHighlightChosenArea(mapRef.current, selectedArea);
 
   const handleLocationFound = (coords: { lat: number; lng: number }) => {
         /*
@@ -155,6 +155,23 @@ const MapComponent: React.FC<MapComponentProps> = ({
         duration: 1500
       });
     }
+  }, [fromLocked, toLocked]);
+
+
+  useEffect(() => {
+    /*
+    Zooms the map to fit both From and To locations if both are set.
+    */
+    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
+
+    const bounds = new mapboxgl.LngLatBounds()
+      .extend(fromLocked.geometry.coordinates)
+      .extend(toLocked.geometry.coordinates);
+
+    mapRef.current.fitBounds(bounds, {
+      padding: 110,
+      duration: 1500
+    });
   }, [fromLocked, toLocked]);
 
 

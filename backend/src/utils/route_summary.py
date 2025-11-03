@@ -49,7 +49,6 @@ def calculate_total_length(route: gpd.GeoDataFrame) -> float:
     return float(route["length_m"].sum())
 
 
-
 def calculate_aq_average(route: gpd.GeoDataFrame) -> float | None:
     """
     Calculates the average air quality value along the route.

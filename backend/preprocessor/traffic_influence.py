@@ -91,7 +91,8 @@ class TrafficInfluenceBuilder:
                                     + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
                                     + {highway_case_sql}
                                 WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
-                                    ({self.base_influence} * (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
+                                    ({self.base_influence} *
+                                    (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
                                     + {self.lane_weight} * COALESCE(d.lanes, 2)
                                     + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
                                     + {highway_case_sql}

@@ -1,21 +1,22 @@
 """FastAPI application entry point"""
-from contextlib import asynccontextmanager
 import os
 import sys
 import time
+from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from utils.geo_transformer import GeoTransformer
+from config.settings import AREA_SETTINGS
 from services.route_service import RouteServiceFactory
+from utils.geo_transformer import GeoTransformer
 
 
 # classify POIs using common osm keys
-poi_keys = {"amenity", "tourism", "shop", "leisure", "historic", "office", "craft"}
+poi_keys = {"amenity", "tourism", "shop",
+            "leisure", "historic", "office", "craft"}
 
-from config.settings import AREA_SETTINGS
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
@@ -70,6 +71,8 @@ if os.path.isdir(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # --- Helper utilities for geocoding suggestions ---------------------------------
+
+
 def _build_full_address(properties: dict) -> str:
     """Build a readable full_address from Photon properties.
 
@@ -181,7 +184,6 @@ async def select_area(request: Request, area_id: str = Path(...)):
         )
 
 
-
 @app.get("/get-area-config")
 async def get_area_config(request: Request):
     """Returns the area configuration as JSON.
@@ -200,7 +202,7 @@ async def get_area_config(request: Request):
             status_code=400,
             content={"error": "No area selected. Please select an area first."}
         )
-        
+
     return {
         "area": area_config.area,
         "bbox": area_config.bbox,
@@ -225,7 +227,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         return []
 
     area_config = request.app.state.area_config
-    
+
     if not area_config:
         return JSONResponse(
             status_code=400,
@@ -275,7 +277,7 @@ async def getroute(request: Request):
 
     area_config = request.app.state.area_config
     route_service = request.app.state.route_service
-    
+
     if not area_config or not route_service:
         return JSONResponse(
             status_code=400,
