@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
-import { Area } from "../types";
+import { Area } from "@/types";
 
 interface AreaConfig {
   area: string;
@@ -16,11 +16,9 @@ interface AreaConfig {
  * 
  * @param map - Mapbox GL map instance
  */
-export const useHighlightChosenArea = (
-  map: mapboxgl.Map | null,
-  selectedArea: Area | null
-) => {
+export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: Area | null) => {
   const [areaConfig, setAreaConfig] = useState<AreaConfig | null>(null);
+  
 
   useEffect(() => {
       if (selectedArea) {
