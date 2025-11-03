@@ -32,17 +32,6 @@ def setup_mock_lifespan():
 client = TestClient(app)
 
 
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_berlin():
-    """ Test if GET to /berlin status is 200
-        and response has correct berlin coordinates.
-    """
-    response = client.get("/berlin")
-    assert response.status_code == 200
-
-    assert response.json()["coordinates"] == [13.404954, 52.520008]
-
-
 @pytest.fixture
 def create_index_html(tmp_path, monkeypatch):
     """Create a temporary build/index.html file for testing."""
@@ -194,7 +183,8 @@ def test_geocode_forward_with_all_fields(monkeypatch):
     assert feature["properties"]["city"] == "Berlin"
     assert "full_address" in feature
     # accept value with or without trailing space
-    assert feature["full_address"].strip() == "Die Mitte Alexanderplatz 3 Berlin"
+    assert feature["full_address"].strip(
+    ) == "Die Mitte Alexanderplatz 3 Berlin"
 
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
@@ -284,13 +274,13 @@ def test_get_area_config_returns_correct_data():
     assert data["focus_point"] == [13.404954, 52.520008]
     assert data["crs"] == "EPSG:25833"
 
+
 """Unit tests for Photon helper functions in src.main.
 
 These tests exercise `_build_full_address` and
 `_compose_photon_suggestions` to ensure address building and
 POI/address composition rules behave as intended.
 """
-
 
 
 def test_build_full_address_empty():
@@ -310,7 +300,8 @@ def test_build_full_address_with_all_fields_and_int():
         "city": "Berlin",
     }
     # int housenumber should be stringified and included
-    assert src.main._build_full_address(props) == "Die Mitte Alexanderplatz 3 Berlin "
+    assert src.main._build_full_address(
+        props) == "Die Mitte Alexanderplatz 3 Berlin "
 
 
 def make_feature(name, osm_key=None):

@@ -81,7 +81,8 @@ class RouteAlgorithm:
             destination_point)
 
         extra_edges = self._combine_edges([origin_splits, destination_splits])
-        graph = self.build_graph(balance_factor=balance_factor, edges_gdf=extra_edges)
+        graph = self.build_graph(
+            balance_factor=balance_factor, edges_gdf=extra_edges)
 
         return origin_node, destination_node, graph, extra_edges
 
@@ -175,7 +176,6 @@ class RouteAlgorithm:
         graph = nx.Graph()
         edges = edges_gdf if edges_gdf is not None else self.edges
 
-
         for _, row in edges.iterrows():
             start = self._normalize_node(row.start_node)
             end = self._normalize_node(row.end_node)
@@ -188,8 +188,9 @@ class RouteAlgorithm:
             if aqi is not None:
                 normalized_aq = min(aqi / 500, 1)
                 aq_multipler_balanced_weight = (
-                    balance_factor * length + (1 - balance_factor) * (length * normalized_aq)
-                    )
+                    balance_factor * length +
+                    (1 - balance_factor) * (length * normalized_aq)
+                )
                 w = aq_multipler_balanced_weight if aqi is not None else length
             else:
                 print("Error: Edge without AQI value")

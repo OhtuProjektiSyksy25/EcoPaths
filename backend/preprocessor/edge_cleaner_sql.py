@@ -248,7 +248,7 @@ class EdgeCleanerSQL:
 
         largest_comp_id = max(set(membership), key=membership.count)
         print(
-            f""" Found {len(components)} components. 
+            f""" Found {len(components)} components.
         Largest has {membership.count(largest_comp_id)} nodes.""")
 
         # Filter edges belonging to largest component
