@@ -15,7 +15,7 @@ html, body, #root {
 
 .header {
   background-color: white;
-  padding: 4px 10px;
+  padding: 0px 10px;
   border-bottom: 1px solid #e8f7ec;
   flex-shrink: 0;
   position: relative;
@@ -26,22 +26,22 @@ html, body, #root {
   align-items: center;
   gap: 0px;
   overflow: visible;
-  height: 80px;
+  height: 65px;
 }
 
 .app-logo {
-  height: 100px;
+  height: 70px;
   width: auto;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   transform: scale(1.6);
   flex-shrink: 0;
-  clip-path: inset(23px);
+  clip-path: inset(15px);
 }
 
 .title {
   margin: 0;
-  font-size: 3rem;
+  font-size: 2.7rem;
   font-weight: 700;
   color: black;
   font-family: 'Arial', sans-serif;
@@ -163,8 +163,12 @@ html, body, #root {
 
 .area-dropdown-button:hover {
   background: #f8f9fa;
-  border-color: #2bc654;
+  border-color: #000000;
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.area-dropdown-button:disabled {
+  display: none;
 }
 
 .map-icon {

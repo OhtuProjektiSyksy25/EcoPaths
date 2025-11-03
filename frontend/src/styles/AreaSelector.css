@@ -63,12 +63,12 @@
 }
 
 .area-button:hover {
-  border-color: #2bc654;
+  border-color: #000000;
 }
 
 .area-button.selected {
-  background: #2bc654;
-  border-color: #2bc654;
+  background: #ffffff;
+  border-color: #000000;
   color: white;
 }
 

@@ -28,6 +28,7 @@ function App(): JSX.Element {
   // Area selection state
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
   const [showAreaSelector, setShowAreaSelector] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
@@ -66,7 +67,12 @@ function App(): JSX.Element {
         </div>
         {selectedArea && !showAreaSelector && (
           <div className="area-dropdown-container">
-            <button className="area-dropdown-button" onClick={handleChangeArea}>
+            <button
+              className="area-dropdown-button"
+              onClick={handleChangeArea}
+              disabled={!!locationError}
+            >
+            
               <Globe size={25} />
               {selectedArea.display_name}
             </button>
@@ -80,6 +86,7 @@ function App(): JSX.Element {
           onToSelect={setToLocked}
           summaries={summaries}
           selectedArea={selectedArea}
+          onErrorChange={setLocationError}
         >
           {(loading || error) && (
             <div className="route-loading-message">

@@ -17,9 +17,17 @@ interface SideBarProps {
   onToSelect: (place: any) => void;
   summaries: Record<string, RouteSummary> | null;
   selectedArea: Area | null;
+  onErrorChange?: (error: string | null) => void; 
   children?: React.ReactNode;
 }
-const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, selectedArea, children}) => {
+const SideBar: React.FC<SideBarProps> = ({
+  onFromSelect,
+  onToSelect,
+  summaries,
+  selectedArea,
+  onErrorChange,
+  children
+}) => {
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -30,6 +38,10 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, s
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const debounce = useRef<number | null>()
   const { getCurrentLocation, coordinates } = useGeolocation();
+
+  useEffect(() => {
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
 
   useEffect(() => {
     /*
