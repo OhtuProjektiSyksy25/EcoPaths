@@ -83,7 +83,6 @@ class RouteService:
 
         # Nodes_gdf from database
         nodes = self._get_nodes_from_db(tile_ids)
-        print(nodes)
         if edges is None or edges.empty:
             raise RuntimeError("No edges found for requested route area.")
 
