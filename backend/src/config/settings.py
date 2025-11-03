@@ -97,15 +97,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
 ENV_PATH = os.path.join(BASE_DIR, "..", "..", ENV_FILE)
 
-if not os.path.exists(ENV_PATH):
-    raise FileNotFoundError(f"Environment file not found: {ENV_PATH}")
+DB_URL = os.getenv("DB_URL")
 
-load_dotenv(dotenv_path=ENV_PATH, override=True)
+if not DB_URL:
+    if os.path.exists(ENV_PATH):
+        load_dotenv(dotenv_path=ENV_PATH, override=True)
+    else:
+        raise FileNotFoundError(f"Environment file not found: {ENV_PATH}")
 
 
 @dataclass
 class DatabaseConfig:
     """Configuration for PostgreSQL database."""
+    url: str = DB_URL
 
     host: str = os.getenv("DB_HOST", "localhost")
     port: int = int(os.getenv("DB_PORT", "5432"))
@@ -129,6 +133,9 @@ class DatabaseConfig:
     @property
     def connection_string(self) -> str:
         """Return SQLAlchemy-compatible PostgreSQL connection string."""
+        if self.url:
+            return self.url
+
         if not self.dbname:
             raise ValueError(
                 "Database name is not set. Check your .env or .env.test file.")
