@@ -173,7 +173,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       .extend(toLocked.geometry.coordinates);
 
     mapRef.current.fitBounds(bounds, {
-      padding: 80,
+      padding: 110,
       duration: 1500
     });
   }, [fromLocked, toLocked]);
