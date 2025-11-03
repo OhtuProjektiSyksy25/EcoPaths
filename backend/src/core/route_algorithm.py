@@ -186,10 +186,10 @@ class RouteAlgorithm:
             # balance_factor is used to balance the influence of aqi on the weight
             # lower balance_factor values equate to weighing air quality more
             # normalized_aqi gets values between 0 and 1
-            # 0.01 is added to normalized_aqi to avoid unnecessary edges when normalized_aqi is 0
+            # 0.001 is added to normalized_aqi to avoid unnecessary edges 
             if normalized_aqi is not None:
                 aq_multipler_balanced_weight = (
-                    balance_factor * length + (1 - balance_factor) * (length * (normalized_aqi+0.01))
+                    balance_factor * length + (1 - balance_factor) * (length * (normalized_aqi+0.001))
                     )
                 w = aq_multipler_balanced_weight if normalized_aqi is not None else length
             else:
