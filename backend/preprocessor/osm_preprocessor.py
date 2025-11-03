@@ -3,8 +3,6 @@ Download and process OpenStreetMap data into a cleaned road network.
 """
 
 import warnings
-import geopandas as gpd
-from pyrosm import OSM
 from src.database.db_client import DatabaseClient
 from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 from .edge_cleaner_sql import EdgeCleanerSQL
@@ -13,6 +11,7 @@ from .node_builder import NodeBuilder
 from .traffic_influence import TrafficInfluenceBuilder
 from .env_influence import EnvInfluenceBuilder
 from .landuse_influence import LanduseInfluenceBuilder
+from .osm_validation import OSMValidator
 
 
 class OSMPreprocessor:
@@ -43,7 +42,6 @@ class OSMPreprocessor:
         self.area_config = self.downloader.area_config
         self.crs = self.area_config.crs
 
-    
     # Public interface
 
     def run(self):
@@ -58,42 +56,76 @@ class OSMPreprocessor:
         if self.network_type == "walking":
             self._postprocess_walking_network()
 
-        print(f"Preprocessing complete for '{self.area}' ({self.network_type})")
-
+        print(
+            f"Preprocessing complete for '{self.area}' ({self.network_type})")
 
     # Internal methods
-    
+
     def _extract_landuse(self):
-        """Extract and save green landuse polygons (forest, park, meadow, etc.)."""
+        """Extract and save green landuse polygons (forest, park, meadow, etc.) with correct CRS."""
+        print(f"Extracting landuse polygons for '{self.area}'...")
+
         osm = self.downloader.get_osm_instance()
         landuse = osm.get_landuse()
+
+        if landuse is None or landuse.empty:
+            print(f"No landuse data found for '{self.area}'.")
+            return
+
+        # Filter to green landuse types
         green_tags = ["forest", "grass", "meadow", "recreation_ground", "park"]
-        landuse = landuse[landuse["landuse"].isin(green_tags)]
+        landuse = landuse[landuse["landuse"].isin(green_tags)].copy()
+
+        if landuse.empty:
+            print(
+                f"No matching green landuse polygons found for '{self.area}'.")
+            return
+
+        landuse = OSMValidator.ensure_crs(landuse, self.crs)
+
+        landuse["area_m2"] = landuse.geometry.area
+
+        landuse = landuse.loc[landuse.is_valid & ~landuse.is_empty]
+
+        landuse = landuse.drop(columns=["id"], errors="ignore")
+        landuse.loc[:, "id"] = landuse.index.astype(int)
+
+        OSMValidator.validate_landuse(landuse)
+
         self.db.save_landuse(landuse, self.area, if_exists="append")
-        print(f"Landuse data saved for '{self.area}'")
+        print(
+            f"Saved {len(landuse)} landuse polygons to database for '{self.area}'.")
 
     def _load_and_prepare_edges(self):
         """Load OSM network data and prepare it for database insertion."""
-        warnings.filterwarnings("ignore", category=FutureWarning, module="pyrosm")
+        warnings.filterwarnings(
+            "ignore", category=FutureWarning, module="pyrosm")
         osm = self.downloader.get_osm_instance()
         gdf = osm.get_network(network_type=self.network_type)
 
         if gdf is None or gdf.empty:
-            raise ValueError(f"No '{self.network_type}' network edges found for area '{self.area}'.")
+            raise ValueError(
+                f"No '{self.network_type}' network edges found for area '{self.area}'.")
 
-        gdf = gdf.to_crs(self.crs).explode(index_parts=False).reset_index(drop=True)
+        gdf = gdf.to_crs(self.crs).explode(
+            index_parts=False).reset_index(drop=True)
         gdf["edge_id"] = range(1, len(gdf) + 1)
         gdf = self._filter_to_selected_columns(gdf)
 
         if self.network_type == "driving":
             gdf = self._clean_maxspeed(gdf)
 
+        required_cols = BASE_COLUMNS + EXTRA_COLUMNS.get(self.network_type, [])
+        OSMValidator.validate_edges(gdf, required_columns=required_cols)
+
         return gdf
 
     def _save_edges_to_db(self, edges):
         """Save raw edges to the database."""
-        self.db.save_edges(edges, self.area, self.network_type, if_exists="append")
-        print(f"Edges saved to database for '{self.area}' ({self.network_type})")
+        self.db.save_edges(
+            edges, self.area, self.network_type, if_exists="append")
+        print(
+            f"Edges saved to database for '{self.area}' ({self.network_type})")
 
     def _clean_edges_in_db(self):
         """Clean and enrich edges in the database using SQL transformations."""
@@ -117,15 +149,17 @@ class OSMPreprocessor:
         tib.summarize_influence_distribution()
 
         lib = LanduseInfluenceBuilder(self.db, area=self.area)
-        lib.run()
+        lib.compute_cumulative_influence_by_tile()
+        lib.summarize_influence_distribution()
 
         eib = EnvInfluenceBuilder(self.db, area=self.area)
         eib.run()
 
-        print(f"Postprocessing (nodes + influences) complete for '{self.area}' ({self.network_type})")
+        print(
+            f"Postprocessing (nodes + influences) complete for '{self.area}' ({self.network_type})")
 
     # Utility methods
-    
+
     def _filter_to_selected_columns(self, gdf):
         """Ensure the GeoDataFrame includes all expected columns."""
         selected = BASE_COLUMNS + EXTRA_COLUMNS.get(self.network_type, [])
@@ -153,9 +187,11 @@ class OSMPreprocessor:
 
         if "maxspeed" in gdf.columns:
             original_count = len(gdf)
-            gdf["maxspeed"] = gdf["maxspeed"].apply(parse_speed).astype("Int64")
+            gdf["maxspeed"] = gdf["maxspeed"].apply(
+                parse_speed).astype("Int64")
             valid_count = gdf["maxspeed"].count()
             null_count = original_count - valid_count
-            print(f"maxspeed cleaned: {valid_count} valid, {null_count} set to NULL")
+            print(
+                f"maxspeed cleaned: {valid_count} valid, {null_count} set to NULL")
 
         return gdf

@@ -315,8 +315,11 @@ def reset_area(c, area: str, network_type: str):
 
     tables = [
         f"edges_{area.lower()}_{network_type.lower()}",
-        f"nodes_{area.lower()}_{network_type.lower()}"
+        f"nodes_{area.lower()}_{network_type.lower()}",
     ]
+
+    if network_type.lower() == "walking":
+        tables.append(f"landuse_{area.lower()}")
 
     for table in tables:
         if db.table_exists(table):

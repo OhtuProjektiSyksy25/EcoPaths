@@ -15,8 +15,9 @@ class EnvInfluenceBuilder:
         self.walk_table = f"edges_{self.area}_walking"
 
     def initialize_env_influence(self):
-        """Creates env_influence column and initializes it to traffic_influence - landuse_influence."""
-        print(f"Initializing env_influence for {self.walk_table} using traffic and landuse influence...")
+        """Creates env_influence column and initializes it 
+        to traffic_influence - landuse_influence."""
+        print("Initializing env_influence using traffic and landuse influence...")
 
         # Add column if missing
         self.db.execute(f"""
@@ -44,7 +45,8 @@ class EnvInfluenceBuilder:
             FROM {self.walk_table};
         """)
         row = result.fetchone()
-        print(f"Fully protected: {row[0]}, Low: {row[1]}, Moderate: {row[2]}, High: {row[3]}")
+        print(
+            f"Fully protected: {row[0]}, Low: {row[1]}, Moderate: {row[2]}, High: {row[3]}")
 
     def run(self):
         """Run the env_influence calculation pipeline."""

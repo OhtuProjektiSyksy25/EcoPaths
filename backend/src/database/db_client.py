@@ -12,7 +12,9 @@ from database.db_connection import get_engine, get_session, Base
 from database.db_models import (
     create_edge_class,
     create_grid_class,
-    create_node_class)
+    create_node_class,
+    create_landuse_class
+)
 
 
 class DatabaseClient:
@@ -60,6 +62,9 @@ class DatabaseClient:
             create_grid_class(area_name, base=base),
             create_node_class(area_name, network_type, base=base),
         ]
+
+        if network_type.lower() == "walking":
+            table_classes.append(create_landuse_class(area_name, base=base))
 
         for table_class in table_classes:
             print(f"Creating table: {table_class.__tablename__}")
@@ -136,8 +141,7 @@ class DatabaseClient:
                 ON nodes_{area}_{network_type} (tile_id);
             """))
 
-    def create_landuse_indexes(self, area: str):
-        with self.engine.begin() as conn:
+            # LANDUSE
             conn.execute(text(f"""
                 CREATE INDEX IF NOT EXISTS idx_landuse_{area}_geometry
                 ON landuse_{area} USING GIST (geometry);
@@ -146,7 +150,6 @@ class DatabaseClient:
                 CREATE INDEX IF NOT EXISTS idx_landuse_{area}_landuse
                 ON landuse_{area} (landuse);
             """))
-
 
     def save_edges(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -245,17 +248,17 @@ class DatabaseClient:
 
         table_name = f"landuse_{area.lower()}"
 
-        # Varmistetaan että on edes perusattribuutit mukana
+        allowed_cols = ["id", "landuse", "name", "geometry", "area_m2"]
+        gdf = gdf[[c for c in allowed_cols if c in gdf.columns]]
+
         if "landuse" not in gdf.columns:
             gdf["landuse"] = None
         if "name" not in gdf.columns:
             gdf["name"] = None
 
-        # Lasketaan pinta-ala (automaattisesti oikeassa CRS:ssä)
         if "area_m2" not in gdf.columns:
             gdf["area_m2"] = gdf.geometry.area
 
-        # Tallennus PostGISiin
         gdf.to_postgis(
             name=table_name,
             con=self.engine,
@@ -265,7 +268,6 @@ class DatabaseClient:
         )
 
         print(f"  Saved {len(gdf)} landuse polygons to table '{table_name}'")
-        self._create_landuse_indexes(area)
 
     def load_edges(self, area: str, network_type: str) -> gpd.GeoDataFrame:
         """
@@ -325,10 +327,12 @@ class DatabaseClient:
         """
         table_name = f"nodes_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
-        gdf = gpd.read_postgis(query, con=self.engine, geom_col="geometry")
-        print(f"Loaded {len(gdf)} nodes from table '{table_name}'")
-        return gdf
-    
+        try:
+            return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load nodes for area '{area}': {e}") from e
+
     def load_landuse(self, area: str) -> gpd.GeoDataFrame:
         """
         Load landuse polygons from the database for a given area.
@@ -352,7 +356,6 @@ class DatabaseClient:
             raise RuntimeError(
                 f"Failed to load landuse data for area '{area}': {e}"
             ) from e
-
 
     def load_edges_for_tiles(
         self,

@@ -138,6 +138,7 @@ def create_node_class(area_name: str, network_type: str, base=Base) -> type:
 
     return type(class_name, (base,), attrs)
 
+
 def create_landuse_class(area_name: str, base=Base) -> type:
     """
     Create a dynamic SQLAlchemy Landuse class for a specific area.
@@ -163,13 +164,12 @@ def create_landuse_class(area_name: str, base=Base) -> type:
         "__tablename__": f"landuse_{area_name.lower()}",
         "__table_args__": {"extend_existing": True},
         # id / tag fields
-        "id": Column(Integer, primary_key=True, autoincrement=True),
+        "land_id": Column(Integer, primary_key=True, autoincrement=True),
         "landuse": Column(String),          # e.g. 'forest', 'park'
         "name": Column(String),             # optional OSM name
-         "geometry": Column(Geometry("POLYGON", srid=srid)),
+        "geometry": Column(Geometry("POLYGON", srid=srid)),
         # optional attributes for analysis
         "area_m2": Column(Float),
     }
 
     return type(class_name, (base,), attrs)
-

@@ -1,5 +1,5 @@
 """Module for analyzing the influence of traffic patterns on walking edges during preprocessing."""
-
+# pylint: disable=R0801
 from src.database.db_client import DatabaseClient
 from src.config.influence_weights import INFLUENCE_WEIGHTS
 
@@ -43,7 +43,7 @@ class TrafficInfluenceBuilder:
         case_sql = "CASE d.highway\n"
         for hw_type, value in self.highway_weights.items():
             case_sql += f"    WHEN '{hw_type}' THEN {value}\n"
-        case_sql += "    ELSE 0\nEND"
+        case_sql += "    ELSE 0 END"
         return case_sql
 
     def build_buffer_table_for_tile(self, tile_id: str):
@@ -60,15 +60,55 @@ class TrafficInfluenceBuilder:
                 highway
             FROM {self.drive_table}
             WHERE tile_id = '{tile_id}'
-            AND highway IN ('{highway_filter}');
+              AND highway IN ('{highway_filter}');
             CREATE INDEX ON temp_drive_buffers USING GIST (buffer_geom);
         """)
 
+    def build_traffic_influence_query(self, tile_id: str) -> str:
+        """Builds SQL query to compute traffic influence for a single tile."""
+        highway_case_sql = self.build_highway_case_sql()
+
+        query = f"""
+        UPDATE {self.walk_table} w
+        SET traffic_influence = ROUND(
+            1.0 + LEAST({self.max_influence}, COALESCE(
+                LOG(
+                    1 + (
+                        SELECT SUM(
+                            CASE
+                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 2 THEN
+                                    ({self.base_influence} 
+                                     + {self.lane_weight} * COALESCE(d.lanes, 2)
+                                     + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
+                                     + ({highway_case_sql}))::double precision
+                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
+                                    (({self.base_influence} * (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
+                                     + {self.lane_weight} * COALESCE(d.lanes, 2)
+                                     + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
+                                     + ({highway_case_sql}))::double precision
+                                ELSE 0
+                            END
+                        )
+                        FROM temp_drive_buffers d
+                        WHERE ST_Intersects(w.geometry, d.buffer_geom)
+                    )
+                , 0)
+            )), 2
+        )
+        WHERE tile_id = '{tile_id}'
+          AND EXISTS (
+              SELECT 1
+              FROM temp_drive_buffers d
+              WHERE ST_Intersects(w.geometry, d.buffer_geom)
+          );
+        """
+        return query
+
     def compute_cumulative_influence_by_tile(self):
-        """Computes traffic influence tile by tile."""
+        """Computes traffic influence tile by tile with temp buffer tables."""
         self.add_traffic_influence_column()
 
-        # Get all tile_ids
+        # Fetch all tile_ids
         result = self.db.execute(
             f"SELECT DISTINCT tile_id FROM {self.walk_table} WHERE tile_id IS NOT NULL;")
         tile_ids = [row[0] for row in result.fetchall()]
@@ -76,40 +116,8 @@ class TrafficInfluenceBuilder:
 
         for tile_id in tile_ids:
             self.build_buffer_table_for_tile(tile_id)
-            highway_case_sql = self.build_highway_case_sql()
-
-            query = f"""
-            UPDATE {self.walk_table} w
-            SET traffic_influence = ROUND(
-                (1.0 + LEAST({self.max_influence}, COALESCE(
-                    LOG(1 + (
-                        SELECT SUM(
-                            CASE
-                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 2 THEN
-                                    {self.base_influence}
-                                    + {self.lane_weight} * COALESCE(d.lanes, 2)
-                                    + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
-                                    + {highway_case_sql}
-                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
-                                    ({self.base_influence} * (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
-                                    + {self.lane_weight} * COALESCE(d.lanes, 2)
-                                    + {self.speed_weight} * LEAST(COALESCE(d.maxspeed, 50), 130)
-                                    + {highway_case_sql}
-                                ELSE 0
-                            END
-                        )
-                        FROM temp_drive_buffers d
-                        WHERE ST_Intersects(w.geometry, d.buffer_geom)
-                    )), 0))
-                )::numeric, 2)
-            WHERE tile_id = '{tile_id}'
-            AND EXISTS (
-                SELECT 1
-                FROM temp_drive_buffers d
-                WHERE ST_Intersects(w.geometry, d.buffer_geom)
-            );
-            """
-            self.db.execute(query)
+            sql = self.build_traffic_influence_query(tile_id)
+            self.db.execute(sql)
 
     def summarize_influence_distribution(self):
         """Prints summary of traffic influence values across walking edges."""
