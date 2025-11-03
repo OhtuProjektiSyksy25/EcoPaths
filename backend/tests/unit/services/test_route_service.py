@@ -43,7 +43,6 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
     return gdf
 
 
-
 @pytest.fixture
 def route_service(monkeypatch):
     monkeypatch.setattr(

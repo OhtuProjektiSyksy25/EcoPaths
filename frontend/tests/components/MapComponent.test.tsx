@@ -94,6 +94,7 @@ describe('MapComponent', () => {
         toLocked={mockLocked}
         routes={mockRoutes}
         showAQIColors={false}
+        selectedArea={null}
       />
     );
 
@@ -106,7 +107,7 @@ describe('MapComponent', () => {
   */
   test("renders LocationButton in the map container", () => {
     process.env.REACT_APP_MAPBOX_TOKEN = "fake-token";
-    render(<MapComponent fromLocked={null} toLocked={null} routes={null} showAQIColors={false}/>);
+    render(<MapComponent fromLocked={null} toLocked={null} routes={null} selectedArea={null} showAQIColors={false}/>);
 
     const locationButton = screen.getByTestId("location-button-mock"); 
     expect(locationButton).toBeInTheDocument();
@@ -124,6 +125,7 @@ describe('MapComponent', () => {
         toLocked={mockLocked}
         routes={mockRoutes}
         showAQIColors={false}
+        selectedArea={null}
       />
     );
 

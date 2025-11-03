@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 # === Area-specific settings ===
 AREA_SETTINGS = {
     "berlin": {
+        "display_name": "Berlin",
         "bbox": [13.30, 52.46, 13.51, 52.59],  # WGS84 EPSG:4326
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
@@ -22,6 +23,7 @@ AREA_SETTINGS = {
         "focus_point": [13.404954, 52.520008]
     },
     "la": {
+        "display_name": "Los Angeles",
         "bbox": [-118.28, 34.02, -118.24, 34.06],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
@@ -29,6 +31,7 @@ AREA_SETTINGS = {
         "focus_point": [-118.2437, 34.0522]
     },
     "helsinki": {
+        "display_name": "Helsinki",
         "bbox": [24.80, 60.13, 25.20, 60.30],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
@@ -36,6 +39,7 @@ AREA_SETTINGS = {
         "focus_point": [24.9384, 60.1699]
     },
     "testarea": {
+        "display_name": "Test Area",
         "bbox": [13.375, 52.50, 13.395, 52.52],  # small area in Berlin
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",

@@ -1,19 +1,22 @@
 """FastAPI application entry point"""
-from contextlib import asynccontextmanager
 import os
 import sys
 import time
+from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from utils.geo_transformer import GeoTransformer
+from config.settings import AREA_SETTINGS
 from services.route_service import RouteServiceFactory
+from utils.geo_transformer import GeoTransformer
 
 
 # classify POIs using common osm keys
-poi_keys = {"amenity", "tourism", "shop", "leisure", "historic", "office", "craft"}
+poi_keys = {"amenity", "tourism", "shop",
+            "leisure", "historic", "office", "craft"}
+
 
 # === CORS configuration ===
 ALLOWED_ORIGINS = [
@@ -36,13 +39,12 @@ async def lifespan(application: FastAPI):
     FastAPI lifespan handler that initializes application state on startup.
 
     Sets up shared services such as RouteService and AreaConfig.
+    No area is selected by default - user must choose one.
     """
-    selected_area = "berlin"
-
-    route_service, area_config = RouteServiceFactory.from_area(selected_area)
-
-    application.state.route_service = route_service
-    application.state.area_config = area_config
+    # Don't initialize any area - wait for user selection
+    application.state.route_service = None
+    application.state.area_config = None
+    application.state.selected_area = None
 
     yield
 
@@ -69,6 +71,8 @@ if os.path.isdir(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # --- Helper utilities for geocoding suggestions ---------------------------------
+
+
 def _build_full_address(properties: dict) -> str:
     """Build a readable full_address from Photon properties.
 
@@ -118,17 +122,66 @@ def _compose_photon_suggestions(photon_suggestions: dict) -> dict:
 
 # === Routes ===
 
-@app.get("/berlin")
-async def berlin(request: Request):
-    """Returns Berlin coordinates as JSON.
-
-    Returns:
-        dict: A dictionary containing the coordinates of Berlin with the format
-              {"coordinates": [longitude, latitude]}.
+@app.get("/api/areas")
+async def get_areas():
     """
-    area_config = request.app.state.area_config
-    center = {"coordinates": area_config.focus_point}
-    return center
+    API endpoint to return a list of available areas.
+    """
+    areas = []
+
+    for area_id, settings in AREA_SETTINGS.items():
+        # Skip testarea
+        #        if area_id == "testarea":
+        #            continue
+
+        areas.append({
+            "id": area_id,
+            "display_name": settings.get("display_name", area_id.title()),
+            "focus_point": settings.get("focus_point"),
+            "zoom": 12,
+            "bbox": settings.get("bbox"),
+        })
+
+    return {"areas": areas}
+
+# Endpoint to change selected area dynamically
+
+
+@app.post("/api/select-area/{area_id}")
+async def select_area(request: Request, area_id: str = Path(...)):
+    """
+    API endpoint to change the selected area dynamically.
+    Args:
+        area_id (str): The ID of the area to select.
+        request (Request): FastAPI request object.
+    Returns:
+        dict: Success message with selected area ID
+    Raises:
+        HTTPException: 404 if area_id not found, 500 on server error
+    """
+    if area_id.lower() not in AREA_SETTINGS:
+        return JSONResponse(status_code=404, content={"error": "Area not found"})
+
+    try:
+        # Create new RouteService and AreaConfig for selected area
+        route_service, area_config = RouteServiceFactory.from_area(
+            area_id.lower())
+
+        # Update application state
+        request.app.state.route_service = route_service
+        request.app.state.area_config = area_config
+        request.app.state.selected_area = area_id.lower()
+
+        print(f"Successfully switched to {area_id}")
+
+        return area_id.lower()
+
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"Failed to switch to {area_id}: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to switch to {area_id}: {str(e)}"}
+        )
 
 
 @app.get("/get-area-config")
@@ -143,6 +196,13 @@ async def get_area_config(request: Request):
             - crs (str): "crs".
     """
     area_config = request.app.state.area_config
+
+    if not area_config:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+
     return {
         "area": area_config.area,
         "bbox": area_config.bbox,
@@ -167,6 +227,13 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         return []
 
     area_config = request.app.state.area_config
+
+    if not area_config:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+
     bbox = area_config.bbox
     bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
 
@@ -207,6 +274,16 @@ async def getroute(request: Request):
             }
         }
     """
+
+    area_config = request.app.state.area_config
+    route_service = request.app.state.route_service
+
+    if not area_config or not route_service:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+
     start_time = time.time()
 
     data = await request.json()

@@ -10,6 +10,7 @@ import { useGeolocation } from "../hooks/useGeolocationState";
 import DisplayContainer from "./DisplayContainer";
 import "../styles/SideBar.css";
 import { RouteSummary } from "@/types/route";
+import { Area } from "../types";
 
 interface SideBarProps {
   onFromSelect: (place: any) => void;
@@ -17,6 +18,8 @@ interface SideBarProps {
   summaries: Record<string, RouteSummary> | null;
   showAQIColors: boolean;
   setShowAQIColors: (value: boolean) => void;
+  selectedArea: Area | null;
+  onErrorChange?: (error: string | null) => void;
   children?: React.ReactNode;
 }
 const SideBar: React.FC<SideBarProps> = ({
@@ -25,6 +28,8 @@ const SideBar: React.FC<SideBarProps> = ({
   summaries,
   showAQIColors,
   setShowAQIColors,
+  selectedArea,
+  onErrorChange,
   children
 }) => {
 
@@ -34,6 +39,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [toSuggestions, setToSuggestions] = useState<any[]>([])
   const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false)
   const [waitingForLocation, setWaitingForLocation] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const debounce = useRef<number | null>()
   const { getCurrentLocation, coordinates } = useGeolocation();
 
@@ -44,6 +50,21 @@ const SideBar: React.FC<SideBarProps> = ({
     when waiting for location and coordinates become available.
     */
     if (waitingForLocation && coordinates) {
+      if (selectedArea && selectedArea.bbox) {
+        const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
+        const isInside =
+          coordinates.lng >= minLon &&
+          coordinates.lng <= maxLon &&
+          coordinates.lat >= minLat &&
+          coordinates.lat <= maxLat;
+
+        if (!isInside) {
+          setErrorMessage(`Your location is outside ${selectedArea.display_name}. Please select a location within the area.`);
+          setFrom("");
+          setWaitingForLocation(false);
+          return;
+        }
+      }
       const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
       const mockPlace = {
         full_address: coordsString,
@@ -72,6 +93,22 @@ const SideBar: React.FC<SideBarProps> = ({
       if (!coordinates) {
         await getCurrentLocation();
       } else {
+        if (selectedArea && selectedArea.bbox) {
+          const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
+          const isInside =
+            coordinates.lng >= minLon &&
+            coordinates.lng <= maxLon &&
+            coordinates.lat >= minLat &&
+            coordinates.lat <= maxLat;
+
+          if (!isInside) {
+            setErrorMessage(`Your location is outside ${selectedArea.display_name}.`);
+            setFrom("");
+            setWaitingForLocation(false);
+            return;
+          }
+        }
+
         const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
         const mockPlace = {
           full_address: coordsString,
@@ -88,7 +125,7 @@ const SideBar: React.FC<SideBarProps> = ({
       console.log("Error getting current location:", error);
       setWaitingForLocation(false);
     }
-  }, [coordinates, getCurrentLocation, onFromSelect]);
+  }, [coordinates, getCurrentLocation, onFromSelect, selectedArea]);
 
 
   const handleFromFocus = () => {
@@ -157,9 +194,38 @@ const SideBar: React.FC<SideBarProps> = ({
   }
   }, 400)}
 
+  useEffect(() => {
+    // Clear inputs when area changes
+    if (selectedArea) {
+      setFrom("");
+      setTo("");
+      setFromSuggestions([]);
+      setToSuggestions([]);
+      setErrorMessage(null);
+    }
+  }, [selectedArea?.id]);
+
+  useEffect(() => {
+    // Notify parent when error changes (to disable area button)
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
 
   return (
     <div className="sidebar">
+            {errorMessage && (
+        <div className="error-popup-overlay" onClick={() => setErrorMessage(null)}>
+          <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="error-popup-content">
+              <h3>Location Error</h3>
+              <p>{errorMessage}</p>
+              <button className="error-popup-button" onClick={() => setErrorMessage(null)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sidebar-content">
         <h1 className="sidebar-title">Where would you like to go?</h1>
 
