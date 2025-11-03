@@ -56,9 +56,46 @@ def route_service(monkeypatch):
 
 @pytest.fixture
 def origin_destination():
-    origin = gpd.GeoDataFrame(geometry=[Point(0, 0)], crs="EPSG:25833")
-    destination = gpd.GeoDataFrame(geometry=[Point(2, 2)], crs="EPSG:25833")
+    origin = gpd.GeoDataFrame(geometry=[Point(1, 1)], crs="EPSG:25833")
+    destination = gpd.GeoDataFrame(geometry=[Point(5, 5)], crs="EPSG:25833")
     return origin, destination
+
+@pytest.fixture
+def simple_nodes_gdf():
+    data = {
+        "node_id": ["A", "B", "C", "D", "E", "F"],
+        "tile_id": [1, 1, 1, 1, 1, 1],
+        "geometry": [
+            Point(0, 0),   # A
+            Point(2, 2),   # B
+            Point(4, 4),   # C
+            Point(0, 2),   # D
+            Point(2, 4),   # E
+            Point(4, 0)    # F
+        ]
+    }
+
+    return gpd.GeoDataFrame(data, crs="EPSG:25833")
+
+@pytest.fixture
+def simple_edges_gdf():
+    data = {
+        "edge_id": [1, 2, 3, 4, 5, 6],
+        "from_node": ["A", "B", "D", "D", "E", "F"],
+        "to_node": ["B", "C", "B", "E", "C", "C"],
+        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0],  # approximate distances
+        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
+        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
+        "geometry": [
+            LineString([(0,0),(2,2)]),  # A->B
+            LineString([(2,2),(4,4)]),  # B->C
+            LineString([(0,2),(2,2)]),  # D->B
+            LineString([(0,2),(2,4)]),  # D->E
+            LineString([(2,4),(4,4)]),  # E->C
+            LineString([(4,0),(4,4)])   # F->C
+        ]
+    }
+    return gpd.GeoDataFrame(data, crs="EPSG:25833")
 
 
 def test_factory_creates_service_and_config():
@@ -109,24 +146,22 @@ def test_save_to_redis_is_triggered(monkeypatch, route_service):
     assert called.get("was_called", False)
 
 
-def test_compute_routes_returns_all_modes(route_service, origin_destination):
+def test_compute_routes_returns_all_modes(route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
     origin, destination = origin_destination
-    edges = gpd.GeoDataFrame({
 
-        "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
-        "edge_id": [1, 2],
-        "length_m": [100, 150],
-        "aqi": [20, 40],
-        "tile_id": ["t101", "t102"]
-    }, crs="EPSG:25833")
+    
 
-    result = route_service._compute_routes(edges, origin, destination)
+    # call _compute_routes with Points
+    result = route_service._compute_routes(simple_edges_gdf, simple_nodes_gdf, origin, destination)
+
+    # check returned structure
     assert "routes" in result and "summaries" in result
     for mode in ["fastest", "best_aq", "balanced"]:
         assert mode in result["routes"]
+        assert result["routes"][mode]["features"]  # ensure features exist
 
 
-def test_compute_routes_single_edge(route_service, origin_destination):
+def test_compute_routes_single_edge(route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
     origin, destination = origin_destination
     edge = gpd.GeoDataFrame({
         "geometry": [LineString([(0, 0), (1, 1)])],
@@ -136,7 +171,7 @@ def test_compute_routes_single_edge(route_service, origin_destination):
         "tile_id": ["t101"]
     }, crs="EPSG:25833")
 
-    result = route_service._compute_routes(edge, origin, destination)
+    result = route_service._compute_routes(simple_edges_gdf, simple_nodes_gdf, origin, destination)
     assert "routes" in result and "summaries" in result
 
 
@@ -144,11 +179,32 @@ def test_get_route_returns_expected_structure(monkeypatch, route_service, origin
     origin, destination = origin_destination
 
     monkeypatch.setattr(route_service, "_get_tile_edges", lambda ids: gpd.GeoDataFrame({
-        "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
-        "edge_id": [1, 2],
-        "length_m": [100, 150],
-        "aqi": [20, 40],
-        "tile_id": ["t101", "t102"]
+        "edge_id": [1, 2, 3, 4, 5, 6],
+        "from_node": ["A", "B", "D", "D", "E", "F"],
+        "to_node": ["B", "C", "B", "E", "C", "C"],
+        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0],  # approximate distances
+        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
+        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
+        "geometry": [
+            LineString([(0,0),(2,2)]),  # A->B
+            LineString([(2,2),(4,4)]),  # B->C
+            LineString([(0,2),(2,2)]),  # D->B
+            LineString([(0,2),(2,4)]),  # D->E
+            LineString([(2,4),(4,4)]),  # E->C
+            LineString([(4,0),(4,4)])   # F->C
+        ]
+    }, crs="EPSG:25833"))
+    monkeypatch.setattr(route_service, "_get_nodes_from_db", lambda ids: gpd.GeoDataFrame({
+        "node_id": ["A", "B", "C", "D", "E", "F"],
+        "tile_id": [1, 1, 1, 1, 1, 1],
+        "geometry": [
+            Point(0, 0),   # A
+            Point(2, 2),   # B
+            Point(4, 4),   # C
+            Point(0, 2),   # D
+            Point(2, 4),   # E
+            Point(4, 0)    # F
+        ]
     }, crs="EPSG:25833"))
 
     result = route_service.get_route(origin, destination)
