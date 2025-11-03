@@ -15,9 +15,18 @@ interface SideBarProps {
   onFromSelect: (place: any) => void;
   onToSelect: (place: any) => void;
   summaries: Record<string, RouteSummary> | null;
+  showAQIColors: boolean;
+  setShowAQIColors: (value: boolean) => void;
   children?: React.ReactNode;
 }
-const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, children}) => {
+const SideBar: React.FC<SideBarProps> = ({
+  onFromSelect,
+  onToSelect,
+  summaries,
+  showAQIColors,
+  setShowAQIColors,
+  children
+}) => {
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -27,6 +36,7 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
   const [waitingForLocation, setWaitingForLocation] = useState(false);
   const debounce = useRef<number | null>()
   const { getCurrentLocation, coordinates } = useGeolocation();
+
 
   useEffect(() => {
     /*
@@ -223,6 +233,11 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
               total_length={summaries.fastest.total_length}
               aq_average={summaries.fastest.aq_average}
             />
+          </div>
+          <div className="aqi-toggle-button">
+            <button onClick={() => setShowAQIColors(!showAQIColors)}>
+              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
+            </button>
           </div>
         </>
 

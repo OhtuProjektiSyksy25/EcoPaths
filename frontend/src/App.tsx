@@ -23,6 +23,7 @@ import "./styles/App.css";
 function App(): JSX.Element {
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
+  const [showAQIColors, setShowAQIColors] = useState(false);
 
   const { routes, summaries, loading, error } = useRoute(fromLocked, toLocked);
 
@@ -37,6 +38,8 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          showAQIColors={showAQIColors}
+          setShowAQIColors={setShowAQIColors}
         >
           {(loading || error) && (
             <div className="route-loading-message">
@@ -51,6 +54,7 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
+            showAQIColors={showAQIColors} 
           />
         </div>
       </main>
