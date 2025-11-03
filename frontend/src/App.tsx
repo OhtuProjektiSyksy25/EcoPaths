@@ -23,6 +23,7 @@ import "./styles/App.css";
 function App(): JSX.Element {
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
+  const [showAQIColors, setShowAQIColors] = useState(false);
 
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
@@ -44,6 +45,8 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          showAQIColors={showAQIColors}
+          setShowAQIColors={setShowAQIColors}
           balancedWeight={balancedWeight}
           setBalancedWeight={setBalancedWeight}
           loading={loading}
@@ -62,6 +65,7 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
+            showAQIColors={showAQIColors} 
           />
         </div>
       </main>

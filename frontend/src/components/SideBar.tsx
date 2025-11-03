@@ -15,6 +15,8 @@ interface SideBarProps {
   onFromSelect: (place: any) => void;
   onToSelect: (place: any) => void;
   summaries: Record<string, RouteSummary> | null;
+  showAQIColors: boolean;
+  setShowAQIColors: (value: boolean) => void;
   balancedWeight: number;
   setBalancedWeight: (weight: number) => void;
   loading?: boolean;
@@ -23,14 +25,21 @@ interface SideBarProps {
 }
 
 const SideBar: React.FC<SideBarProps> = ({
+  
   onFromSelect,
+ 
   onToSelect,
+ 
   summaries,
+  showAQIColors,
+  setShowAQIColors,
+ 
   balancedWeight,
   setBalancedWeight,
   loading = false,
   balancedLoading = false,
   children
+
 }) => {
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
@@ -40,6 +49,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [waitingForLocation, setWaitingForLocation] = useState(false);
   const debounce = useRef<number | null>();
   const { getCurrentLocation, coordinates } = useGeolocation();
+
 
   useEffect(() => {
     if (waitingForLocation && coordinates) {
@@ -205,6 +215,11 @@ const SideBar: React.FC<SideBarProps> = ({
                 aq_average={summaries.fastest.aq_average}
               />
             </div>
+          <div className="aqi-toggle-button">
+            <button onClick={() => setShowAQIColors(!showAQIColors)}>
+              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
+            </button>
+          </div>
 
             <div className="balanced-route-container">
               {balancedLoading ? (

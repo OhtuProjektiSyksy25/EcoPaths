@@ -1,9 +1,8 @@
 """
-Utilities for summarizing route data, 
+Utilities for summarizing route data,
 including total distance, average air quality, and estimated walking time.
 """
 
-from typing import Union
 import geopandas as gpd
 import pandas as pd
 
@@ -17,10 +16,11 @@ def format_walk_time(length_m: float) -> str:
         length_m (float): Distance in meters.
 
     Returns:
-        str: Formatted time estimate (e.g., "1h 5 min" or "15 min 30 s").
+        str: Formatted time estimate (e.g., "1h 5 min" or "15 min").
     """
     if length_m is None or pd.isna(length_m):
         return "unknown"
+
     avg_speed_mps = 1.4
     seconds = length_m / avg_speed_mps
 
@@ -36,86 +36,53 @@ def format_walk_time(length_m: float) -> str:
     return f"{minutes} min"
 
 
-def calculate_total_length(route: Union[gpd.GeoDataFrame, dict]) -> float:
+def calculate_total_length(route: gpd.GeoDataFrame) -> float:
     """
     Calculates the total route length in meters.
 
     Args:
-        route (GeoDataFrame or FeatureCollection): Route represented as edge-level geometry.
+        route (GeoDataFrame): Route represented as edge-level geometry.
 
     Returns:
         float: Total length in meters.
     """
-    if isinstance(route, gpd.GeoDataFrame):
-        return float(route["length_m"].sum())
-    if isinstance(route, dict) and route.get("type") == "FeatureCollection":
-        return sum(
-            f["properties"].get("length_m", 0)
-            for f in route["features"]
-            if "length_m" in f["properties"]
-        )
-    raise ValueError("Unsupported route format")
+    return float(route["length_m"].sum())
 
 
-def calculate_aq_average(route: Union[gpd.GeoDataFrame, dict]) -> float | None:
+def calculate_aq_average(route: gpd.GeoDataFrame) -> float | None:
     """
     Calculates the average air quality value along the route.
 
     Args:
-        route (GeoDataFrame or FeatureCollection): Route represented as edge-level geometry.
+        route (GeoDataFrame): Route represented as edge-level geometry.
 
     Returns:
         float | None: Average AQI, or None if no values are available.
     """
-    if isinstance(route, gpd.GeoDataFrame):
-        # collect (aqi, length_m) tuples
-        aqi_both = list(
-            zip(
-                route["aqi"].dropna().tolist(),
-                route["length_m"].dropna().tolist(
-                ) if "length_m" in route else []
-            )
-        )
-
-    elif isinstance(route, dict) and route.get("type") == "FeatureCollection":
-        aqi_both = [
-            (f["properties"]["aqi"], f["properties"]["length_m"])
-            for f in route["features"]
-            if (
-                "aqi" in f["properties"]
-                and "length_m" in f["properties"]
-                and f["properties"]["aqi"] is not None
-                and f["properties"]["length_m"] is not None
-            )
-        ]
-
-    else:
-        raise ValueError("Unsupported route format")
-
-    total_length = sum(length for _, length in aqi_both)
-    if total_length == 0:
+    valid = route.dropna(subset=["aqi", "length_m"])
+    if valid.empty or valid["length_m"].sum() == 0:
         return None
 
-    weighted_avg = sum(aqi * length for aqi, length in aqi_both) / total_length
-    return weighted_avg
+    weighted_sum = (valid["aqi"] * valid["length_m"]).sum()
+    total_length = valid["length_m"].sum()
+    return weighted_sum / total_length
 
 
-def summarize_route(route: Union[gpd.GeoDataFrame, dict]) -> dict:
+def summarize_route(route: gpd.GeoDataFrame) -> dict:
     """
     Summarizes a route by calculating total length, average air quality, and estimated walking time.
 
     Args:
-        route (GeoDataFrame or FeatureCollection): Route represented as edge-level geometry.
+        route (GeoDataFrame): Route represented as edge-level geometry.
 
     Returns:
         dict: Summary containing 'total_length', 'aq_average', and 'time_estimate'.
     """
     length_m = calculate_total_length(route)
-    total_length = round(length_m/1000, 2)
-    aq_avg = round(calculate_aq_average(route), 0)
-    time_estimate = format_walk_time(length_m)
+    aq_avg = calculate_aq_average(route)
+
     return {
-        "total_length": total_length,
-        "time_estimate": time_estimate,
-        "aq_average": aq_avg
+        "total_length": round(length_m / 1000, 2),
+        "time_estimate": format_walk_time(length_m),
+        "aq_average": round(aq_avg, 0) if aq_avg is not None else None,
     }
