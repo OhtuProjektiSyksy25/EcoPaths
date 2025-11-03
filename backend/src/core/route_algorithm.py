@@ -180,17 +180,18 @@ class RouteAlgorithm:
             start = self._normalize_node(row.start_node)
             end = self._normalize_node(row.end_node)
 
-            aqi = row.get("aqi", None)
+            normalized_aqi = row.get("normalized_aqi", None)
+
             length = row.get("length_m", row.geometry.length)
             # balance_factor is used to balance the influence of aqi on the weight
             # lower balance_factor values equate to weighing air quality more
-            # normalized_aq gets values between 0 and 1
-            if aqi is not None:
-                normalized_aq = min(aqi / 500, 1)
+            # normalized_aqi gets values between 0 and 1
+            # 0.01 is added to normalized_aqi to avoid unnecessary edges when normalized_aqi is 0
+            if normalized_aqi is not None:
                 aq_multipler_balanced_weight = (
-                    balance_factor * length + (1 - balance_factor) * (length * normalized_aq)
+                    balance_factor * length + (1 - balance_factor) * (length * (normalized_aqi+0.01))
                     )
-                w = aq_multipler_balanced_weight if aqi is not None else length
+                w = aq_multipler_balanced_weight if normalized_aqi is not None else length
             else:
                 print("Error: Edge without AQI value")
                 w = length
