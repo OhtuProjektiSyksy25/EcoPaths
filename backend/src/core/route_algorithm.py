@@ -144,10 +144,8 @@ class RouteAlgorithm:
 
         if "origin" not in self.igraph.vs["name"]:
             self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
-            print("ORIGIN")
         if "destination" not in self.igraph.vs["name"]:
             self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
-            print("DEST")
         self.update_weights(balance_factor=balance_factor)
 
         isolates = [v.index for v in self.igraph.vs if self.igraph.degree(v.index) == 0]
@@ -245,7 +243,6 @@ class RouteAlgorithm:
         if existing_vertices:
             v = existing_vertices[0]
             v["name"] = destination
-            print("HEP")
             return
 
         self.igraph.add_vertices(destination)
@@ -294,7 +291,6 @@ class RouteAlgorithm:
             (from_node, destination),
             (destination, to_node)
             ]
-        print(new_edges)
         self.igraph.add_edges(new_edges)
 
         new_edge_ids = [
