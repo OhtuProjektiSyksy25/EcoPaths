@@ -84,12 +84,16 @@ class RouteService:
         # Get edges for relevant tiles (Redis + enrich new tiles if needed)
         edges = self._get_tile_edges(tile_ids)
 
+        # Nodes_gdf from database
+        nodes = self._get_nodes_from_db(tile_ids)
         if edges is None or edges.empty:
             raise RuntimeError("No edges found for requested route area.")
 
         edges_subset = edges[edges.geometry.intersects(buffer)].copy()
 
-        return self._compute_routes(edges_subset, origin_gdf, destination_gdf, balanced_value)
+        return self._compute_routes(
+            edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
+            )
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """
@@ -172,7 +176,7 @@ class RouteService:
             tile_ids
         )
 
-    def _compute_routes(self, edges, origin_gdf, destination_gdf, balanced_value=0.5):
+    def _compute_routes(self, edges, nodes, origin_gdf, destination_gdf, balanced_value=0.5):
         """Compute multiple route variants and summaries."""
 
         modes = {
@@ -181,7 +185,7 @@ class RouteService:
             "balanced": balanced_value
         }
 
-        algo = RouteAlgorithm(edges)
+        algo = RouteAlgorithm(edges, nodes)
         results, summaries = {}, {}
 
         for mode, balance_factor in modes.items():
