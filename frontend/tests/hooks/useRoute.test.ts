@@ -1,9 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useRoute } from "../../src/hooks/useRoute";
 import { LockedLocation, RouteGeoJSON, RouteSummary } from "../../src/types/route";
-import * as routeApi from "../../src/api/routeApi";
-
-jest.mock("../../src/api/routeApi");
 
 const mockFrom: LockedLocation = {
   full_address: "Start Address",
@@ -39,46 +36,59 @@ const mockSummaries: Record<string, RouteSummary> = {
   },
 };
 
+beforeAll(() => {
+  jest.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterAll(() => {
+  (console.error as jest.Mock).mockRestore();
+});
+
 describe("useRoute", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    global.fetch = jest.fn();
   });
 
   test("fetches routes and summaries when both locations are provided", async () => {
-    (routeApi.fetchRoute as jest.Mock).mockResolvedValue({
-      routes: mockRoutes,
-      summaries: mockSummaries,
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        routes: mockRoutes,
+        summaries: mockSummaries,
+      }),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
 
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(routeApi.fetchRoute).toHaveBeenCalledWith(mockFrom, mockTo);
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/getroute"),
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+    );
     expect(result.current.routes).toEqual(mockRoutes);
     expect(result.current.summaries).toEqual(mockSummaries);
     expect(result.current.error).toBeNull();
   });
 
   test("does not fetch if fromLocked or toLocked is incomplete", () => {
-    const { result } = renderHook(() => useRoute(null, mockTo));
-    expect(result.current.routes).toBeNull();
-    expect(routeApi.fetchRoute).not.toHaveBeenCalled();
+    renderHook(() => useRoute(null, mockTo, 0.5));
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   test("handles fetch error correctly", async () => {
-    (routeApi.fetchRoute as jest.Mock).mockRejectedValue(new Error("Network error"));
+    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network request failed"));
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
 
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.routes).toBeNull();
     expect(result.current.summaries).toBeNull();
-    expect(result.current.error).toBe("Network error");
+    expect(result.current.error).toBe("Network request failed");
   });
 });

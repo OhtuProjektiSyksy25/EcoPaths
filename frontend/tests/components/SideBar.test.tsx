@@ -36,10 +36,12 @@ describe("SideBar", () => {
   <SideBar 
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect} 
+    selectedArea={null}
     summaries={null}
     showAQIColors={false}
     setShowAQIColors={jest.fn()}
-    selectedArea={null}
+    balancedWeight={undefined as any}
+    setBalancedWeight={undefined as any}
   />
 );
 
@@ -59,11 +61,13 @@ describe("SideBar", () => {
     render(
   <SideBar 
     onFromSelect={mockOnFromSelect} 
-    onToSelect={mockOnToSelect} 
+    onToSelect={mockOnToSelect}
+    selectedArea={null}
     summaries={null}
     showAQIColors={false}
     setShowAQIColors={jest.fn()}
-    selectedArea={null}
+    balancedWeight={undefined as any}
+    setBalancedWeight={undefined as any}
   />
 );
 
@@ -82,11 +86,13 @@ describe("SideBar", () => {
     render(
   <SideBar 
     onFromSelect={mockOnFromSelect} 
-    onToSelect={mockOnToSelect} 
+    onToSelect={mockOnToSelect}
+    selectedArea={null}
     summaries={null}  
     showAQIColors={false}
     setShowAQIColors={jest.fn()}
-    selectedArea={null}
+    balancedWeight={undefined as any}
+    setBalancedWeight={undefined as any}
   />
 );
 
@@ -121,11 +127,13 @@ describe("SideBar", () => {
     const { rerender } = render(
       <SideBar 
         onFromSelect={mockOnFromSelect} 
-        onToSelect={mockOnToSelect} 
+        onToSelect={mockOnToSelect}
         summaries={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -144,6 +152,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -185,6 +195,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -202,6 +214,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -224,6 +238,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={null}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -239,6 +255,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={null}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -274,6 +292,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -291,6 +311,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
@@ -338,6 +360,8 @@ describe("SideBar", () => {
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
       />
     );
 
