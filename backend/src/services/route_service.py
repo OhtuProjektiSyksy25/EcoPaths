@@ -64,12 +64,15 @@ class RouteService:
         self.db_client = DatabaseClient()
         self.network_type = network_type
 
-    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame) -> dict:
-        """Main entrypoint: compute route and return routes + summaries.
+    def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
+                  balanced_value: float = 0.5) -> dict:
+        """
+        Main entrypoint: compute route and return routes + summaries.
 
-        Args:
-            origin_gdf (GeoDataFrame): GeoDataFrame with origin point.
-            destination_gdf (GeoDataFrame): GeoDataFrame with destination point.
+            Args:
+                origin_gdf (GeoDataFrame): GeoDataFrame with origin point.
+                destination_gdf (GeoDataFrame): GeoDataFrame with destination point.
+                balanced_weight (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
 
         Returns:
             dict: GeoJSON FeatureCollection and route summaries.
@@ -81,15 +84,12 @@ class RouteService:
         # Get edges for relevant tiles (Redis + enrich new tiles if needed)
         edges = self._get_tile_edges(tile_ids)
 
-        # Nodes_gdf from database
-        # nodes = self._get_nodes_from_db(tile_ids)
-
         if edges is None or edges.empty:
             raise RuntimeError("No edges found for requested route area.")
 
         edges_subset = edges[edges.geometry.intersects(buffer)].copy()
 
-        return self._compute_routes(edges_subset, origin_gdf, destination_gdf)
+        return self._compute_routes(edges_subset, origin_gdf, destination_gdf, balanced_value)
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """

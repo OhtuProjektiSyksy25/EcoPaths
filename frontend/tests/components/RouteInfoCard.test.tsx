@@ -1,12 +1,12 @@
 /*
-DisplayContainer.test.tsx tests the DisplayContainer component which displays 
+RouteInfoCard.test.tsx tests the RouteInfoCard component which displays 
 information such as route type, time estimate, total length, and air quality average.
 */
 
 import { render, screen } from '@testing-library/react';
-import DisplayContainer from '../../src/components/DisplayContainer';
+import RouteInfoCard from '../../src/components/RouteInfoCard';
 
-describe('DisplayContainer', () => {
+describe('RouteInfoCard', () => {
   test('renders all props correctly', () => {
 
     const testRouteType = 'Best Air Quality';
@@ -14,7 +14,7 @@ describe('DisplayContainer', () => {
     const testTotalLength = 2.5;
     const testAQAverage = 42;
 
-    render(<DisplayContainer
+    render(<RouteInfoCard
       route_type={testRouteType}
       time_estimate={testTimeEstimate}
       total_length={testTotalLength}
@@ -35,7 +35,7 @@ describe('DisplayContainer', () => {
     const testTotalLength = 3;
     const testAQAverage = 50;
 
-    render(<DisplayContainer
+    render(<RouteInfoCard
       route_type={testRouteType}
       time_estimate={testTimeEstimate}
       total_length={testTotalLength}
@@ -58,7 +58,7 @@ describe('DisplayContainer', () => {
 
     // Act
     const { container } = render(
-                            <DisplayContainer
+                            <RouteInfoCard
                             route_type={testRouteType}
                             time_estimate={testTimeEstimate}
                             total_length={testTotalLength}
@@ -67,13 +67,13 @@ describe('DisplayContainer', () => {
                           );
 
     // Assert
-    const displayContainer = container.querySelector('.DisplayContainer');
+    const routeInfoCard = container.querySelector('.RouteInfoCard');
     const routeType = container.querySelector('.route_type');
     const timeEstimate = container.querySelector('.time_estimate');
     const totalLength = container.querySelector('.total_length');
     const aqAverage = container.querySelector('.aq_average');
 
-    expect(displayContainer).toBeInTheDocument();
+    expect(routeInfoCard).toBeInTheDocument();
     expect(container.querySelector('.route-type')).toBeInTheDocument();
     expect(container.querySelector('.time-estimate')).toBeInTheDocument();
     expect(container.querySelector('.additional-info')).toBeInTheDocument();
