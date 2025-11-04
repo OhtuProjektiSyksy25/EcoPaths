@@ -15,21 +15,37 @@ html, body, #root {
 
 .header {
   background-color: white;
-  padding-top: 8px;
-  padding-bottom: 3px;
-  padding-left: 8px;
+  padding: 0px 10px;
   border-bottom: 1px solid #e8f7ec;
   flex-shrink: 0;
+  position: relative;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  overflow: visible;
+  height: 65px;
+}
+
+.app-logo {
+  height: 70px;
+  width: auto;
+  object-fit: contain;
+  object-position: center;
+  transform: scale(1.6);
+  flex-shrink: 0;
+  clip-path: inset(15px);
 }
 
 .title {
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.7rem;
+  font-weight: 700;
   color: black;
   font-family: 'Arial', sans-serif;
-  padding-left: 20px;
-  padding-bottom: 5px;
+
 }
 
 .main-container {
@@ -112,6 +128,7 @@ html, body, #root {
   border-radius: 4px;
   box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
   transition-duration: 0.15s;
+  font-family: 'Arial', sans-serif;
   -webkit-transition-duration: 0.15s;
 }
 
@@ -123,8 +140,9 @@ html, body, #root {
 
 .area-dropdown-container {
   position: absolute;
-  top: 4px;
-  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 10px;
   z-index: 1000;
 }
 
@@ -145,8 +163,12 @@ html, body, #root {
 
 .area-dropdown-button:hover {
   background: #f8f9fa;
-  border-color: #2bc654;
+  border-color: #000000;
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.area-dropdown-button:disabled {
+  display: none;
 }
 
 .map-icon {

@@ -19,18 +19,23 @@ interface SideBarProps {
   showAQIColors: boolean;
   setShowAQIColors: (value: boolean) => void;
   selectedArea: Area | null;
-  onErrorChange?: (error: string | null) => void;
+  onErrorChange?: (error: string | null) => void; 
   children?: React.ReactNode;
 }
 const SideBar: React.FC<SideBarProps> = ({
+  
   onFromSelect,
+ 
   onToSelect,
+ 
   summaries,
+ 
   showAQIColors,
   setShowAQIColors,
   selectedArea,
   onErrorChange,
   children
+
 }) => {
 
   const [from, setFrom] = useState<string>("")
@@ -43,6 +48,9 @@ const SideBar: React.FC<SideBarProps> = ({
   const debounce = useRef<number | null>()
   const { getCurrentLocation, coordinates } = useGeolocation();
 
+  useEffect(() => {
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
 
   useEffect(() => {
     /*

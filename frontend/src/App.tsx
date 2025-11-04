@@ -8,10 +8,9 @@ import SideBar from "./components/SideBar";
 import AreaSelector from "./components/AreaSelector";
 import { useRoute } from "./hooks/useRoute";
 import { LockedLocation, Area } from "./types";
+import logo from "./assets/images/ecopaths_logo_no_text.jpg";
 import "./styles/App.css";
-import { LocateFixed, Locate, Globe } from "lucide-react";
-// import CIcon from '@coreui/icons-react';
-// import { cilMap } from '@coreui/icons';
+import { Globe } from "lucide-react";
 
 /**
  * Root component of the EcoPaths React application.
@@ -63,21 +62,25 @@ function App(): JSX.Element {
       {showAreaSelector && (
         <AreaSelector onAreaSelect={handleAreaSelect} />
       )}
-      {selectedArea && !showAreaSelector && (
-        <div className="area-dropdown-container">
-          <button
-            className="area-dropdown-button"
-            onClick={handleChangeArea}
-            disabled={!!locationError}
-          >
-             <Globe size={25} />
-            {selectedArea.display_name}
-          </button>
-        </div>
-      )}
 
       <header className="header">
-        <h1 className="title">EcoPaths</h1>
+        <div className="header-content">
+          <img src={logo} alt="EcoPaths Logo" className="app-logo" />
+          <h1 className="title">EcoPaths</h1>
+        </div>
+        {selectedArea && !showAreaSelector && (
+          <div className="area-dropdown-container">
+            <button
+              className="area-dropdown-button"
+              onClick={handleChangeArea}
+              disabled={!!locationError}
+            >
+            
+              <Globe size={25} />
+              {selectedArea.display_name}
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="main-container">

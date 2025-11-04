@@ -16,6 +16,7 @@ jest.mock("mapbox-gl", () => {
         getLayer: jest.fn(() => null),
         removeSource: jest.fn(),
         removeLayer: jest.fn(),
+        on: jest.fn(),
         once: jest.fn(),
         off: jest.fn(),
       })),
@@ -32,14 +33,7 @@ const mockSelectedArea: Area = {
 };
 
 beforeEach(() => {
-  jest.spyOn(global, 'fetch').mockResolvedValue({
-    ok: true,
-    json: async () => mockSelectedArea,
-  } as Response);
-});
-
-afterEach(() => {
-  jest.restoreAllMocks();
+  jest.clearAllMocks();
 });
 
 describe("useHighlightChosenArea", () => {
@@ -127,14 +121,16 @@ describe("useHighlightChosenArea", () => {
 
     renderHook(() => useHighlightChosenArea(map, mockSelectedArea));
 
+    // Should not add immediately when map isn't ready
     expect(map.addSource).not.toHaveBeenCalled();
     expect(map.addLayer).not.toHaveBeenCalled();
 
+    // Should set up event listeners to wait for map to load
     await waitFor(() => {
-      expect(map.once).toHaveBeenCalledWith("load", expect.any(Function));
+      expect(map.on).toHaveBeenCalledWith("load", expect.any(Function));
     });
 
-    expect(map.once).toHaveBeenCalledWith("style.load", expect.any(Function));
+    expect(map.on).toHaveBeenCalledWith("style.load", expect.any(Function));
   });
 
 });
