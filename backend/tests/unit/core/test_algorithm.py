@@ -48,6 +48,12 @@ def origin_destination():
     return origin, destination
 
 @pytest.fixture
+def origin_destination_other():
+    origin = gpd.GeoDataFrame(geometry=[Point(1.3, 1.3)], crs="EPSG:25833")
+    destination = gpd.GeoDataFrame(geometry=[Point(3.3, 4.3)], crs="EPSG:25833")
+    return origin, destination
+
+@pytest.fixture
 def algorithm(simple_edges_gdf, simple_nodes_gdf):
     return RouteAlgorithm(simple_edges_gdf, simple_nodes_gdf)
 
@@ -58,14 +64,23 @@ def test_snap_and_split_adds_vertice_and_edges(algorithm):
     start_edges = len(algorithm.igraph.es)
 
     algorithm.init_route_specific()
-    snapped_coord = algorithm.snap_and_split(point, "origin")
+    algorithm.snap_and_split(point, "origin")
     end_vertices = len(algorithm.igraph.vs)
     end_edges = len(algorithm.igraph.es)
 
     assert end_vertices == (start_vertices+1)
     assert end_edges == (start_edges+1)
     
-
+def test_prepare_graph_and_nodes(algorithm, origin_destination_other):
+    start, end = origin_destination_other
+    start_vertices = len(algorithm.igraph.vs)
+    start_edges = len(algorithm.igraph.es)
+    algorithm.prepare_graph_and_nodes(start, end)
+    end_vertices = len(algorithm.igraph.vs)
+    end_edges = len(algorithm.igraph.es)
+    print(start_vertices, end_vertices)
+    print(start_edges, end_edges)
+    
 
 def test_calculate_path_returns_edges(algorithm, origin_destination):
     origin, destination = origin_destination

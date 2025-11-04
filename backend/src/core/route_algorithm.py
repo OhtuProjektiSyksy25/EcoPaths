@@ -5,6 +5,7 @@ import igraph as ig
 from shapely.strtree import STRtree
 from shapely.ops import split
 from shapely.geometry import Point, LineString
+import pandas as pd
 
 class RouteAlgorithm:
     """Class for computing shortest paths through a spatial network using igraph."""
@@ -27,6 +28,8 @@ class RouteAlgorithm:
         self.route_edges_tree = None #placeholder
         self.nodes_tree = STRtree(self.nodes.geometry.to_list())
         self.init_graph()
+        self.route_specific_gdf = self.edges_gdf_filtered.copy()
+        self.route_edges_tree = STRtree(self.route_specific_gdf.geometry.to_list())
 
     def init_graph(self):
         """
@@ -134,15 +137,17 @@ class RouteAlgorithm:
         Returns:
             tuple: origin_node, destination_node, graph, combined_edges
         """
-        self.init_route_specific()
+        #self.init_route_specific()
 
         #self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
         #self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
 
         if "origin" not in self.igraph.vs["name"]:
             self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
+            print("ORIGIN")
         if "destination" not in self.igraph.vs["name"]:
             self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
+            print("DEST")
         self.update_weights(balance_factor=balance_factor)
 
         isolates = [v.index for v in self.igraph.vs if self.igraph.degree(v.index) == 0]
@@ -240,6 +245,7 @@ class RouteAlgorithm:
         if existing_vertices:
             v = existing_vertices[0]
             v["name"] = destination
+            print("HEP")
             return
 
         self.igraph.add_vertices(destination)
@@ -248,10 +254,10 @@ class RouteAlgorithm:
         vertice["x"] = snapped_coord[0]
         vertice["y"] = snapped_coord[1]
 
-        self.init_split_edges(edge_row, destination, parts)
+        self.init_split_edges(edge_row, destination, parts, snapped_coord, line)
 
 
-    def init_split_edges(self, edge_row, destination, parts):
+    def init_split_edges(self, edge_row, destination, parts, snapped_coord, line):
         """
         Splits an existing edge at a given location.
         Deletes the original edge between "from_node" and "to_node" if it exists.
@@ -288,7 +294,7 @@ class RouteAlgorithm:
             (from_node, destination),
             (destination, to_node)
             ]
-
+        print(new_edges)
         self.igraph.add_edges(new_edges)
 
         new_edge_ids = [
@@ -308,6 +314,28 @@ class RouteAlgorithm:
         self.igraph.es[new_edge_ids[1]]["gdf_edge_id"] = max_id+2
         self.igraph.es[new_edge_ids[1]]["weight"] = 0  # placeholder
 
+        new_edges_gdf = gpd.GeoDataFrame([
+            {
+                **edge_row.to_dict(),
+                "edge_id": max_id+1,
+                "from_node": from_node,
+                "to_node": destination,
+                "length_m": parts[0].length,
+                "geometry": LineString([line.coords[0], snapped_coord])
+            },
+            {
+                **edge_row.to_dict(),
+                "edge_id": max_id+2,
+                "from_node": destination,
+                "to_node": to_node,
+                "length_m": parts[1].length,
+                "geometry": LineString([snapped_coord, line.coords[-1]])
+            }
+        ], crs=self.route_specific_gdf.crs)
+
+        self.route_specific_gdf = pd.concat(
+            [self.route_specific_gdf, new_edges_gdf], ignore_index=True
+            )
 
     @staticmethod
     def _compute_split_result(line, snapped_point, offset=0.01):
