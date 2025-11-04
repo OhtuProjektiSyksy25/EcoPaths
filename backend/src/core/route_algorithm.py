@@ -185,11 +185,14 @@ class RouteAlgorithm:
             # balance_factor is used to balance the influence of aqi on the weight
             # lower balance_factor values equate to weighing air quality more
             # normalized_aq gets values between 0 and 1
+            normalized_aq = row.get("normalized_aqi")
+            min_normalized = 0
+            if balance_factor == 0:
+                min_normalized = 0.001
             if aqi is not None:
-                normalized_aq = min(aqi / 500, 1)
                 aq_multipler_balanced_weight = (
                     balance_factor * length +
-                    (1 - balance_factor) * (length * normalized_aq)
+                    (1 - balance_factor) * (length * (normalized_aq+min_normalized))
                 )
                 w = aq_multipler_balanced_weight if aqi is not None else length
             else:
