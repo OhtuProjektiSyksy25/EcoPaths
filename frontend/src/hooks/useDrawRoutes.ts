@@ -5,9 +5,9 @@ import mapboxgl from "mapbox-gl";
 type RoutesRecord = Record<string, GeoJSON.FeatureCollection>;
 
 const ROUTE_COLORS: Record<string, string> = {
-  fastest: "#007AFF",
-  best_aq: "#34C759",
-  balanced: "#FF9500",
+  fastest: "#003cff",
+  best_aq: "#01be30",
+  balanced: "#03e0a9",
 };
 
 /**
@@ -21,7 +21,11 @@ const ROUTE_COLORS: Record<string, string> = {
  * @param routes - Record mapping route type keys to GeoJSON FeatureCollections.
  *                 Each GeoJSON FeatureCollection represents a route.
  */
-export function useDrawRoutes(map: mapboxgl.Map | null, routes: RoutesRecord | null) {
+export function useDrawRoutes(
+  map: mapboxgl.Map | null,
+  routes: RoutesRecord | null,
+  showAQIColors: boolean
+) {
   useEffect(() => {
     if (!map || !routes) return;
 
@@ -32,7 +36,8 @@ export function useDrawRoutes(map: mapboxgl.Map | null, routes: RoutesRecord | n
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     });
 
-    Object.entries(routes).forEach(([mode, geojson]) => {
+    ["fastest", "balanced", "best_aq"].forEach((mode) => {
+      const geojson = routes[mode];
       if (!geojson || !geojson.features?.length) return;
 
       const sourceId = `route-${mode}`;
@@ -49,9 +54,21 @@ export function useDrawRoutes(map: mapboxgl.Map | null, routes: RoutesRecord | n
           "line-cap": "round",
         },
         paint: {
-          "line-color": ROUTE_COLORS[mode] || "#888",
-          "line-width": mode === "fastest" ? 6 : 4,
-          "line-opacity": mode === "fastest" ? 1.0 : 0.7,
+          "line-color": showAQIColors
+            ? [
+                "interpolate",
+                ["linear"],
+                ["get", "aqi"],
+                0, "#2ECC71",   // Good
+                80, "#F1C40F",  // Moderate
+                100, "#E67E22", // Unhealthy for sensitive groups
+                130, "#E74C3C", // Unhealthy
+                160, "#8E44AD"  // Very unhealthy
+              ]
+            : ROUTE_COLORS[mode],
+          "line-width": 3.5,
+          "line-opacity": mode === "best_aq" ? 1.0 : 0.8,
+          "line-offset": mode === "balanced" ? 1.5 : mode === "fastest" ? -1.5 : 0,
         },
       });
     });
@@ -64,5 +81,6 @@ export function useDrawRoutes(map: mapboxgl.Map | null, routes: RoutesRecord | n
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
     };
-  }, [map, routes]);
+  }, [map, routes, showAQIColors]);
 }
+

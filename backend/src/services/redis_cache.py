@@ -12,18 +12,18 @@ logger = logging.getLogger(__name__)
 
 
 class RedisCache:
-    """Class for methods to interact with Redis cache.
-    """
+    """Class for interacting with Redis cache."""
 
     def __init__(self, host=None, port=None, db=None, default_expire=None):
         """
-        Initialize connection to Redis
+        Initialize Redis connection.
 
         Args:
-            host: Redis host. Defaults to config settings.
-            port: Redis port. Defaults to config settings.
-            db: Redis database number. Defaults to config settings.
-            default_expire: Default expiration time in seconds. Defaults to config settings.
+            host (str, optional): Redis host. Defaults to config settings.
+            port (int, optional): Redis port. Defaults to config settings.
+            db (int, optional): Redis database number. Defaults to config settings.
+            default_expire (int, optional): Default expiration time in seconds. 
+            Defaults to config settings.
         """
         config = RedisConfig()
 
@@ -37,121 +37,148 @@ class RedisCache:
                 self.client = redis.from_url(config.url, decode_responses=True)
                 self.client.ping()
                 url_without_credentials = config.url.split('@')[-1]
-                logger.info("Connected to redis at %s", url_without_credentials)
+                logger.info("Connected to Redis at %s",
+                            url_without_credentials)
             else:
                 self.client = redis.Redis(
                     host=host, port=port, db=db, decode_responses=True)
                 self.client.ping()
-                logger.info("Connected to redis at %s:%s", host, port)
-
+                logger.info("Connected to Redis at %s:%s", host, port)
         except redis.ConnectionError as e:
-            logger.error("Failed to connect to redis: %s", e)
+            logger.error("Failed to connect to Redis: %s", e)
             self.client = None
 
+    def _ensure_client(self):
+        """Check if Redis client is available.
 
-    def set_geojson(self, key, geojson_data, expire=None):
+        Returns:
+            bool: True if client exists, False otherwise.
         """
-        Set a GeoJSON data in the cache
+        if not self.client:
+            logger.warning("Redis is not connected.")
+            return False
+        return True
+
+    def _set(self, key, value, expire=None, as_json=True):
+        """Internal method to set a value in Redis.
 
         Args:
-            key: The key to set.
-            geojson_data: The GeoJSON data to set.
-            expire: The expiration time in seconds. Defaults to None.
+            key (str): Key to set.
+            value (Any): Value to store.
+            expire (int, optional): Expiration time in seconds. Defaults to None.
+            as_json (bool): Whether to store value as JSON. Defaults to True.
+
+        Returns:
+            bool: True if successful, False otherwise.
         """
-        if not self.client:
-            logger.warning("Redis is not connected. Cannot set GeoJSON.")
-            return False
-
-        try:
-            if isinstance(geojson_data, dict):
-                if "type" not in geojson_data:
-                    logger.warning(
-                        "Invalid GeoJSON data: missing 'type' field.")
-                    return False
-
-            expire_time = expire if expire is not None else self.default_expire
-
-            json_string = json.dumps(geojson_data, separators=(',', ':'))
-            self.client.set(key, json_string, ex=expire_time)
-
-            logger.debug("Cached GeoJSON data with key '%s'", key)
-            return True
-
-        except (redis.RedisError, TypeError, ValueError) as e:
-            logger.error("Failed to cache GeoJSON data: '%s': %s", key, e)
-            return False
-
-    def get_geojson(self, key):
-        """
-        Get a GeoJSON data from the cache
-        """
-        if not self.client:
-            logger.warning("Redis is not connected. Cannot get GeoJSON.")
-            return None
-        try:
-            data = self.client.get(key)
-            if not data:
-                return None
-
-            geojson_object = json.loads(data)
-
-            if isinstance(geojson_object, dict) and "type" in geojson_object:
-                logger.debug("Retrieved GeoJSON with key '%s'", key)
-                return geojson_object
-
-            logger.warning(
-                "Cached data for key '%s' is not valid GeoJSON", key)
-            return None
-
-        except (redis.RedisError, json.JSONDecodeError) as e:
-            logger.error("Failed to get cache key '%s': %s", key, e)
-            return None
-
-    def set(self, key, value, expire=None):
-        """
-        Set a regular (non-GeoJSON) value in the cache
-
-        Args:
-            key: The key to set.
-            value: The value to set.
-            expire: The expiration time in seconds.
-        """
-        if not self.client:
-            logger.warning("Redis is not connected. Cannot set value.")
-            print("Redis is not connected. Cannot set value.")
+        if not self._ensure_client():
             return False
 
         try:
             expire_time = expire if expire is not None else self.default_expire
-            self.client.set(key, json.dumps(value), ex=expire_time)
-            print(f"Cached value with key '{key}'")
+            if as_json:
+                value = json.dumps(value, separators=(',', ':'))
+            self.client.set(key, value, ex=expire_time)
+            logger.debug("Cached key '%s'", key)
             return True
         except (redis.RedisError, TypeError, ValueError) as e:
             logger.error("Failed to set cache key '%s': %s", key, e)
             return False
 
-    def get(self, key):
+    def _get(self, key, as_json=True):
+        """Internal method to get a value from Redis.
+
+        Args:
+            key (str): Key to retrieve.
+            as_json (bool): Whether to parse as JSON. Defaults to True.
+
+        Returns:
+            Any: Retrieved value or None if not found or error occurs.
         """
-        Get a regular (non-GeoJSON) value from the cache
-        """
-        if not self.client:
-            logger.warning("Redis is not connected. Cannot get value.")
+        if not self._ensure_client():
             return None
         try:
             data = self.client.get(key)
             if not data:
                 return None
-            return json.loads(data)
+            return json.loads(data) if as_json else data
         except (redis.RedisError, json.JSONDecodeError) as e:
             logger.error("Failed to get cache key '%s': %s", key, e)
             return None
 
+    # Public methods
+    def set_geojson(self, key, geojson_data, expire=None):
+        """
+        Store GeoJSON data in Redis.
+
+        Args:
+            key (str): Key to store the GeoJSON under.
+            geojson_data (dict): GeoJSON data.
+            expire (int, optional): Expiration in seconds. Defaults to None.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        if not isinstance(geojson_data, dict) or "type" not in geojson_data:
+            logger.warning("Invalid GeoJSON data for key '%s'", key)
+            return False
+        return self._set(key, geojson_data, expire, as_json=True)
+
+    def get_geojson(self, key):
+        """
+        Retrieve GeoJSON data from Redis.
+
+        Args:
+            key (str): Key of the GeoJSON data.
+
+        Returns:
+            dict | None: GeoJSON dict if valid, otherwise None.
+        """
+        geojson = self._get(key, as_json=True)
+        if geojson and isinstance(geojson, dict) and "type" in geojson:
+            return geojson
+        if geojson:
+            logger.warning(
+                "Cached data for key '%s' is not valid GeoJSON", key)
+        return None
+
+    def set(self, key, value, expire=None):
+        """
+        Set a regular value in Redis (stored as JSON).
+
+        Args:
+            key (str): Key to store.
+            value (Any): Value to store.
+            expire (int, optional): Expiration in seconds.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        return self._set(key, value, expire, as_json=True)
+
+    def get(self, key):
+        """
+        Get a regular value from Redis (parsed as JSON).
+
+        Args:
+            key (str): Key to retrieve.
+
+        Returns:
+            Any: Value if exists, otherwise None.
+        """
+        return self._get(key, as_json=True)
+
     def delete(self, key):
         """
-        Delete a value from the cache
+        Delete a key from Redis.
+
+        Args:
+            key (str): Key to delete.
+
+        Returns:
+            bool: True if key was deleted, False otherwise.
         """
-        if not self.client:
-            logger.warning("Redis is not connected. Cannot delete key.")
+        if not self._ensure_client():
             return False
         try:
             result = self.client.delete(key)
@@ -160,27 +187,17 @@ class RedisCache:
             logger.error("Failed to delete cache key '%s': %s", key, e)
             return False
 
-    def clear(self):
-        """
-        WARNING!: Clear the entire cache
-        """
-        if not self.client:
-            logger.warning("Redis is not connected. Cannot clear cache.")
-            return False
-        try:
-            self.client.flushdb()
-            return True
-        except redis.RedisError as e:
-            logger.error("Failed to clear cache: %s", e)
-            return False
-
     def exists(self, key):
         """
-        Check if a key exists in the cache
+        Check if a key exists in Redis.
+
+        Args:
+            key (str): Key to check.
+
+        Returns:
+            bool: True if key exists, False otherwise.
         """
-        if not self.client:
-            logger.warning(
-                "Redis is not connected. Cannot check key existence.")
+        if not self._ensure_client():
             return False
         try:
             return self.client.exists(key) == 1

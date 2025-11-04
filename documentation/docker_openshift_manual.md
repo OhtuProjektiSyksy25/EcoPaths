@@ -13,7 +13,7 @@ The build and deployment process is already automated through the project’s CI
 2. Build the image for **OpenShift deployment**:
 
 ```bash
-docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
+docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg GOOGLE_API_KEY=<GOOGLE_API_KEY> -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
 ```
 
 > **Note:** When running this image locally, the map component might not render correctly. The map component will render properly when the image deployed to OpenShift. 
@@ -21,7 +21,7 @@ docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT
 To **test the application locally** with the map component, use this command instead:
 
 ```bash
-docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg REACT_APP_API_URL=http://localhost:8000 -t <IMAGE_NAME> .
+docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg GOOGLE_API_KEY=<GOOGLE_API_KEY> --build-arg REACT_APP_API_URL=http://localhost:8000 -t <IMAGE_NAME> .
 ```
 
 > [!CAUTION]
@@ -158,4 +158,85 @@ View the logs for a specific pod:
 
 ```bash
 oc logs <POD_NAME>
+```
+
+## Populate the database manually
+
+1. Populate local database
+
+```bash
+bash setup.sh
+```
+
+2. Create dump from local database
+
+```bash
+export PGPASSWORD=<LOCAL_POSTGRES_PASSWORD>
+```
+
+```bash
+docker exec -e PGPASSWORD=<LOCAL_POSTGRES_PASSWORD> <DOCKER_CONTAINER_NAME> pg_dump \
+  -h localhost \
+  -U <LOCAL_POSTGRES_USER> \
+  -d <LOCAL_POSTGRES_DB_NAME> \
+  -Fc -Z9 --no-owner --no-acl \
+  -f /tmp/database_dump.backup
+```
+
+```bash
+unset PGPASSWORD
+```
+
+3. Check that the dump was created
+
+```bash
+ls -lh database_dump.backup
+```
+
+4. Connect to the OpenShift client
+
+5. Run a temporary client pod
+
+```bash
+oc run pg-client --image=postgres:15 --restart=Never -- sleep infinity
+```
+
+6. Copy your dump file into the temporary pod
+
+```bash
+oc cp ./database_dump.backup pg-client:/tmp/database_dump.backup
+```
+
+7. Connect to your existing database service from inside the cluster
+
+```bash
+oc exec -it pg-client -- bash
+```
+
+8. Inside the shell, run:
+
+```bash
+export PGPASSWORD=<DEPLOYMENT_DB_PASSWORD>
+```
+
+```bash
+pg_restore -h <DEPLOYMENT_DB_HOST> -U <DEPLOYMENT_DB_USER> -d <DEPLOYMENT_DB_NAME> \
+  -v --no-owner --no-acl -j 2 --clean --if-exists \
+  /tmp/database_dump.backup
+```
+
+```bash
+unset PGPASSWORD
+```
+
+9. When done, exit the shell:
+
+```bash
+exit
+```
+
+10. Delete the pg-client pod:
+
+```bash
+oc delete pod pg-client
 ```

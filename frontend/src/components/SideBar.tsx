@@ -1,39 +1,83 @@
 /*
-Component that renders "From" and "To" input fields and manages their state
-renders suggestions for from and to fields and manages their state based on their values
-uses LocationButton to get user's current location and set it as "From" value
+  SideBar component allows users to input start and destination locations,
+  view route summaries, and adjust route preferences via a slider.
 */
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import InputContainer from "./InputContainer";
 import { useGeolocation } from "../hooks/useGeolocationState";
-import DisplayContainer from "./DisplayContainer";
+import RouteInfoCard from "./RouteInfoCard";
+import RouteSlider from "./RouteSlider";
 import "../styles/SideBar.css";
 import { RouteSummary } from "@/types/route";
+import { Area } from "../types";
 
 interface SideBarProps {
   onFromSelect: (place: any) => void;
   onToSelect: (place: any) => void;
   summaries: Record<string, RouteSummary> | null;
+  showAQIColors: boolean;
+  setShowAQIColors: (value: boolean) => void;
+  selectedArea: Area | null;
+  onErrorChange?: (error: string | null) => void; 
+  balancedWeight: number;
+  setBalancedWeight: (weight: number) => void;
+  loading?: boolean;
+  balancedLoading?: boolean;
   children?: React.ReactNode;
 }
-const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, children}) => {
 
-  const [from, setFrom] = useState<string>("")
-  const [to, setTo] = useState<string>("")
-  const [fromSuggestions, setFromSuggestions] = useState<any[]>([])
-  const [toSuggestions, setToSuggestions] = useState<any[]>([])
-  const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false)
+const SideBar: React.FC<SideBarProps> = ({
+  
+  onFromSelect,
+ 
+  onToSelect,
+ 
+  summaries,
+ 
+  showAQIColors,
+  setShowAQIColors,
+  selectedArea,
+  onErrorChange,
+ 
+  balancedWeight,
+  setBalancedWeight,
+  loading = false,
+  balancedLoading = false,
+  children
+
+}) => {
+  const [from, setFrom] = useState<string>("");
+  const [to, setTo] = useState<string>("");
+  const [fromSuggestions, setFromSuggestions] = useState<any[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<any[]>([]);
+  const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false);
   const [waitingForLocation, setWaitingForLocation] = useState(false);
-  const debounce = useRef<number | null>()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const debounce = useRef<number | null>();
   const { getCurrentLocation, coordinates } = useGeolocation();
 
   useEffect(() => {
-    /*
-    Creates a mock place object and calls onFromSelect with it
-    when waiting for location and coordinates become available.
-    */
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
+
+  useEffect(() => {
     if (waitingForLocation && coordinates) {
+      if (selectedArea && selectedArea.bbox) {
+        const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
+        const isInside =
+          coordinates.lng >= minLon &&
+          coordinates.lng <= maxLon &&
+          coordinates.lat >= minLat &&
+          coordinates.lat <= maxLat;
+
+        if (!isInside) {
+          setErrorMessage(`Your location is outside ${selectedArea.display_name}. Please select a location within the area.`);
+          setFrom("");
+          setWaitingForLocation(false);
+          return;
+        }
+      }
       const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
       const mockPlace = {
         full_address: coordsString,
@@ -51,17 +95,28 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
   }, [coordinates, waitingForLocation, onFromSelect]);
 
   const handleCurrentLocationSelect = useCallback(async () => {
-    /*
-    Handles selection of "Your location" suggestion
-    Uses geolocation hook to get current coordinates
-    Creates a mock place object and calls onFromSelect with it
-    */
     try {
       setWaitingForLocation(true);
 
       if (!coordinates) {
         await getCurrentLocation();
       } else {
+        if (selectedArea && selectedArea.bbox) {
+          const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
+          const isInside =
+            coordinates.lng >= minLon &&
+            coordinates.lng <= maxLon &&
+            coordinates.lat >= minLat &&
+            coordinates.lat <= maxLat;
+
+          if (!isInside) {
+            setErrorMessage(`Your location is outside ${selectedArea.display_name}.`);
+            setFrom("");
+            setWaitingForLocation(false);
+            return;
+          }
+        }
+
         const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
         const mockPlace = {
           full_address: coordsString,
@@ -78,88 +133,103 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
       console.log("Error getting current location:", error);
       setWaitingForLocation(false);
     }
-  }, [coordinates, getCurrentLocation, onFromSelect]);
-
+  }, [coordinates, getCurrentLocation, onFromSelect, selectedArea]);
 
   const handleFromFocus = () => {
-    /*
-    Shows "Your location" suggestion when From input is focused
-    */
     setShowFromCurrentLocation(true);
   };
 
   const handleFromBlur = () => {
-    /*
-    Hides "Your location" suggestion when From input loses focus after a short delay
-    */
     setTimeout(() => {
       setShowFromCurrentLocation(false);
     }, 200);
   };
-  
+
   const HandleFromChange = async (value: string) => {
-   /*
-   Updates from value
-   fetches autofill suggestions if debounce clear
-   updates fromSuggestions
-   */
-    setFrom(value)
-    setShowFromCurrentLocation(false)
-    if (debounce.current) clearTimeout(debounce.current)
+    setFrom(value);
+    setShowFromCurrentLocation(false);
+    if (debounce.current) clearTimeout(debounce.current);
     debounce.current = window.setTimeout(async () => {
-    if (!value) {
-      setFromSuggestions([])
-      return
-    }
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`)
-     if (!response.ok) {
-      throw new Error(`server error: ${response.status}`)
-    } const data = await response.json()
-    setFromSuggestions(data.features)
-  } catch (error) {
-    console.log(error)
-  }
-  }, 400)}
+      if (!value) {
+        setFromSuggestions([]);
+        return;
+      }
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`);
+        if (!response.ok) {
+          throw new Error(`server error: ${response.status}`);
+        }
+        const data = await response.json();
+        setFromSuggestions(data.features);
+      } catch (error) {
+        console.log(error);
+      }
+    }, 400);
+  };
 
   const HandleToChange = async (value: string) => {
-    /*
-    Updates from value
-    fetches autofill suggestions if debounce clear
-    updates toSuggestions
-    */
-    setTo(value)
-    if (debounce.current) clearTimeout(debounce.current)
+    setTo(value);
+    if (debounce.current) clearTimeout(debounce.current);
     debounce.current = window.setTimeout(async () => {
-    if (!value) {
-      setToSuggestions([])
-      return
+      if (!value) {
+        setToSuggestions([]);
+        return;
+      }
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`);
+        if (!response.ok) {
+          throw new Error(`server error: ${response.status}`);
+        }
+        const data = await response.json();
+        setToSuggestions(data.features);
+      } catch (error) {
+        console.log(error);
+        setToSuggestions([]);
+      }
+    }, 400);
+  };
+  useEffect(() => {
+    // Clear inputs when area changes
+    if (selectedArea) {
+      setFrom("");
+      setTo("");
+      setFromSuggestions([]);
+      setToSuggestions([]);
+      setErrorMessage(null);
     }
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`)
-     if (!response.ok) {
-      throw new Error(`server error: ${response.status}`)
-    } const data = await response.json()
-    setToSuggestions(data.features)
-  } catch (error) {
-    console.log(error)
-    setToSuggestions([])
-  }
-  }, 400)}
+  }, [selectedArea?.id]);
 
+  useEffect(() => {
+    // Notify parent when error changes (to disable area button)
+    onErrorChange?.(errorMessage);
+  }, [errorMessage, onErrorChange]);
 
   return (
     <div className="sidebar">
+            {errorMessage && (
+        <div className="error-popup-overlay" onClick={() => setErrorMessage(null)}>
+          <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="error-popup-content">
+              <h3>Location Error</h3>
+              <p>{errorMessage}</p>
+              <button className="error-popup-button" onClick={() => setErrorMessage(null)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sidebar-content">
         <h1 className="sidebar-title">Where would you like to go?</h1>
 
         <div className="input-box">
-            <InputContainer
-              placeholder="Start location"
-              value={from}
-              onChange={HandleFromChange}
-              suggestions={
-                /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
+          <InputContainer
+            placeholder="Start location"
+            value={from}
+            onChange={HandleFromChange}
+            suggestions={
+              /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
                 ? []
                 : (showFromCurrentLocation && !from
                   ? [{
@@ -169,17 +239,17 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
                       geometry: { coordinates: [0, 0] }
                     }]
                   : fromSuggestions)
+            }
+            onSelect={(place) => {
+              if (place.properties?.isCurrentLocation) {
+                handleCurrentLocationSelect();
+              } else {
+                onFromSelect(place);
               }
-              onSelect={(place) => {
-                if (place.properties?.isCurrentLocation) {
-                  handleCurrentLocationSelect();
-                } else {
-                  onFromSelect(place);
-                }
-              }}
-              onFocus={handleFromFocus}
-              onBlur={handleFromBlur}
-            />
+            }}
+            onFocus={handleFromFocus}
+            onBlur={handleFromBlur}
+          />
         </div>
 
         <div className="divider"/>
@@ -196,40 +266,56 @@ const SideBar: React.FC<SideBarProps> = ({onFromSelect, onToSelect, summaries, c
 
         {children}
 
-      {summaries && !children && (
-        <>
-          <div className="best-aq-container">
-            <DisplayContainer
-              route_type="Best Air Quality"
-              time_estimate={summaries.best_aq.time_estimate}
-              total_length={summaries.best_aq.total_length}
-              aq_average={summaries.best_aq.aq_average}
-            />
-          </div>
+        {summaries && !children && (
+          <>
+            <div className="best-aq-container">
+              <RouteInfoCard
+                route_type="Best Air Quality"
+                time_estimate={summaries.best_aq.time_estimate}
+                total_length={summaries.best_aq.total_length}
+                aq_average={summaries.best_aq.aq_average}
+              />
+            </div>
 
-          <div className="balanced-route-container">
-            <DisplayContainer
-              route_type="Balanced Route"
-              time_estimate={summaries.balanced.time_estimate}
-              total_length={summaries.balanced.total_length}
-              aq_average={summaries.balanced.aq_average}
-            />
-          </div>
+            <div className="fastest-route-container">
+              <RouteInfoCard
+                route_type="Fastest Route"
+                time_estimate={summaries.fastest.time_estimate}
+                total_length={summaries.fastest.total_length}
+                aq_average={summaries.fastest.aq_average}
+              />
+            </div>
 
-          <div className="fastest-route-container">
-            <DisplayContainer
-              route_type="Fastest Route"
-              time_estimate={summaries.fastest.time_estimate}
-              total_length={summaries.fastest.total_length}
-              aq_average={summaries.fastest.aq_average}
+            <div className="balanced-route-container">
+              {balancedLoading ? (
+                <div className="route-loading-overlay">
+                  <h4>Getting route...</h4>
+                </div>
+              ) : (
+                <RouteInfoCard
+                  route_type="Your Route"
+                  time_estimate={summaries.balanced.time_estimate}
+                  total_length={summaries.balanced.total_length}
+                  aq_average={summaries.balanced.aq_average}
+                />
+              )}
+            </div>
+            <RouteSlider
+              value={balancedWeight}
+              onChange={setBalancedWeight}
+              disabled={loading || balancedLoading}
             />
-          </div>
-        </>
 
+          <div className="aqi-toggle-button">
+            <button onClick={() => setShowAQIColors(!showAQIColors)}>
+              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
+            </button>
+          </div>
+          </>
         )}
-        </div>
+      </div>
     </div>
   );
 };
 
-export default SideBar
+export default SideBar;

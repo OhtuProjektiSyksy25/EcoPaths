@@ -6,8 +6,10 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
 
+  collectCoverage: true, 
+
   // Folders where Jest will look for tests
-  roots: ['<rootDir>/tests'],
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
 
   // Setup file to configure testing environment (e.g., jest-dom)
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
@@ -25,6 +27,8 @@ const config: Config = {
 
     // Map all CSS/SCSS imports to identity-obj-proxy
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    // Mock SVG imports (support `import { ReactComponent as Icon } from './icon.svg'`)
+    '\\.(svg)$': '<rootDir>/tests/__mocks__/svgrMock.ts',
   },
 
   // Transform ignore patterns (except certain node_modules that need transpiling)
@@ -36,6 +40,7 @@ const config: Config = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
+    '!src/**/index.ts',
   ],
   coverageDirectory: '../coverage_reports/frontend',
   coverageThreshold: {

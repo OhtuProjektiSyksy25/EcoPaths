@@ -1,20 +1,23 @@
 /*
-DisplayContainer is a component that displays information, for example the walking time estimate to the user. 
+RouteInfoCard is a component that displays information, for example the walking time estimate to the user. 
 */
 
 import React from 'react';
-import "../styles/DisplayContainer.css";
+import "../styles/RouteInfoCard.css";
 
-interface DisplayContainerProps {
+interface RouteInfoCardProps {
   route_type: string;
   time_estimate : string;
   total_length : number;
   aq_average : number;
 }
 
-const DisplayContainer: React.FC<DisplayContainerProps> = ({ route_type, time_estimate, total_length, aq_average }) => {
+  /*
+  RouteInfoCard component displays route information including type, time estimate, total length, and air quality average.
+  */
+const RouteInfoCard: React.FC<RouteInfoCardProps> = ({ route_type, time_estimate, total_length, aq_average }) => {
   return (
-    <div className="DisplayContainer">
+    <div className="RouteInfoCard">
       <div className="route-type">
         <span className="route_type">{route_type}</span>
       </div>
@@ -29,4 +32,4 @@ const DisplayContainer: React.FC<DisplayContainerProps> = ({ route_type, time_es
   );
 };
 
-export default DisplayContainer;
+export default RouteInfoCard;

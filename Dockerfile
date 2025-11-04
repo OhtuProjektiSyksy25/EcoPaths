@@ -34,17 +34,23 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 
 WORKDIR /app
 
-COPY backend/pyproject.toml backend/poetry.lock* ./
+RUN mkdir -p backend
 
-RUN poetry install --no-interaction --no-ansi --no-root
+COPY backend/pyproject.toml backend/poetry.lock* ./backend/
 
-COPY backend/ ./
+RUN cd backend && poetry install --no-interaction --no-ansi --no-root --with dev
 
-COPY --from=frontend /app/build ./build
+COPY backend/ ./backend/
+
+COPY tasks.py ./tasks.py
+
+COPY --from=frontend /app/build ./backend/build
 
 RUN chmod -R a+rwX /app
 
-ENV PYTHONPATH="${PYTHONPATH}:/app/src"
+ENV PYTHONPATH="${PYTHONPATH}:/app:/app/backend/src"
+
+WORKDIR /app/backend
 
 EXPOSE 8000
 
