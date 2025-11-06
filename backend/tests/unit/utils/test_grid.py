@@ -8,7 +8,6 @@ class TestGrid:
     @pytest.fixture
     def berlin_grid(self):
         """Create Berlin grid instance."""
-        """Create Berlin grid instance."""
         area_config = AreaConfig("berlin")
         return Grid(area_config)
 
@@ -24,20 +23,17 @@ class TestGrid:
         assert berlin_grid.max_lon == berlin_config.bbox[2]
         assert berlin_grid.max_lat == berlin_config.bbox[3]
 
-    def test_create_grid(self, berlin_grid, berlin_config):
-        """Test grid creation for Berlin."""
+    def test_create_grid(self, berlin_grid):
+        """Test grid creation returns valid GeoDataFrame."""
         grid_gdf = berlin_grid.create_grid()
 
-        assert grid_gdf is not None
-        assert len(grid_gdf) > 0
+        assert isinstance(grid_gdf, gpd.GeoDataFrame)
+        assert not grid_gdf.empty
 
-        # Check expected columns
         expected_columns = {"tile_id", "row", "col",
                             "geometry", "center_lon", "center_lat"}
-        missing = expected_columns - set(grid_gdf.columns)
-        assert not missing, f"Missing columns: {missing}"
+        assert expected_columns.issubset(grid_gdf.columns)
 
-        # Check CRS is set
         assert grid_gdf.crs is not None
 
     def test_tile_id_parsing(self, berlin_grid):
@@ -97,9 +93,9 @@ class TestGrid:
         assert max_col > col  # Max should be in higher col
 
     def test_get_tile_id_outside_area(self, berlin_grid, berlin_config):
-        """Test that coordinates outside bbox raise error."""
+        """Test that coordinates outside bbox raise ValueError."""
+        lon_outside = berlin_config.bbox[0] - 0.1
+        lat_outside = berlin_config.bbox[1] - 0.1
+
         with pytest.raises(ValueError, match="not in grid bounds"):
-            berlin_grid.get_tile_id(
-                berlin_config.bbox[0] - 0.1,  # outside west
-                berlin_config.bbox[1] - 0.1   # outside south
-            )
+            berlin_grid.get_tile_id(lon_outside, lat_outside)

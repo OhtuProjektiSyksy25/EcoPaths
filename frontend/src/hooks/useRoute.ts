@@ -1,52 +1,118 @@
-// src/hooks/useRoute.ts
-import { useState, useEffect } from "react";
-import { fetchRoute } from "../api/routeApi";
-import { LockedLocation, RouteGeoJSON, UseRouteResult, RouteSummary } from "../types/route";
+import { useState, useEffect, useRef } from "react";
+import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
+import { Area } from "../types";
+
+
+interface UseRouteReturn {
+  routes: Record<string, RouteGeoJSON> | null;
+  summaries: Record<string, RouteSummary> | null;
+  loading: boolean;
+  balancedLoading: boolean;
+  error: string | null;
+}
 
 /**
- * Custom React hook for fetching multiple routes between two locked locations.
- *
- * @param fromLocked - Starting location with address, geometry and optional city
- * @param toLocked - Destination location with address, geometry and optional city
- * @returns An object containing all routes, loading state, error message, and summaries
+ * Custom hook to fetch route data from the backend API.
+ * 
+ * @param fromLocked - The starting location
+ * @param toLocked - The destination location
+ * @param balancedWeight - Weight for balanced route (0 = fastest, 1 = best AQ)
+ * @returns Object containing routes, summaries, loading states, and error
  */
-export function useRoute(
+export const useRoute = (
   fromLocked: LockedLocation | null,
-  toLocked: LockedLocation | null
-): UseRouteResult {
+  toLocked: LockedLocation | null,
+  balancedWeight: number
+): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
   const [loading, setLoading] = useState(false);
+  const [balancedLoading, setBalancedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Track if this is the initial load or a weight change
+  const isInitialLoadRef = useRef(true);
+  const prevWeightRef = useRef(balancedWeight);
 
   useEffect(() => {
-    const shouldFetch =
-      fromLocked?.full_address &&
-      toLocked?.full_address &&
-      fromLocked.geometry?.coordinates &&
-      toLocked.geometry?.coordinates;
+    if (!fromLocked || !toLocked) {
+      setRoutes(null);
+      setSummaries(null);
+      setError(null);
+      isInitialLoadRef.current = true;
+      return;
+    }
 
-    if (!shouldFetch) return;
-
-    const getRoutes = async () => {
-      try {
+    const fetchRoute = async () => {
+      // Determine if this is just a weight change (not location change)
+      const isWeightChange = !isInitialLoadRef.current && prevWeightRef.current !== balancedWeight;
+      
+      if (isInitialLoadRef.current) {
         setLoading(true);
-        setError(null);
-        const { routes, summaries } = await fetchRoute(fromLocked, toLocked);
-        setRoutes(routes);
-        setSummaries(summaries);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message);
-        setRoutes(null);
-        setSummaries(summaries);
+        isInitialLoadRef.current = false;
+      } else if (isWeightChange) {
+        setBalancedLoading(true);
+      } else {
+        setLoading(true);
+      }
+      
+      setError(null);
+      prevWeightRef.current = balancedWeight;
+
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/getroute`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                properties: { role: "start" },
+                geometry: fromLocked.geometry,
+              },
+              {
+                type: "Feature",
+                properties: { role: "end" },
+                geometry: toLocked.geometry,
+              },
+            ],
+            balanced_weight: balancedWeight,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (isWeightChange) {
+          // Only update balanced route and summary
+          setRoutes(prev => prev ? { ...prev, balanced: data.routes.balanced } : data.routes);
+          setSummaries(prev => prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries);
+        } else {
+          // Update all routes
+          setRoutes(data.routes);
+          setSummaries(data.summaries);
+        }
+      } catch (err) {
+        console.error("Error fetching route:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch route");
+        if (!isWeightChange) {
+          setRoutes(null);
+          setSummaries(null);
+        }
       } finally {
         setLoading(false);
+        setBalancedLoading(false);
       }
     };
 
-    getRoutes();
-  }, [fromLocked, toLocked]);
+    fetchRoute();
+  }, [fromLocked, toLocked, balancedWeight]);
 
-  return { routes, summaries, loading, error };
-}
+  return { routes, summaries, loading, balancedLoading, error };
+};

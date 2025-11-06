@@ -26,6 +26,7 @@ selenium*.png
 
 # General
 .env
+.env.test
 .DS_Store
 Thumbs.db
 *.swp

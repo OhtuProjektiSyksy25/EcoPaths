@@ -47,37 +47,149 @@
   display: flex;
   gap: 8px;
   padding: 16px;
-  background-color: rgba(17, 212, 82, 0.4);
-  color: rgb(34, 34, 34);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #11d45240;
   margin-top: 16px;
+  background-color: rgba(0, 184, 46, 0.1);
+  border: 2px solid #019c2a;
+  color: #019c2a;
 }
 
 .balanced-route-container {
+  position: relative;
   display: flex;
   gap: 8px;
   padding: 16px;
   background-color: #b8ffd3;
-  color: rgb(0, 255, 200);
+  color: rgb(0, 0, 0);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #00ff9540;
   margin-top: 16px;
+  background-color: rgba(3, 224, 213, 0.12);
+  border: 2px solid #02beb5;
+  color: #00c5cc;
 }
 
 .fastest-route-container {
   display: flex;
   gap: 8px;
   padding: 16px;
-  background-color: #5cabff40;
-  color: rgb(34, 34, 34);
   border-radius: 12px;
   font-family: Public Sans, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #5cabff40;
   margin-top: 16px;
+  background-color: rgba(0, 80, 228, 0.1);
+  border: 2px solid #0051d4;
+  color: #0051d4;
+}
+
+.aqi-toggle-button {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.aqi-toggle-button button {
+  padding: 10px 18px;
+  background-color: #ffffff;
+  border: 2px solid #60B45A;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #333;
+  font-family: 'Public Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.aqi-toggle-button button:hover {
+  background-color: #e8f7ec;
+  border-color: #60B45A;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+
+
+.error-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.error-popup-modal {
+  background: rgb(255, 255, 255);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.error-popup-content h3 {
+  margin: 0 0 20px 0;
+  color: #d32f2f;
+  font-size: 24px;
+  text-align: center;
+  font-family: 'Arial', sans-serif;
+  font-weight: 600;
+}
+
+.error-popup-content p {
+  color: #666;
+  font-size: 16px;
+  text-align: center;
+  margin: 0 0 30px 0;
+  font-family: 'Arial', sans-serif;
+  line-height: 1.5;
+}
+
+.error-popup-button {
+  background: #ffffff;
+  color: rgb(0, 0, 0);
+  border: 2px solid black;
+  border-radius: 8px;
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Arial', sans-serif;
+  cursor: pointer;
+  display: block;
+  margin: 0 auto;
+  transition: background 0.3s;
+}
+
+.error-popup-button:hover {
+  background: #f5f5f5;
+}
+
+
+.route-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(2px);
 }
