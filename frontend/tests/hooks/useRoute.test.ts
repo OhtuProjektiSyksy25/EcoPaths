@@ -42,8 +42,15 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
 };
 
 const mockSummaries: Record<string, RouteSummary> = {
-  fastest: { total_length: 1200, time_estimate: "5 min", aq_average: 42 },
-  balanced: { total_length: 1300, time_estimate: "6 min", aq_average: 38 },
+    fastest: {
+    total_length: 1200,
+    time_estimate: "5 min",
+    aq_average: 42,
+  },
+    balanced: { 
+    total_length: 1300,
+    time_estimate: "6 min",
+    aq_average: 38 },
 };
 
 beforeAll(() => {
@@ -72,6 +79,14 @@ describe("useRoute", () => {
     const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/getroute"),
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+    );
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(result.current.routes).toEqual(mockRoutes);
