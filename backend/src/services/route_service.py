@@ -63,6 +63,7 @@ class RouteService:
         self.redis = RedisCache()
         self.db_client = DatabaseClient()
         self.network_type = network_type
+        self.current_route_algorithm = None
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
                   balanced_value: float = 0.5) -> dict:
@@ -94,6 +95,25 @@ class RouteService:
         return self._compute_routes(
             edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
             )
+
+    def compute_balanced_route_only(self, balanced_value):
+        """
+        Computes only the "balanced route" for the given balanced_value
+        Uses a pre-initialized graph
+
+        Args:
+            balanced_value (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
+
+        Returns:
+            result (GeoJSON FeatureCollection): Route edges
+            summary (dict): Route data summary
+        """
+        gdf = self.current_route_algorithm.re_calculate_path(balanced_value)
+        summary = summarize_route(gdf)
+        result = GeoTransformer.gdf_to_feature_collection(
+                gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
+            )
+        return result, summary
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
         """
@@ -185,11 +205,11 @@ class RouteService:
             "balanced": balanced_value
         }
 
-        algo = RouteAlgorithm(edges, nodes)
+        self.current_route_algorithm = RouteAlgorithm(edges, nodes)
         results, summaries = {}, {}
 
         for mode, balance_factor in modes.items():
-            gdf = algo.calculate_path(
+            gdf = self.current_route_algorithm.calculate_path(
                 origin_gdf, destination_gdf, balance_factor=balance_factor)
             gdf["mode"] = mode
             summaries[mode] = summarize_route(gdf)

@@ -114,6 +114,14 @@ class RouteAlgorithm:
         print(f"Extracted {len(path_edges)} edges for final route")
         return path_edges
 
+    def re_calculate_balanced_path(self, balance_factor):
+
+        self.update_weights(balance_factor=balance_factor)
+        path_nodes = self.run_routing_algorithm(
+            self.igraph, "origin", "destination")
+        path_edges = self.extract_path_edges(path_nodes)
+        return path_edges
+
     def init_route_specific(self):
         """
         Inits route specific data:

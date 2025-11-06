@@ -46,14 +46,17 @@ export const useRoute = (
     const fetchRoute = async () => {
       // Determine if this is just a weight change (not location change)
       const isWeightChange = !isInitialLoadRef.current && prevWeightRef.current !== balancedWeight;
-      
+      let balancedRouteBool: boolean
       if (isInitialLoadRef.current) {
         setLoading(true);
+        balancedRouteBool = false
         isInitialLoadRef.current = false;
       } else if (isWeightChange) {
+        balancedRouteBool = true
         setBalancedLoading(true);
       } else {
         setLoading(true);
+        balancedRouteBool = false
       }
       
       setError(null);
@@ -80,6 +83,7 @@ export const useRoute = (
               },
             ],
             balanced_weight: balancedWeight,
+            balanced_route: balancedRouteBool
           }),
         });
 
@@ -91,8 +95,8 @@ export const useRoute = (
         
         if (isWeightChange) {
           // Only update balanced route and summary
-          setRoutes(prev => prev ? { ...prev, balanced: data.routes.balanced } : data.routes);
-          setSummaries(prev => prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries);
+          setRoutes(prev => prev ? { ...prev, balanced: data[0] } : data.routes);
+          setSummaries(prev => prev ? { ...prev, balanced: data[1] } : data.summaries);
         } else {
           // Update all routes
           setRoutes(data.routes);
