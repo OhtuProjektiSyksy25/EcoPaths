@@ -31,8 +31,8 @@ spec:
             - name: GOOGLE_API_KEY
               valueFrom:
                 secretKeyRef:
-                name: ecopaths-google-api
-                key: GOOGLE_API_KEY
+                  name: ecopaths-google-api
+                  key: GOOGLE_API_KEY
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
