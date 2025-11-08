@@ -49,11 +49,15 @@ export const useRoute = (
       
       if (isInitialLoadRef.current) {
         setLoading(true);
+        setRoutes(null);
+        setSummaries(null);
         isInitialLoadRef.current = false;
       } else if (isWeightChange) {
         setBalancedLoading(true);
       } else {
         setLoading(true);
+        setRoutes(null);
+        setSummaries(null);
       }
       
       setError(null);
