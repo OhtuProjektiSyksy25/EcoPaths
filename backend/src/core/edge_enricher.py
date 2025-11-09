@@ -150,11 +150,10 @@ class EdgeEnricher:
             how="left"
         )
 
-        # Fill missing AQI values with neutral baseline (e.g. 50)
         enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
 
         # Compute derived AQI cost (scaled by environmental influence)
-        enriched["aqi"] = enriched["raw_aqi"] * (((enriched["env_influence"] - 1) * 0.1) + 1)
+        enriched["aqi"] = enriched["raw_aqi"] * enriched["env_influence"]
 
         # normalized_aqi is a derived feature used for routing algorithms.
         # It scales AQI cost between 0–1 for consistent weighting.
