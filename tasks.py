@@ -1,11 +1,11 @@
 import os
+import sys
+import gc
 import subprocess
 import signal
 import socket
 from invoke import task
-import geopandas as gpd
-from pathlib import Path
-
+from backend.src.database.db_client import DatabaseClient
 
 # ========================
 # Code formatting & linting
@@ -194,110 +194,98 @@ Includes commands to:
 Usage:
     inv reset-and-populate-area --area=berlin
     inv create-all-tables --area=berlin --network-type=walking
-    inv populate-database --area=berlin --network-type=walking --overwrite-edges
+    inv fill-area-tables --area=berlin --network-type=walking --overwrite-edges
 """
-
-from backend.src.database.db_client import DatabaseClient
 
 @task
 def reset_and_populate_area(c, area: str):
     """
-    Main task to reset and repopulate all tables for a given area.
-
-    Steps:
-    - Drops grid and edge tables
-    - Recreates ORM tables
-    - Populates edge data from OSM
-    - Grid is created only once (shared across networks)
-
-    Usage:
-        inv reset-and-populate-area --area=berlin
+    Reset and repopulate all tables for a given area.
+    Runs driving and walking networks separately to avoid memory accumulation.
     """
     network_types = ["driving", "walking"]
 
+    print(f"\n[AREA] Resetting grid and tables for area '{area}'")
     reset_grid(c, area)
 
     for i, network_type in enumerate(network_types):
-        reset_area(c, area, network_type)
-        create_all_tables(c, area, network_type)
-        fill_area_tables(
-            c,
-            area,
-            network_type,
-            overwrite_edges=True,
-            overwrite_grid=(i == 0)
-        )
+        print(f"\n[NETWORK] Starting network '{network_type}'\n")
+
+        subprocess.run([
+            sys.executable, "-m", "invoke",
+            "reset-area", "--area", area, "--network-type", network_type
+        ], check=True)
+
+        subprocess.run([
+            sys.executable, "-m", "invoke",
+            "create-all-tables", "--area", area, "--network-type", network_type
+        ], check=True)
+
+        subprocess.run([
+            sys.executable, "-m", "invoke",
+            "fill-area-tables", "--area", area,
+            "--network-type", network_type,
+            "--overwrite-edges",
+            *(["--overwrite-grid"] if i == 0 else [])
+        ], check=True)
+
+        gc.collect()
+        print(f"[NETWORK] Completed network '{network_type}'\n")
 
 
 @task
 def create_all_tables(c, area: str, network_type: str):
     """
     Create all ORM-defined tables for a specific area and network type.
-
-    Usage:
-        inv create-all-tables --area=berlin --network-type=walking
     """
-    from backend.src.database.db_client import DatabaseClient
     db = DatabaseClient()
     db.create_tables_for_area(area, network_type)
+    print(f"[DB] Tables ensured for area '{area}' ({network_type})")
 
 
 @task
 def fill_area_tables(c, area: str, network_type: str, overwrite_edges=False, overwrite_grid=False):
     """
-    Create necessary tables and populate the database with grid and edge data for a specific area.
-
-    Usage:
-        inv populate-database --area=berlin --network-type=walking --overwrite-edges --overwrite-grid
+    Populate grid and edge tables for a specific area and network type.
+    Prints summarized output of actions performed.
     """
-    from backend.src.database.db_client import DatabaseClient
     from backend.preprocessor.osm_preprocessor import OSMPreprocessor
     from backend.src.config.settings import get_settings
     from backend.src.utils.grid import Grid
 
-    print(f"Starting database population for area: '{area}', network type: '{network_type}'")
-
+    print(f"\n[DB] Starting database population for area '{area}', network '{network_type}'")
+    
     db_client = DatabaseClient()
-
     grid_table = f"grid_{area.lower()}"
     edge_table = f"edges_{area.lower()}_{network_type.lower()}"
 
     if not db_client.table_exists(edge_table):
-        raise RuntimeError(f"Edge table '{edge_table}' does not exist. Run 'create-all-tables' first.")
+        raise RuntimeError(f"[ERROR] Edge table '{edge_table}' does not exist. Run 'create-all-tables' first.")
 
     # GRID
-    settings = get_settings(area)
-    grid = Grid(settings.area)
+    grid = Grid(get_settings(area).area)
     grid_gdf = grid.create_grid()
-
-    if db_client.table_exists(grid_table) and not overwrite_grid:
-        print(f"Grid table '{grid_table}' already exists. Skipping..")
-    else:
-        action = "Overwriting" if overwrite_grid else "Creating"
-        print(f"{action} grid for area '{area}'...")
+    grid_action = "Skipped"
+    if not db_client.table_exists(grid_table) or overwrite_grid:
         db_client.save_grid(grid_gdf, area=area, if_exists="replace" if overwrite_grid else "fail")
+        grid_action = "Created"
 
     # EDGES
-    if db_client.table_exists(edge_table) and not overwrite_edges:
-        print(f"Edge table '{edge_table}' already exists. Skipping..")
-    else:
-        action = "Overwriting" if overwrite_edges else "Creating"
-        print(f"{action} edge data for table '{edge_table}'...")
+    edges_action = "Skipped"
+    if not db_client.table_exists(edge_table) or overwrite_edges:
         preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-        preprocessor.extract_edges() 
+        preprocessor.extract_edges()
+        edges_action = "Created"
 
-    print(f"Database population complete for area '{area}', network type '{network_type}'.")
+    print(f"[GRID] Table: {grid_action}")
+    print(f"[EDGES] Table: {edges_action}")
+    print(f"[DB] Database population complete for area '{area}', network '{network_type}'\n")
 
 @task
 def drop_table(c, table_name: str):
     """
     Drop a specific table from the database.
-
-    Usage:
-        inv drop-table --table-name=edges_berlin_walking
     """
-    from backend.src.database.db_client import DatabaseClient
-
     db = DatabaseClient()
     db.drop_table(table_name)
 
@@ -305,12 +293,11 @@ def drop_table(c, table_name: str):
 @task
 def reset_area(c, area: str, network_type: str):
     """
-    Drop all tables for a given area.
+    Drop all tables for a given area, summarized output.
 
     Usage:
         inv reset-area --area=berlin --network-type=walking
     """
-    from backend.src.database.db_client import DatabaseClient
     db = DatabaseClient()
 
     tables = [
@@ -318,26 +305,42 @@ def reset_area(c, area: str, network_type: str):
         f"nodes_{area.lower()}_{network_type.lower()}"
     ]
 
+    dropped_tables = []
     for table in tables:
         if db.table_exists(table):
-            print(f"Dropping table: {table}")
             db.drop_table(table)
+            dropped_tables.append(table)
+
+    if dropped_tables:
+        print(f"[DB] Dropped tables: {', '.join(dropped_tables)}")
+    else:
+        print(f"[DB] No tables existed for area '{area}' and network '{network_type}'")
+
 
 @task
 def reset_grid(c, area: str):
     """
-    Drop grid table and its index for a given area.
+    Drop grid table and its index for a given area, summarized output.
     """
+    from backend.src.database.db_client import DatabaseClient
     db = DatabaseClient()
+
     grid_table = f"grid_{area.lower()}"
     grid_index = f"idx_{grid_table}_geometry"
 
-    if db.table_exists(grid_table):
-        print(f"Dropping table: {grid_table}")
-        db.drop_table(grid_table)
+    dropped_items = []
 
-    print(f"Dropping index: {grid_index}")
+    if db.table_exists(grid_table):
+        db.drop_table(grid_table)
+        dropped_items.append(grid_table)
+
     try:
         db.execute(f"DROP INDEX IF EXISTS {grid_index};")
+        dropped_items.append(grid_index)
     except Exception as e:
         print(f"Warning: failed to drop index {grid_index}: {e}")
+
+    if dropped_items:
+        print(f"Dropped items: {', '.join(dropped_items)}")
+    else:
+        print(f"No grid table or index existed for area '{area}'")
