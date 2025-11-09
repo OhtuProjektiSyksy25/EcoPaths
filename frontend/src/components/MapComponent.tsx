@@ -39,6 +39,10 @@ export const updateWaterLayers = (map: mapboxgl.Map) => {
   });
 };
 
+interface MapWithLock extends mapboxgl.Map {
+  interactionLocked?: boolean;
+}
+
 const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
@@ -49,7 +53,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || "";
   const mapboxRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -97,11 +101,9 @@ const MapComponent: React.FC<MapComponentProps> = ({
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-
     map.on("load", () => updateWaterLayers(map));
 
     mapRef.current = map;
-
     return () => map.remove();
   }, [mapboxToken, mapboxStyle]);
 
@@ -132,42 +134,36 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [fromLocked, toLocked]);
 
-  /*  Fly to selected area */
+  /*  Fly to selected area and disable interactions until finished  */
   useEffect(() => {
     if (!mapRef.current || !selectedArea) return;
 
-    mapRef.current.flyTo({
+    const map = mapRef.current;
+
+    /* Disable all user interactions */
+    map.dragPan.disable();
+    map.scrollZoom.disable();
+    map.boxZoom.disable();
+    map.doubleClickZoom.disable();
+    map.keyboard.disable();
+    map.touchZoomRotate.disable();
+
+    const onMoveEnd = () => {
+      /* Re-enable interactions after flyTo */
+      map.dragPan.enable();
+      map.scrollZoom.enable();
+      map.boxZoom.enable();
+      map.doubleClickZoom.enable();
+      map.keyboard.enable();
+      map.touchZoomRotate.enable();
+      map.off("moveend", onMoveEnd);
+    };
+
+    map.on("moveend", onMoveEnd);
+
+    map.flyTo({
       center: selectedArea.focus_point,
-      zoom: selectedArea.zoom,
-      duration: 2000,
-      essential: true,
-    });
-  }, [selectedArea]);
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    fromMarkerRef.current?.remove()
-    toMarkerRef.current?.remove()
-
-    if (fromLocked?.geometry?.coordinates) {
-      fromMarkerRef.current = new mapboxgl.Marker({color: "red"})
-      .setLngLat([fromLocked.geometry.coordinates[0], fromLocked.geometry.coordinates[1]])
-      .addTo(mapRef.current)
-    }
-
-    if (toLocked?.geometry?.coordinates) {
-      toMarkerRef.current = new mapboxgl.Marker({color: "red"})
-      .setLngLat([toLocked.geometry.coordinates[0], toLocked.geometry.coordinates[1]])
-      .addTo(mapRef.current)
-    }    
-  },[fromLocked, toLocked]);
-
-    useEffect(() => {
-    if (!mapRef.current || !selectedArea) return;
-    mapRef.current.flyTo({
-      center: selectedArea.focus_point,
-      zoom: selectedArea.zoom,
+      zoom: 13.5,
       duration: 2000,
       essential: true,
     });
