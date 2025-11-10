@@ -29,7 +29,7 @@ export async function fetchCustomRoute(
     ],
   };
 
-  const response = await fetch(`${process.env.REACT_APP_API_URL}/getroute/custom`, {
+  const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute/custom`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
