@@ -80,10 +80,12 @@ class AreaConfig:
             else:
                 raise ValueError(f"Unknown area: {self.area}")
 
-        if self.area not in AREA_TO_COUNTRY_CODE:
+        if self.area in AREA_TO_COUNTRY_CODE:
+            self.country_code = AREA_TO_COUNTRY_CODE[self.area]
+        elif self.area.startswith("test"):
+            AREA_TO_COUNTRY_CODE[self.area] = AREA_TO_COUNTRY_CODE.get("testarea", {})
+        else:
             raise ValueError(f"Country code not defined for area: {self.area}")
-
-        self.country_code = AREA_TO_COUNTRY_CODE[self.area]
 
         settings = AREA_SETTINGS[self.area]
         self.bbox = settings["bbox"]
