@@ -108,7 +108,7 @@ class RouteService:
             result (GeoJSON FeatureCollection): Route edges
             summary (dict): Route data summary
         """
-        gdf = self.current_route_algorithm.re_calculate_path(balanced_value)
+        gdf = self.current_route_algorithm.re_calculate_balanced_path(balanced_value)
         summary = summarize_route(gdf)
         result = GeoTransformer.gdf_to_feature_collection(
                 gdf, property_keys=[c for c in gdf.columns if c != "geometry"]

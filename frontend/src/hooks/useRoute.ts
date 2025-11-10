@@ -92,7 +92,7 @@ export const useRoute = (
         }
 
         const data = await response.json();
-        
+
         if (isWeightChange) {
           // Only update balanced route and summary
           setRoutes(prev => prev ? { ...prev, balanced: data[0] } : data.routes);

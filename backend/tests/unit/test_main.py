@@ -349,3 +349,49 @@ def test_compose_photon_suggestions_empty():
     photon = {"features": []}
     out = src.main._compose_photon_suggestions(photon)
     assert out["features"] == []
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_getroute_calls_correct_function_according_to_balancedbool(monkeypatch):
+    mock_service = Mock()
+    mock_service.get_route.return_value = {"result": "ok"}
+    mock_service.compute_balanced_route_only.return_value = {"result": "ok"}
+
+    app.state.route_service = mock_service
+    app.state.area_config = MockAreaConfig()
+    monkeypatch.setattr("src.main.GeoTransformer.geojson_to_projected_gdf", Mock())
+
+    body = {
+        "features": [
+            {"type": "Feature", "properties": {"role": "start"}, "geometry": {"type": "Point", "coordinates": [1, 2]}},
+            {"type": "Feature", "properties": {"role": "end"}, "geometry": {"type": "Point", "coordinates": [3, 4]}},
+        ],
+        "balanced_route": False,
+        "balanced_weight": 0.5,
+    }
+    client.post("/getroute", json=body)
+
+    mock_service.get_route.assert_called_once()
+    mock_service.compute_balanced_route_only.assert_not_called()
+
+    args, _ = mock_service.get_route.call_args
+    assert len(args) == 3
+    assert args[2] == 0.5
+    mock_service.compute_balanced_route_only.assert_not_called()
+
+    mock_service.reset_mock()
+
+    new_body = {
+        "features": [
+            {"type": "Feature", "properties": {"role": "start"}, "geometry": {"type": "Point", "coordinates": [1, 2]}},
+            {"type": "Feature", "properties": {"role": "end"}, "geometry": {"type": "Point", "coordinates": [3, 4]}},
+        ],
+        "balanced_route": True,
+        "balanced_weight": 0.8,
+    }
+
+    client.post("/getroute", json=new_body)
+
+    args, _ = mock_service.compute_balanced_route_only.call_args
+    assert len(args) == 1
+    assert args[0] == 0.8
+    mock_service.get_route.assert_not_called()
