@@ -191,7 +191,8 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
             photon_suggestions = response.json()
-            photon_suggestions["features"] = remove_double_osm_features(photon_suggestions.get("features", []))
+            trimmed_features = remove_double_osm_features(photon_suggestions.get("features", []))
+            photon_suggestions["features"] = trimmed_features
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []
