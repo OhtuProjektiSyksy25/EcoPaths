@@ -82,7 +82,7 @@ describe("SideBar", () => {
   /*
   Checks that clicking "Use my current location" calls getCurrentLocation from the geolocation hook
   */
-  test("clicking 'Your location' calls getCurrentLocation", async () => {
+  test("clicking 'Use my current location' calls getCurrentLocation", async () => {
     render(
   <SideBar 
     onFromSelect={mockOnFromSelect} 
