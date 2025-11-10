@@ -85,13 +85,13 @@ def test_compose_photon_suggestions_empty():
     assert out["features"] == []
 
 
-def test_remove_double_OSM_features_dedupes():
+def test_remove_double_osm_features_dedupes():
     f1 = make_feature("Place A", osm_id=123, osm_type="node")
     f2 = make_feature("Place A duplicate", osm_id=123, osm_type="node")
     f3 = make_feature("Different", osm_id=456, osm_type="node")
     features = [f1, f2, f3]
 
-    unique = addr.remove_double_OSM_features(features)
+    unique = addr._remove_double_osm_features(features)
     # should keep first occurrence of osm_id 123 and include osm_id 456
     assert len(unique) == 2
     assert unique[0]["properties"]["osm_id"] == 123

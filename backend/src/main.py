@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from config.settings import AREA_SETTINGS
 from services.route_service import RouteServiceFactory
 from utils.geo_transformer import GeoTransformer
-from utils.address_suggestions import (remove_double_OSM_features,
+from utils.address_suggestions import (remove_double_osm_features,
                                      compose_photon_suggestions)
 
 
@@ -191,7 +191,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
             photon_suggestions = response.json()
-            photon_suggestions["features"] = remove_double_OSM_features( photon_suggestions.get("features", []) )
+            photon_suggestions["features"] = remove_double_osm_features(photon_suggestions.get("features", []))
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []

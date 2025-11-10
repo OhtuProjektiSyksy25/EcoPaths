@@ -59,7 +59,7 @@ def compose_photon_suggestions(photon_suggestions: dict) -> dict:
     photon_suggestions["features"] = final_features
     return photon_suggestions
 
-def remove_double_OSM_features(features: list[dict]) -> list[dict]:
+def remove_double_osm_features(features: list[dict]) -> list[dict]:
     """Remove features with duplicate OSM IDs, keeping the first occurrence."""
     seen_osm_ids = set()
     unique_features = []
