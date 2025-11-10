@@ -241,6 +241,7 @@ const SideBar: React.FC<SideBarProps> = ({
                   : fromSuggestions)
             }
             onSelect={(place) => {
+              setShowFromCurrentLocation(false);
               if (place.properties?.isCurrentLocation) {
                 handleCurrentLocationSelect();
               } else {
