@@ -53,6 +53,14 @@ AREA_SETTINGS = {
     },
 }
 
+# === Country Code Mapping ===
+# Maps AREA_SETTINGS keys to country codes for external APIs
+AREA_TO_COUNTRY_CODE = {
+    "berlin": "DE",
+    "la": "US",
+    "helsinki": "FI",
+    "testarea": "DE",
+}
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
@@ -71,6 +79,11 @@ class AreaConfig:
                 AREA_SETTINGS[self.area] = AREA_SETTINGS.get("testarea", {})
             else:
                 raise ValueError(f"Unknown area: {self.area}")
+        
+        if self.area not in AREA_TO_COUNTRY_CODE:
+            raise ValueError(f"Country code not defined for area: {self.area}")
+
+        self.country_code = AREA_TO_COUNTRY_CODE[self.area]
 
         settings = AREA_SETTINGS[self.area]
         self.bbox = settings["bbox"]
