@@ -43,7 +43,7 @@ export function useDrawRoutes(
 
       map.addSource(sourceId, { type: "geojson", data: geojson });
 
-      if (mode === "balanced") {
+      if (mode === "balanced" && !showAQIColors) {
         map.addLayer({
           id: `${layerId}-halo`,
           type: "line",
