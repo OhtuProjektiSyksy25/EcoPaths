@@ -129,6 +129,20 @@ def _compose_photon_suggestions(photon_suggestions: dict) -> dict:
     photon_suggestions["features"] = final_features
     return photon_suggestions
 
+def remove_double_OSM_features(features: list[dict]) -> list[dict]:
+    """Remove features with duplicate OSM IDs, keeping the first occurrence."""
+    seen_osm_ids = set()
+    unique_features = []
+
+    for feature in features:
+        props = feature.get("properties", {})
+        osm_id = props.get("osm_id")
+        if osm_id not in seen_osm_ids:
+            seen_osm_ids.add(osm_id)
+            unique_features.append(feature)
+
+    return unique_features
+
 # ------------------------------------------------------------------------------
 
 
@@ -256,6 +270,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
             photon_suggestions = response.json()
+            photon_suggestions["features"] = remove_double_OSM_features( photon_suggestions.get("features", []) )
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []
