@@ -56,6 +56,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const debounce = useRef<number | null>();
   const { getCurrentLocation, coordinates } = useGeolocation();
+  const fromInputSelected = useRef(false);
+  const toInputSelected = useRef(false);
 
   useEffect(() => {
     onErrorChange?.(errorMessage);
@@ -148,6 +150,13 @@ const SideBar: React.FC<SideBarProps> = ({
   const HandleFromChange = async (value: string) => {
     setFrom(value);
     setShowFromCurrentLocation(false);
+
+    if (fromInputSelected.current) {
+      fromInputSelected.current = false;
+      setFromSuggestions([]);
+      return;
+    }
+
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = window.setTimeout(async () => {
       if (!value) {
@@ -169,6 +178,13 @@ const SideBar: React.FC<SideBarProps> = ({
 
   const HandleToChange = async (value: string) => {
     setTo(value);
+
+    if (toInputSelected.current) {
+      toInputSelected.current = false;
+      setToSuggestions([]);
+      return;
+    }
+
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = window.setTimeout(async () => {
       if (!value) {
@@ -242,6 +258,7 @@ const SideBar: React.FC<SideBarProps> = ({
             }
             onSelect={(place) => {
               setShowFromCurrentLocation(false);
+              fromInputSelected.current = true;
               if (place.properties?.isCurrentLocation) {
                 handleCurrentLocationSelect();
               } else {
@@ -261,7 +278,10 @@ const SideBar: React.FC<SideBarProps> = ({
             value={to}
             onChange={HandleToChange}
             suggestions={toSuggestions}
-            onSelect={onToSelect}
+            onSelect={(place) => {
+              toInputSelected.current = true;
+              onToSelect(place);
+            }}
           />
         </div>
 
