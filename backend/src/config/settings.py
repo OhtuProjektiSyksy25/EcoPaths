@@ -79,7 +79,7 @@ class AreaConfig:
                 AREA_SETTINGS[self.area] = AREA_SETTINGS.get("testarea", {})
             else:
                 raise ValueError(f"Unknown area: {self.area}")
-        
+
         if self.area not in AREA_TO_COUNTRY_CODE:
             raise ValueError(f"Country code not defined for area: {self.area}")
 
