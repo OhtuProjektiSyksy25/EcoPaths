@@ -87,7 +87,6 @@ def _build_full_address(properties: dict) -> str:
     full = " ".join(part for part in parts if part)
     return full + " " if full else full
 
-
 def _compose_photon_suggestions(photon_suggestions: dict) -> dict:
     """Classify Photon features into addresses and POIs and compose final list.
 
@@ -96,10 +95,23 @@ def _compose_photon_suggestions(photon_suggestions: dict) -> dict:
     """
     poi_features = []
     address_features = []
+    # track seen full_address strings (normalized via strip) to avoid exact duplicates
+    seen_full_addresses = set()
 
     for feature in photon_suggestions.get("features", []):
         props = feature.get("properties", {})
-        feature["full_address"] = _build_full_address(props)
+        # build and normalize full_address (strip trailing/leading whitespace)
+        full_addr = _build_full_address(props)
+        if isinstance(full_addr, str):
+            full_addr = full_addr.strip()
+        feature["full_address"] = full_addr
+
+        # skip exact duplicate full_address entries
+        if full_addr and full_addr in seen_full_addresses:
+            continue
+        if full_addr:
+            seen_full_addresses.add(full_addr)
+
         osm_key = props.get("osm_key")
         if osm_key in poi_keys:
             poi_features.append(feature)
