@@ -56,7 +56,7 @@ class TestGoogleAPIServices:
         }
         mock_post.return_value = mock_response
 
-        result = api_service._fetch_single_tile(52.52, 13.405)
+        result = api_service._fetch_single_tile(52.52, 13.405, "berlin")
         assert result["aqi"] == 42
         assert "pm2_5" in result
         assert "no2" in result
@@ -67,7 +67,7 @@ class TestGoogleAPIServices:
         # Mockataan oikea poikkeustyyppi
         mock_post.side_effect = RequestException("API down")
 
-        result = api_service._fetch_single_tile(52.52, 13.405)
+        result = api_service._fetch_single_tile(52.52, 13.405, "berlin")
 
         assert result == {"aqi": None, "pm2_5": None, "no2": None}
 
