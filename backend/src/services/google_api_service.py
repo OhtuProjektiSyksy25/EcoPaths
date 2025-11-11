@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import geopandas as gpd
 import numpy as np
+import random
+import os
 
 from config.settings import get_settings
 from database.db_client import DatabaseClient
@@ -14,14 +16,29 @@ class GoogleAPIService:
     """Service for fetching air quality data from Google API."""
 
     def __init__(self):
+        env_test_mode = os.getenv("TEST_MODE", "False").lower() == "true"
         settings = get_settings("testarea")  # area can be anything
-        if not settings.google_api_key:
+        self.test_mode = env_test_mode or getattr(settings, "TEST_MODE", False)
+
+        # Prefer env GOOGLE_API_KEY (more robust during startup), fallback to settings
+        self.api_key = os.getenv("GOOGLE_API_KEY") or settings.google_api_key
+
+        if not self.test_mode and not self.api_key:
             raise ValueError("GOOGLE_API_KEY not found in .env file.")
-        self.api_key = settings.google_api_key
+
         self.endpoint = "https://airquality.googleapis.com/v1/currentConditions:lookup"
 
     def _fetch_single_tile(self, lat: float, lon: float) -> dict:
         """Fetch AQI for a single coordinate pair; other pollutants as placeholders."""
+        # When in test mode, return random AQI instead of making an API call
+        print(f"Fetching AQ data for ({lat}, {lon}){' (TEST MODE)' if self.test_mode else ''}...")
+        if self.test_mode:
+            return {
+                "aqi": random.randint(5, 150),  # random AQI between 5–150
+                "pm2_5": None,
+                "no2": None
+            }
+
         payload = {"location": {"latitude": lat, "longitude": lon}}
         params = {"key": self.api_key}
         headers = {"Content-Type": "application/json"}
@@ -65,7 +82,6 @@ class GoogleAPIService:
                 crs=area_config.crs
             )
 
-        print(f"Fetching AQ data for {len(tiles)} tiles...")
 
         # Run parallel API calls for each tile
         results = {}

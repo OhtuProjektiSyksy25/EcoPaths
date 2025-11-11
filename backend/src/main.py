@@ -44,7 +44,7 @@ async def lifespan(application: FastAPI):
     selected_area = "berlin"
 
     if TEST_MODE:
-        print("Running in TEST MODE - Using local air quality data")
+        print("Running in TEST MODE - Using mocked air quality data")
 
     route_service, area_config = RouteServiceFactory.from_area(selected_area)
 

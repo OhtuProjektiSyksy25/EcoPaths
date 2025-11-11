@@ -1,4 +1,3 @@
-# config/settings.py
 # pylint: disable=invalid-name
 
 """
@@ -51,8 +50,8 @@ AREA_SETTINGS = {
     },
 }
 
-TEST_MODE_ENV = os.getenv("TEST_MODE", "false").lower()
-TEST_MODE = TEST_MODE_ENV in ("true")
+ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
@@ -172,6 +171,7 @@ class Settings:
         self.redis = RedisConfig()
         self.db = DatabaseConfig()
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.TEST_MODE = TEST_MODE
 
 
 @lru_cache(maxsize=None)
