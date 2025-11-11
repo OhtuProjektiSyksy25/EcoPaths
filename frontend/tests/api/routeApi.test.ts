@@ -29,7 +29,7 @@ describe("fetchRoute", () => {
     const result = await fetchRoute(fromLocked, toLocked);
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:8000/getroute",
+      "http://localhost:8000/api/getroute",
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },

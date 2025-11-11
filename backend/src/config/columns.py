@@ -33,8 +33,7 @@ EXTRA_COLUMNS = {
     "driving": [
         "access",       # OSM access tag: 'yes', 'private', etc.
         "highway",      # road type: motorway, primary, residential, etc.
-        "lanes",        # number of lanes
-        "maxspeed",     # speed limit (km/h)
-        "surface",      # pavement type: asphalt, gravel, etc.
     ]
 }
+
+BASE_COLUMNS_DF = BASE_COLUMNS[1:]

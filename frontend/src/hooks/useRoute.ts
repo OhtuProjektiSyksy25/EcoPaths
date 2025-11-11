@@ -49,18 +49,22 @@ export const useRoute = (
       
       if (isInitialLoadRef.current) {
         setLoading(true);
+        setRoutes(null);
+        setSummaries(null);
         isInitialLoadRef.current = false;
       } else if (isWeightChange) {
         setBalancedLoading(true);
       } else {
         setLoading(true);
+        setRoutes(null);
+        setSummaries(null);
       }
       
       setError(null);
       prevWeightRef.current = balancedWeight;
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/getroute`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

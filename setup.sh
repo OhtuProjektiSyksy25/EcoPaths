@@ -15,8 +15,8 @@ echo "PostgreSQL is ready!"
 echo "Populating all areas..."
 inv reset-and-populate-area --area=testarea
 inv reset-and-populate-area --area=berlin
-#inv reset-and-populate-area --area=la
-#inv reset-and-populate-area --area=helsinki
+inv reset-and-populate-area --area=la
+inv reset-and-populate-area --area=helsinki
 
 
 echo "Creating test database if it doesn't exist..."

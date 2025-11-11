@@ -25,14 +25,14 @@ screenshots/
 selenium*.png
 
 # General
-.env
-.env.test
+**/.env*
 .DS_Store
 Thumbs.db
 *.swp
 node_modules/
 /package.json
 /package-lock.json
+database_dump.backup
 
 
 # Redis

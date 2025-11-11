@@ -1,9 +1,7 @@
 """
 Download and load OpenStreetMap (OSM) PBF data for a configured area.
-
-Uses AreaConfig for area settings (URL, local path, bounding box).
-Downloads missing PBF files and returns a pyrosm.OSM instance for data access.
 """
+from pathlib import Path
 import requests
 from pyrosm import OSM
 from src.config.settings import AreaConfig
@@ -46,16 +44,41 @@ class OSMDownloader:
                 f.write(chunk)
         print(f"Downloaded PBF to {self.local_path}")
 
-    def get_osm_instance(self):
+    def save_bbox_network_to_file(self, network_type: str, file_format: str = "gpkg") -> Path:
         """
-        Ensure PBF exists and return Pyrosm OSM object.
+        Extracts a network of edges from the OSM PBF file for the
+        configured area and saves it to disk.
+
+        The network is filtered using the bounding box defined in AreaConfig. 
+        The result is saved in either GPKG or Parquet format, 
+        depending on the specified file_format.
+
+        Args:
+            network_type (str): Type of network to extract ('walking', 'cycling', 'driving').
+            file_format (str): Output file format ('gpkg' or 'parquet'). Defaults to 'gpkg'.
+
         Returns:
-            pyrosm.OSM: A Pyrosm OSM instance initialized with the area's data.
+            Path: Full path to the saved network file.
 
         Raises:
-            ValueError: If no PBF URL is configured and the file is missing.
-            requests.HTTPError: If downloading the file fails.
+            ValueError: If no edges are found or an unsupported format is specified.
         """
-
         self.download_if_missing()
-        return OSM(str(self.local_path), bounding_box=self.area_config.bbox)
+        osm = OSM(str(self.local_path), bounding_box=self.area_config.bbox)
+        edges = osm.get_network(network_type=network_type)
+        if edges is None or edges.empty:
+            raise ValueError(
+                f"No edges found for '{network_type}' in '{self.area_config.area}'")
+
+        output_path = self.area_config.get_raw_osm_file_path(
+            network_type, file_format)
+
+        if file_format == "gpkg":
+            edges.to_file(output_path, driver="GPKG")
+        elif file_format == "parquet":
+            edges.to_parquet(output_path)
+        else:
+            raise ValueError(f"Unsupported format: {file_format}")
+
+        print(f"Saved raw OSM network to {output_path}")
+        return output_path
