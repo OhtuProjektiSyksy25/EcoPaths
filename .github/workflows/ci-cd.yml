@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - main
+      - feature/e2e-tests
   pull_request:
     branches:
       - dev
@@ -142,32 +143,136 @@ jobs:
           files: coverage_reports/backend/coverage.xml
           fail_ci_if_error: true
 
-  ### 3. ROBOT TESTS (UI)
-  # robot-tests:
-  #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
+  ### 3. PLAYWRIGHT E2E (UI)
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    defaults:
+      run:
+        working-directory: .
+    services:
+      postgres:
+        image: kartoza/postgis:15-3.4
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: pathplanner
+          POSTGRES_PASSWORD: sekret
+          POSTGRES_DB: ecopaths_test
+        options: >-
+          --health-cmd="pg_isready -U pathplanner -d ecopaths"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
 
-  #   name: Robot Framework UI Tests (E2E)
-  #   runs-on: ubuntu-latest
-  #   needs: [frontend, backend]
-  #   defaults:
-  #     run:
-  #       working-directory: e2e
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  #     - name: Setup Chromedriver
-  #       uses: nanasess/setup-chromedriver@master
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-  #     - name: Start virtual display for UI tests
-  #       run: |
-  #         export DISPLAY=:99
-  #         chromedriver --url-base=/wd/hub &
-  #         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+      - name: Install Poetry
+        run: pip install poetry
 
-  #     - name: Run Robot Framework E2E tests
-  #       run: bash run_robot_tests.sh
+      - name: Install backend dependencies
+        run: poetry install
+
+      - name: Create test database and enable PostGIS
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+          export PGPASSWORD=sekret
+          # create test db if not exists
+          psql -h localhost -U pathplanner -d postgres -c "SELECT 1 FROM pg_database WHERE datname='ecopaths_test' \gexec" || true
+          psql -h localhost -U pathplanner -d postgres -c "CREATE DATABASE ecopaths_test;" || true
+          psql -h localhost -U pathplanner -d ecopaths_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+
+      - name: Create .env.test
+        run: |
+          cat <<EOF > backend/.env.test
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_USER_TEST=pathplanner
+          DB_PASSWORD_TEST=sekret
+          DB_NAME_TEST=ecopaths_test
+          TEST_AREA=testarea
+          NETWORK_TYPE=walking
+          TEST_MODE=True
+          EOF
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Playwright deps
+        run: |
+          cd e2e
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Start backend (uvicorn) in background
+        env:
+          ENV_FILE: backend/.env.test
+          TEST_MODE: "True"
+        run: |
+          # start backend without reload to avoid extra processes
+          cd backend
+          nohup env ENV_FILE=backend/.env.test TEST_MODE=True poetry run uvicorn src.main:app --host 127.0.0.1 --port 8000 --log-level info > ../backend-uvicorn.log 2>&1 &
+          sleep 1
+
+      - name: Start frontend (CRA) in background
+        run: |
+          cd frontend
+          # run in background, avoid opening browser
+          nohup BROWSER=none npm start > ../frontend.log 2>&1 &
+          sleep 1
+
+      - name: Wait for backend and frontend to be ready
+        run: |
+          # wait for backend /api/areas
+          for i in {1..60}; do
+            if curl --fail http://127.0.0.1:8000/api/areas >/dev/null 2>&1; then
+              echo "backend ready"
+              break
+            fi
+            sleep 1
+          done
+          # wait for frontend
+          for i in {1..60}; do
+            if curl --fail http://localhost:3000 >/dev/null 2>&1; then
+              echo "frontend ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        env:
+          ENV_FILE: ../backend/.env.test
+          TEST_MODE: "True"
+        run: |
+          npx playwright test --config=playwright.config.ts --reporter=github
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            e2e/playwright-results
+            backend-uvicorn.log
+            frontend.log
 
   ### 4. BUILD & PUSH DOCKER IMAGES
   docker:
