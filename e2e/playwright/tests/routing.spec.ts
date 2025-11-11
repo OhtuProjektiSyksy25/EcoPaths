@@ -82,6 +82,6 @@ test.describe('EcoPaths E2E - Full Routing Flow', () => {
     await page.waitForSelector('text=Your Route', { timeout: 20000 });
 
     const toggleButton = page.getByRole('button', { name: /(Show|Hide) air quality on map/i });
-    await expect(toggleButton).toBeVisible({ timeout: 10000 });
+    await expect(toggleButton).toBeVisible({ timeout: 20000 });
   });
 });

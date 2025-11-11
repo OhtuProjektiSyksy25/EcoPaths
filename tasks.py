@@ -59,34 +59,33 @@ def test_frontend(c):
     print("Frontend coverage reports generated in coverage_reports/frontend/")
 
 @task
-def test_playwright(c):
+def test_playwright(c, flush=False):
     """
-    Run Playwright end-to-end tests (E2E) in the e2e/ directory.
-
-    - Installs dependencies if node_modules is missing
-    - Runs `npx playwright test`
-    - Displays clear success/failure output
+    Run Playwright end-to-end tests (quiet mode).
+    Usage:
+        inv test-playwright [--flush]
+    Args:
+        flush (bool): If True, flush Redis cache before tests.
     """
+    from pathlib import Path
     e2e_path = Path("e2e")
-
-    if not e2e_path.exists():
-        print("[ERROR] e2e directory not found.")
-        sys.exit(1)
-
     print("Starting Playwright end-to-end tests...")
+    if flush:
+        print("Flushing cache...")
+        c.run("redis-cli flushdb", warn=True, hide=True)
 
     with c.cd(str(e2e_path)):
         if not Path("node_modules").exists():
             print("Installing E2E test dependencies...")
-            c.run("npm ci")
+            c.run("npm ci", hide="both")
 
-        result = c.run("npx playwright test", warn=True)
+        result = c.run("npx playwright test", warn=True, hide=False)
 
     if result.ok:
         print("E2E tests passed!")
     else:
         print("E2E tests failed!")
-        sys.exit(result.exited)
+        raise sys.exit(result.exited)
 
 
 # ========================
