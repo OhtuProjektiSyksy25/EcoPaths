@@ -236,19 +236,13 @@ jobs:
           done
           curl -v http://127.0.0.1:8000/api/areas || (echo "Backend did not start" && cat ../backend.log && exit 1)
 
-      - name: Start frontend (CRA) in background
+      - name: Build frontend
         working-directory: frontend
-        run: |
-          nohup BROWSER=none npm start > ../frontend.log 2>&1 &
-          echo "Waiting for frontend to start..."
-          for i in {1..60}; do
-            if curl --silent --fail --retry 30 --retry-delay 2 --retry-connrefused http://localhost:3000 >/dev/null; then
-              echo "Frontend ready"
-              break
-            fi
-            sleep 2
-          done
-          curl -v http://localhost:3000 || (echo "Frontend did not start" && cat ../frontend.log && exit 1)
+        run: npm run build
+
+      - name: Serve frontend
+        working-directory: frontend
+        run: npx serve -s build -l 3000 &
 
       - name: Run Playwright tests
         working-directory: e2e
