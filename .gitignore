@@ -6,6 +6,7 @@ build
 *.log
 *.tmp
 frontend/env.example
+venv/
 
 # Backend
 .venv/
