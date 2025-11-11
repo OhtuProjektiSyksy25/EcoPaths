@@ -58,23 +58,6 @@ def test_frontend(c):
     print("Frontend coverage reports generated in coverage_reports/frontend/")
 
 
-@task
-def test_e2e(c, headed=False, ui=False):
-    """Run Playwright E2E tests"""
-    cmd = "npm run test:e2e"
-    if ui:
-        cmd = "npm run test:e2e:ui"
-    elif headed:
-        cmd = "npm run test:e2e:headed"
-    c.run(cmd, pty=True)
-
-
-@task
-def setup_e2e(c):
-    """Install Playwright"""
-    c.run("npm install --save-dev @playwright/test @types/node")
-    c.run("npx playwright install chromium")
-
 # ========================
 # Utility tasks
 # ========================
