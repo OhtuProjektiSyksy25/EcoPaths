@@ -1,8 +1,8 @@
 /*
 RouteSlider.tsx renders a slider allowing users to customize their route preference
 */
-import React, { useState } from "react";
-import "../styles/RouteSlider.css";
+import React, { useState } from 'react';
+import '../styles/RouteSlider.css';
 import { CIcon } from '@coreui/icons-react';
 import { cilSpeedometer, cilLeaf } from '@coreui/icons';
 
@@ -49,9 +49,9 @@ const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = f
   Determines the label to display based on the slider value 
   */
   const getLabel = () => {
-    if (localValue < 0.33) return "Cleaner Air";
-    if (localValue > 0.67) return "Faster";
-    return "Balanced";
+    if (localValue < 0.33) return 'Cleaner Air';
+    if (localValue > 0.67) return 'Faster';
+    return 'Balanced';
   };
 
   return (

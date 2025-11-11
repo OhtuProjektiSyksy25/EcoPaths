@@ -9,24 +9,24 @@ Props:
   -onFocus: optional callback when input is focused
   -onBlur: optional callback when input loses focus
 */
-import React, {useState, useEffect, useRef} from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import { ReactComponent as PoiIcon } from '../assets/icons/poi-icon.svg';
 
 // Keys used by the backend to classify POIs (keep in sync with backend POI_KEYS)
 const POI_KEYS: Set<string> = new Set([
-  "amenity",
-  "tourism",
-  "shop",
-  "leisure",
-  "historic",
-  "office",
-  "craft",
+  'amenity',
+  'tourism',
+  'shop',
+  'leisure',
+  'historic',
+  'office',
+  'craft',
 ]);
 
 interface InputContainerProps {
   placeholder: string;
   value: string;
-  onChange: (value:string) => void;
+  onChange: (value: string) => void;
   suggestions: any[];
   onSelect: (place: any) => void;
   onFocus?: () => void;
@@ -40,48 +40,47 @@ const InputContainer: React.FC<InputContainerProps> = ({
   suggestions,
   onSelect,
   onFocus,
-  onBlur
+  onBlur,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const inputSelected = useRef(false);
 
-  }) => {
+  // Prepare suggestions so that POIs are shown after address suggestions
+  const prepareSuggestions = (items: any[]) => {
+    if (!items || items.length === 0) return items;
+    const isPoi = (suggestion: any) =>
+      !!suggestion?.properties?.osm_key && POI_KEYS.has(suggestion.properties.osm_key);
+    // stable-ish sort: copy the array and sort by isPoi (POIs first)
+    // keep original relative ordering among POIs and among addresses
+    return [...items].sort((a, b) => {
+      const aPoi = isPoi(a);
+      const bPoi = isPoi(b);
+      if (aPoi === bPoi) return 0;
+      // if a is a POI and b is not, a should come first (-1)
+      return aPoi ? -1 : 1;
+    });
+  };
 
-const [isOpen, setIsOpen] = useState(false)
-const containerRef = useRef<HTMLDivElement | null>(null);
-const inputSelected = useRef(false);
+  const sortedSuggestions = prepareSuggestions(suggestions);
 
-// Prepare suggestions so that POIs are shown after address suggestions
-const prepareSuggestions = (items: any[]) => {
-  if (!items || items.length === 0) return items;
-  const isPoi = (suggestion: any) => !!suggestion?.properties?.osm_key && POI_KEYS.has(suggestion.properties.osm_key);
-  // stable-ish sort: copy the array and sort by isPoi (POIs first)
-  // keep original relative ordering among POIs and among addresses
-  return [...items].sort((a, b) => {
-    const aPoi = isPoi(a);
-    const bPoi = isPoi(b);
-    if (aPoi === bPoi) return 0;
-    // if a is a POI and b is not, a should come first (-1)
-    return aPoi ? -1 : 1;
-  });
-};
-
-const sortedSuggestions = prepareSuggestions(suggestions);
-
-useEffect(() => {
-  /*
+  useEffect(() => {
+    /*
   useEffect for updating isOpen useState when suggestion updates
   */
-  if (inputSelected.current) {
-    inputSelected.current = false;
-    setIsOpen(false);
-    return;
-  }
+    if (inputSelected.current) {
+      inputSelected.current = false;
+      setIsOpen(false);
+      return;
+    }
 
-  (!suggestions || suggestions == undefined || suggestions.length === 0) ? setIsOpen(false) : setIsOpen(true)
+    !suggestions || suggestions == undefined || suggestions.length === 0
+      ? setIsOpen(false)
+      : setIsOpen(true);
+  }, [suggestions]);
 
-},[suggestions])
-
-
-useEffect(() => {
-  /*
+  useEffect(() => {
+    /*
   useEffect for handling clicks outside of input / suggestions box to update isOpen useState
   */
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,50 +88,60 @@ useEffect(() => {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-
- return (
+  return (
     <div className="InputContainer" ref={containerRef}>
       <input
-      type="text"
-      value={value}
-      onChange={(e)=> onChange(e.target.value)}
-      placeholder={placeholder}
-      onFocus={() => {
-        suggestions.length > 0 && inputSelected.current === false && setIsOpen(true);
-        onFocus?.();
-      }}
-      onBlur={() => {
-        onBlur?.();
-      }}
-			/>
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        onFocus={() => {
+          suggestions.length > 0 && inputSelected.current === false && setIsOpen(true);
+          onFocus?.();
+        }}
+        onBlur={() => {
+          onBlur?.();
+        }}
+      />
       {isOpen && sortedSuggestions?.length && (
         <ul className="originul">
-        {sortedSuggestions.map((s, i) => (
-          <li 
-          className="originli" 
-          key={`${s.properties.osm_id}-${i}`}
-          onClick={() => {
-            onChange(s.full_address)
-            if (onSelect) onSelect(s)
-            setIsOpen(false)
-            inputSelected.current = true;
-          }}>
-            {/* POI icon: render a small marker when the suggestion is classified as a POI */}
-            {s?.properties?.osm_key && POI_KEYS.has(s.properties.osm_key) && (
-             <PoiIcon aria-hidden="true" style={{width: 14, height: 14, verticalAlign: 'middle', marginRight: 8, color: '#d33'}} />
-            )}
-            {s.full_address}
-          </li>
+          {sortedSuggestions.map((s, i) => (
+            <li
+              className="originli"
+              key={`${s.properties.osm_id}-${i}`}
+              onClick={() => {
+                onChange(s.full_address);
+                if (onSelect) onSelect(s);
+                setIsOpen(false);
+                inputSelected.current = true;
+              }}
+            >
+              {/* POI icon: render a small marker when the suggestion is classified as a POI */}
+              {s?.properties?.osm_key && POI_KEYS.has(s.properties.osm_key) && (
+                <PoiIcon
+                  aria-hidden="true"
+                  style={{
+                    width: 14,
+                    height: 14,
+                    verticalAlign: 'middle',
+                    marginRight: 8,
+                    color: '#d33',
+                  }}
+                />
+              )}
+              {s.full_address}
+            </li>
           ))}
-        </ul>)}
+        </ul>
+      )}
     </div>
   );
 };
 
-export default InputContainer
+export default InputContainer;

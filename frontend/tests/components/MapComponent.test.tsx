@@ -1,9 +1,7 @@
-
 import { render, screen } from '@testing-library/react';
 import mapboxgl from 'mapbox-gl';
 import MapComponent from '../../src/components/MapComponent';
 import { LockedLocation, RouteGeoJSON } from '../../src/types/route';
-
 
 /* Leaflet mock */
 jest.mock('react-leaflet', () => ({
@@ -15,7 +13,7 @@ jest.mock('react-leaflet', () => ({
 }));
 
 /* LocationButton mock */
-jest.mock("../../src/components/LocationButton", () => ({
+jest.mock('../../src/components/LocationButton', () => ({
   LocationButton: () => <div data-testid="location-button-mock" />,
 }));
 
@@ -62,7 +60,7 @@ describe('MapComponent', () => {
       />
     );
 
-    expect(screen.getByTestId("location-button-mock")).toBeInTheDocument();
+    expect(screen.getByTestId('location-button-mock')).toBeInTheDocument();
   });
 
   test('renders Leaflet map when no Mapbox token', () => {

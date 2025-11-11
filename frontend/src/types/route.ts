@@ -15,7 +15,7 @@ export interface LockedLocation {
  * Includes optional route type and any additional metadata.
  */
 export interface RouteFeatureProperties {
-  route_type?: "fastest" | "best_aq" | "balanced";
+  route_type?: 'fastest' | 'best_aq' | 'balanced';
   [key: string]: any; // allow extra metadata
 }
 
@@ -23,7 +23,7 @@ export interface RouteFeatureProperties {
  * A single GeoJSON Feature representing a segment or part of a route.
  */
 export interface RouteFeature {
-  type: "Feature";
+  type: 'Feature';
   geometry: {
     type: string;
     coordinates: any;
@@ -35,7 +35,7 @@ export interface RouteFeature {
  * A GeoJSON FeatureCollection representing a complete route.
  */
 export interface RouteGeoJSON {
-  type: "FeatureCollection";
+  type: 'FeatureCollection';
   features: RouteFeature[];
 }
 

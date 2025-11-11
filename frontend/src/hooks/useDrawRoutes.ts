@@ -1,13 +1,13 @@
 // src/hooks/useDrawRoutes.ts
-import { useEffect } from "react";
-import mapboxgl from "mapbox-gl";
+import { useEffect } from 'react';
+import mapboxgl from 'mapbox-gl';
 
 type RoutesRecord = Record<string, GeoJSON.FeatureCollection>;
 
 const ROUTE_COLORS: Record<string, string> = {
-  fastest: "#003cff",
-  best_aq: "#008b23",
-  balanced: "#00f5e0",
+  fastest: '#003cff',
+  best_aq: '#008b23',
+  balanced: '#00f5e0',
 };
 
 /**
@@ -34,51 +34,56 @@ export function useDrawRoutes(
       removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
-    ["fastest", "balanced", "best_aq"].forEach((mode) => {
+    ['fastest', 'balanced', 'best_aq'].forEach((mode) => {
       const geojson = routes[mode];
       if (!geojson || !geojson.features?.length) return;
 
       const sourceId = `route-${mode}`;
       const layerId = `route-${mode}`;
 
-      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addSource(sourceId, { type: 'geojson', data: geojson });
 
-      if (mode === "balanced") {
+      if (mode === 'balanced') {
         map.addLayer({
           id: `${layerId}-halo`,
-          type: "line",
+          type: 'line',
           source: sourceId,
-          layout: { "line-join": "round", "line-cap": "round" },
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
           paint: {
-            "line-color": "#00bdbd",
-            "line-width": 4,
-            "line-opacity": 0.9,
-            "line-offset": 1.5,
+            'line-color': '#00bdbd',
+            'line-width': 4,
+            'line-opacity': 0.9,
+            'line-offset': 1.5,
           },
         });
       }
 
       map.addLayer({
         id: layerId,
-        type: "line",
+        type: 'line',
         source: sourceId,
-        layout: { "line-join": "round", "line-cap": "round" },
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          "line-color": showAQIColors
+          'line-color': showAQIColors
             ? [
-                "interpolate",
-                ["linear"],
-                ["get", "aqi"],
-                0, "#2ECC71",   // Good
-                80, "#F1C40F",  // Moderate
-                100, "#E67E22", // Unhealthy for sensitive groups
-                130, "#E74C3C", // Unhealthy
-                160, "#8E44AD"  // Very unhealthy
+                'interpolate',
+                ['linear'],
+                ['get', 'aqi'],
+                0,
+                '#2ECC71', // Good
+                80,
+                '#F1C40F', // Moderate
+                100,
+                '#E67E22', // Unhealthy for sensitive groups
+                130,
+                '#E74C3C', // Unhealthy
+                160,
+                '#8E44AD', // Very unhealthy
               ]
             : ROUTE_COLORS[mode],
-          "line-width": mode == "balanced" ? 2.5 : 3.5,
-          "line-opacity": 1,
-          "line-offset": mode === "balanced" ? 1.5 : mode === "fastest" ? -1.5 : 0,
+          'line-width': mode == 'balanced' ? 2.5 : 3.5,
+          'line-opacity': 1,
+          'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
         },
       });
     });
@@ -92,4 +97,3 @@ export function useDrawRoutes(
     };
   }, [map, routes, showAQIColors]);
 }
-

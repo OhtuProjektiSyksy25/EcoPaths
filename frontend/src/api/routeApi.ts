@@ -1,4 +1,4 @@
-import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
+import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
 
 export interface RouteApiResponse {
   routes: Record<string, RouteGeoJSON>;
@@ -24,21 +24,21 @@ export async function fetchRoute(
   balancedWeight?: number
 ): Promise<RouteApiResponse> {
   const geojson = {
-    type: "FeatureCollection",
+    type: 'FeatureCollection',
     features: [
       {
-        type: "Feature",
-        properties: { role: "start" },
+        type: 'Feature',
+        properties: { role: 'start' },
         geometry: {
-          type: "Point",
+          type: 'Point',
           coordinates: fromLocked.geometry.coordinates,
         },
       },
       {
-        type: "Feature",
-        properties: { role: "end" },
+        type: 'Feature',
+        properties: { role: 'end' },
         geometry: {
-          type: "Point",
+          type: 'Point',
           coordinates: toLocked.geometry.coordinates,
         },
       },
@@ -50,13 +50,14 @@ export async function fetchRoute(
   produce a custom/balanced route. Weight expected in range 0..1.
   */
   const baseUrl = `${process.env.REACT_APP_API_URL}/getroute`;
-  const url = typeof balancedWeight === "number"
-    ? `${baseUrl}?balanced_weight=${encodeURIComponent(balancedWeight)}`
-    : baseUrl;
+  const url =
+    typeof balancedWeight === 'number'
+      ? `${baseUrl}?balanced_weight=${encodeURIComponent(balancedWeight)}`
+      : baseUrl;
 
   const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(geojson),
   });
 
@@ -66,6 +67,3 @@ export async function fetchRoute(
 
   return (await response.json()) as RouteApiResponse;
 }
-
-
- 

@@ -15,15 +15,14 @@ jest.mock('mapbox-gl', () => ({
       removeLayer: jest.fn(),
       flyTo: jest.fn(),
       fitBounds: jest.fn(),
-      on: jest.fn((event, cb) => { if (event === 'load') cb(); }),
+      on: jest.fn((event, cb) => {
+        if (event === 'load') cb();
+      }),
       setPaintProperty: jest.fn(),
       addControl: jest.fn(),
       remove: jest.fn(),
       getStyle: jest.fn(() => ({
-        layers: [
-          { id: 'water' },
-          { id: 'land' },
-        ]
+        layers: [{ id: 'water' }, { id: 'land' }],
       })),
     })),
     NavigationControl: jest.fn(),

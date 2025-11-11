@@ -3,18 +3,17 @@ MapComponent.tsx renders a Mapbox map or Leaflet fallback.
 It handles markers for From/To locations and user location,
 updates water layer styling, and fits the map to selected areas/routes.
 */
-import React, { useEffect, useRef} from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { initialMapZoom, initialMapCenter } from "../constants";
-import { LockedLocation, RouteGeoJSON, Area } from "../types";
-import { LocationButton } from "./LocationButton";
-import { useDrawRoutes } from "../hooks/useDrawRoutes";
-import { useHighlightChosenArea } from "../hooks/useHighlightChosenArea";
-import "../styles/MapComponent.css";
-
+import React, { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { initialMapZoom, initialMapCenter } from '../constants';
+import { LockedLocation, RouteGeoJSON, Area } from '../types';
+import { LocationButton } from './LocationButton';
+import { useDrawRoutes } from '../hooks/useDrawRoutes';
+import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
+import '../styles/MapComponent.css';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -30,10 +29,10 @@ export const updateWaterLayers = (map: mapboxgl.Map) => {
 
   layers.forEach((layer) => {
     if (!layer.id) return;
-    if (layer.id.includes("water")) {
+    if (layer.id.includes('water')) {
       try {
-        map.setPaintProperty(layer.id, "fill-color", "hsl(200, 80%, 80%)");
-        map.setPaintProperty(layer.id, "fill-outline-color", "hsl(200, 70%, 75%)");
+        map.setPaintProperty(layer.id, 'fill-color', 'hsl(200, 80%, 80%)');
+        map.setPaintProperty(layer.id, 'fill-outline-color', 'hsl(200, 70%, 75%)');
       } catch {}
     }
   });
@@ -47,11 +46,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
-  showAQIColors, 
+  showAQIColors,
   selectedArea,
 }) => {
-  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
-  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || "";
+  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
   const mapboxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -59,13 +58,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
-
-  /*  Draw routes and highlight area hooks */ 
-  useDrawRoutes(
-    mapRef.current,
-    routes as Record<string, GeoJSON.FeatureCollection>,
-    showAQIColors
-  );
+  /*  Draw routes and highlight area hooks */
+  useDrawRoutes(mapRef.current, routes as Record<string, GeoJSON.FeatureCollection>, showAQIColors);
   useHighlightChosenArea(mapRef.current, selectedArea);
 
   /*  Handle user location */
@@ -74,8 +68,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     userUsedLocationRef.current = true;
     locationMarkerRef.current?.remove();
 
-    const elem = document.createElement("div");
-    elem.className = "current-location-dot";
+    const elem = document.createElement('div');
+    elem.className = 'current-location-dot';
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
       .setLngLat([coords.lng, coords.lat])
@@ -84,7 +78,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current.flyTo({
       center: [coords.lng, coords.lat],
       zoom: 15,
-      duration: 1500
+      duration: 1500,
     });
   };
 
@@ -100,8 +94,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
       zoom: initialMapZoom,
     });
 
-    map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-    map.on("load", () => updateWaterLayers(map));
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+    map.on('load', () => updateWaterLayers(map));
 
     mapRef.current = map;
     return () => map.remove();
@@ -114,12 +108,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
     toMarkerRef.current?.remove();
 
     if (fromLocked?.geometry?.coordinates) {
-      fromMarkerRef.current = new mapboxgl.Marker({ color: "red" })
+      fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(fromLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
     if (toLocked?.geometry?.coordinates) {
-      toMarkerRef.current = new mapboxgl.Marker({ color: "red" })
+      toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(toLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
@@ -156,10 +150,10 @@ const MapComponent: React.FC<MapComponentProps> = ({
       map.doubleClickZoom.enable();
       map.keyboard.enable();
       map.touchZoomRotate.enable();
-      map.off("moveend", onMoveEnd);
+      map.off('moveend', onMoveEnd);
     };
 
-    map.on("moveend", onMoveEnd);
+    map.on('moveend', onMoveEnd);
 
     map.flyTo({
       center: selectedArea.focus_point,
@@ -171,8 +165,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   if (mapboxToken) {
     return (
-      <div style={{ position: "relative", height: "100%", width: "100%" }}>
-        <div ref={mapboxRef} data-testid="mapbox-map" style={{ height: "100%", width: "100%" }} />
+      <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+        <div ref={mapboxRef} data-testid="mapbox-map" style={{ height: '100%', width: '100%' }} />
         <div className="location-button-container">
           <LocationButton onLocationFound={handleLocationFound} />
         </div>
@@ -182,11 +176,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   /*  Fallback Leaflet map */
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div style={{ height: '100%', width: '100%' }}>
       <MapContainer
         center={selectedArea?.focus_point || initialMapCenter}
         zoom={selectedArea?.zoom || initialMapZoom}
-        style={{ height: "100%", width: "100%" }}
+        style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

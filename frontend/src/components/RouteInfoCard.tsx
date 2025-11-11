@@ -3,19 +3,24 @@ RouteInfoCard is a component that displays information, for example the walking 
 */
 
 import React from 'react';
-import "../styles/RouteInfoCard.css";
+import '../styles/RouteInfoCard.css';
 
 interface RouteInfoCardProps {
   route_type: string;
-  time_estimate : string;
-  total_length : number;
-  aq_average : number;
+  time_estimate: string;
+  total_length: number;
+  aq_average: number;
 }
 
-  /*
+/*
   RouteInfoCard component displays route information including type, time estimate, total length, and air quality average.
   */
-const RouteInfoCard: React.FC<RouteInfoCardProps> = ({ route_type, time_estimate, total_length, aq_average }) => {
+const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
+  route_type,
+  time_estimate,
+  total_length,
+  aq_average,
+}) => {
   return (
     <div className="RouteInfoCard">
       <div className="route-type">

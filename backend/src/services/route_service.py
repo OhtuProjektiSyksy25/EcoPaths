@@ -93,7 +93,7 @@ class RouteService:
 
         return self._compute_routes(
             edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
-            )
+        )
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """

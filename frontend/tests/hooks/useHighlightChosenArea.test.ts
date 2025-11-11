@@ -1,9 +1,9 @@
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { useHighlightChosenArea } from "../../src/hooks/useHighlightChosenArea";
-import mapboxgl from "mapbox-gl";
-import { Area } from "../../src/types";
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { useHighlightChosenArea } from '../../src/hooks/useHighlightChosenArea';
+import mapboxgl from 'mapbox-gl';
+import { Area } from '../../src/types';
 
-jest.mock("mapbox-gl", () => {
+jest.mock('mapbox-gl', () => {
   return {
     __esModule: true,
     default: {
@@ -25,33 +25,32 @@ jest.mock("mapbox-gl", () => {
 });
 
 const mockSelectedArea: Area = {
-  id: "berlin",
-  display_name: "Berlin",
-  bbox: [13.30, 52.46, 13.51, 52.59] as [number, number, number, number],
+  id: 'berlin',
+  display_name: 'Berlin',
+  bbox: [13.3, 52.46, 13.51, 52.59] as [number, number, number, number],
   focus_point: [13.404954, 52.520008] as [number, number],
-  zoom: 12
+  zoom: 12,
 };
 
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("useHighlightChosenArea", () => {
-//   test("fetches and sets area config correctly", async () => {
-//     const map = new mapboxgl.Map();
-//     renderHook(() => useHighlightChosenArea(map, mockSelectedArea));
+describe('useHighlightChosenArea', () => {
+  //   test("fetches and sets area config correctly", async () => {
+  //     const map = new mapboxgl.Map();
+  //     renderHook(() => useHighlightChosenArea(map, mockSelectedArea));
 
-//       await waitFor(() => expect(result.current).not.toBeNull());
+  //       await waitFor(() => expect(result.current).not.toBeNull());
 
-//     expect(global.fetch).toHaveBeenCalledTimes(1);
-//     expect(global.fetch).toHaveBeenCalledWith(
-//       `${process.env.REACT_APP_API_URL}/get-area-config`
-//     );
-//     expect(result.current).toEqual(mockAreaConfig);
-//   });
+  //     expect(global.fetch).toHaveBeenCalledTimes(1);
+  //     expect(global.fetch).toHaveBeenCalledWith(
+  //       `${process.env.REACT_APP_API_URL}/get-area-config`
+  //     );
+  //     expect(result.current).toEqual(mockAreaConfig);
+  //   });
 
-
-  test("creates maskGeoJSON correctly", async () => {
+  test('creates maskGeoJSON correctly', async () => {
     const map = new mapboxgl.Map();
     renderHook(() => useHighlightChosenArea(map, mockSelectedArea));
 
@@ -62,14 +61,14 @@ describe("useHighlightChosenArea", () => {
     const addSourceCall = (map.addSource as jest.Mock).mock.calls[0];
     const [sourceId, sourceConfig] = addSourceCall;
 
-    expect(sourceId).toBe("polygon");
-    expect(sourceConfig.type).toBe("geojson");
-    expect(sourceConfig.data.type).toBe("FeatureCollection");
+    expect(sourceId).toBe('polygon');
+    expect(sourceConfig.type).toBe('geojson');
+    expect(sourceConfig.data.type).toBe('FeatureCollection');
     expect(sourceConfig.data.features).toHaveLength(1);
 
     const feature = sourceConfig.data.features[0];
 
-    expect(feature.geometry.type).toBe("Polygon");
+    expect(feature.geometry.type).toBe('Polygon');
     expect(feature.geometry.coordinates).toHaveLength(2);
 
     const outerRing = feature.geometry.coordinates[0];
@@ -81,17 +80,16 @@ describe("useHighlightChosenArea", () => {
     expect(outerRing[4]).toEqual([-180, -90]);
 
     const innerRing = feature.geometry.coordinates[1];
-    const [minLng, minLat, maxLng, maxLat] = mockSelectedArea.bbox; 
+    const [minLng, minLat, maxLng, maxLat] = mockSelectedArea.bbox;
 
     expect(innerRing[0]).toEqual([minLng, minLat]);
     expect(innerRing[1]).toEqual([minLng, maxLat]);
     expect(innerRing[2]).toEqual([maxLng, maxLat]);
     expect(innerRing[3]).toEqual([maxLng, minLat]);
     expect(innerRing[4]).toEqual([minLng, minLat]);
-});
+  });
 
-
-  test("creates mask layer correctly", async () => {
+  test('creates mask layer correctly', async () => {
     const map = new mapboxgl.Map();
     renderHook(() => useHighlightChosenArea(map, mockSelectedArea));
 
@@ -101,19 +99,18 @@ describe("useHighlightChosenArea", () => {
 
     expect(map.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: "gray-out-polygon",
-        type: "fill",
-        source: "polygon",
+        id: 'gray-out-polygon',
+        type: 'fill',
+        source: 'polygon',
         paint: {
-          "fill-color": "#666666",
-          "fill-opacity": 0.2,
+          'fill-color': '#666666',
+          'fill-opacity': 0.2,
         },
       })
     );
   });
 
-
-  test("waits for map to load before adding highlight", async () => {
+  test('waits for map to load before adding highlight', async () => {
     const map = new mapboxgl.Map();
 
     (map.isStyleLoaded as jest.Mock).mockReturnValue(false);
@@ -127,10 +124,9 @@ describe("useHighlightChosenArea", () => {
 
     // Should set up event listeners to wait for map to load
     await waitFor(() => {
-      expect(map.on).toHaveBeenCalledWith("load", expect.any(Function));
+      expect(map.on).toHaveBeenCalledWith('load', expect.any(Function));
     });
 
-    expect(map.on).toHaveBeenCalledWith("style.load", expect.any(Function));
+    expect(map.on).toHaveBeenCalledWith('style.load', expect.any(Function));
   });
-
 });

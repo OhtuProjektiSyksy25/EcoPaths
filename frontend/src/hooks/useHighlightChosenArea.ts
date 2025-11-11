@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
-import mapboxgl from "mapbox-gl";
-import { Area } from "@/types";
+import { useEffect, useState, useMemo } from 'react';
+import mapboxgl from 'mapbox-gl';
+import { Area } from '@/types';
 
 interface AreaConfig {
   area: string;
@@ -13,23 +13,22 @@ interface AreaConfig {
  * useHighlightChosenArea.ts fetches the chosen area configuration
  * and visually highlights it on a Mapbox map by graying out all
  * regions outside the defined bounding box.
- * 
+ *
  * @param map - Mapbox GL map instance
  */
 export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: Area | null) => {
   const [areaConfig, setAreaConfig] = useState<AreaConfig | null>(null);
-  
 
   useEffect(() => {
-      if (selectedArea) {
-        setAreaConfig({
-          area: selectedArea.id,
-          bbox: selectedArea.bbox,
-          focus_point: selectedArea.focus_point,
-          crs: "EPSG:4326"
-        });
-      }
-    }, [selectedArea]);
+    if (selectedArea) {
+      setAreaConfig({
+        area: selectedArea.id,
+        bbox: selectedArea.bbox,
+        focus_point: selectedArea.focus_point,
+        crs: 'EPSG:4326',
+      });
+    }
+  }, [selectedArea]);
 
   const maskGeoJSON = useMemo(() => {
     /*
@@ -41,12 +40,12 @@ export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: A
     const [minLng, minLat, maxLng, maxLat] = areaConfig.bbox;
 
     return {
-      type: "FeatureCollection",
+      type: 'FeatureCollection',
       features: [
         {
-          type: "Feature",
+          type: 'Feature',
           geometry: {
-            type: "Polygon",
+            type: 'Polygon',
             coordinates: [
               [
                 [-180, -90],
@@ -76,32 +75,30 @@ export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: A
     */
     if (!map || !maskGeoJSON) return;
 
-    const sourceId = "polygon";
-    const layerId = "gray-out-polygon";
+    const sourceId = 'polygon';
+    const layerId = 'gray-out-polygon';
 
     const addHighlight = () => {
-
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
- 
+
         map.addSource(sourceId, {
-          type: "geojson",
+          type: 'geojson',
           data: maskGeoJSON,
         });
 
         map.addLayer({
           id: layerId,
-          type: "fill",
+          type: 'fill',
           source: sourceId,
           paint: {
-            "fill-color": "#666666",
-            "fill-opacity": 0.2,
+            'fill-color': '#666666',
+            'fill-opacity': 0.2,
           },
         });
-
       } catch (error) {
-        console.log("Error adding highlight:", error);
+        console.log('Error adding highlight:', error);
       }
     };
 
@@ -121,21 +118,20 @@ export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: A
     waitForMapReady();
 
     // Also listen for load events in case map reloads
-    map.on("load", addHighlight);
-    map.on("style.load", addHighlight);
-    
+    map.on('load', addHighlight);
+    map.on('style.load', addHighlight);
+
     // Cleanup
     return () => {
-      map.off("load", addHighlight);
-      map.off("style.load", addHighlight);
-      
+      map.off('load', addHighlight);
+      map.off('style.load', addHighlight);
+
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       } catch (error) {
         // Ignore cleanup errors
       }
-
     };
   }, [map, maskGeoJSON]);
 
