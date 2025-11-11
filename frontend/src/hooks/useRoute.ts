@@ -64,7 +64,7 @@ export const useRoute = (
       prevWeightRef.current = balancedWeight;
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/getroute`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
