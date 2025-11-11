@@ -4,6 +4,7 @@ import gc
 import subprocess
 import signal
 import socket
+from pathlib import Path
 from invoke import task
 from backend.src.database.db_client import DatabaseClient
 from dotenv import load_dotenv
@@ -56,6 +57,36 @@ def test_frontend(c):
     with c.cd("frontend"):
         c.run("npm test -- --watchAll=false")
     print("Frontend coverage reports generated in coverage_reports/frontend/")
+
+@task
+def test_playwright(c):
+    """
+    Run Playwright end-to-end tests (E2E) in the e2e/ directory.
+
+    - Installs dependencies if node_modules is missing
+    - Runs `npx playwright test`
+    - Displays clear success/failure output
+    """
+    e2e_path = Path("e2e")
+
+    if not e2e_path.exists():
+        print("[ERROR] e2e directory not found.")
+        sys.exit(1)
+
+    print("Starting Playwright end-to-end tests...")
+
+    with c.cd(str(e2e_path)):
+        if not Path("node_modules").exists():
+            print("Installing E2E test dependencies...")
+            c.run("npm ci")
+
+        result = c.run("npx playwright test", warn=True)
+
+    if result.ok:
+        print("E2E tests passed!")
+    else:
+        print("E2E tests failed!")
+        sys.exit(result.exited)
 
 
 # ========================
@@ -157,7 +188,7 @@ def run_all(c, test_mode=False):
         print(f"Docker container '{container_name}' is already running.")
     else:
         print(f"Starting Docker container '{container_name}'...")
-        c.run("docker compose up -d", pty=True)
+        c.run("docker-compose up -D", pty=True)
 
     # Start Redis
     redis_proc = None

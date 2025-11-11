@@ -47,3 +47,4 @@ test-results/
 playwright-report/
 playwright-results/
 e2e/playwright/.cache/
+backend/.env.test
