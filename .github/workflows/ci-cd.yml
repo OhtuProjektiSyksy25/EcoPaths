@@ -194,10 +194,10 @@ jobs:
             psql -h localhost -U pathplanner -d postgres -c "CREATE DATABASE ecopaths_test;"
           psql -h localhost -U pathplanner -d ecopaths_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 
-      - name: Create backend .env.test
+      - name: Create backend .env
         working-directory: backend
         run: |
-          cat <<EOF > .env.test
+          cat <<EOF > .env
           DB_HOST=127.0.0.1
           DB_PORT=5432
           DB_USER_TEST=pathplanner
@@ -206,6 +206,7 @@ jobs:
           TEST_AREA=testarea
           NETWORK_TYPE=walking
           TEST_MODE=true
+          GOOGLE_API_KEY=dummy_key_for_tests
           EOF
 
       - name: Install frontend dependencies
@@ -221,27 +222,40 @@ jobs:
       - name: Start backend (Uvicorn) in background
         working-directory: backend
         env:
-          ENV_FILE: .env.test
+          ENV_FILE: .env
           TEST_MODE: "true"
         run: |
           nohup poetry run uvicorn src.main:app --host 127.0.0.1 --port 8000 --log-level info > ../backend.log 2>&1 &
-          sleep 5
-          curl --retry 30 --retry-delay 2 --retry-connrefused http://127.0.0.1:8000/api/areas || (echo "Backend did not start" && cat ../backend.log && exit 1)
+          echo "Waiting for backend to start..."
+          for i in {1..60}; do
+            if curl --silent --fail --retry 30 --retry-delay 2 --retry-connrefused http://127.0.0.1:8000/api/areas >/dev/null; then
+              echo "Backend ready"
+              break
+            fi
+            sleep 2
+          done
+          curl -v http://127.0.0.1:8000/api/areas || (echo "Backend did not start" && cat ../backend.log && exit 1)
 
       - name: Start frontend (CRA) in background
         working-directory: frontend
         run: |
           nohup BROWSER=none npm start > ../frontend.log 2>&1 &
-          sleep 5
-          curl --retry 30 --retry-delay 2 --retry-connrefused http://127.0.0.1:3000 || (echo "Frontend did not start" && cat ../frontend.log && exit 1)
+          echo "Waiting for frontend to start..."
+          for i in {1..60}; do
+            if curl --silent --fail --retry 30 --retry-delay 2 --retry-connrefused http://localhost:3000 >/dev/null; then
+              echo "Frontend ready"
+              break
+            fi
+            sleep 2
+          done
+          curl -v http://localhost:3000 || (echo "Frontend did not start" && cat ../frontend.log && exit 1)
 
       - name: Run Playwright tests
         working-directory: e2e
         env:
-          ENV_FILE: ../backend/.env.test
+          ENV_FILE: ../backend/.env
           TEST_MODE: "true"
-        run: |
-          npx playwright test --config=playwright.config.ts --reporter=github
+        run: npx playwright test --config=playwright.config.ts --reporter=github
 
       - name: Upload Playwright artifacts
         if: always()
