@@ -1,13 +1,12 @@
 """
 Google API Service for AQ data retrieval.
 """
+import random
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import geopandas as gpd
 import numpy as np
-import random
-import os
-
 from config.settings import get_settings
 from database.db_client import DatabaseClient
 
@@ -31,7 +30,8 @@ class GoogleAPIService:
     def _fetch_single_tile(self, lat: float, lon: float) -> dict:
         """Fetch AQI for a single coordinate pair; other pollutants as placeholders."""
         # When in test mode, return random AQI instead of making an API call
-        print(f"Fetching AQ data for ({lat}, {lon}){' (TEST MODE)' if self.test_mode else ''}...")
+        print(
+            f"Fetching AQ data for ({lat}, {lon}){' (TEST MODE)' if self.test_mode else ''}...")
         if self.test_mode:
             return {
                 "aqi": random.randint(5, 150),  # random AQI between 5–150
@@ -81,7 +81,6 @@ class GoogleAPIService:
                 columns=["tile_id", "raw_aqi", "pm2_5", "no2", "geometry"],
                 crs=area_config.crs
             )
-
 
         # Run parallel API calls for each tile
         results = {}

@@ -29,6 +29,7 @@ ALLOWED_ORIGINS = [
 if TEST_MODE:
     print("Running in TEST MODE - Using mocked air quality data")
 
+
 @asynccontextmanager
 async def lifespan_context(_app: FastAPI):
     """Initialize FastAPI app state for shared services."""

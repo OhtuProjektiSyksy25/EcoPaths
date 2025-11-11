@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from dotenv import load_dotenv
 
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 # === Area-specific settings ===
 AREA_SETTINGS = {
@@ -21,7 +22,8 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
         "tile_size_m": 500,
-        "focus_point": [13.404954, 52.520008]
+        "focus_point": [13.404954, 52.520008],
+        "batch_size": 5000
     },
     "la": {
         "display_name": "Los Angeles",
@@ -29,7 +31,8 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
         "tile_size_m": 500,
-        "focus_point": [-118.2437, 34.0522]
+        "focus_point": [-118.2437, 34.0522],
+        "batch_size": 5000
     },
     "helsinki": {
         "display_name": "Helsinki",
@@ -37,7 +40,8 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
-        "focus_point": [24.9384, 60.1699]
+        "focus_point": [24.9384, 60.1699],
+        "batch_size": 5000
     },
     "testarea": {
         "display_name": "Test Area",
@@ -45,12 +49,12 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
         "tile_size_m": 500,
-        "focus_point": [13.385, 52.51]
+        "focus_point": [13.385, 52.51],
+        "batch_size": 1000
+
     },
 }
 
-ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
-TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
@@ -76,6 +80,7 @@ class AreaConfig:
         self.crs = settings["crs"]
         self.tile_size_m = settings.get("tile_size_m", 500)
         self.focus_point = settings["focus_point"]
+        self.batch_size = settings.get("batch_size", 5000)
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.pbf_data_dir = self.project_root / "preprocessor" / "data"
@@ -85,6 +90,20 @@ class AreaConfig:
 
         # File paths
         self.pbf_file = self.pbf_data_dir / f"{self.area}-latest.osm.pbf"
+
+    def get_raw_osm_file_path(self, network_type: str, file_format: str = "gpkg") -> Path:
+        """
+        Construct the file path for the raw OSM network data file.
+
+        Args:
+            network_type (str): Type of network to extract ('walking', 'cycling', 'driving').
+            format (str): Desired file format ('gpkg' or 'parquet'). Defaults to 'gpkg'.
+
+        Returns:
+            Path: Full path to the raw OSM network file.
+        """
+        filename = f"{self.area}_{network_type}_raw_osm.{file_format}"
+        return self.output_dir / filename
 
 
 class RedisConfig:
