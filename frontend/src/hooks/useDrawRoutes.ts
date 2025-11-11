@@ -69,11 +69,12 @@ export function useDrawRoutes(
                 "interpolate",
                 ["linear"],
                 ["get", "aqi"],
-                0, "#2ECC71",   // Good
-                80, "#F1C40F",  // Moderate
-                100, "#E67E22", // Unhealthy for sensitive groups
-                130, "#E74C3C", // Unhealthy
-                160, "#8E44AD"  // Very unhealthy
+                0, "#00E400",   // Good
+                51, "#FFFF00",  // Moderate
+                101, "#FF7E00", // Unhealthy for sensitive groups
+                151, "#FF0000", // Unhealthy
+                201, "#8F3F97", // Very unhealthy
+                301, "#7E0023"  // Hazardous
               ]
             : ROUTE_COLORS[mode],
           "line-width": mode == "balanced" ? 2.5 : 3.5,
