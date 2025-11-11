@@ -1,72 +1,87 @@
 import { test, expect } from '@playwright/test';
-import { ApiMock } from '../helpers/apiMock';
 
 test.describe('EcoPaths E2E - Full Routing Flow', () => {
-  let apiMock: ApiMock;
-
   test.beforeEach(async ({ page }) => {
-    apiMock = new ApiMock(page);
     await page.goto('http://localhost:3000');
     await page.waitForLoadState('networkidle');
+
+    const areaButton = page.locator('button:has-text("Berlin")');
+    if (await areaButton.isVisible()) {
+      await areaButton.click();
+      await page.waitForSelector('text=Where would you like to go?', { timeout: 10000 });
+    }
   });
 
+  test('search suggestions appear', async ({ page }) => {
+    const startInput = page.getByRole('textbox', { name: /Start location/i });
+    await startInput.fill('Berlin');
 
-    test('homepage loads', async ({ page }) => {
-      await expect(page.getByText('Where would you like to go?')).toBeVisible();
-    });
+    await page.waitForSelector('.originli', { timeout: 10000 });
+    await page.locator('.originli', { hasText: 'Berlin' }).first().click();
 
+    await expect(startInput).toHaveValue(/Berlin/, { timeout: 10000 });
+  });
 
-    test('search suggestions appear', async ({ page }) => {
-      
-      // Fill start location
-      await page.fill('input[placeholder="Start location"]', 'Berlin');
-      
-      // Wait for suggestions to appear
-      await page.waitForSelector('text=Berlin');
-      
-      // Click the first suggestion
-      await page.locator('text=Berlin').first().click();
+  test('route results are displayed', async ({ page }) => {
+    await page.fill('input[placeholder="Start location"]', 'Mitte Berlin');
+    await page.waitForSelector('text=Mitte Berlin');
+    await page.locator('text=Mitte Berlin').first().click();
 
-      // Expect the input to contain "Berlin"
-      await expect(page.locator('input[placeholder="Start location"]')).toHaveValue(/Berlin/);
-    });
+    await page.fill('input[placeholder="Destination"]', 'Checkpoint Charlie');
+    await page.waitForSelector('text=Checkpoint Charlie');
+    await page.locator('text=Checkpoint Charlie').first().click();
 
+    await page.waitForSelector('text=Your Route', { timeout: 20000 });
 
-    test('route results are displayed', async ({ page }) => {
+    await expect(page.getByText('Best Air Quality')).toBeVisible();
+    await expect(page.getByText('Fastest Route')).toBeVisible();
+    await expect(page.locator('span.route_type').first()).toBeVisible();
+  });
 
-      // Start and destination
-      await page.fill('input[placeholder="Start location"]', 'Berlin');
-      await page.waitForSelector('text=Berlin');
-      await page.locator('text=Berlin').first().click();
+  test('route results contain AQI and time info', async ({ page }) => {
+    await page.fill('input[placeholder="Start location"]', 'Mitte Berlin');
+    await page.waitForSelector('text=Mitte Berlin');
+    await page.locator('text=Mitte Berlin').first().click();
 
-      await page.fill('input[placeholder="Destination"]', 'Zoo Berlin');
-      await page.waitForSelector('text=Zoo Berlin');
-      await page.locator('text=Zoo Berlin').first().click();
+    await page.fill('input[placeholder="Destination"]', 'Checkpoint Charlie');
+    await page.waitForSelector('text=Checkpoint Charlie');
+    await page.locator('text=Checkpoint Charlie').first().click();
 
-      // Wait for results — assuming 3 boxes are rendered
-      await page.waitForSelector('text=Balanced route');
+    await page.waitForSelector('text=Your Route', { timeout: 20000 });
 
-      // Expect the route boxes to exist
-      const boxes = page.locator('.route-card'); // or use a more specific class if available
-      await expect(boxes).toHaveCount(3);
-    });
+    await expect(page.locator('.time_estimate').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.total_length').first()).toContainText(/km/, { timeout: 10000 });
+    await expect(page.locator('.aq_average').first()).toContainText(/AQI/i, { timeout: 10000 });
+  });
 
+  test('user can adjust the route balance slider', async ({ page }) => {
+    await page.fill('input[placeholder="Start location"]', 'Mitte Berlin');
+    await page.waitForSelector('text=Mitte Berlin');
+    await page.locator('text=Mitte Berlin').first().click();
 
-    test('route results contain AQI and time info', async ({ page }) => {
+    await page.fill('input[placeholder="Destination"]', 'Checkpoint Charlie');
+    await page.waitForSelector('text=Checkpoint Charlie');
+    await page.locator('text=Checkpoint Charlie').first().click();
 
-      await page.fill('input[placeholder="Start location"]', 'Berlin');
-      await page.waitForSelector('text=Berlin');
-      await page.locator('text=Berlin').first().click();
+    const slider = page.locator('input[type="range"]');
+    await slider.waitFor({ timeout: 10000 });
+    await slider.focus();
+    await slider.press('ArrowRight');
+    await expect(slider).toBeVisible();
+  });
 
-      await page.fill('input[placeholder="Destination"]', 'Zoo Berlin');
-      await page.waitForSelector('text=Zoo Berlin');
-      await page.locator('text=Zoo Berlin').first().click();
+  test('AQ map toggle is visible', async ({ page }) => {
+    await page.fill('input[placeholder="Start location"]', 'Mitte Berlin');
+    await page.waitForSelector('text=Mitte Berlin');
+    await page.locator('text=Mitte Berlin').first().click();
 
-      await page.waitForSelector('text=Balanced route');
-      
-      // Check the boxes contain some text about AQI and time
-      await expect(page.locator('text=AQI')).toBeVisible();
-      await expect(page.locator('text=min')).toBeVisible();  // assuming time like "12 min"
-    });
+    await page.fill('input[placeholder="Destination"]', 'Checkpoint Charlie');
+    await page.waitForSelector('text=Checkpoint Charlie');
+    await page.locator('text=Checkpoint Charlie').first().click();
 
+    await page.waitForSelector('text=Your Route', { timeout: 20000 });
+
+    const toggleButton = page.getByRole('button', { name: /(Show|Hide) air quality on map/i });
+    await expect(toggleButton).toBeVisible({ timeout: 10000 });
+  });
 });

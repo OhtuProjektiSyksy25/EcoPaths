@@ -50,8 +50,6 @@ AREA_SETTINGS = {
     },
 }
 
-ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
-TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
@@ -103,6 +101,7 @@ class RedisConfig:
 # Load .env.test for tests, otherwise normal .env
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 ENV_PATH = os.path.join(BASE_DIR, "..", "..", ENV_FILE)
 
 DB_URL = os.getenv("DB_URL")

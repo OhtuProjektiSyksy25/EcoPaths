@@ -5,6 +5,7 @@ import socket
 from invoke import task
 import geopandas as gpd
 from pathlib import Path
+from dotenv import load_dotenv
 
 
 # ========================
@@ -147,10 +148,17 @@ def is_container_running(name):
 
 
 @task
-def run_all(c):
+def run_all(c, test_mode=False):
     """Run both backend, frontend, Redis and database in development mode"""
     db_user = os.getenv("DB_USER_TEST", "pathplanner")
     db_name = os.getenv("DB_NAME_TEST", "ecopaths_test")
+    
+    if test_mode:
+        os.environ["ENV"] = "test"
+        os.environ["TEST_MODE"] = "True"
+        load_dotenv('.env.test', override=True)
+    else:
+        load_dotenv('.env', override=True)
 
     print("Starting full development environment...")
     print("Backend: http://127.0.0.1:8000")
