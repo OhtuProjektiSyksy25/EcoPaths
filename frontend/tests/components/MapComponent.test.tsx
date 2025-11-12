@@ -99,4 +99,44 @@ describe('MapComponent', () => {
     const mapInstance = (mapboxgl.Map as jest.Mock).mock.results[0].value;
     expect(mapInstance.setPaintProperty).toHaveBeenCalled();
   });
+
+  test("adds ScaleControl to the map", () => {
+    render(
+      <MapComponent
+        fromLocked={null}
+        toLocked={null}
+        routes={null}
+        showAQIColors={false}
+        selectedArea={null}
+      />
+    );
+
+    const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
+    expect(mapInstance.addControl).toHaveBeenCalledWith(expect.anything(), "bottom-left");
+  });
+
+  test("ScaleControl fades out on movestart and back on moveend", () => {
+    render(
+      <MapComponent
+        fromLocked={null}
+        toLocked={null}
+        routes={null}
+        showAQIColors={false}
+        selectedArea={null}
+      />
+    );
+
+    const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
+
+    const scaleEl = { style: { opacity: "1" } };
+    mapInstance.getContainer = jest.fn(() => ({
+      querySelector: jest.fn(() => scaleEl)
+    }));
+
+    mapInstance.trigger("movestart");
+    expect(scaleEl.style.opacity).toBe("0");
+
+    mapInstance.trigger("moveend");
+    expect(scaleEl.style.opacity).toBe("1");
+  });
 });
