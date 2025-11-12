@@ -192,7 +192,7 @@ jobs:
       - name: Create .env.test file for backend
         working-directory: backend
         run: |
-          cat <<EOF > .env.test
+          cat <<EOF > .env
           ENV=test
           TEST_MODE=True
           DB_HOST=127.0.0.1
