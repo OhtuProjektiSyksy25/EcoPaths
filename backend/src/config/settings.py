@@ -16,29 +16,59 @@ from dotenv import load_dotenv
 AREA_SETTINGS = {
     "berlin": {
         "display_name": "Berlin",
-        "bbox": [13.30, 52.46, 13.51, 52.59],  # WGS84 EPSG:4326
+        "bbox": [13.18, 52.42, 13.54, 52.59],  # WGS84 EPSG:4326
         "pbf_url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.404954, 52.520008],
         "batch_size": 5000
     },
-    "la": {
-        "display_name": "Los Angeles",
-        "bbox": [-118.28, 34.02, -118.24, 34.06],  # WGS84 (EPSG:4326)
-        "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
-        "crs": "EPSG:2229",
-        "tile_size_m": 500,
-        "focus_point": [-118.2437, 34.0522],
-        "batch_size": 5000
-    },
     "helsinki": {
         "display_name": "Helsinki",
-        "bbox": [24.80, 60.13, 25.20, 60.30],  # WGS84 (EPSG:4326)
+        "bbox": [24.80, 60.13, 25.20, 60.28],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
         "focus_point": [24.9384, 60.1699],
+        "batch_size": 5000
+    },
+    "london": {
+        "display_name": "London",
+        "bbox": [-0.25, 51.45, 0.05, 51.57],  # WGS84 EPSG:4326
+        "pbf_url": (
+            "https://download.geofabrik.de/europe-united-kingdom/"
+            "england/greater-london-latest.osm.pbf"
+        ),
+        "crs": "EPSG:27700",
+        "tile_size_m": 500,
+        "focus_point": [-0.105, 51.507],
+        "batch_size": 5000
+    },
+    "la": {
+        "display_name": "Los Angeles",
+        "bbox": [-118.28, 34.02, -118.22, 34.085],  # WGS84 (EPSG:4326)
+        "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
+        "crs": "EPSG:2229",
+        "tile_size_m": 500,
+        "focus_point": [-118.248, 34.049],
+        "batch_size": 5000
+    },
+    "riyadh": {
+        "display_name": "Riyadh",
+        "bbox": [46.60, 24.60, 46.85, 24.85],  # WGS84 EPSG:4326
+        "pbf_url": "https://download.geofabrik.de/asia/gcc-states-latest.osm.pbf",
+        "crs": "EPSG:32638",
+        "tile_size_m": 500,
+        "focus_point": [46.70, 24.70],
+        "batch_size": 5000
+    },
+    "rome": {
+        "display_name": "Rome",
+        "bbox": [12.42, 41.85, 12.55, 41.95],  # WGS84 EPSG:4326
+        "pbf_url": "https://download.geofabrik.de/europe/italy/centro-latest.osm.pbf",
+        "crs": "EPSG:3003",
+        "tile_size_m": 500,
+        "focus_point": [12.496366, 41.902782],
         "batch_size": 5000
     },
     "testarea": {
