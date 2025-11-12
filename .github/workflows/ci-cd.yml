@@ -189,10 +189,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Create .env file for backend
+      - name: Create .env.test file for backend
         working-directory: backend
         run: |
-          cat <<EOF > .env
+          cat <<EOF > .env.test
           ENV=test
           TEST_MODE=True
           DB_HOST=127.0.0.1
@@ -204,6 +204,7 @@ jobs:
           NETWORK_TYPE=walking
           REDIS_HOST=localhost
           REDIS_PORT=6379
+          GOOGLE_API_KEY=dummy_key
           EOF
 
       - name: Install Playwright dependencies
