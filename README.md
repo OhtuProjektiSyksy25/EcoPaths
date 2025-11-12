@@ -260,30 +260,23 @@ invoke test-frontend
 invoke coverage
 ```
 
-## Robot testing
+## E2E testing
 
-### Install robot framework
+#### Create .env.test file
 
 ```bash
-npm run install-robot
+cp backend/.env.test.example backend/.env.test
 ```
 
+#### Run playwright tests
 
-### Running tests
+- Starts frontend, backend and then runs playwright tests. 
+- --flush clears cache and gets new AQ mock data
 
-1. **Start the app on terminal 1**
 ```bash
-npm start
+invoke test-playwright [--flush] 
 ```
 
-2. **Run tests on terminal 2**
-```bash
-npm run test:robot
-```
-or
-```bash
-npm run test:robot:headless
-```
 
 ### Notes / Tips
 
