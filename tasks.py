@@ -187,7 +187,7 @@ def run_all(c, test_mode=False):
         print(f"Docker container '{container_name}' is already running.")
     else:
         print(f"Starting Docker container '{container_name}'...")
-        c.run("docker-compose up -D", pty=True)
+        c.run("docker compose up -d", pty=True)
 
     # Start Redis
     redis_proc = None
