@@ -21,7 +21,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.404954, 52.520008],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "DE"
     },
     "la": {
         "display_name": "Los Angeles",
@@ -30,7 +31,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:2229",
         "tile_size_m": 500,
         "focus_point": [-118.2437, 34.0522],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "US"
     },
     "helsinki": {
         "display_name": "Helsinki",
@@ -39,7 +41,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
         "focus_point": [24.9384, 60.1699],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "FI"
     },
     "testarea": {
         "display_name": "Test Area",
@@ -48,19 +51,11 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.385, 52.51],
-        "batch_size": 1000
-
+        "batch_size": 1000,
+        "region_code": "DE"
     },
 }
 
-# === Country Code Mapping ===
-# Maps AREA_SETTINGS keys to country codes for external APIs
-AREA_TO_COUNTRY_CODE = {
-    "berlin": "DE",
-    "la": "US",
-    "helsinki": "FI",
-    "testarea": "DE",
-}
 
 class AreaConfig:
     """Configuration class for area-specific parameters."""
@@ -80,13 +75,6 @@ class AreaConfig:
             else:
                 raise ValueError(f"Unknown area: {self.area}")
 
-        if self.area in AREA_TO_COUNTRY_CODE:
-            self.country_code = AREA_TO_COUNTRY_CODE[self.area]
-        elif self.area.startswith("test"):
-            AREA_TO_COUNTRY_CODE[self.area] = AREA_TO_COUNTRY_CODE.get("testarea", {})
-        else:
-            raise ValueError(f"Country code not defined for area: {self.area}")
-
         settings = AREA_SETTINGS[self.area]
         self.bbox = settings["bbox"]
         self.pbf_url = settings["pbf_url"]
@@ -94,6 +82,7 @@ class AreaConfig:
         self.tile_size_m = settings.get("tile_size_m", 500)
         self.focus_point = settings["focus_point"]
         self.batch_size = settings.get("batch_size", 5000)
+        self.region_code = settings["region_code"]
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.pbf_data_dir = self.project_root / "preprocessor" / "data"

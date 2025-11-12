@@ -20,10 +20,10 @@ class GoogleAPIService:
         self.api_key = settings.google_api_key
         self.endpoint = "https://airquality.googleapis.com/v1/currentConditions:lookup"
 
-    def _fetch_single_tile(self, lat: float, lon: float, area_code: str) -> dict:
+    def _fetch_single_tile(self, lat: float, lon: float, area: str) -> dict:
         """Fetch AQI for a single coordinate pair; other pollutants as placeholders."""
-        settings = get_settings(area_code)
-        region_code = settings.area.country_code
+        settings = get_settings(area)
+        region_code = settings.area.region_code
 
         payload = {
             "location": {"latitude": lat, "longitude": lon},
