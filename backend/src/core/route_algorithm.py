@@ -7,6 +7,7 @@ from shapely.ops import split
 from shapely.geometry import Point, LineString
 import pandas as pd
 
+
 class RouteAlgorithm:
     """Class for computing shortest paths through a spatial network using igraph."""
 
@@ -24,12 +25,13 @@ class RouteAlgorithm:
 
         self.edges = edges_gdf.copy()
         self.nodes = nodes_gdf.copy()
-        self.route_specific_gdf = None #placeholder
-        self.route_edges_tree = None #placeholder
+        self.route_specific_gdf = None  # placeholder
+        self.route_edges_tree = None  # placeholder
         self.nodes_tree = STRtree(self.nodes.geometry.to_list())
         self.init_graph()
         self.route_specific_gdf = self.edges_gdf_filtered.copy()
-        self.route_edges_tree = STRtree(self.route_specific_gdf.geometry.to_list())
+        self.route_edges_tree = STRtree(
+            self.route_specific_gdf.geometry.to_list())
 
     def init_graph(self):
         """
@@ -57,17 +59,15 @@ class RouteAlgorithm:
         ]
         self.edges_gdf_filtered = edges_gdf_filtered.copy()
         edge_tuples = list(
-        zip(edges_gdf_filtered["from_node"].astype(str),
-            edges_gdf_filtered["to_node"].astype(str))
+            zip(edges_gdf_filtered["from_node"].astype(str),
+                edges_gdf_filtered["to_node"].astype(str))
         )
         self.igraph.add_edges(edge_tuples)
         self.igraph.es["gdf_edge_id"] = edges_gdf_filtered["edge_id"].tolist()
         self.igraph.es["length_m"] = edges_gdf_filtered["length_m"].tolist()
         self.igraph.es["aqi"] = edges_gdf_filtered["aqi"].tolist()
         self.igraph.es["normalized_aqi"] = edges_gdf_filtered["normalized_aqi"].tolist()
-        self.igraph.es["weight"] = [0] * len(edges_gdf_filtered) # placeholder
-
-
+        self.igraph.es["weight"] = [0] * len(edges_gdf_filtered)  # placeholder
 
     def update_weights(self, balance_factor):
         """
@@ -82,9 +82,8 @@ class RouteAlgorithm:
             edge["weight"] = (
                 balance_factor * edge["length_m"] +
                 (1 - balance_factor) * (edge["length_m"]
-                * (edge["normalized_aqi"] + min_normalized_aqi))
+                                        * (edge["normalized_aqi"] + min_normalized_aqi))
             )
-
 
     def calculate_path(self, origin_gdf, destination_gdf, balance_factor=1):
         """
@@ -121,7 +120,8 @@ class RouteAlgorithm:
             self.route_edges_tree
         """
         self.route_specific_gdf = self.edges_gdf_filtered.copy()
-        self.route_edges_tree = STRtree(self.route_specific_gdf.geometry.to_list())
+        self.route_edges_tree = STRtree(
+            self.route_specific_gdf.geometry.to_list())
 
     def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, balance_factor=1):
         """
@@ -137,10 +137,10 @@ class RouteAlgorithm:
         Returns:
             tuple: origin_node, destination_node, graph, combined_edges
         """
-        #self.init_route_specific()
+        # self.init_route_specific()
 
-        #self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
-        #self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
+        # self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
+        # self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
 
         if "origin" not in self.igraph.vs["name"]:
             self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
@@ -148,7 +148,8 @@ class RouteAlgorithm:
             self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
         self.update_weights(balance_factor=balance_factor)
 
-        isolates = [v.index for v in self.igraph.vs if self.igraph.degree(v.index) == 0]
+        isolates = [
+            v.index for v in self.igraph.vs if self.igraph.degree(v.index) == 0]
         self.igraph.delete_vertices(isolates)
 
         return "origin", "destination", self.igraph
@@ -163,7 +164,7 @@ class RouteAlgorithm:
         Returns:
             gpd.GeoDataFrame: GeoDataFrame containing the edges of the path
         """
-        name_to_idx = {vertice["name"]: vertice.index for vertice in self.igraph.vs}
+        name_to_idx = {vertice["name"]                       : vertice.index for vertice in self.igraph.vs}
 
         edges_gdf_rows = []
 
@@ -179,12 +180,10 @@ class RouteAlgorithm:
             except ig.InternalError:
                 print(f"Missing edge for {from_node_name} ↔ {to_node_name}")
 
-
-
-        edges_gdf = gpd.GeoDataFrame(edges_gdf_rows, crs=self.route_specific_gdf.crs)
+        edges_gdf = gpd.GeoDataFrame(
+            edges_gdf_rows, crs=self.route_specific_gdf.crs)
 
         return edges_gdf
-
 
     def _find_nearest_edge(self, point: Point):
         """
@@ -210,7 +209,7 @@ class RouteAlgorithm:
         nearest_idx = distances.idxmin()
         return self.route_specific_gdf.loc[nearest_idx]
 
-    def snap_and_split(self, point: Point, destination:str):
+    def snap_and_split(self, point: Point, destination: str):
         """
         Snaps a point to the nearest edge and splits that edge at the snapped location.
         Adds snapped locations as a vertice to self.igraph
@@ -251,8 +250,8 @@ class RouteAlgorithm:
         vertice["x"] = snapped_coord[0]
         vertice["y"] = snapped_coord[1]
 
-        self.init_split_edges(edge_row, destination, parts, snapped_coord, line)
-
+        self.init_split_edges(edge_row, destination,
+                              parts, snapped_coord, line)
 
     def init_split_edges(self, edge_row, destination, parts, snapped_coord, line):
         """
@@ -286,17 +285,16 @@ class RouteAlgorithm:
         except ig.InternalError:
             pass
 
-
         new_edges = [
             (from_node, destination),
             (destination, to_node)
-            ]
+        ]
         self.igraph.add_edges(new_edges)
 
         new_edge_ids = [
             self.igraph.get_eid(from_node, destination),
             self.igraph.get_eid(destination, to_node)
-            ]
+        ]
 
         self.igraph.es[new_edge_ids[0]]["length_m"] = parts[0].length
         self.igraph.es[new_edge_ids[0]]["aqi"] = aqi
@@ -331,7 +329,7 @@ class RouteAlgorithm:
 
         self.route_specific_gdf = pd.concat(
             [self.route_specific_gdf, new_edges_gdf], ignore_index=True
-            )
+        )
 
     @staticmethod
     def _compute_split_result(line, snapped_point, offset=0.01):
@@ -369,7 +367,6 @@ class RouteAlgorithm:
         """
         return (round(point[0], decimals), round(point[1], decimals))
 
-
     @staticmethod
     def run_routing_algorithm(graph, origin_node, destination_node):
         """
@@ -379,10 +376,10 @@ class RouteAlgorithm:
             graph (igraph.Graph): Graph on which the algorithm is ran on
             origin_node (str): name attribute of origin node
             destination_node (str): name attribute of the destination node
-        
+
         Returns:
             name_path (list): Ordered list of node name attributes 
-        
+
         Raises:
             ValueError: If no route is found between origin and destination.
         """
@@ -396,4 +393,5 @@ class RouteAlgorithm:
             return name_path
 
         except ig.InternalError as exc:
-            raise ValueError("No route found between origin and destination.") from exc
+            raise ValueError(
+                "No route found between origin and destination.") from exc

@@ -220,29 +220,33 @@
 
 .sidebar-stage-routes {
   height: 80vh;
-  transform: translateY(40%);
+  transform: translateY(32vh);
+  transition: transform 0.4s smooth;
 }
 
 .sidebar-stage-routes .sidebar-content {
   height: calc(80vh - 40px);
   overflow-y: auto;
   scroll-behavior: smooth;
-  padding-bottom: 23vh;
+  padding-bottom: 80vh;
+  transform: none;
 }
-
 
 
 
 .sidebar-stage-routes-only {
   height: 43vh;
   transform: translateY(50vh);
+  transition: transform 0.4s smooth;
 }
 
 .sidebar-stage-routes-only .sidebar-content {
-  /* Hide input elements */
-  padding-top: 10%;
+  height: calc(43vh - 40px); 
+  padding-top: 50px;
+  padding-bottom: 60px;
   overflow-y: auto;
   scroll-behavior: smooth;
+  transform: none;
 }
 
 
@@ -271,7 +275,7 @@
   
 
   .sidebar::after {
-    content: '⌃';
+
     position: absolute;
     top: 0;
     left: 0;
@@ -291,6 +295,24 @@
     font-family: 'Arial', sans-serif;
   }
 
+
+.sidebar-stage-hidden::after {
+  content: '⌃';
+}
+
+.sidebar-stage-inputs::after {
+  content: '';
+}
+
+.sidebar-stage-routes::after {
+  content: '⌃';
+  transform: rotate(180deg);
+}
+
+.sidebar-stage-routes-only::after {
+  content: '...';
+  font-size: 20px;
+}
 
   .sidebar-content {
     padding-top: 55px;
