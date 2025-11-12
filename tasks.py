@@ -68,7 +68,7 @@ def test_playwright(c, flush=False):
         flush (bool): If True, flush Redis cache before tests.
     """
     from pathlib import Path
-    e2e_path = Path("e2e")
+    e2e_path = Path("e2e/playwright")
     print("Starting Playwright end-to-end tests...")
     if flush:
         print("Flushing cache...")

@@ -83,7 +83,8 @@ class TestGoogleAPIService:
         tile_ids = ["t1", "t2"]
         gdf = api_service.get_aq_data_for_tiles(tile_ids, "berlin")
 
-        assert set(gdf.columns) == {"tile_id", "raw_aqi", "pm2_5", "no2", "geometry"}
+        assert set(gdf.columns) == {"tile_id",
+                                    "raw_aqi", "pm2_5", "no2", "geometry"}
         assert set(gdf["tile_id"]) == set(tile_ids)
         assert gdf.crs.to_string() == "EPSG:25833"
 
@@ -97,4 +98,5 @@ class TestGoogleAPIService:
         """Returns empty GeoDataFrame if none of the requested tiles exist."""
         gdf = api_service.get_aq_data_for_tiles(["nonexistent_tile"], "berlin")
         assert gdf.empty
-        assert set(gdf.columns) == {"tile_id", "raw_aqi", "pm2_5", "no2", "geometry"}
+        assert set(gdf.columns) == {"tile_id",
+                                    "raw_aqi", "pm2_5", "no2", "geometry"}
