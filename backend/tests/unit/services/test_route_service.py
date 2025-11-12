@@ -60,6 +60,7 @@ def origin_destination():
     destination = gpd.GeoDataFrame(geometry=[Point(5, 5)], crs="EPSG:25833")
     return origin, destination
 
+
 @pytest.fixture
 def simple_nodes_gdf():
     data = {
@@ -77,6 +78,7 @@ def simple_nodes_gdf():
 
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
 
+
 @pytest.fixture
 def simple_edges_gdf():
     data = {
@@ -87,12 +89,12 @@ def simple_edges_gdf():
         "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
         "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
         "geometry": [
-            LineString([(0,0),(2,2)]),  # A->B
-            LineString([(2,2),(4,4)]),  # B->C
-            LineString([(0,2),(2,2)]),  # D->B
-            LineString([(0,2),(2,4)]),  # D->E
-            LineString([(2,4),(4,4)]),  # E->C
-            LineString([(4,0),(4,4)])   # F->C
+            LineString([(0, 0), (2, 2)]),  # A->B
+            LineString([(2, 2), (4, 4)]),  # B->C
+            LineString([(0, 2), (2, 2)]),  # D->B
+            LineString([(0, 2), (2, 4)]),  # D->E
+            LineString([(2, 4), (4, 4)]),  # E->C
+            LineString([(4, 0), (4, 4)])   # F->C
         ]
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
@@ -151,7 +153,8 @@ def test_compute_routes_returns_all_modes(route_service, origin_destination, sim
 
 
     # call _compute_routes with Points
-    result = route_service._compute_routes(simple_edges_gdf, simple_nodes_gdf, origin, destination)
+    result = route_service._compute_routes(
+        simple_edges_gdf, simple_nodes_gdf, origin, destination)
 
     # check returned structure
     assert "routes" in result and "summaries" in result
@@ -170,7 +173,8 @@ def test_compute_routes_single_edge(route_service, origin_destination, simple_ed
         "tile_id": ["t101"]
     }, crs="EPSG:25833")
 
-    result = route_service._compute_routes(simple_edges_gdf, simple_nodes_gdf, origin, destination)
+    result = route_service._compute_routes(
+        simple_edges_gdf, simple_nodes_gdf, origin, destination)
     assert "routes" in result and "summaries" in result
 
 
@@ -185,12 +189,12 @@ def test_get_route_returns_expected_structure(monkeypatch, route_service, origin
         "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
         "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
         "geometry": [
-            LineString([(0,0),(2,2)]),  # A->B
-            LineString([(2,2),(4,4)]),  # B->C
-            LineString([(0,2),(2,2)]),  # D->B
-            LineString([(0,2),(2,4)]),  # D->E
-            LineString([(2,4),(4,4)]),  # E->C
-            LineString([(4,0),(4,4)])   # F->C
+            LineString([(0, 0), (2, 2)]),  # A->B
+            LineString([(2, 2), (4, 4)]),  # B->C
+            LineString([(0, 2), (2, 2)]),  # D->B
+            LineString([(0, 2), (2, 4)]),  # D->E
+            LineString([(2, 4), (4, 4)]),  # E->C
+            LineString([(4, 0), (4, 4)])   # F->C
         ]
     }, crs="EPSG:25833"))
     monkeypatch.setattr(route_service, "_get_nodes_from_db", lambda ids: gpd.GeoDataFrame({
@@ -223,12 +227,12 @@ def test_compute_balanced_route_only_returns_only_one_route(monkeypatch, route_s
         "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
         "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
         "geometry": [
-            LineString([(0,0),(2,2)]),  # A->B
-            LineString([(2,2),(4,4)]),  # B->C
-            LineString([(0,2),(2,2)]),  # D->B
-            LineString([(0,2),(2,4)]),  # D->E
-            LineString([(2,4),(4,4)]),  # E->C
-            LineString([(4,0),(4,4)])   # F->C
+            LineString([(0, 0), (2, 2)]),  # A->B
+            LineString([(2, 2), (4, 4)]),  # B->C
+            LineString([(0, 2), (2, 2)]),  # D->B
+            LineString([(0, 2), (2, 4)]),  # D->E
+            LineString([(2, 4), (4, 4)]),  # E->C
+            LineString([(4, 0), (4, 4)])   # F->C
         ]
     }, crs="EPSG:25833"))
     monkeypatch.setattr(route_service, "_get_nodes_from_db", lambda ids: gpd.GeoDataFrame({

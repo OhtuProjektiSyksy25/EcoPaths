@@ -21,6 +21,7 @@ def simple_nodes_gdf():
 
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
 
+
 @pytest.fixture
 def simple_edges_gdf():
     data = {
@@ -31,15 +32,16 @@ def simple_edges_gdf():
         "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
         "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
         "geometry": [
-            LineString([(1,1),(2,2)]),  # A -> B
-            LineString([(2,2),(3,4)]),  # B -> E
-            LineString([(2,2),(3,3)]),  # B -> C
-            LineString([(3,3),(1,2)]),  # 
-            LineString([(3,4,),(5,5)]),  # 
-            LineString([(3,3),(5,5)])   # 
+            LineString([(1, 1), (2, 2)]),  # A -> B
+            LineString([(2, 2), (3, 4)]),  # B -> E
+            LineString([(2, 2), (3, 3)]),  # B -> C
+            LineString([(3, 3), (1, 2)]),  #
+            LineString([(3, 4,), (5, 5)]),  #
+            LineString([(3, 3), (5, 5)])   #
         ]
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
+
 
 @pytest.fixture
 def origin_destination():
@@ -47,11 +49,14 @@ def origin_destination():
     destination = gpd.GeoDataFrame(geometry=[Point(5, 5)], crs="EPSG:25833")
     return origin, destination
 
+
 @pytest.fixture
 def origin_destination_other():
     origin = gpd.GeoDataFrame(geometry=[Point(1.3, 1.3)], crs="EPSG:25833")
-    destination = gpd.GeoDataFrame(geometry=[Point(3.3, 4.3)], crs="EPSG:25833")
+    destination = gpd.GeoDataFrame(
+        geometry=[Point(3.3, 4.3)], crs="EPSG:25833")
     return origin, destination
+
 
 @pytest.fixture
 def algorithm(simple_edges_gdf, simple_nodes_gdf):
@@ -70,7 +75,8 @@ def test_snap_and_split_adds_vertice_and_edges(algorithm):
 
     assert end_vertices == (start_vertices+1)
     assert end_edges == (start_edges+1)
-    
+
+
 def test_prepare_graph_and_nodes(algorithm, origin_destination_other):
     start, end = origin_destination_other
     start_vertices = len(algorithm.igraph.vs)
@@ -80,7 +86,7 @@ def test_prepare_graph_and_nodes(algorithm, origin_destination_other):
     end_edges = len(algorithm.igraph.es)
     print(start_vertices, end_vertices)
     print(start_edges, end_edges)
-    
+
 
 def test_calculate_path_returns_edges(algorithm, origin_destination):
     origin, destination = origin_destination

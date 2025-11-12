@@ -118,10 +118,10 @@ useEffect(() => {
           className="originli" 
           key={`${s.properties.osm_id}-${i}`}
           onClick={() => {
+            inputSelected.current = true;
             onChange(s.full_address)
             if (onSelect) onSelect(s)
             setIsOpen(false)
-            inputSelected.current = true;
           }}>
             {/* POI icon: render a small marker when the suggestion is classified as a POI */}
             {s?.properties?.osm_key && POI_KEYS.has(s.properties.osm_key) && (

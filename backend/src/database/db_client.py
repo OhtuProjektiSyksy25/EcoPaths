@@ -62,9 +62,6 @@ class DatabaseClient:
         ]
 
         for table_class in table_classes:
-            print(f"Creating table: {table_class.__tablename__}")
-            print("Columns:", [
-                  col.name for col in table_class.__table__.columns])
             table_class.__table__.create(           # pylint: disable=no-member
                 bind=self.engine, checkfirst=True)  # pylint: disable=no-member
 
@@ -152,13 +149,10 @@ class DatabaseClient:
         if gdf.empty:
             raise ValueError("Cannot save empty GeoDataFrame.")
 
-        # Ensure all BASE_COLUMNS exist
+        # Ensure all BASE_COLUMNS exist, except edge_id which is auto-generated
         for col in BASE_COLUMNS:
-            if col not in gdf.columns:
-                if col == "edge_id":
-                    gdf[col] = gdf.index.astype(int)
-                else:
-                    gdf[col] = None
+            if col not in gdf.columns and col != "edge_id":
+                gdf[col] = None
 
         table_name = f"edges_{area.lower()}_{network_type.lower()}"
         gdf.to_postgis(

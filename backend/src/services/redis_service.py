@@ -44,7 +44,7 @@ class RedisService:
             key = f"{area.area}_{tile_id}"
             current_gdf = current_gdf.to_crs(area.crs)
             feature_collection = current_gdf.to_json()
-            success = redis.set_direct(key, feature_collection, 3600)
+            success = redis.set_direct(key, feature_collection, 10800)
             if not success:
                 failed.append(key)
         if failed:

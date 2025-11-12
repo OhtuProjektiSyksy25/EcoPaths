@@ -43,8 +43,6 @@ class TestTrafficInfluenceBuilder:
             "tile_id": ["T1"],
             "length_m": [10.0],
             "geometry": [LineString([(0.5, 0.5), (1.5, 1.5)])],
-            "lanes": [2],
-            "maxspeed": [50],
             "highway": ["primary"],
         }, geometry="geometry", crs="EPSG:25833")
 

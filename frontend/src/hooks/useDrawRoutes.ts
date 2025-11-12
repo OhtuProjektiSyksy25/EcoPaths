@@ -6,20 +6,20 @@ type RoutesRecord = Record<string, GeoJSON.FeatureCollection>;
 
 const ROUTE_COLORS: Record<string, string> = {
   fastest: "#003cff",
-  best_aq: "#01be30",
-  balanced: "#03e0a9",
+  best_aq: "#008b23",
+  balanced: "#00f5e0",
 };
 
 /**
- * Custom React hook to draw multiple routes on a Mapbox map.
- *
- * Supports different route types (fastest, best_aq, balanced),
- * each rendered with a distinct color and line style.
- * Automatically removes previous route layers on update or unmount.
- *
- * @param map - Mapbox GL JS map instance. If null, hook does nothing.
- * @param routes - Record mapping route type keys to GeoJSON FeatureCollections.
- *                 Each GeoJSON FeatureCollection represents a route.
+ * Removes a layer and source if they exist
+ */
+const removeLayerIfExists = (map: mapboxgl.Map, id: string) => {
+  if (map.getLayer(id)) map.removeLayer(id);
+  if (map.getSource(id)) map.removeSource(id);
+};
+
+/**
+ * React hook to draw routes on a Mapbox map.
  */
 export function useDrawRoutes(
   map: mapboxgl.Map | null,
@@ -30,10 +30,8 @@ export function useDrawRoutes(
     if (!map || !routes) return;
 
     Object.keys(ROUTE_COLORS).forEach((mode) => {
-      const layerId = `route-${mode}`;
-      const sourceId = `route-${mode}`;
-      if (map.getLayer(layerId)) map.removeLayer(layerId);
-      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      removeLayerIfExists(map, `route-${mode}`);
+      removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
     ["fastest", "balanced", "best_aq"].forEach((mode) => {
@@ -45,14 +43,26 @@ export function useDrawRoutes(
 
       map.addSource(sourceId, { type: "geojson", data: geojson });
 
+      if (mode === "balanced" && !showAQIColors) {
+        map.addLayer({
+          id: `${layerId}-halo`,
+          type: "line",
+          source: sourceId,
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": "#00bdbd",
+            "line-width": 4,
+            "line-opacity": 0.9,
+            "line-offset": 1.5,
+          },
+        });
+      }
+
       map.addLayer({
         id: layerId,
         type: "line",
         source: sourceId,
-        layout: {
-          "line-join": "round",
-          "line-cap": "round",
-        },
+        layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": showAQIColors
             ? [
@@ -66,19 +76,18 @@ export function useDrawRoutes(
                 160, "#8E44AD"  // Very unhealthy
               ]
             : ROUTE_COLORS[mode],
-          "line-width": 3.5,
-          "line-opacity": mode === "best_aq" ? 1.0 : 0.8,
+          "line-width": mode == "balanced" ? 2.5 : 3.5,
+          "line-opacity": 1,
           "line-offset": mode === "balanced" ? 1.5 : mode === "fastest" ? -1.5 : 0,
         },
       });
     });
 
+    /*  Cleanup */
     return () => {
       Object.keys(ROUTE_COLORS).forEach((mode) => {
-        const layerId = `route-${mode}`;
-        const sourceId = `route-${mode}`;
-        if (map.getLayer(layerId)) map.removeLayer(layerId);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        removeLayerIfExists(map, `route-${mode}`);
+        removeLayerIfExists(map, `route-${mode}-halo`);
       });
     };
   }, [map, routes, showAQIColors]);

@@ -46,15 +46,13 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
 
     def column_for_name(name: str, srid: int) -> Column:
         column_map = {
-            "edge_id": Column(Integer, primary_key=True, nullable=False),
+            "edge_id": Column(Integer, primary_key=True, autoincrement=True),
             "tile_id": Column(String),
             "geometry": Column(Geometry("LINESTRING", srid=srid)),
             "length_m": Column(Float),
             "normalized_length": Column(Float),
             "from_node": Column(Integer),
             "to_node": Column(Integer),
-            "lanes": Column(Integer),
-            "maxspeed": Column(Integer),
             "traffic_influence": Column(Float),
             "landuse_influence": Column(Float),
             "env_influence": Column(Float),

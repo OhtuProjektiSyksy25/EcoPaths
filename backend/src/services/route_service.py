@@ -94,7 +94,7 @@ class RouteService:
 
         return self._compute_routes(
             edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
-            )
+        )
 
     def compute_balanced_route_only(self, balanced_value):
         """
@@ -115,7 +115,7 @@ class RouteService:
             )
         return result, summary
 
-    def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=400) -> Polygon:
+    def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """
         Creates a buffer polygon around a straight line between origin and destination points.
 

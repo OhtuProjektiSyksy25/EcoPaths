@@ -23,9 +23,19 @@ jest.mock("../../src/hooks/useGeolocationState", () => ({
 
 const mockUseGeolocation = useGeolocation as jest.MockedFunction<typeof useGeolocation>;
 
+/*
+Mock fetch for geocoding API
+*/
+global.fetch = jest.fn();
+
 describe("SideBar", () => {
+  beforeEach(() => {
+    (global.fetch as jest.Mock).mockReset();
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockClear();
   });
 
   /*
@@ -82,7 +92,7 @@ describe("SideBar", () => {
   /*
   Checks that clicking "Use my current location" calls getCurrentLocation from the geolocation hook
   */
-  test("clicking 'Your location' calls getCurrentLocation", async () => {
+  test("clicking 'Use my current location' calls getCurrentLocation", async () => {
     render(
   <SideBar 
     onFromSelect={mockOnFromSelect} 
@@ -376,4 +386,119 @@ describe("SideBar", () => {
       expect(mockOnFromSelect).toHaveBeenCalled();
     });
   });
+
+
+  /*
+  Test that selecting a starting location doesn't trigger a new geocoding API call
+  */
+  test("selecting from suggestion doesn't trigger new API call", async () => {
+    jest.useFakeTimers();
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        features: [
+          {
+            full_address: "Mannerheimintie, Helsinki",
+            properties: { name: "Mannerheimintie" },
+            geometry: { coordinates: [60.17, 24.93] }
+          }
+        ]
+      })
+    });
+
+    render(
+      <SideBar
+        onFromSelect={mockOnFromSelect}
+        onToSelect={mockOnToSelect}
+        summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
+        selectedArea={null}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
+      />
+    );
+
+    const fromInput = screen.getByPlaceholderText("Start location") as HTMLInputElement;
+
+    fireEvent.change(fromInput, { target: { value: "Manne" } });
+
+    jest.advanceTimersByTime(400);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Mannerheimintie, Helsinki")).toBeInTheDocument();
+    });
+
+    const suggestion = screen.getByText("Mannerheimintie, Helsinki");
+    fireEvent.click(suggestion);
+
+    await waitFor(() => {
+      expect(fromInput.value).toBe("Mannerheimintie, Helsinki");
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(mockOnFromSelect).toHaveBeenCalledTimes(1);
+
+    jest.useRealTimers();
+  });
+
+
+  /*
+  Test that selecting a destination doesn't trigger a new geocoding API call
+  */
+  test("selecting to suggestion doesn't trigger new API call", async () => {
+    jest.useFakeTimers();
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        features: [
+          {
+            full_address: "Mannerheimintie, Helsinki",
+            properties: { name: "Mannerheimintie" },
+            geometry: { coordinates: [60.17, 24.93] }
+          }
+        ]
+      })
+    });
+
+    render(
+      <SideBar
+        onFromSelect={mockOnFromSelect}
+        onToSelect={mockOnToSelect}
+        summaries={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
+        selectedArea={null}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
+      />
+    );
+
+    const toInput = screen.getByPlaceholderText("Destination") as HTMLInputElement;
+
+    fireEvent.change(toInput, { target: { value: "Mann" } });
+
+    jest.advanceTimersByTime(400);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Mannerheimintie, Helsinki")).toBeInTheDocument();
+    });
+
+    const suggestion = screen.getByText("Mannerheimintie, Helsinki");
+    fireEvent.click(suggestion);
+
+    await waitFor(() => {
+      expect(toInput.value).toBe("Mannerheimintie, Helsinki");
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(mockOnToSelect).toHaveBeenCalledTimes(1);
+
+    jest.useRealTimers();
+  });
+
 });
