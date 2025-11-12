@@ -143,12 +143,11 @@ jobs:
           files: coverage_reports/backend/coverage.xml
           fail_ci_if_error: true
 
-  ### 3. PLAYWRIGHT E2E (UI)
+  ### 3. E2E (Playwright)
   e2e:
-    name: Playwright E2E
+    name: End-to-End Tests (Playwright)
     runs-on: ubuntu-latest
     needs: [frontend, backend]
-
     services:
       postgres:
         image: kartoza/postgis:15-3.4
@@ -162,7 +161,7 @@ jobs:
           --health-cmd="pg_isready -U pathplanner -d ecopaths_test"
           --health-interval 5s
           --health-timeout 5s
-          --health-retries 30
+          --health-retries 20
 
     steps:
       - name: Checkout repository
@@ -185,81 +184,63 @@ jobs:
         working-directory: backend
         run: poetry install
 
-      - name: Create test database and enable PostGIS
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y postgresql-client
-          export PGPASSWORD=sekret
-          psql -h localhost -U pathplanner -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='ecopaths_test'" | grep -q 1 || \
-            psql -h localhost -U pathplanner -d postgres -c "CREATE DATABASE ecopaths_test;"
-          psql -h localhost -U pathplanner -d ecopaths_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-
-      - name: Create backend .env
-        working-directory: backend
-        run: |
-          cat <<EOF > .env
-          DB_HOST=127.0.0.1
-          DB_PORT=5432
-          DB_USER_TEST=pathplanner
-          DB_PASSWORD_TEST=sekret
-          DB_NAME_TEST=ecopaths_test
-          TEST_AREA=testarea
-          NETWORK_TYPE=walking
-          TEST_MODE=true
-          GOOGLE_API_KEY=dummy_key_for_tests
-          EOF
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
 
-      - name: Install Playwright deps
-        working-directory: e2e
-        run: |
-          npm ci
-          npx playwright install --with-deps
-
-      - name: Start backend (Uvicorn) in background
+      - name: Start backend in background
         working-directory: backend
         env:
-          ENV_FILE: .env
-          TEST_MODE: "true"
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_USER_TEST: pathplanner
+          DB_PASSWORD_TEST: sekret
+          DB_NAME_TEST: ecopaths_test
         run: |
-          nohup poetry run uvicorn src.main:app --host 127.0.0.1 --port 8000 --log-level info > ../backend.log 2>&1 &
-          echo "Waiting for backend to start..."
-          for i in {1..60}; do
-            if curl --silent --fail --retry 30 --retry-delay 2 --retry-connrefused http://127.0.0.1:8000/api/areas >/dev/null; then
-              echo "Backend ready"
-              break
+          nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 > ../backend.log 2>&1 &
+          sleep 10
+          echo "Backend started"
+
+      - name: Start frontend in background
+        working-directory: frontend
+        env:
+          BROWSER: none
+          REACT_APP_API_URL: http://localhost:8000
+        run: |
+          nohup npm start > ../frontend.log 2>&1 &
+          sleep 15
+          echo "Frontend started"
+
+      - name: Wait for backend and frontend to be ready
+        run: |
+          for i in {1..20}; do
+            if curl -sSf http://localhost:8000/docs >/dev/null && curl -sSf http://localhost:3000 >/dev/null; then
+              echo "✅ Both backend and frontend are ready."
+              exit 0
             fi
-            sleep 2
+            echo "Waiting for services to start..."
+            sleep 5
           done
-          curl -v http://127.0.0.1:8000/api/areas || (echo "Backend did not start" && cat ../backend.log && exit 1)
+          echo "❌ Backend or frontend failed to start"
+          echo "---- Backend log ----"
+          cat backend.log || true
+          echo "---- Frontend log ----"
+          cat frontend.log || true
+          exit 1
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
-      - name: Serve frontend
-        working-directory: frontend
-        run: npx serve -s build -l 3000 &
+      - name: Install Playwright
+        working-directory: e2e/playwright
+        run: npx playwright install --with-deps
 
       - name: Run Playwright tests
-        working-directory: e2e
-        env:
-          ENV_FILE: ../backend/.env
-          TEST_MODE: "true"
-        run: npx playwright test --config=playwright.config.ts --reporter=github
+        working-directory: e2e/playwright
+        run: npx playwright test --reporter=line
 
-      - name: Upload Playwright artifacts
+      - name: Stop background processes
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: |
-            e2e/playwright-results
-            backend.log
-            frontend.log
+        run: |
+          pkill -f uvicorn || true
+          pkill -f react-scripts || true
 
 
   ### 4. BUILD & PUSH DOCKER IMAGES
