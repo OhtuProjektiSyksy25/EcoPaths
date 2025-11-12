@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from config.settings import TEST_MODE
 
 from endpoints import areas, geocode, routes, static
 
@@ -24,6 +25,9 @@ ALLOWED_ORIGINS = [
     "https://photon.komoot.io",
     "http://172.25.211.59:3000"
 ]
+
+if TEST_MODE:
+    print("Running in TEST MODE - Using mocked air quality data")
 
 
 @asynccontextmanager

@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 """
 Configuration settings for EcoPaths backend.
 
@@ -11,6 +12,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from dotenv import load_dotenv
 
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 # === Area-specific settings ===
 AREA_SETTINGS = {
@@ -187,6 +189,7 @@ class Settings:
         self.redis = RedisConfig()
         self.db = DatabaseConfig()
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.TEST_MODE = TEST_MODE
 
 
 @lru_cache(maxsize=None)

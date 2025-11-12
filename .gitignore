@@ -26,7 +26,7 @@ screenshots/
 selenium*.png
 
 # General
-**/.env*
+**/.env
 .DS_Store
 Thumbs.db
 *.swp
@@ -42,3 +42,10 @@ backend/dump.rdb
 
 # OpenShift
 manifests/configmap.yaml
+
+# E2E tests
+test-results/
+playwright-report/
+playwright-results/
+e2e/playwright/.cache/
+backend/.env.test
