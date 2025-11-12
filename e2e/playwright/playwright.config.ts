@@ -16,26 +16,16 @@ export default defineConfig({
   webServer: [
     // Backend server
     {
-      command: 'cd ../../backend && poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000',
+      command: 'cd ../backend && poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000',
       url: 'http://localhost:8000/docs',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
-      env: {
-        ENV: '.env.test',
-        NODE_ENV: 'test',
-        TEST_MODE: 'True',
-        DB_HOST: '127.0.0.1',
-        DB_PORT: '5432',
-        DB_USER_TEST: 'pathplanner',
-        DB_PASSWORD_TEST: 'sekret',
-        DB_NAME_TEST: 'ecopaths_test',
-      },
       stdout: 'pipe',
       stderr: 'pipe',
     },
     // Frontend server
     {
-      command: 'cd ../../frontend && npm start',
+      command: 'cd ../frontend && npm start',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
