@@ -188,17 +188,27 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Create .env.test file
+        working-directory: backend
+        run: |
+          cat <<EOF > .env.test
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_USER_TEST=pathplanner
+          DB_PASSWORD_TEST=sekret
+          DB_NAME_TEST=ecopaths_test
+          TEST_AREA=testarea
+          NETWORK_TYPE=walking
+          EOF
+
       - name: Start backend in background
         working-directory: backend
         env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_USER_TEST: pathplanner
-          DB_PASSWORD_TEST: sekret
-          DB_NAME_TEST: ecopaths_test
+          ENV_PATH: ${{ github.workspace }}/backend/.env.test
+          ENV: test
         run: |
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 > ../backend.log 2>&1 &
-          sleep 10
+          sleep 20
           echo "Backend started"
 
       - name: Start frontend in background
@@ -208,12 +218,12 @@ jobs:
           REACT_APP_API_URL: http://localhost:8000
         run: |
           nohup npm start > ../frontend.log 2>&1 &
-          sleep 15
+          sleep 20
           echo "Frontend started"
 
       - name: Wait for backend and frontend to be ready
         run: |
-          for i in {1..20}; do
+          for i in {1..25}; do
             if curl -sSf http://localhost:8000/docs >/dev/null && curl -sSf http://localhost:3000 >/dev/null; then
               echo "✅ Both backend and frontend are ready."
               exit 0
@@ -241,6 +251,7 @@ jobs:
         run: |
           pkill -f uvicorn || true
           pkill -f react-scripts || true
+
 
 
   ### 4. BUILD & PUSH DOCKER IMAGES

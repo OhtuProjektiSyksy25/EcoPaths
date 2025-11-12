@@ -25,7 +25,7 @@ screenshots/
 selenium*.png
 
 # General
-**/.env*
+**/.env
 .DS_Store
 Thumbs.db
 *.swp
