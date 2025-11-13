@@ -1,4 +1,3 @@
-
 import type { Config } from 'jest';
 
 const config: Config = {
@@ -6,7 +5,7 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
 
-  collectCoverage: true, 
+  collectCoverage: true,
 
   // Folders where Jest will look for tests
   roots: ['<rootDir>/src', '<rootDir>/tests'],
@@ -32,16 +31,10 @@ const config: Config = {
   },
 
   // Transform ignore patterns (except certain node_modules that need transpiling)
-  transformIgnorePatterns: [
-    '/node_modules/(?!react-leaflet|@react-leaflet|leaflet)/',
-  ],
+  transformIgnorePatterns: ['/node_modules/(?!react-leaflet|@react-leaflet|leaflet)/'],
 
   // Coverage collection settings
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
   coverageDirectory: '../coverage_reports/frontend',
   coverageThreshold: {
     global: {
@@ -54,4 +47,3 @@ const config: Config = {
 };
 
 export default config;
-

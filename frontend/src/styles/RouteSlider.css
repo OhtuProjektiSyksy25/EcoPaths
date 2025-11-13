@@ -17,14 +17,18 @@
   font-size: 15px;
   font-weight: 700;
   color: #333;
-  font-family: Public Sans, sans-serif;
+  font-family:
+    Public Sans,
+    sans-serif;
 }
 
 .slider-value-label {
   font-size: 13px;
   color: #666;
   font-weight: 500;
-  font-family: Public Sans, sans-serif;
+  font-family:
+    Public Sans,
+    sans-serif;
 }
 
 .slider-wrapper {
@@ -58,7 +62,7 @@
   outline: none;
   -webkit-appearance: none;
   appearance: none;
-  background: linear-gradient(to right, #4CAF50 , #2196F3);
+  background: linear-gradient(to right, #4caf50, #2196f3);
   cursor: pointer;
 }
 
@@ -79,7 +83,7 @@
   height: 20px;
   border-radius: 50%;
   background: white;
-  border: 2px solid #2196F3;
+  border: 2px solid #2196f3;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
@@ -95,7 +99,7 @@
   height: 20px;
   border-radius: 50%;
   background: white;
-  border: 2px solid #2196F3;
+  border: 2px solid #2196f3;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
@@ -107,12 +111,12 @@
 }
 
 .route-slider:focus::-webkit-slider-thumb {
-  border-color: #1976D2;
+  border-color: #1976d2;
   box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.2);
 }
 
 .route-slider:focus::-moz-range-thumb {
-  border-color: #1976D2;
+  border-color: #1976d2;
   box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.2);
 }
 
