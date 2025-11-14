@@ -31,7 +31,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
         "focus_point": [24.9384, 60.1699],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "FI"
     },
     "london": {
         "display_name": "London",
@@ -43,7 +44,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:27700",
         "tile_size_m": 500,
         "focus_point": [-0.105, 51.507],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "GB"
     },
     "la": {
         "display_name": "Los Angeles",
@@ -52,7 +54,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:2229",
         "tile_size_m": 500,
         "focus_point": [-118.248, 34.049],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "US"
     },
     "riyadh": {
         "display_name": "Riyadh",
@@ -61,7 +64,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:32638",
         "tile_size_m": 500,
         "focus_point": [46.70, 24.70],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "SA"
     },
     "rome": {
         "display_name": "Rome",
@@ -70,7 +74,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:3003",
         "tile_size_m": 500,
         "focus_point": [12.496366, 41.902782],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "IT"
     },
     "testarea": {
         "display_name": "Test Area",
