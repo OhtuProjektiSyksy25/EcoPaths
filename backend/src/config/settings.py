@@ -21,7 +21,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.404954, 52.520008],
-        "batch_size": 5000
+        "batch_size": 5000,
+        "region_code": "DE"
     },
     "helsinki": {
         "display_name": "Helsinki",
@@ -78,8 +79,8 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.385, 52.51],
-        "batch_size": 1000
-
+        "batch_size": 1000,
+        "region_code": "DE"
     },
 }
 
@@ -109,6 +110,7 @@ class AreaConfig:
         self.tile_size_m = settings.get("tile_size_m", 500)
         self.focus_point = settings["focus_point"]
         self.batch_size = settings.get("batch_size", 5000)
+        self.region_code = settings["region_code"]
 
         self.project_root = Path(__file__).resolve().parents[2]
         self.pbf_data_dir = self.project_root / "preprocessor" / "data"
