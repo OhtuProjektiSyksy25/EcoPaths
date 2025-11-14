@@ -38,8 +38,8 @@ AREA_SETTINGS = {
         "display_name": "London",
         "bbox": [-0.25, 51.45, 0.05, 51.57],  # WGS84 EPSG:4326
         "pbf_url": (
-            "https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf"  # pylint: disable=line-too-long
-
+            "https://download.geofabrik.de/europe/united-kingdom/"
+            "england/greater-london-latest.osm.pbf"
         ),
         "crs": "EPSG:27700",
         "tile_size_m": 500,
