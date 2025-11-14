@@ -1,3 +1,12 @@
+.desktop-layout {
+  display: block;
+}
+
+.route-card-content {
+  display: none;
+}
+
+
 .route_type {
     display: flex;
     flex-direction: row;
@@ -23,4 +32,69 @@
     color: #61896f;
     font-weight: 300;
     gap: 8px;
+}
+
+/* Mobile Styles */
+
+@media (max-width: 800px) {
+  .desktop-layout {
+    display: none;
+  }
+  
+  .route-card-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: clamp(8px, 2vw, 12px);
+  }
+
+    
+  .route_type {
+    font-size: 15px;
+    color: #61896f;
+    font-weight: 300;
+    margin: 0;
+    flex: 0 0 auto;
+    min-width: 120px;
+    text-align: left;
+  }
+
+  .route_type::after {
+    content: "|";
+    color: #61896f;
+    opacity: 0.4;
+    margin-left: auto;
+    margin-right: 8px;
+    font-weight: 300;
+  }
+
+  .time-estimate {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    color: #111813;
+    font-weight: 600;
+    gap: 6px;
+    padding: 0;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .additional-info {
+    font-size: 15px;
+    color: #61896f;
+    font-weight: 300;
+    flex: 0 0 auto;
+    text-align: right;
+    min-width: 80px;
+  }
+
+  .route-stat-divider {
+    color: #61896f;
+    opacity: 0.5;
+    font-weight: 300;
+    margin: 0 4px;
+  }
+
 }

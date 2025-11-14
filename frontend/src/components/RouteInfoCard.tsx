@@ -18,15 +18,29 @@ interface RouteInfoCardProps {
 const RouteInfoCard: React.FC<RouteInfoCardProps> = ({ route_type, time_estimate, total_length, aq_average }) => {
   return (
     <div className="RouteInfoCard">
-      <div className="route-type">
+      <div className="desktop-layout">
+        <div className="route-type">
+          <span className="route_type">{route_type}</span>
+        </div>
+        <div className="time-estimate">
+          <span className="time_estimate">{time_estimate}</span>
+        </div>
+        <div className="additional-info">
+          <span className="total_length">{total_length} km</span>
+          <span className="aq_average">AQI {aq_average}</span>
+        </div>
+      </div>
+
+
+      <div className="route-card-content">
         <span className="route_type">{route_type}</span>
-      </div>
-      <div className="time-estimate">
-        <span className="time_estimate">{time_estimate}</span>
-      </div>
-      <div className="additional-info">
-        <span className="total_length">{total_length} km</span>
-        <span className="aq_average">AQI {aq_average}</span>
+        <span className="time-estimate">{time_estimate}</span>
+        <span className="route-stat-divider">|</span>
+        <div className="additional-info">
+          <span>{total_length} km</span>
+          <span className="route-stat-divider">|</span>
+          <span>AQI {aq_average}</span>
+        </div>
       </div>
     </div>
   );

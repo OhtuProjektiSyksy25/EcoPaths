@@ -60,6 +60,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  color: #000000;
 }
 
 .area-button:hover {

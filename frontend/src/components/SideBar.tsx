@@ -98,14 +98,12 @@ const SideBar: React.FC<SideBarProps> = ({
     if (!isMobile || !isDragging) return;
     
     const deltaY = startY - currentY;
-    const threshold = 50; // Minimum swipe distance
+    const threshold = 50;
 
     if (Math.abs(deltaY) > threshold) {
       if (deltaY > 0) {
-        // Swiped UP - expand to next stage
         handleSwipeUp();
       } else {
-        // Swiped DOWN - collapse to previous stage
         handleSwipeDown();
       }
     }
@@ -123,7 +121,6 @@ const SideBar: React.FC<SideBarProps> = ({
       // From routes only -> show full routes with inputs
       setSidebarStage('routes');
     }
-    // If already at 'routes' or 'inputs', do nothing (fully expanded)
   };
 
   const handleSwipeDown = () => {
@@ -134,17 +131,15 @@ const SideBar: React.FC<SideBarProps> = ({
       // From routes only -> hidden
       setSidebarStage('hidden');
     }
-    // If already hidden, do nothing
   };
 
-  // Keep tap functionality for handle area
   const handleMobileSidebarClick = (e: React.MouseEvent) => {
     if (!isMobile) return;
     
     const rect = e.currentTarget.getBoundingClientRect();
     const clickY = e.clientY - rect.top;
 
-    if (clickY <= 80) { // Only handle clicks on handle area
+    if (clickY <= 80) {
       if (sidebarStage === 'hidden') {
         setSidebarStage('routes-only');
       } else if (sidebarStage === 'routes-only') {
