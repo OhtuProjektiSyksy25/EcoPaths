@@ -6,6 +6,7 @@ from fastapi import APIRouter, Request, Path
 import httpx
 from utils.poi_utils import compose_photon_suggestions
 from utils.decorators import require_area_config
+from utils.poi_utils import remove_double_osm_features
 
 router = APIRouter()
 
@@ -26,6 +27,9 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         async with httpx.AsyncClient() as client:
             response = await client.get(photon_url)
             photon_suggestions = response.json()
+            trimmed_features = remove_double_osm_features(
+                photon_suggestions.get("features", []))
+            photon_suggestions["features"] = trimmed_features
     except httpx.HTTPError as exc:
         print(f"HTTP Exception for {exc.request.url} - {exc}")
         return []
