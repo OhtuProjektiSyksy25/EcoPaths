@@ -12,7 +12,7 @@ global.fetch = jest.fn();
 
 describe('AreaSelector', () => {
   const mockOnAreaSelect = jest.fn();
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.REACT_APP_API_URL = 'http://localhost:8000';
@@ -26,12 +26,12 @@ describe('AreaSelector', () => {
   Checks that loading spinner and text are shown while fetching areas
   */
   test('renders loading state initially', () => {
-    (global.fetch as jest.Mock).mockImplementation(() => 
-      new Promise(() => {}) // Never resolves
+    (global.fetch as jest.Mock).mockImplementation(
+      () => new Promise(() => {}), // Never resolves
     );
 
     render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
-    
+
     expect(screen.getByText('Loading areas...')).toBeInTheDocument();
   });
 
@@ -42,13 +42,13 @@ describe('AreaSelector', () => {
     const mockAreas = {
       areas: [
         { id: 'berlin', display_name: 'Berlin', focus_point: [13.4, 52.5], zoom: 12 },
-        { id: 'helsinki', display_name: 'Helsinki', focus_point: [24.9, 60.1], zoom: 12 }
-      ]
+        { id: 'helsinki', display_name: 'Helsinki', focus_point: [24.9, 60.1], zoom: 12 },
+      ],
     };
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockAreas
+      json: async () => mockAreas,
     });
 
     render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
@@ -67,19 +67,17 @@ describe('AreaSelector', () => {
   */
   test('handles area selection and calls backend', async () => {
     const mockAreas = {
-      areas: [
-        { id: 'berlin', display_name: 'Berlin', focus_point: [13.4, 52.5], zoom: 12 }
-      ]
+      areas: [{ id: 'berlin', display_name: 'Berlin', focus_point: [13.4, 52.5], zoom: 12 }],
     };
 
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockAreas
+        json: async () => mockAreas,
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => 'berlin'
+        json: async () => 'berlin',
       });
 
     render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
@@ -92,42 +90,46 @@ describe('AreaSelector', () => {
     fireEvent.click(berlinButton);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/select-area/berlin',
-        { method: 'POST' }
-      );
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/select-area/berlin', {
+        method: 'POST',
+      });
     });
 
     // Wait for setTimeout to complete
-    await waitFor(() => {
-      expect(mockOnAreaSelect).toHaveBeenCalledWith({
-        id: 'berlin',
-        display_name: 'Berlin',
-        focus_point: [13.4, 52.5],
-        zoom: 12
-      });
-    }, { timeout: 500 });
+    await waitFor(
+      () => {
+        expect(mockOnAreaSelect).toHaveBeenCalledWith({
+          id: 'berlin',
+          display_name: 'Berlin',
+          focus_point: [13.4, 52.5],
+          zoom: 12,
+        });
+      },
+      { timeout: 500 },
+    );
   });
 
   /*
   Checks that error message is displayed when fetch fails
   */
-test('displays error message on fetch failure', async () => {
-  // Suppress console.error for this test
-  const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  
-  (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+  test('displays error message on fetch failure', async () => {
+    // Suppress console.error for this test
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-  render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-  await waitFor(() => {
-    expect(screen.getByText('Connection Error')).toBeInTheDocument();
-    expect(screen.getByText('Could not load available areas. Please try again later.')).toBeInTheDocument();
+    render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Connection Error')).toBeInTheDocument();
+      expect(
+        screen.getByText('Could not load available areas. Please try again later.'),
+      ).toBeInTheDocument();
+    });
+
+    // Restore console.error
+    consoleErrorSpy.mockRestore();
   });
-  
-  // Restore console.error
-  consoleErrorSpy.mockRestore();
-});
 
   /*
   Checks that empty state message is shown when no areas are returned
@@ -135,7 +137,7 @@ test('displays error message on fetch failure', async () => {
   test('displays no areas message when empty list returned', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ areas: [] })
+      json: async () => ({ areas: [] }),
     });
 
     render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);

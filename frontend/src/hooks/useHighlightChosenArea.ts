@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
-import mapboxgl from "mapbox-gl";
-import { Area } from "@/types";
+import { useEffect, useState, useMemo } from 'react';
+import mapboxgl from 'mapbox-gl';
+import { Area } from '@/types';
 
 interface AreaConfig {
   area: string;
@@ -13,40 +13,42 @@ interface AreaConfig {
  * useHighlightChosenArea.ts fetches the chosen area configuration
  * and visually highlights it on a Mapbox map by graying out all
  * regions outside the defined bounding box.
- * 
+ *
  * @param map - Mapbox GL map instance
  */
-export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: Area | null) => {
+export const useHighlightChosenArea = (
+  map: mapboxgl.Map | null,
+  selectedArea: Area | null,
+): AreaConfig | null => {
   const [areaConfig, setAreaConfig] = useState<AreaConfig | null>(null);
-  
 
-  useEffect(() => {
-      if (selectedArea) {
-        setAreaConfig({
-          area: selectedArea.id,
-          bbox: selectedArea.bbox,
-          focus_point: selectedArea.focus_point,
-          crs: "EPSG:4326"
-        });
-      }
-    }, [selectedArea]);
+  useEffect((): void => {
+    if (selectedArea) {
+      setAreaConfig({
+        area: selectedArea.id,
+        bbox: selectedArea.bbox,
+        focus_point: selectedArea.focus_point,
+        crs: 'EPSG:4326',
+      });
+    }
+  }, [selectedArea]);
 
-  const maskGeoJSON = useMemo(() => {
+  const maskGeoJSON = useMemo<GeoJSON.FeatureCollection | null>(() => {
     /*
     Builds a GeoJSON polygon that covers the entire world,
     with a hole matching the chosen area's bounding box.
     */
     if (!areaConfig) return null;
 
-    const [minLng, minLat, maxLng, maxLat] = areaConfig.bbox;
+    const [minLon, minLat, maxLon, maxLat] = areaConfig.bbox;
 
     return {
-      type: "FeatureCollection",
+      type: 'FeatureCollection',
       features: [
         {
-          type: "Feature",
+          type: 'Feature',
           geometry: {
-            type: "Polygon",
+            type: 'Polygon',
             coordinates: [
               [
                 [-180, -90],
@@ -56,11 +58,11 @@ export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: A
                 [-180, -90],
               ],
               [
-                [minLng, minLat],
-                [minLng, maxLat],
-                [maxLng, maxLat],
-                [maxLng, minLat],
-                [minLng, minLat],
+                [minLon, minLat],
+                [minLon, maxLat],
+                [maxLon, maxLat],
+                [maxLon, minLat],
+                [minLon, minLat],
               ],
             ],
           },
@@ -76,66 +78,52 @@ export const useHighlightChosenArea = (map: mapboxgl.Map | null, selectedArea: A
     */
     if (!map || !maskGeoJSON) return;
 
-    const sourceId = "polygon";
-    const layerId = "gray-out-polygon";
+    const sourceId = 'polygon';
+    const layerId = 'gray-out-polygon';
 
-    const addHighlight = () => {
-
+    const addHighlight = (): void => {
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
- 
+
         map.addSource(sourceId, {
-          type: "geojson",
+          type: 'geojson',
           data: maskGeoJSON,
         });
 
         map.addLayer({
           id: layerId,
-          type: "fill",
+          type: 'fill',
           source: sourceId,
           paint: {
-            "fill-color": "#666666",
-            "fill-opacity": 0.2,
+            'fill-color': '#666666',
+            'fill-opacity': 0.2,
           },
         });
-
       } catch (error) {
-        console.log("Error adding highlight:", error);
+        console.log('Error adding highlight:', error);
       }
     };
 
-    const setupHighlightLayer = () => addHighlight();
-
-    // Wait for map to be fully ready before adding highlight
-    const waitForMapReady = () => {
+    // Wait until map is ready
+    (function waitForMapReady(): void {
       if (map.isStyleLoaded() && map.loaded()) {
         addHighlight();
       } else {
-        // Map not ready yet, check again in 100ms
         setTimeout(waitForMapReady, 100);
       }
-    };
+    })();
 
-    // Start checking
-    waitForMapReady();
+    map.on('load', addHighlight);
+    map.on('style.load', addHighlight);
 
-    // Also listen for load events in case map reloads
-    map.on("load", addHighlight);
-    map.on("style.load", addHighlight);
-    
-    // Cleanup
     return () => {
-      map.off("load", addHighlight);
-      map.off("style.load", addHighlight);
-      
+      map.off('load', addHighlight);
+      map.off('style.load', addHighlight);
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
-      } catch (error) {
-        // Ignore cleanup errors
-      }
-
+      } catch {}
     };
   }, [map, maskGeoJSON]);
 

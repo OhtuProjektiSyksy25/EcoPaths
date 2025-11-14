@@ -36,7 +36,7 @@ def format_frontend(c):
 def lint_frontend(c):
     """Run prettier check on frontend"""
     with c.cd("frontend"):
-        c.run("npm run check-format")
+        c.run("npm run lint")
 
 
 # ========================

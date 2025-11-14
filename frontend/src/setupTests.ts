@@ -1,13 +1,14 @@
 /* setupTests.ts */
 import '@testing-library/jest-dom';
 import 'whatwg-fetch';
-import mapboxgl from 'mapbox-gl';
+
+type Callback = () => void;
 
 jest.mock('mapbox-gl', () => ({
   __esModule: true,
   default: {
     Map: jest.fn(() => {
-      const callbacks: Record<string, Function[]> = {};
+      const callbacks: Record<string, Callback[]> = {};
 
       return {
         addSource: jest.fn(),
@@ -18,25 +19,22 @@ jest.mock('mapbox-gl', () => ({
         removeLayer: jest.fn(),
         flyTo: jest.fn(),
         fitBounds: jest.fn(),
-        on: jest.fn((event: string, cb: Function) => {
+        on: jest.fn((event: string, cb: Callback) => {
           if (!callbacks[event]) callbacks[event] = [];
           callbacks[event].push(cb);
           if (event === 'load') cb();
         }),
         trigger: (event: string) => {
-          callbacks[event]?.forEach(cb => cb());
+          callbacks[event]?.forEach((cb) => cb());
         },
         setPaintProperty: jest.fn(),
         addControl: jest.fn(),
         remove: jest.fn(),
         getStyle: jest.fn(() => ({
-          layers: [
-            { id: 'water' },
-            { id: 'land' },
-          ],
+          layers: [{ id: 'water' }, { id: 'land' }],
         })),
         getContainer: jest.fn(() => ({
-          querySelector: jest.fn(() => ({ style: { opacity: "1" } })),
+          querySelector: jest.fn(() => ({ style: { opacity: '1' } })),
         })),
       };
     }),
@@ -52,4 +50,3 @@ jest.mock('mapbox-gl', () => ({
     })),
   },
 }));
-

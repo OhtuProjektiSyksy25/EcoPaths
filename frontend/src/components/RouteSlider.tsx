@@ -1,8 +1,8 @@
 /*
 RouteSlider.tsx renders a slider allowing users to customize their route preference
 */
-import React, { useState } from "react";
-import "../styles/RouteSlider.css";
+import React, { useState } from 'react';
+import '../styles/RouteSlider.css';
 import { CIcon } from '@coreui/icons-react';
 import { cilSpeedometer, cilLeaf } from '@coreui/icons';
 
@@ -24,14 +24,14 @@ const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = f
   /* 
   Called when user moves the slider 
   */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setLocalValue(parseFloat(e.target.value));
   };
 
   /* 
   Called when user releases the slider (mouse or touch) 
   */
-  const handleMouseUp = () => {
+  const handleMouseUp = (): void => {
     if (localValue !== value) {
       onChange(localValue);
     }
@@ -39,7 +39,7 @@ const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = f
   /* 
   Called when user releases the slider (mouse or touch) 
   */
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (): void => {
     if (localValue !== value) {
       onChange(localValue);
     }
@@ -48,39 +48,39 @@ const RouteSlider: React.FC<RouteSliderProps> = ({ value, onChange, disabled = f
   /* 
   Determines the label to display based on the slider value 
   */
-  const getLabel = () => {
-    if (localValue < 0.33) return "Cleaner Air";
-    if (localValue > 0.67) return "Faster";
-    return "Balanced";
+  const getLabel = (): string => {
+    if (localValue < 0.33) return 'Cleaner Air';
+    if (localValue > 0.67) return 'Faster';
+    return 'Balanced';
   };
 
   return (
-    <div className="route-slider-container">
-      <div className="slider-header">
-        <span className="slider-label">Customize Your Route</span>
-        <span className="slider-value-label">{getLabel()}</span>
+    <div className='route-slider-container'>
+      <div className='slider-header'>
+        <span className='slider-label'>Customize Your Route</span>
+        <span className='slider-value-label'>{getLabel()}</span>
       </div>
 
-      <div className="slider-wrapper">
-        <span className="slider-end-label flex items-center gap-1">
-          <CIcon icon={cilLeaf} size="sm" />
+      <div className='slider-wrapper'>
+        <span className='slider-end-label flex items-center gap-1'>
+          <CIcon icon={cilLeaf} size='sm' />
         </span>
 
         <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
+          type='range'
+          min='0'
+          max='1'
+          step='0.01'
           value={localValue}
           onChange={handleChange}
           onMouseUp={handleMouseUp}
           onTouchEnd={handleTouchEnd}
           disabled={disabled}
-          className="route-slider"
+          className='route-slider'
         />
 
-        <span className="slider-end-label flex items-center gap-1">
-          <CIcon icon={cilSpeedometer} size="sm" />
+        <span className='slider-end-label flex items-center gap-1'>
+          <CIcon icon={cilSpeedometer} size='sm' />
         </span>
       </div>
     </div>

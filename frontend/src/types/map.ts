@@ -1,10 +1,9 @@
-import { Map } from 'mapbox-gl'
+import { Map } from 'mapbox-gl';
 
-export type MbMap = Map | null
+export type MbMap = Map | null;
 
-
-export type Coords = [number, number]
+export type Coords = [number, number];
 
 export interface Coordinates {
-  coordinates: Coords
+  coordinates: Coords;
 }

@@ -1,73 +1,80 @@
-import { renderHook, waitFor, act } from "@testing-library/react";
-import { useRoute } from "../../src/hooks/useRoute";
-import { LockedLocation, RouteGeoJSON, RouteSummary } from "../../src/types/route";
+import { renderHook, waitFor, act } from '@testing-library/react';
+import { useRoute } from '../../src/hooks/useRoute';
+import { LockedLocation, RouteGeoJSON, RouteSummary } from '../../src/types/route';
 
 const mockFrom: LockedLocation = {
-  full_address: "Start Address",
+  full_address: 'Start Address',
   geometry: { coordinates: [24.935, 60.169] },
 };
 
 const mockTo: LockedLocation = {
-  full_address: "End Address",
+  full_address: 'End Address',
   geometry: { coordinates: [24.941, 60.17] },
 };
 
 const mockRoutes: Record<string, RouteGeoJSON> = {
   fastest: {
-    type: "FeatureCollection",
+    type: 'FeatureCollection',
     features: [
       {
-        type: "Feature",
+        type: 'Feature',
         geometry: {
-          type: "LineString",
-          coordinates: [[24.935, 60.169], [24.941, 60.17]],
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.941, 60.17],
+          ],
         },
-        properties: { route_type: "fastest" },
+        properties: { route_type: 'fastest' },
       },
     ],
   },
   balanced: {
-    type: "FeatureCollection",
+    type: 'FeatureCollection',
     features: [
       {
-        type: "Feature",
+        type: 'Feature',
         geometry: {
-          type: "LineString",
-          coordinates: [[24.935, 60.169], [24.940, 60.171]],
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.94, 60.171],
+          ],
         },
-        properties: { route_type: "balanced" },
+        properties: { route_type: 'balanced' },
       },
     ],
   },
 };
 
 const mockSummaries: Record<string, RouteSummary> = {
-    fastest: {
+  fastest: {
     total_length: 1200,
-    time_estimate: "5 min",
+    time_estimate: '5 min',
     aq_average: 42,
   },
-    balanced: { 
+  balanced: {
     total_length: 1300,
-    time_estimate: "6 min",
-    aq_average: 38 },
+    time_estimate: '6 min',
+    aq_average: 38,
+  },
 };
 
 beforeAll(() => {
-  jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterAll(() => {
   (console.error as jest.Mock).mockRestore();
 });
 
-describe("useRoute", () => {
+describe('useRoute', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     global.fetch = jest.fn();
   });
 
-  test("fetches routes and summaries when both locations are provided", async () => {
+  test('fetches routes and summaries when both locations are provided', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -81,11 +88,11 @@ describe("useRoute", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/getroute"),
+      expect.stringContaining('/getroute'),
       expect.objectContaining({
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }),
     );
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -94,13 +101,13 @@ describe("useRoute", () => {
     expect(result.current.error).toBeNull();
   });
 
-  test("does not fetch if fromLocked or toLocked is incomplete", () => {
+  test('does not fetch if fromLocked or toLocked is incomplete', () => {
     renderHook(() => useRoute(null, mockTo, 0.5));
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  test("handles fetch error correctly", async () => {
-    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network request failed"));
+  test('handles fetch error correctly', async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network request failed'));
 
     const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
 
@@ -108,10 +115,10 @@ describe("useRoute", () => {
 
     expect(result.current.routes).toBeNull();
     expect(result.current.summaries).toBeNull();
-    expect(result.current.error).toBe("Network request failed");
+    expect(result.current.error).toBe('Network request failed');
   });
 
-  test("updates only balanced route when balancedWeight changes", async () => {
+  test('updates only balanced route when balancedWeight changes', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -128,10 +135,9 @@ describe("useRoute", () => {
         }),
       });
 
-    const { result, rerender } = renderHook(
-      ({ weight }) => useRoute(mockFrom, mockTo, weight),
-      { initialProps: { weight: 0.5 } }
-    );
+    const { result, rerender } = renderHook(({ weight }) => useRoute(mockFrom, mockTo, weight), {
+      initialProps: { weight: 0.5 },
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -149,7 +155,7 @@ describe("useRoute", () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
-  test("handles error during balancedWeight update without clearing all routes", async () => {
+  test('handles error during balancedWeight update without clearing all routes', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -158,12 +164,11 @@ describe("useRoute", () => {
           summaries: mockSummaries,
         }),
       })
-      .mockRejectedValueOnce(new Error("Partial fetch failed"));
+      .mockRejectedValueOnce(new Error('Partial fetch failed'));
 
-    const { result, rerender } = renderHook(
-      ({ weight }) => useRoute(mockFrom, mockTo, weight),
-      { initialProps: { weight: 0.5 } }
-    );
+    const { result, rerender } = renderHook(({ weight }) => useRoute(mockFrom, mockTo, weight), {
+      initialProps: { weight: 0.5 },
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     const initialRoutes = result.current.routes;
@@ -175,10 +180,10 @@ describe("useRoute", () => {
     await waitFor(() => expect(result.current.balancedLoading).toBe(false));
 
     expect(result.current.routes).toEqual(initialRoutes);
-    expect(result.current.error).toBe("Partial fetch failed");
+    expect(result.current.error).toBe('Partial fetch failed');
   });
 
-  test("sets loading when locations change but weight stays the same", async () => {
+  test('sets loading when locations change but weight stays the same', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -195,16 +200,15 @@ describe("useRoute", () => {
         }),
       });
 
-    const { result, rerender } = renderHook(
-      ({ from, to, weight }) => useRoute(from, to, weight),
-      { initialProps: { from: mockFrom, to: mockTo, weight: 0.5 } }
-    );
+    const { result, rerender } = renderHook(({ from, to, weight }) => useRoute(from, to, weight), {
+      initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const newTo: LockedLocation = {
       ...mockTo,
-      geometry: { coordinates: [24.950, 60.172] as [number, number] },
+      geometry: { coordinates: [24.95, 60.172] as [number, number] },
     };
 
     await act(async () => {
@@ -218,23 +222,25 @@ describe("useRoute", () => {
     expect(result.current.routes).toEqual(mockRoutes);
   });
 
-  test("throws error with invalid response when fetching", async () => {
+  test('throws error with invalid response when fetching', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({})
+      json: async () => ({}),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));    
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
 
-    await waitFor(() => { expect(result.current.loading).toBe(false);});
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    expect(result.current.error).toBe("Server error: 500");
+    expect(result.current.error).toBe('Server error: 500');
     expect(result.current.routes).toBeNull();
     expect(result.current.summaries).toBeNull();
   });
 
-  test("updates only balanced route and summary when isWeightChange = true", async () => {
+  test('updates only balanced route and summary when isWeightChange = true', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -251,10 +257,9 @@ describe("useRoute", () => {
         }),
       });
 
-    const { result, rerender } = renderHook(
-      ({ weight }) => useRoute(mockFrom, mockTo, weight),
-      { initialProps: { weight: 0.5 } }
-    );
+    const { result, rerender } = renderHook(({ weight }) => useRoute(mockFrom, mockTo, weight), {
+      initialProps: { weight: 0.5 },
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -273,5 +278,4 @@ describe("useRoute", () => {
     expect(result.current.summaries?.fastest).toBe(prevSummaries?.fastest);
     expect(result.current.summaries?.balanced.aq_average).toBe(99);
   });
-
 });
