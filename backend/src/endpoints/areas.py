@@ -16,9 +16,8 @@ async def get_areas():
     """Return a list of available areas."""
     areas = []
     for area_id, settings in AREA_SETTINGS.items():
-        # Skip testarea
-        #        if area_id == "testarea":
-        #            continue
+        if area_id == "testarea":
+            continue
         areas.append({
             "id": area_id,
             "display_name": settings.get("display_name", area_id.title()),

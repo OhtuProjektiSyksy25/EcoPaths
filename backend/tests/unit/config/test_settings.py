@@ -30,5 +30,5 @@ def test_valid_area_configs(area_key):
 def test_invalid_area_raises():
     """Check that an unknown area raises ValueError"""
     with pytest.raises(ValueError) as excinfo:
-        AreaConfig("london")
-    assert "Unknown area: london" in str(excinfo.value)
+        AreaConfig("newyork")
+    assert "Unknown area: newyork" in str(excinfo.value)
