@@ -30,8 +30,6 @@ selenium*.png
 Thumbs.db
 *.swp
 node_modules/
-/package.json
-/package-lock.json
 database_dump.backup
 
 
