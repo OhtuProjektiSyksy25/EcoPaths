@@ -276,7 +276,7 @@ cp backend/.env.test.example backend/.env.test
 ```bash
 invoke test-playwright [--flush] 
 ```
-
+- We use AQ mock data in end-to-end tests, so we don't make excess AQ API calls.
 
 ### Notes / Tips
 
