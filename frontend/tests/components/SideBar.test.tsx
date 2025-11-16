@@ -10,6 +10,7 @@ import { useGeolocation } from "../../src/hooks/useGeolocationState";
 const mockOnFromSelect = jest.fn();
 const mockOnToSelect = jest.fn();
 const mockGetCurrentLocation = jest.fn();
+const mockOnRouteSelect = jest.fn();
 
 /*
 Mock useGeolocation hook
@@ -48,10 +49,13 @@ describe("SideBar", () => {
     onToSelect={mockOnToSelect} 
     selectedArea={null}
     summaries={null}
+    aqiDifferences={null}
     showAQIColors={false}
     setShowAQIColors={jest.fn()}
     balancedWeight={undefined as any}
     setBalancedWeight={undefined as any}
+    selectedRoute={null}
+    onRouteSelect={mockOnRouteSelect}
   />
 );
 
@@ -74,10 +78,13 @@ describe("SideBar", () => {
     onToSelect={mockOnToSelect}
     selectedArea={null}
     summaries={null}
+    aqiDifferences={null}
     showAQIColors={false}
     setShowAQIColors={jest.fn()}
     balancedWeight={undefined as any}
     setBalancedWeight={undefined as any}
+    selectedRoute={null}
+    onRouteSelect={mockOnRouteSelect}
   />
 );
 
@@ -98,11 +105,14 @@ describe("SideBar", () => {
     onFromSelect={mockOnFromSelect} 
     onToSelect={mockOnToSelect}
     selectedArea={null}
-    summaries={null}  
+    summaries={null}
+    aqiDifferences={null}
     showAQIColors={false}
     setShowAQIColors={jest.fn()}
     balancedWeight={undefined as any}
     setBalancedWeight={undefined as any}
+    selectedRoute={null}
+    onRouteSelect={mockOnRouteSelect}
   />
 );
 
@@ -139,11 +149,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect}
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -159,11 +172,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -202,11 +218,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -221,11 +240,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -245,11 +267,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={null}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -262,11 +287,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={null}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -299,11 +327,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -318,11 +349,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -367,11 +401,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect} 
         onToSelect={mockOnToSelect} 
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={berlinArea}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -412,11 +449,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect}
         onToSelect={mockOnToSelect}
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={null}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
@@ -469,11 +509,14 @@ describe("SideBar", () => {
         onFromSelect={mockOnFromSelect}
         onToSelect={mockOnToSelect}
         summaries={null}
+        aqiDifferences={null}
         showAQIColors={false}
         setShowAQIColors={jest.fn()}
         selectedArea={null}
         balancedWeight={undefined as any}
         setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
       />
     );
 
