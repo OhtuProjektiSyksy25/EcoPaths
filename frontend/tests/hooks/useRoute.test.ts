@@ -142,7 +142,7 @@ describe("useRoute", () => {
     });
 
     await waitFor(() => expect(result.current.balancedLoading).toBe(false));
-
+ 
     expect(result.current.routes?.fastest).toEqual(initialRoutes?.fastest);
     expect(result.current.routes?.balanced).toEqual(mockRoutes.balanced);
     expect(result.current.summaries?.balanced).toEqual(mockSummaries.balanced);

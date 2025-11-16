@@ -108,12 +108,17 @@ class RouteService:
             result (GeoJSON FeatureCollection): Route edges
             summary (dict): Route data summary
         """
-        gdf = self.current_route_algorithm.re_calculate_balanced_path(balanced_value)
+        gdf = self.current_route_algorithm.re_calculate_balanced_path(
+            balanced_value)
         summary = summarize_route(gdf)
         result = GeoTransformer.gdf_to_feature_collection(
-                gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
-            )
-        return result, summary
+            gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
+        )
+
+        results, summaries = {}, {}
+        results["balanced"] = result
+        summaries["balanced"] = summary
+        return {"routes": results, "summaries": summaries}
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """

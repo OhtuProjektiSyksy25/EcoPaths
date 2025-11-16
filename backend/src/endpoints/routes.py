@@ -48,6 +48,7 @@ async def getroute(request: Request):
     data = await request.json()
     features = data.get("features", [])
     balanced_weight = data.get("balanced_weight", 0.5)
+    only_compute_balanced_route = data.get("balanced_route")
 
     if not isinstance(balanced_weight, (int, float)) or not 0 <= balanced_weight <= 1:
         return JSONResponse(
@@ -71,8 +72,11 @@ async def getroute(request: Request):
     destination_gdf = GeoTransformer.geojson_to_projected_gdf(
         end_feature["geometry"], target_crs)
 
-    response = route_service.get_route(
-        origin_gdf, destination_gdf, balanced_weight)
+    if only_compute_balanced_route:
+        response = route_service.compute_balanced_route_only(balanced_weight)
+    else:
+        response = route_service.get_route(
+            origin_gdf, destination_gdf, balanced_weight)
 
     duration = time.time() - start_time
     print(f"/getroute took {duration:.3f} seconds")

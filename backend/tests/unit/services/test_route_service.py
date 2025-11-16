@@ -151,7 +151,6 @@ def test_save_to_redis_is_triggered(monkeypatch, route_service):
 def test_compute_routes_returns_all_modes(route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
     origin, destination = origin_destination
 
-
     # call _compute_routes with Points
     result = route_service._compute_routes(
         simple_edges_gdf, simple_nodes_gdf, origin, destination)
@@ -216,6 +215,7 @@ def test_get_route_returns_expected_structure(monkeypatch, route_service, origin
         assert mode in result["routes"]
         assert result["routes"][mode]["features"]
 
+
 def test_compute_balanced_route_only_returns_only_one_route(monkeypatch, route_service, origin_destination):
     origin, destination = origin_destination
 
@@ -250,5 +250,6 @@ def test_compute_balanced_route_only_returns_only_one_route(monkeypatch, route_s
 
     route_service.get_route(origin, destination)
     result = route_service.compute_balanced_route_only(0.1)
-    assert isinstance(result, tuple)
-    assert result[0]["type"] == "FeatureCollection"
+    assert isinstance(result, dict)
+    assert isinstance(result["routes"], dict)
+    assert result["routes"]["balanced"].get("type") == "FeatureCollection"

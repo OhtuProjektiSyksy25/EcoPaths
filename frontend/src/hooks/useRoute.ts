@@ -99,8 +99,8 @@ export const useRoute = (
 
         if (isWeightChange) {
           // Only update balanced route and summary
-          setRoutes(prev => prev ? { ...prev, balanced: data[0] } : data.routes);
-          setSummaries(prev => prev ? { ...prev, balanced: data[1] } : data.summaries);
+          setRoutes(prev => prev ? { ...prev, balanced: data.routes.balanced } : data.routes);
+          setSummaries(prev => prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries);
         } else {
           // Update all routes
           setRoutes(data.routes);
