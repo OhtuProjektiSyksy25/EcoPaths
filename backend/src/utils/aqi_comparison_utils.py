@@ -55,9 +55,9 @@ def format_comparison_text(percentage_diff: float | None) -> str:
     """
 
     if percentage_diff is None:
-        return f"Exposure comparison with Fastest Route not available"
+        return "Exposure comparison with Fastest Route not available"
 
     if percentage_diff > 0:
         return f"{abs(percentage_diff)}% less exposure than Fastest Route"
 
-    return f"Exposure level is the same as Fastest Route"
+    return "Exposure level is the same as Fastest Route"
