@@ -48,13 +48,12 @@ class TestGoogleAPIService:
 
     @patch("src.services.google_api_service.requests.post")
     def test_fetch_single_tile_success(self, mock_post, api_service):
-        """_fetch_single_tile returns valid AQI structure (mocked or test mode)."""
+        """_fetch_single_tile returns correct aqi value from mocked API."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"indexes": [{"aqi": 42}]}
         mock_post.return_value = mock_response
-
-        result = api_service._fetch_single_tile(52.52, 13.405)
+        result = api_service._fetch_single_tile(52.52, 13.405, "berlin")
 
         assert isinstance(result, dict)
         assert set(result.keys()) == {"aqi", "pm2_5", "no2"}
@@ -65,8 +64,7 @@ class TestGoogleAPIService:
     @patch("src.services.google_api_service.requests.post", side_effect=RequestException("API down"))
     def test_fetch_single_tile_failure(self, mock_post, api_service):
         """Handles failed requests gracefully, even in test mode."""
-        result = api_service._fetch_single_tile(52.52, 13.405)
-
+        result = api_service._fetch_single_tile(52.52, 13.405, "berlin")
         assert set(result.keys()) == {"aqi", "pm2_5", "no2"}
         assert isinstance(result["aqi"], (int, type(None)))
 

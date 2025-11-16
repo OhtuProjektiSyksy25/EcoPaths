@@ -2,7 +2,6 @@
 Google API Service for AQ data retrieval.
 """
 import random
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import geopandas as gpd
@@ -15,7 +14,7 @@ class GoogleAPIService:
     """Service for fetching air quality data from Google API."""
 
     def __init__(self):
-        settings = get_settings("testarea") # area can be anything
+        settings = get_settings("testarea")  # area can be anything
 
         self.test_mode = settings.TEST_MODE
         self.api_key = settings.google_api_key
