@@ -29,6 +29,18 @@ def lint_backend(c):
         c.run("poetry run pylint src preprocessor tests")
     print("Linting completed.")
 
+@task
+def format_frontend(c):
+    """Format frontend code using prettier"""
+    with c.cd("frontend"):
+        c.run("npm run format")
+
+@task
+def lint_frontend(c):
+    """Run prettier check on frontend"""
+    with c.cd("frontend"):
+        c.run("npm run check-format")
+
 
 # ========================
 # Testing & coverage
@@ -120,8 +132,12 @@ def check_backend(c):
     """Run lint and unit tests with coverage"""
     print("Backend checked.")
 
+@task(pre=[lint_frontend, test_frontend])
+def check_frontend(c):
+    """Run lint and tests for frontend"""
+    print("Frontend checked")
 
-@task(pre=[format_backend, check_backend])
+@task(pre=[format_backend, check_backend, format_frontend, check_frontend])
 def full(c):
     """Format code, lint, run tests, and generate coverage"""
     print("Code formatted and fully checked!")

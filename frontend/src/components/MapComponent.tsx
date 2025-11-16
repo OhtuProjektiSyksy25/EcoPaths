@@ -101,6 +101,23 @@ const MapComponent: React.FC<MapComponentProps> = ({
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+
+    const scale = new mapboxgl.ScaleControl({
+      maxWidth: 100,
+      unit: "metric",
+    });
+    map.addControl(scale, "bottom-left");
+
+    map.on("movestart", () => {
+      const scaleEl = map.getContainer().querySelector(".mapboxgl-ctrl-scale") as HTMLElement;
+      if (scaleEl) scaleEl.style.opacity = "0";
+    });
+
+    map.on("moveend", () => {
+      const scaleEl = map.getContainer().querySelector(".mapboxgl-ctrl-scale") as HTMLElement;
+      if (scaleEl) scaleEl.style.opacity = "1";
+    });
+
     map.on("load", () => updateWaterLayers(map));
 
     mapRef.current = map;
@@ -149,7 +166,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
     map.touchZoomRotate.disable();
 
     const onMoveEnd = () => {
-      /* Re-enable interactions after flyTo */
       map.dragPan.enable();
       map.scrollZoom.enable();
       map.boxZoom.enable();

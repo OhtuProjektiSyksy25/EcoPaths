@@ -25,8 +25,11 @@ class GoogleAPIService:
 
         self.endpoint = "https://airquality.googleapis.com/v1/currentConditions:lookup"
 
-    def _fetch_single_tile(self, lat: float, lon: float) -> dict:
+    def _fetch_single_tile(self, lat: float, lon: float, area: str) -> dict:
         """Fetch AQI for a single coordinate pair; other pollutants as placeholders."""
+        settings = get_settings(area)
+        region_code = settings.area.region_code
+
         # When in test mode, return random AQI instead of making an API call
         print(
             f"Fetching AQ data for ({lat}, {lon}){' (TEST MODE)' if self.test_mode else ''}...")
@@ -37,7 +40,16 @@ class GoogleAPIService:
                 "no2": None
             }
 
-        payload = {"location": {"latitude": lat, "longitude": lon}}
+        payload = {
+            "location": {"latitude": lat, "longitude": lon},
+            "extraComputations": ["LOCAL_AQI", "POLLUTANT_CONCENTRATION"],
+            "customLocalAqis": [
+                {
+                    "regionCode": region_code,
+                    "aqi": "usa_epa_nowcast"
+                }
+            ]
+        }
         params = {"key": self.api_key}
         headers = {"Content-Type": "application/json"}
 
@@ -52,7 +64,15 @@ class GoogleAPIService:
             response.raise_for_status()
             data = response.json()
             indexes = data.get("indexes", [])
-            aqi = indexes[0].get("aqi") if indexes else None
+
+            aqi = None
+
+            if indexes:
+                aqi = indexes[0].get("aqi")
+
+            # Pollutants can be extracted from this variable if needed
+            # pollutants = data.get("pollutants", [])
+
             return {
                 "aqi": aqi,
                 "pm2_5": None,  # placeholder
@@ -85,7 +105,7 @@ class GoogleAPIService:
         with ThreadPoolExecutor(max_workers=8) as executor:
             futures = {
                 executor.submit(
-                    self._fetch_single_tile, row.center_lat, row.center_lon
+                    self._fetch_single_tile, row.center_lat, row.center_lon, area
                 ): row.tile_id
                 for _, row in tiles.iterrows()
             }
