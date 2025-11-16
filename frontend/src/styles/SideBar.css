@@ -54,8 +54,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-top: 16px;
   background-color: rgba(0, 184, 46, 0.1);
-  border: 2px solid #019c2a;
+  border: 2px solid #019c2a95;
   color: #019c2a;
+  transition: all 0.3s ease;
 }
 
 .balanced-route-container {
@@ -72,8 +73,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-top: 16px;
   background-color: rgba(3, 224, 213, 0.12);
-  border: 2px solid #02beb5;
+  border: 2px solid #02beb595;
   color: #00c5cc;
+  transition: all 0.3s ease;
 }
 
 .fastest-route-container {
@@ -87,8 +89,38 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-top: 16px;
   background-color: rgba(0, 80, 228, 0.1);
-  border: 2px solid #0051d4;
+  border: 2px solid #0051d495;
   color: #0051d4;
+  transition: all 0.3s ease;
+}
+
+.route-container * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.route-container:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.route-container:has(.RouteInfoCard.selected) {
+  transform: scale(1.02);
+  opacity: 1;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-content:has(.RouteInfoCard.selected) .route-container:not(:has(.RouteInfoCard.selected)) {
+  opacity: 0.6;
+  border-color: transparent;
+}
+
+.sidebar-content:has(.RouteInfoCard.selected) .route-container:not(:has(.RouteInfoCard.selected)):hover {
+  opacity: 0.8;
+  border-color: rgba(0, 0, 0, 0.2);
 }
 
 .aqi-toggle-button {

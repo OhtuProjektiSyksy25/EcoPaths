@@ -21,6 +21,7 @@ interface MapComponentProps {
   routes: Record<string, RouteGeoJSON> | null;
   showAQIColors: boolean;
   selectedArea: Area | null;
+  selectedRoute: string | null;
 }
 
 export const updateWaterLayers = (map: mapboxgl.Map): void => {
@@ -48,6 +49,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   routes,
   showAQIColors,
   selectedArea,
+  selectedRoute,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -58,8 +60,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
-  /*  Draw routes and highlight area hooks */
-  useDrawRoutes(mapRef.current, routes as Record<string, GeoJSON.FeatureCollection>, showAQIColors);
+  /*  Draw routes and highlight area hooks */ 
+  useDrawRoutes(
+    mapRef.current,
+    routes as Record<string, GeoJSON.FeatureCollection>,
+    showAQIColors,
+    selectedRoute
+  );
   useHighlightChosenArea(mapRef.current, selectedArea);
 
   /*  Handle user location */
