@@ -17,58 +17,47 @@ def calculate_aqi_difference(summaries: dict) -> dict:
     modes = ["fastest", "best_aq", "balanced"]
     comparisons = defaultdict(dict)
 
+    baseline_mode = "fastest"
+    baseline_aqi = summaries["fastest"]["aq_average"]
+
     for mode in modes:
+        if mode == baseline_mode:
+            continue
+
         mode_aqi = summaries[mode]["aq_average"]
 
-        for compared_mode in modes:
-            if mode == compared_mode:
-                continue
+        if mode_aqi is None or baseline_aqi is None or baseline_aqi == 0:
+            aqi_diff = None
+            percentage_diff = None
+        else:
+            aqi_diff = baseline_aqi - mode_aqi
+            percentage_diff = round((aqi_diff / baseline_aqi * 100), 2)
 
-            compared_mode_aqi = summaries[compared_mode]["aq_average"]
+        comparison_text = format_comparison_text(percentage_diff)
 
-            if mode_aqi is None or compared_mode_aqi is None or compared_mode_aqi == 0:
-                aqi_diff = None
-                percentage_diff = None
-            else:
-                aqi_diff = compared_mode_aqi - mode_aqi
-                percentage_diff = round((aqi_diff / compared_mode_aqi * 100), 2)
-
-            comparison_text = format_comparison_text(percentage_diff, compared_mode)
-
-            comparisons[mode][compared_mode] = {
-                "aqi_difference": aqi_diff,
-                "percentage_difference": percentage_diff,
-                "comparison_text": comparison_text
-            }
+        comparisons[mode][baseline_mode] = {
+            "aqi_difference": aqi_diff,
+            "percentage_difference": percentage_diff,
+            "comparison_text": comparison_text
+        }
 
     return comparisons
 
-def format_comparison_text(percentage_diff: float | None, compared_mode: str) -> str:
+def format_comparison_text(percentage_diff: float | None) -> str:
     """
     Format the AQI into a string.
 
     Args:
         percentage_diff (float | None): Percentage difference in AQI or None if unavailable.
-        compared_mode (str): The route mode being compared against.
 
     Returns:
         str: Formatted comparison text.
     """
-    mode_names = {
-        "fastest": "Fastest Route",
-        "best_aq": "Best Air Quality Route",
-        "balanced": "Your Route"
-    }
-
-    mode_label = mode_names[compared_mode]
 
     if percentage_diff is None:
-        return f"AQI comparison with {mode_label} not available"
+        return f"Exposure comparison with Fastest Route not available"
 
     if percentage_diff > 0:
-        return f"{abs(percentage_diff)}% better AQI than {mode_label}"
+        return f"{abs(percentage_diff)}% less exposure than Fastest Route"
 
-    if percentage_diff < 0:
-        return f"{abs(percentage_diff)}% worse AQI than {mode_label}"
-
-    return f"Same AQI as {mode_label}"
+    return f"Exposure level is the same as Fastest Route"
