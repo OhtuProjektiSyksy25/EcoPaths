@@ -1,3 +1,15 @@
+.RouteInfoCard {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    outline: none;
+}
+
+.route-card-header {
+    display: flex;
+    flex-direction: column;
+}
+
 .route_type {
     display: flex;
     flex-direction: row;
@@ -23,4 +35,35 @@
     color: #61896f;
     font-weight: 300;
     gap: 8px;
+}
+
+.route-comparisons {
+    margin-top: 18px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comparisons-divider {
+    height: 1px;
+    background: rgba(97, 137, 111, 0.2);
+    margin-bottom: 14px;
+}
+
+.comparison-item {
+    font-size: 13.8px;
+    color: #333;
+}
+
+.comparison-text {
+    line-height: 1.4;
 }

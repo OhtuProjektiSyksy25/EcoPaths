@@ -10,12 +10,15 @@ import RouteInfoCard from "./RouteInfoCard";
 import RouteSlider from "./RouteSlider";
 import "../styles/SideBar.css";
 import { RouteSummary } from "@/types/route";
+import { AqiComparison } from "@/types/route";
 import { Area } from "../types";
+
 
 interface SideBarProps {
   onFromSelect: (place: any) => void;
   onToSelect: (place: any) => void;
   summaries: Record<string, RouteSummary> | null;
+  aqiDifferences?: Record<string, Record<string, AqiComparison>> | null;
   showAQIColors: boolean;
   setShowAQIColors: (value: boolean) => void;
   selectedArea: Area | null;
@@ -25,27 +28,26 @@ interface SideBarProps {
   loading?: boolean;
   balancedLoading?: boolean;
   children?: React.ReactNode;
+  selectedRoute: string | null;
+  onRouteSelect: (route: string) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
-  
   onFromSelect,
- 
   onToSelect,
- 
   summaries,
- 
+  aqiDifferences = null,
   showAQIColors,
   setShowAQIColors,
   selectedArea,
   onErrorChange,
- 
   balancedWeight,
   setBalancedWeight,
   loading = false,
   balancedLoading = false,
-  children
-
+  children,
+  selectedRoute,
+  onRouteSelect
 }) => {
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
@@ -289,25 +291,43 @@ const SideBar: React.FC<SideBarProps> = ({
 
         {summaries && !children && (
           <>
-            <div className="best-aq-container">
+            <div
+              className="best-aq-container route-container"
+              onClick={() => onRouteSelect('best_aq')}
+              onMouseDown={(e) => e.preventDefault()}
+            >
               <RouteInfoCard
                 route_type="Best Air Quality"
                 time_estimate={summaries.best_aq.time_estimate}
                 total_length={summaries.best_aq.total_length}
                 aq_average={summaries.best_aq.aq_average}
+                comparisons={aqiDifferences?.best_aq}
+                isSelected={selectedRoute === 'best_aq'}
+                isExpanded={selectedRoute === 'best_aq'}
               />
             </div>
 
-            <div className="fastest-route-container">
+            <div
+              className="fastest-route-container route-container"
+              onClick={() => onRouteSelect('fastest')}
+              onMouseDown={(e) => e.preventDefault()}
+            >
               <RouteInfoCard
                 route_type="Fastest Route"
                 time_estimate={summaries.fastest.time_estimate}
                 total_length={summaries.fastest.total_length}
                 aq_average={summaries.fastest.aq_average}
+                comparisons={aqiDifferences?.fastest}
+                isSelected={selectedRoute === 'fastest'}
+                isExpanded={selectedRoute === 'fastest'}
               />
             </div>
 
-            <div className="balanced-route-container">
+            <div
+              className="balanced-route-container route-container"
+              onClick={() => onRouteSelect('balanced')}
+              onMouseDown={(e) => e.preventDefault()}
+            >
               {balancedLoading ? (
                 <div className="route-loading-overlay">
                   <h4>Getting route...</h4>
@@ -318,6 +338,9 @@ const SideBar: React.FC<SideBarProps> = ({
                   time_estimate={summaries.balanced.time_estimate}
                   total_length={summaries.balanced.total_length}
                   aq_average={summaries.balanced.aq_average}
+                  comparisons={aqiDifferences?.balanced}
+                  isSelected={selectedRoute === 'balanced'}
+                  isExpanded={selectedRoute === 'balanced'}
                 />
               )}
             </div>
@@ -327,11 +350,11 @@ const SideBar: React.FC<SideBarProps> = ({
               disabled={loading || balancedLoading}
             />
 
-          <div className="aqi-toggle-button">
-            <button onClick={() => setShowAQIColors(!showAQIColors)}>
-              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
-            </button>
-          </div>
+            <div className="aqi-toggle-button">
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
+              </button>
+            </div>
           </>
         )}
       </div>

@@ -58,3 +58,12 @@ export interface RouteSummary {
   time_estimate: string;
   aq_average: number;
 }
+
+/**
+ * AQI comparison data between two routes.
+ */
+export interface AqiComparison {
+  aqi_difference: number | null;
+  percentage_difference: number | null;
+  comparison_text: string;
+}

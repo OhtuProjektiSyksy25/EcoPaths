@@ -22,6 +22,7 @@ interface MapComponentProps {
   routes: Record<string, RouteGeoJSON> | null;
   showAQIColors: boolean;
   selectedArea: Area | null;
+  selectedRoute: string | null;
 }
 
 export const updateWaterLayers = (map: mapboxgl.Map) => {
@@ -49,6 +50,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   routes,
   showAQIColors, 
   selectedArea,
+  selectedRoute,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || "";
@@ -64,7 +66,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   useDrawRoutes(
     mapRef.current,
     routes as Record<string, GeoJSON.FeatureCollection>,
-    showAQIColors
+    showAQIColors,
+    selectedRoute
   );
   useHighlightChosenArea(mapRef.current, selectedArea);
 
