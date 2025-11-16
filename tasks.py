@@ -61,7 +61,7 @@ def test_frontend(c):
 @task
 def test_playwright(c, flush=False):
     """
-    Run Playwright end-to-end tests (quiet mode).
+    Run Playwright end-to-end tests.
     Usage:
         inv test-playwright [--flush]
     Args:
@@ -70,14 +70,18 @@ def test_playwright(c, flush=False):
     from pathlib import Path
     e2e_path = Path("e2e/playwright")
     print("Starting Playwright end-to-end tests...")
+
     if flush:
         print("Flushing cache...")
         c.run("redis-cli flushdb", warn=True, hide=True)
 
     with c.cd(str(e2e_path)):
-        if not Path("node_modules").exists():
-            print("Installing E2E test dependencies...")
+        if not (e2e_path / "node_modules").exists():
+            print("Installing E2E test dependencies (npm ci)...")
             c.run("npm ci", hide="both")
+
+            print("Installing Playwright browsers (npx playwright install)...")
+            c.run("npx playwright install --with-deps", hide="both")
 
         result = c.run("npx playwright test", warn=True, hide=False)
 

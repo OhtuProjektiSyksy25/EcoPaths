@@ -4,8 +4,8 @@ export default defineConfig({
   testDir: './tests',
   timeout: 60 * 1000,
   expect: { timeout: 5000 },
-  fullyParallel: false, // Sequential to avoid DB conflicts
-  workers: 1, // Single worker for test DB
+  fullyParallel: false,
+  workers: 2,
 
   use: {
     baseURL: 'http://localhost:3000',
