@@ -1,3 +1,6 @@
+"""
+Util for calculating AQI difference between different route modes.
+"""
 from collections import defaultdict
 
 def calculate_aqi_difference(summaries: dict) -> dict:
@@ -37,7 +40,7 @@ def calculate_aqi_difference(summaries: dict) -> dict:
                 "percentage_difference": percentage_diff,
                 "comparison_text": comparison_text
             }
-    
+
     return comparisons
 
 def format_comparison_text(percentage_diff: float | None, compared_mode: str) -> str:
@@ -64,7 +67,8 @@ def format_comparison_text(percentage_diff: float | None, compared_mode: str) ->
 
     if percentage_diff > 0:
         return f"{abs(percentage_diff)}% better AQI than {mode_label}"
-    elif percentage_diff < 0:
+
+    if percentage_diff < 0:
         return f"{abs(percentage_diff)}% worse AQI than {mode_label}"
-    else:
-        return f"Same AQI as {mode_label}"
+
+    return f"Same AQI as {mode_label}"
