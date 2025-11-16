@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from "../types/route";
-import { Area } from "../types";
-
+import { useState, useEffect, useRef } from 'react';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
+import { Area } from '../types';
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -27,7 +26,10 @@ export const useRoute = (
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
-  const [aqiDifferences, setAqiDifferences] = useState<Record<string, Record<string, AqiComparison>> | null>(null);
+  const [aqiDifferences, setAqiDifferences] = useState<Record<
+    string,
+    Record<string, AqiComparison>
+  > | null>(null);
   const [loading, setLoading] = useState(false);
   const [balancedLoading, setBalancedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,9 +102,13 @@ export const useRoute = (
 
         if (isWeightChange) {
           // Only update balanced route, summary, and recalculate AQI differences
-          setRoutes(prev => prev ? { ...prev, balanced: data.routes.balanced } : data.routes);
-          setSummaries(prev => prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries);
-          setAqiDifferences(prev => prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences);
+          setRoutes((prev) => (prev ? { ...prev, balanced: data.routes.balanced } : data.routes));
+          setSummaries((prev) =>
+            prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries
+          );
+          setAqiDifferences((prev) =>
+            prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences
+          );
         } else {
           // Update all routes
           setRoutes(data.routes);

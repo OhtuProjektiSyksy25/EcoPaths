@@ -60,7 +60,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
-  /*  Draw routes and highlight area hooks */ 
+  /*  Draw routes and highlight area hooks */
   useDrawRoutes(
     mapRef.current,
     routes as Record<string, GeoJSON.FeatureCollection>,

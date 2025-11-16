@@ -11,15 +11,21 @@ const ROUTE_COLORS: Record<string, string> = {
 };
 
 const AQI_COLOR_SCALE = [
-  "interpolate",
-  ["linear"],
-  ["get", "aqi"],
-  0, "#00E400",   // Good
-  51, "#FFFF00",  // Moderate
-  101, "#FF7E00", // Unhealthy for sensitive groups
-  151, "#FF0000", // Unhealthy
-  201, "#8F3F97", // Very unhealthy
-  301, "#7E0023"  // Hazardous
+  'interpolate',
+  ['linear'],
+  ['get', 'aqi'],
+  0,
+  '#00E400', // Good
+  51,
+  '#FFFF00', // Moderate
+  101,
+  '#FF7E00', // Unhealthy for sensitive groups
+  151,
+  '#FF0000', // Unhealthy
+  201,
+  '#8F3F97', // Very unhealthy
+  301,
+  '#7E0023', // Hazardous
 ] as any;
 
 /**
@@ -49,12 +55,12 @@ export function useDrawRoutes(
       removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
-    const routeTypes = ["fastest", "balanced", "best_aq"];
+    const routeTypes = ['fastest', 'balanced', 'best_aq'];
 
     // Draw non-selected routes
     routeTypes.forEach((mode) => {
       if (mode === selectedRoute) return;
-      
+
       const geojson = routes[mode];
       if (!geojson || !geojson.features?.length) return;
 
@@ -64,7 +70,7 @@ export function useDrawRoutes(
 
       map.addSource(sourceId, { type: 'geojson', data: geojson });
 
-      if (mode === "balanced" && !showAQIColors && !selectedRoute) {
+      if (mode === 'balanced' && !showAQIColors && !selectedRoute) {
         map.addLayer({
           id: `${layerId}-halo`,
           type: 'line',
@@ -85,14 +91,15 @@ export function useDrawRoutes(
         source: sourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          "line-color": selectedRoute && !isSelected
-            ? "#838383"
-            : showAQIColors
-            ? AQI_COLOR_SCALE
-            : ROUTE_COLORS[mode],
-          "line-width": mode === "balanced" ? 2.5 : 3.5,
-          "line-opacity": selectedRoute && !isSelected ? 0.5 : 1,
-          "line-offset": mode === "balanced" ? 1.5 : mode === "fastest" ? -1.5 : 0,
+          'line-color':
+            selectedRoute && !isSelected
+              ? '#838383'
+              : showAQIColors
+                ? AQI_COLOR_SCALE
+                : ROUTE_COLORS[mode],
+          'line-width': mode === 'balanced' ? 2.5 : 3.5,
+          'line-opacity': selectedRoute && !isSelected ? 0.5 : 1,
+          'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
         },
       });
     });
@@ -104,35 +111,34 @@ export function useDrawRoutes(
         const sourceId = `route-${selectedRoute}`;
         const layerId = `route-${selectedRoute}`;
 
-        map.addSource(sourceId, { type: "geojson", data: geojson });
+        map.addSource(sourceId, { type: 'geojson', data: geojson });
 
-        if (selectedRoute === "balanced" && !showAQIColors) {
+        if (selectedRoute === 'balanced' && !showAQIColors) {
           map.addLayer({
             id: `${layerId}-halo`,
-            type: "line",
+            type: 'line',
             source: sourceId,
-            layout: { "line-join": "round", "line-cap": "round" },
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: {
-              "line-color": "#00bdbd",
-              "line-width": 5,
-              "line-opacity": 1,
-              "line-offset": 1.5,
+              'line-color': '#00bdbd',
+              'line-width': 5,
+              'line-opacity': 1,
+              'line-offset': 1.5,
             },
           });
         }
 
         map.addLayer({
           id: layerId,
-          type: "line",
+          type: 'line',
           source: sourceId,
-          layout: { "line-join": "round", "line-cap": "round" },
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
           paint: {
-            "line-color": showAQIColors
-              ? AQI_COLOR_SCALE
-              : ROUTE_COLORS[selectedRoute],
-            "line-width": selectedRoute === "balanced" ? 3.5 : 4.5,
-            "line-opacity": 1,
-            "line-offset": selectedRoute === "balanced" ? 1.5 : selectedRoute === "fastest" ? -1.5 : 0,
+            'line-color': showAQIColors ? AQI_COLOR_SCALE : ROUTE_COLORS[selectedRoute],
+            'line-width': selectedRoute === 'balanced' ? 3.5 : 4.5,
+            'line-opacity': 1,
+            'line-offset':
+              selectedRoute === 'balanced' ? 1.5 : selectedRoute === 'fastest' ? -1.5 : 0,
           },
         });
       }

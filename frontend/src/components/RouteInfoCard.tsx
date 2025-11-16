@@ -4,8 +4,8 @@ Expandable to show AQI comparisons with other routes.
 */
 
 import React from 'react';
-import { AqiComparison } from "@/types/route";
-import "../styles/RouteInfoCard.css";
+import { AqiComparison } from '@/types/route';
+import '../styles/RouteInfoCard.css';
 
 interface RouteInfoCardProps {
   route_type: string;

@@ -41,8 +41,8 @@ function App(): JSX.Element {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
 
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
-    fromLocked, 
-    toLocked, 
+    fromLocked,
+    toLocked,
     balancedWeight
   );
 
@@ -63,7 +63,7 @@ function App(): JSX.Element {
     setFromLocked(null);
     setToLocked(null);
     setSelectedRoute(null);
-    
+
     // Then show area selector
     setShowAreaSelector(true);
   };

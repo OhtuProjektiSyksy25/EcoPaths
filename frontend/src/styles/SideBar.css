@@ -118,7 +118,8 @@
   border-color: transparent;
 }
 
-.sidebar-content:has(.RouteInfoCard.selected) .route-container:not(:has(.RouteInfoCard.selected)):hover {
+.sidebar-content:has(.RouteInfoCard.selected)
+  .route-container:not(:has(.RouteInfoCard.selected)):hover {
   opacity: 0.8;
   border-color: rgba(0, 0, 0, 0.2);
 }
