@@ -15,12 +15,10 @@ class GoogleAPIService:
     """Service for fetching air quality data from Google API."""
 
     def __init__(self):
-        env_test_mode = os.getenv("TEST_MODE", "False").lower() == "true"
-        settings = get_settings("testarea")  # area can be anything
-        self.test_mode = env_test_mode or getattr(settings, "TEST_MODE", False)
+        settings = get_settings("testarea") # area can be anything
 
-        # Prefer env GOOGLE_API_KEY (more robust during startup), fallback to settings
-        self.api_key = os.getenv("GOOGLE_API_KEY") or settings.google_api_key
+        self.test_mode = settings.TEST_MODE
+        self.api_key = settings.google_api_key
 
         if not self.test_mode and not self.api_key:
             raise ValueError("GOOGLE_API_KEY not found in .env file.")

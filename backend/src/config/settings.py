@@ -12,8 +12,6 @@ from dataclasses import dataclass
 from functools import lru_cache
 from dotenv import load_dotenv
 
-TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
-
 # === Area-specific settings ===
 AREA_SETTINGS = {
     "berlin": {
@@ -122,6 +120,7 @@ class RedisConfig:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
 ENV_PATH = os.path.join(BASE_DIR, "..", "..", ENV_FILE)
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 DB_URL = os.getenv("DB_URL")
 
