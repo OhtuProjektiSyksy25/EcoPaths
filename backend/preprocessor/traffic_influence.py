@@ -83,12 +83,12 @@ class TrafficInfluenceBuilder:
                     LOG(1 + (
                         SELECT SUM(
                             CASE
-                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 2 THEN
+                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 5 THEN
                                     {self.base_influence}
                                     + {highway_case_sql}
-                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 6 THEN
+                                WHEN ST_Distance(w.geometry, d.buffer_geom) <= 15 THEN
                                     ({self.base_influence} *
-                                    (1 - (ST_Distance(w.geometry, d.buffer_geom) - 2)/4))
+                                    (1 - (ST_Distance(w.geometry, d.buffer_geom) - 5)/10))
                                     + {highway_case_sql}
                                 ELSE 0
                             END
@@ -119,4 +119,5 @@ class TrafficInfluenceBuilder:
             FROM {self.walk_table};
         """)
         row = result.fetchone()
-        print(f"Untouched: {row[0]}, Partial: {row[1]}, Maxed: {row[2]}")
+        print(
+            f"Traffic inluence. Untouched: {row[0]}, Partial: {row[1]}, Maxed: {row[2]}")

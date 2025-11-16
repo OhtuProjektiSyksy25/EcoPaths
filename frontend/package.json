@@ -30,6 +30,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.2.0",
+    "prettier": "^3.6.2",
     "react-scripts": "5.0.1",
     "react-test-renderer": "^18.3.1",
     "ts-jest": "^29.4.4",
@@ -43,7 +44,9 @@
     "install-robot": "python3 -m pip install robotframework robotframework-seleniumlibrary",
     "test:robot": "python3 -m robot tests/frontend.robot",
     "test:robot:headless": "python3 -m robot --variable HEADLESS:true tests/frontend.robot",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "format": "prettier --write .",
+    "check-format": "prettier --check ."
   },
   "browserslist": {
     "production": [
