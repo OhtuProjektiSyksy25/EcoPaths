@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from "../types/route";
-import { Area } from "../types";
-
+import { useState, useEffect, useRef } from 'react';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
+import { Area } from '../types';
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -14,7 +13,7 @@ interface UseRouteReturn {
 
 /**
  * Custom hook to fetch route data from the backend API.
- * 
+ *
  * @param fromLocked - The starting location
  * @param toLocked - The destination location
  * @param balancedWeight - Weight for balanced route (0 = fastest, 1 = best AQ)
@@ -27,11 +26,14 @@ export const useRoute = (
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
-  const [aqiDifferences, setAqiDifferences] = useState<Record<string, Record<string, AqiComparison>> | null>(null);
+  const [aqiDifferences, setAqiDifferences] = useState<Record<
+    string,
+    Record<string, AqiComparison>
+  > | null>(null);
   const [loading, setLoading] = useState(false);
   const [balancedLoading, setBalancedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Track if this is the initial load or a weight change
   const isInitialLoadRef = useRef(true);
   const prevWeightRef = useRef(balancedWeight);
@@ -49,7 +51,7 @@ export const useRoute = (
     const fetchRoute = async () => {
       // Determine if this is just a weight change (not location change)
       const isWeightChange = !isInitialLoadRef.current && prevWeightRef.current !== balancedWeight;
-      
+
       if (isInitialLoadRef.current) {
         setLoading(true);
         setRoutes(null);
@@ -64,27 +66,27 @@ export const useRoute = (
         setSummaries(null);
         setAqiDifferences(null);
       }
-      
+
       setError(null);
       prevWeightRef.current = balancedWeight;
 
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            type: "FeatureCollection",
+            type: 'FeatureCollection',
             features: [
               {
-                type: "Feature",
-                properties: { role: "start" },
+                type: 'Feature',
+                properties: { role: 'start' },
                 geometry: fromLocked.geometry,
               },
               {
-                type: "Feature",
-                properties: { role: "end" },
+                type: 'Feature',
+                properties: { role: 'end' },
                 geometry: toLocked.geometry,
               },
             ],
@@ -97,12 +99,16 @@ export const useRoute = (
         }
 
         const data = await response.json();
-        
+
         if (isWeightChange) {
           // Only update balanced route, summary, and recalculate AQI differences
-          setRoutes(prev => prev ? { ...prev, balanced: data.routes.balanced } : data.routes);
-          setSummaries(prev => prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries);
-          setAqiDifferences(prev => prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences);
+          setRoutes((prev) => (prev ? { ...prev, balanced: data.routes.balanced } : data.routes));
+          setSummaries((prev) =>
+            prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries
+          );
+          setAqiDifferences((prev) =>
+            prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences
+          );
         } else {
           // Update all routes
           setRoutes(data.routes);
@@ -110,8 +116,8 @@ export const useRoute = (
           setAqiDifferences(data.aqi_differences);
         }
       } catch (err) {
-        console.error("Error fetching route:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch route");
+        console.error('Error fetching route:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch route');
         if (!isWeightChange) {
           setRoutes(null);
           setSummaries(null);
