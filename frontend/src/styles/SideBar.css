@@ -277,9 +277,8 @@
     transform: translateY(calc(100% - clamp(400px, 68vh, 80vh) + env(safe-area-inset-bottom, 0px)));
   }
 
-  /* --------------------- HANDLE AREA (::after indicators) ------------------------ */
-  .sidebar::after {
-    content: '';
+  /* --------------------- HANDLE AREA ------------------------ */
+  .sidebar-handle {
     position: absolute;
     top: 0;
     left: 0;
@@ -295,46 +294,18 @@
     align-items: center;
     justify-content: center;
     
-    font-family: 'Arial', sans-serif;
-    font-weight: 600;
-    font-size: clamp(16px, 4vw, 22px);
     color: #374151;
     cursor: pointer;
   }
 
-  /* Hidden stage: up arrow */
-  .sidebar-stage-hidden::after {
-    content: '⌃';
-  }
-
-  /* Inputs stage: no indicator */
-  .sidebar-stage-inputs::after {
+  .sidebar::after,
+  .sidebar::before {
     display: none;
   }
 
-  /* Routes-only stage: three dots */
-  .sidebar-stage-routes-only::after {
-    content: '⋯';
-    font-size: 20px;
-  }
-
-  /* Routes stage: down arrow */
-  .sidebar-stage-routes::after {
-    content: '⌃';
-    transform: rotate(180deg);
-    border-bottom: none;
-  }
-
   /* Routes stage: separator line */
-  .sidebar-stage-routes::before {
-    content: '';
-    position: absolute;
-    top: clamp(25px, 5dvh, 35px);
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #e5e7eb;
-    z-index: 1001;
+  .sidebar-stage-routes .sidebar-handle {
+    border-bottom: 1px solid #e5e7eb;
   }
 
   /* --------------------- SIDEBAR CONTENT AREA ------------------------ */

@@ -12,6 +12,7 @@ import '../styles/SideBar.css';
 import { RouteSummary } from '@/types/route';
 import { AqiComparison } from '@/types/route';
 import { Area } from '../types';
+import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 
 interface SideBarProps {
   onFromSelect: (place: any) => void;
@@ -344,6 +345,11 @@ const SideBar: React.FC<SideBarProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      <div className="sidebar-handle">
+        {sidebarStage === 'hidden' && <ChevronUp size={24} />}
+        {sidebarStage === 'routes-only' && <MoreHorizontal size={24} />}
+        {sidebarStage === 'routes' && <ChevronDown size={24} />}
+      </div>
             {errorMessage && (
         <div className="error-popup-overlay" onClick={() => setErrorMessage(null)}>
           <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
