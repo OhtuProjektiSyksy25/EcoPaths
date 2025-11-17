@@ -7,12 +7,12 @@ describe('InputContainer', () => {
     const handleChange = jest.fn();
     render(
       <InputContainer
-        placeholder="Start location"
-        value=""
+        placeholder='Start location'
+        value=''
         onChange={handleChange}
         suggestions={[]}
         onSelect={() => {}}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText('Start location') as HTMLInputElement;
@@ -25,19 +25,34 @@ describe('InputContainer', () => {
     const handleSelect = jest.fn();
 
     const suggestions = [
-      { properties: { osm_id: 1 }, full_address: 'Address A' },
-      { properties: { osm_id: 2, osm_key: 'amenity' }, full_address: 'POI B' },
-      { properties: { osm_id: 3 }, full_address: 'Address C' },
+      {
+        full_address: 'Address A',
+        place_name: 'Address A',
+        geometry: { coordinates: [24.93, 60.17] as [number, number] },
+        properties: { osm_id: 1 },
+      },
+      {
+        full_address: 'POI B',
+        place_name: 'POI B',
+        geometry: { coordinates: [24.93, 60.17] as [number, number] },
+        properties: { osm_id: 2, osm_key: 'amenity' },
+      },
+      {
+        full_address: 'Address C',
+        place_name: 'Address C',
+        geometry: { coordinates: [24.93, 60.17] as [number, number] },
+        properties: { osm_id: 3 },
+      },
     ];
 
     render(
       <InputContainer
-        placeholder="Start location"
-        value=""
+        placeholder='Start location'
+        value=''
         onChange={handleChange}
         suggestions={suggestions}
         onSelect={handleSelect}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText('Start location');

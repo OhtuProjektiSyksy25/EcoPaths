@@ -42,8 +42,8 @@ jobs:
       - name: Type-check (TypeScript)
         run: npx tsc --noEmit
 
-      #- name: Lint
-      #  run: npm run lint
+      - name: Lint
+        run: npm run lint
 
       - name: Run tests with coverage
         run: npm test
@@ -142,32 +142,99 @@ jobs:
           files: coverage_reports/backend/coverage.xml
           fail_ci_if_error: true
 
-  ### 3. ROBOT TESTS (UI)
-  # robot-tests:
-  #   if: github.event_name == 'pull_request' || github.ref_name == 'main'
+   ### 3. E2E (Playwright) - COMMENTED OUT FOR NOW
+#  e2e:
+#    name: End-to-End Tests (Playwright)
+#    runs-on: ubuntu-latest
+#    needs: [frontend, backend]
+    
+#    services:
+#      postgres:
+#        image: kartoza/postgis:15-3.4
+#        ports:
+#          - 5432:5432
+#        env:
+#          POSTGRES_USER: pathplanner
+#          POSTGRES_PASSWORD: sekret
+#          POSTGRES_DB: ecopaths_test
+#        options: >-
+#          --health-cmd="pg_isready -U pathplanner -d ecopaths_test"
+#          --health-interval 5s
+#          --health-timeout 5s
+#          --health-retries 20
 
-  #   name: Robot Framework UI Tests (E2E)
-  #   runs-on: ubuntu-latest
-  #   needs: [frontend, backend]
-  #   defaults:
-  #     run:
-  #       working-directory: e2e
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: '20'
 
-  #     - name: Setup Chromedriver
-  #       uses: nanasess/setup-chromedriver@master
+#      - name: Setup Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.10'
 
-  #     - name: Start virtual display for UI tests
-  #       run: |
-  #         export DISPLAY=:99
-  #         chromedriver --url-base=/wd/hub &
-  #         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+#      - name: Install Poetry
+#        run: pip install poetry
 
-  #     - name: Run Robot Framework E2E tests
-  #       run: bash run_robot_tests.sh
+#      - name: Install backend dependencies
+#        working-directory: backend
+#        run: poetry install
+
+#      - name: Install frontend dependencies
+#        working-directory: frontend
+#        run: npm ci
+
+#      - name: Create .env.test file for backend
+#        working-directory: backend
+#        run: |
+#          cat <<EOF > .env
+#          ENV=test
+#          TEST_MODE=True
+#          DB_HOST=127.0.0.1
+#          DB_PORT=5432
+#          DB_USER_TEST=pathplanner
+#          DB_PASSWORD_TEST=sekret
+#          DB_NAME_TEST=ecopaths_test
+#          TEST_AREA=testarea
+#          NETWORK_TYPE=walking
+#          REDIS_HOST=localhost
+#          REDIS_PORT=6379
+#          GOOGLE_API_KEY=dummy_key
+#          EOF
+
+#      - name: Install Playwright dependencies
+#        working-directory: e2e/playwright
+#        run: |
+#          npm ci
+#          npx playwright install --with-deps
+
+#      - name: Populate testarea database
+#        working-directory: backend
+#        run: |
+#          echo "Waiting for PostgreSQL to be ready..."
+#          until pg_isready -h localhost -p 5432 -U pathplanner > /dev/null 2>&1; do
+#            sleep 1
+#          done
+#          echo "Database is ready, populating testarea..."
+#          poetry run invoke reset-and-populate-area --area=testarea
+#
+#      - name: Run Playwright tests
+#        working-directory: e2e/playwright
+#        env:
+#          CI: true
+#        run: npx playwright test --reporter=line
+#
+#      - name: Upload Playwright report
+#        if: always()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: playwright-report
+#          path: e2e/playwright/playwright-report/
+#          retention-days: 30
 
   ### 4. BUILD & PUSH DOCKER IMAGES
   docker:

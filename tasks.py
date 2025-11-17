@@ -4,8 +4,11 @@ import gc
 import subprocess
 import signal
 import socket
+from pathlib import Path
 from invoke import task
 from backend.src.database.db_client import DatabaseClient
+from dotenv import load_dotenv
+
 
 # ========================
 # Code formatting & linting
@@ -36,7 +39,7 @@ def format_frontend(c):
 def lint_frontend(c):
     """Run prettier check on frontend"""
     with c.cd("frontend"):
-        c.run("npm run check-format")
+        c.run("npm run lint")
 
 
 # ========================
@@ -66,6 +69,40 @@ def test_frontend(c):
     with c.cd("frontend"):
         c.run("npm test -- --watchAll=false")
     print("Frontend coverage reports generated in coverage_reports/frontend/")
+
+@task
+def test_playwright(c, flush=False):
+    """
+    Run Playwright end-to-end tests.
+    Usage:
+        inv test-playwright [--flush]
+    Args:
+        flush (bool): If True, flush Redis cache before tests.
+    """
+    from pathlib import Path
+    e2e_path = Path("e2e/playwright")
+    print("Starting Playwright end-to-end tests...")
+
+    if flush:
+        print("Flushing cache...")
+        c.run("redis-cli flushdb", warn=True, hide=True)
+
+    with c.cd(str(e2e_path)):
+        if not (e2e_path / "node_modules").exists():
+            print("Installing E2E test dependencies (npm ci)...")
+            c.run("npm ci", hide="both")
+
+            print("Installing Playwright browsers (npx playwright install)...")
+            c.run("npx playwright install --with-deps", hide="both")
+
+        result = c.run("npx playwright test", warn=True, hide=False)
+
+    if result.ok:
+        print("E2E tests passed!")
+    else:
+        print("E2E tests failed!")
+        raise sys.exit(result.exited)
+
 
 # ========================
 # Utility tasks
@@ -145,10 +182,17 @@ def is_container_running(name):
 
 
 @task
-def run_all(c):
+def run_all(c, test_mode=False):
     """Run both backend, frontend, Redis and database in development mode"""
     db_user = os.getenv("DB_USER_TEST", "pathplanner")
     db_name = os.getenv("DB_NAME_TEST", "ecopaths_test")
+    
+    if test_mode:
+        os.environ["ENV"] = "test"
+        os.environ["TEST_MODE"] = "True"
+        load_dotenv('.env.test', override=True)
+    else:
+        load_dotenv('.env', override=True)
 
     print("Starting full development environment...")
     print("Backend: http://127.0.0.1:8000")

@@ -15,18 +15,23 @@ export interface LockedLocation {
  * Includes optional route type and any additional metadata.
  */
 export interface RouteFeatureProperties {
-  route_type?: "fastest" | "best_aq" | "balanced";
-  [key: string]: any; // allow extra metadata
+  route_type?: 'fastest' | 'best_aq' | 'balanced';
+  [key: string]: string | number | boolean | Array<string | number | boolean> | undefined; // allow extra metadata
 }
 
 /**
  * A single GeoJSON Feature representing a segment or part of a route.
  */
+export type GeoJSONCoordinates =
+  | [number, number] // Point
+  | Array<[number, number]> // LineString
+  | Array<Array<[number, number]>>; // Polygon
+
 export interface RouteFeature {
-  type: "Feature";
+  type: 'Feature';
   geometry: {
-    type: string;
-    coordinates: any;
+    type: 'Point' | 'LineString' | 'Polygon';
+    coordinates: GeoJSONCoordinates;
   };
   properties?: RouteFeatureProperties;
 }
@@ -35,7 +40,7 @@ export interface RouteFeature {
  * A GeoJSON FeatureCollection representing a complete route.
  */
 export interface RouteGeoJSON {
-  type: "FeatureCollection";
+  type: 'FeatureCollection';
   features: RouteFeature[];
 }
 
@@ -57,4 +62,13 @@ export interface RouteSummary {
   total_length: number;
   time_estimate: string;
   aq_average: number;
+}
+
+/**
+ * AQI comparison data between two routes.
+ */
+export interface AqiComparison {
+  aqi_difference: number | null;
+  percentage_difference: number | null;
+  comparison_text: string;
 }
