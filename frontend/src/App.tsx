@@ -37,7 +37,10 @@ function App(): JSX.Element {
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
 
-  const { routes, summaries, loading, balancedLoading, error } = useRoute(
+  // Route selection state for highlighting routes
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+
+  const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
     toLocked,
     balancedWeight,
@@ -51,6 +54,7 @@ function App(): JSX.Element {
     // Clear routes when changing area
     setFromLocked(null);
     setToLocked(null);
+    setSelectedRoute(null);
   };
 
   // Handle changing area from dropdown
@@ -58,9 +62,15 @@ function App(): JSX.Element {
     // Clear locked locations FIRST (this clears routes & DisplayContainers)
     setFromLocked(null);
     setToLocked(null);
+    setSelectedRoute(null);
 
     // Then show area selector
     setShowAreaSelector(true);
+  };
+
+  // Handle route selection
+  const handleRouteSelect = (route: string): void => {
+    setSelectedRoute(route === selectedRoute ? null : route);
   };
 
   return (
@@ -91,6 +101,7 @@ function App(): JSX.Element {
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          aqiDifferences={aqiDifferences}
           showAQIColors={showAQIColors}
           setShowAQIColors={setShowAQIColors}
           selectedArea={selectedArea}
@@ -99,6 +110,8 @@ function App(): JSX.Element {
           setBalancedWeight={setBalancedWeight}
           loading={loading}
           balancedLoading={balancedLoading}
+          selectedRoute={selectedRoute}
+          onRouteSelect={handleRouteSelect}
         >
           {(loading || error) && (
             <div className='route-loading-message'>
@@ -115,6 +128,7 @@ function App(): JSX.Element {
             routes={routes}
             showAQIColors={showAQIColors}
             selectedArea={selectedArea}
+            selectedRoute={selectedRoute}
           />
         </div>
       </main>

@@ -8,6 +8,7 @@ export type {
   RouteGeoJSON,
   UseRouteResult,
   RouteSummary,
+  AqiComparison,
 } from './route';
 export type { ApiError, ApiResponse } from './api';
 export type { Place } from './place';
