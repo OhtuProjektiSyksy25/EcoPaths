@@ -26,7 +26,7 @@ const AQI_COLOR_SCALE = [
   '#8F3F97', // Very unhealthy
   301,
   '#7E0023', // Hazardous
-] as any;
+] as mapboxgl.Expression;
 
 /**
  * Removes a layer and source if they exist

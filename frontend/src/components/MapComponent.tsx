@@ -65,7 +65,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current,
     routes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    selectedRoute
+    selectedRoute,
   );
   useHighlightChosenArea(mapRef.current, selectedArea);
 

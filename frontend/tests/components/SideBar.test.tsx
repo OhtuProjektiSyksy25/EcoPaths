@@ -73,17 +73,20 @@ describe('SideBar', () => {
   */
   test("shows 'Your location' when from input is clicked on", async () => {
     render(
-  <SideBar 
-    onFromSelect={mockOnFromSelect} 
-    onToSelect={mockOnToSelect}
-    selectedArea={null}
-    summaries={null}
-    showAQIColors={false}
-    setShowAQIColors={jest.fn()}
-    balancedWeight={undefined as any}
-    setBalancedWeight={undefined as any}
-  />
-);
+      <SideBar
+        onFromSelect={mockOnFromSelect}
+        onToSelect={mockOnToSelect}
+        selectedArea={null}
+        summaries={null}
+        aqiDifferences={null}
+        showAQIColors={false}
+        setShowAQIColors={jest.fn()}
+        balancedWeight={undefined as any}
+        setBalancedWeight={undefined as any}
+        selectedRoute={null}
+        onRouteSelect={mockOnRouteSelect}
+      />,
+    );
 
     const fromInput = screen.getByPlaceholderText('Start location');
     fireEvent.focus(fromInput);
@@ -98,8 +101,8 @@ describe('SideBar', () => {
   */
   test("clicking 'Use my current location' calls getCurrentLocation", async () => {
     render(
-      <SideBar 
-        onFromSelect={mockOnFromSelect} 
+      <SideBar
+        onFromSelect={mockOnFromSelect}
         onToSelect={mockOnToSelect}
         selectedArea={null}
         summaries={null}

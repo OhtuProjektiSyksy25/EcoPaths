@@ -299,7 +299,7 @@ const SideBar: React.FC<SideBarProps> = ({
         {summaries && !children && (
           <>
             <div
-              className="best-aq-container route-container"
+              className='best-aq-container route-container'
               onClick={() => onRouteSelect('best_aq')}
               onMouseDown={(e) => e.preventDefault()}
             >
@@ -315,7 +315,7 @@ const SideBar: React.FC<SideBarProps> = ({
             </div>
 
             <div
-              className="fastest-route-container route-container"
+              className='fastest-route-container route-container'
               onClick={() => onRouteSelect('fastest')}
               onMouseDown={(e) => e.preventDefault()}
             >
@@ -331,7 +331,7 @@ const SideBar: React.FC<SideBarProps> = ({
             </div>
 
             <div
-              className="balanced-route-container route-container"
+              className='balanced-route-container route-container'
               onClick={() => onRouteSelect('balanced')}
               onMouseDown={(e) => e.preventDefault()}
             >

@@ -43,7 +43,7 @@ function App(): JSX.Element {
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
     toLocked,
-    balancedWeight
+    balancedWeight,
   );
 
   // Handle area selection
@@ -69,7 +69,7 @@ function App(): JSX.Element {
   };
 
   // Handle route selection
-  const handleRouteSelect = (route: string) => {
+  const handleRouteSelect = (route: string): void => {
     setSelectedRoute(route === selectedRoute ? null : route);
   };
 

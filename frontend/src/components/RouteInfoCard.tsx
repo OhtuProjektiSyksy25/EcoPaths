@@ -34,25 +34,25 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
 
   return (
     <div className={`RouteInfoCard ${isSelected ? 'selected' : ''}`}>
-      <div className="route-card-header">
-        <div className="route-type">
-          <span className="route_type">{route_type}</span>
+      <div className='route-card-header'>
+        <div className='route-type'>
+          <span className='route_type'>{route_type}</span>
         </div>
-        <div className="time-estimate">
-          <span className="time_estimate">{time_estimate}</span>
+        <div className='time-estimate'>
+          <span className='time_estimate'>{time_estimate}</span>
         </div>
-        <div className="additional-info">
-          <span className="total_length">{total_length} km</span>
-          <span className="aq_average">AQI {aq_average}</span>
+        <div className='additional-info'>
+          <span className='total_length'>{total_length} km</span>
+          <span className='aq_average'>AQI {aq_average}</span>
         </div>
       </div>
 
       {isExpanded && hasComparisons && (
-        <div className="route-comparisons">
-          <div className="comparisons-divider"></div>
+        <div className='route-comparisons'>
+          <div className='comparisons-divider'></div>
           {Object.entries(comparisons).map(([comparedMode, data]) => (
-            <div key={comparedMode} className="comparison-item">
-              <span className="comparison-text">{data.comparison_text}</span>
+            <div key={comparedMode} className='comparison-item'>
+              <span className='comparison-text'>{data.comparison_text}</span>
             </div>
           ))}
         </div>
