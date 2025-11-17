@@ -72,3 +72,8 @@ export interface AqiComparison {
   percentage_difference: number | null;
   comparison_text: string;
 }
+
+/**
+ * Select route mode
+ */
+export type RouteMode = 'walk' | 'run';

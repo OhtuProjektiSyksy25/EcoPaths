@@ -9,6 +9,7 @@ export type {
   UseRouteResult,
   RouteSummary,
   AqiComparison,
+  RouteMode,
 } from './route';
 export type { ApiError, ApiResponse } from './api';
 export type { Place } from './place';

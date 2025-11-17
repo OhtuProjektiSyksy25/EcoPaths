@@ -8,8 +8,9 @@ import InputContainer from './InputContainer';
 import { useGeolocation } from '../hooks/useGeolocationState';
 import RouteInfoCard from './RouteInfoCard';
 import RouteSlider from './RouteSlider';
+import RouteModeSelector from './RouteModeSelector';
 import '../styles/SideBar.css';
-import { Area, Place, RouteSummary, AqiComparison } from '../types';
+import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -27,6 +28,8 @@ interface SideBarProps {
   children?: React.ReactNode;
   selectedRoute: string | null;
   onRouteSelect: (route: string) => void;
+  routeMode: RouteMode;
+  setRouteMode: (mode: RouteMode) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -57,6 +60,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
+  const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
+  const [roundtrip, setRoundtrip] = useState(false);
 
   useEffect(() => {
     onErrorChange?.(errorMessage);
@@ -244,6 +249,12 @@ const SideBar: React.FC<SideBarProps> = ({
       )}
 
       <div className='sidebar-content'>
+        <RouteModeSelector
+          mode={routeMode}
+          setMode={setRouteMode}
+          roundtrip={roundtrip}
+          setRoundtrip={setRoundtrip}
+        />
         <h1 className='sidebar-title'>Where would you like to go?</h1>
 
         <div className='input-box'>
