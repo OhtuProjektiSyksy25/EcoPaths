@@ -1,21 +1,19 @@
 /*
-MapComponent.tsx renders a mapBox map. 
-If the mapbox fails it renders a leaflet map.
-It also manages markers for From and To locations and adjusts the map view based on their presence.
+MapComponent.tsx renders a Mapbox map or Leaflet fallback.
+It handles markers for From/To locations and user location,
+updates water layer styling, and fits the map to selected areas/routes.
 */
-import React, { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { initialMapZoom, initialMapCenter } from "../constants";
-import { LockedLocation, RouteGeoJSON, Area } from "../types";
-import { LocationButton } from "./LocationButton";
-import { useCoordinates } from "../hooks/useCoordinates";
-import { useDrawRoutes } from "../hooks/useDrawRoutes";
-import { useHighlightChosenArea } from "../hooks/useHighlightChosenArea";
-import "../styles/MapComponent.css";
-
+import React, { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { initialMapZoom, initialMapCenter } from '../constants';
+import { LockedLocation, RouteGeoJSON, Area } from '../types';
+import { LocationButton } from './LocationButton';
+import { useDrawRoutes } from '../hooks/useDrawRoutes';
+import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
+import '../styles/MapComponent.css';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -23,42 +21,62 @@ interface MapComponentProps {
   routes: Record<string, RouteGeoJSON> | null;
   showAQIColors: boolean;
   selectedArea: Area | null;
+  selectedRoute: string | null;
+}
+
+export const updateWaterLayers = (map: mapboxgl.Map) => {
+  const layers = map.getStyle().layers;
+  if (!layers) return;
+
+  layers.forEach((layer) => {
+    if (!layer.id) return;
+    if (layer.id.includes('water')) {
+      try {
+        map.setPaintProperty(layer.id, 'fill-color', 'hsl(200, 80%, 80%)');
+        map.setPaintProperty(layer.id, 'fill-outline-color', 'hsl(200, 70%, 75%)');
+      } catch {}
+    }
+  });
+};
+
+interface MapWithLock extends mapboxgl.Map {
+  interactionLocked?: boolean;
 }
 
 const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
-  showAQIColors, 
+  showAQIColors,
   selectedArea,
+  selectedRoute,
 }) => {
-  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
-  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || "";
+  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
   const mapboxRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
+  /*  Draw routes and highlight area hooks */
   useDrawRoutes(
     mapRef.current,
     routes as Record<string, GeoJSON.FeatureCollection>,
-    showAQIColors
+    showAQIColors,
+    selectedRoute
   );
   useHighlightChosenArea(mapRef.current, selectedArea);
 
+  /*  Handle user location */
   const handleLocationFound = (coords: { lat: number; lng: number }) => {
-    /*
-    Centers the map on the user's current location and adds a dot marker to that location.
-    */
     if (!mapRef.current || userUsedLocationRef.current) return;
     userUsedLocationRef.current = true;
-
     locationMarkerRef.current?.remove();
 
-    const elem = document.createElement("div");
-    elem.className = "current-location-dot";
+    const elem = document.createElement('div');
+    elem.className = 'current-location-dot';
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
       .setLngLat([coords.lng, coords.lat])
@@ -67,121 +85,111 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current.flyTo({
       center: [coords.lng, coords.lat],
       zoom: 15,
-      duration: 1500
+      duration: 1500,
     });
   };
 
+  /*  Initialize Mapbox map */
   useEffect(() => {
-    /*
-    Initializes the mapbox map if token is available, we have coordinates and the mapboxRef is set.
-    */
     if (!mapboxToken || !mapboxRef.current) return;
 
     mapboxgl.accessToken = mapboxToken;
-
-    mapRef.current = new mapboxgl.Map({
+    const map = new mapboxgl.Map({
       container: mapboxRef.current,
       style: mapboxStyle,
       center: initialMapCenter,
       zoom: initialMapZoom,
     });
 
-    mapRef.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
-    return () => mapRef.current?.remove();
+    const scale = new mapboxgl.ScaleControl({
+      maxWidth: 100,
+      unit: 'metric',
+    });
+    map.addControl(scale, 'bottom-left');
+
+    map.on('movestart', () => {
+      const scaleEl = map.getContainer().querySelector('.mapboxgl-ctrl-scale') as HTMLElement;
+      if (scaleEl) scaleEl.style.opacity = '0';
+    });
+
+    map.on('moveend', () => {
+      const scaleEl = map.getContainer().querySelector('.mapboxgl-ctrl-scale') as HTMLElement;
+      if (scaleEl) scaleEl.style.opacity = '1';
+    });
+
+    map.on('load', () => updateWaterLayers(map));
+
+    mapRef.current = map;
+    return () => map.remove();
   }, [mapboxToken, mapboxStyle]);
 
+  /*  Update markers */
+  useEffect(() => {
+    if (!mapRef.current) return;
+    fromMarkerRef.current?.remove();
+    toMarkerRef.current?.remove();
 
+    if (fromLocked?.geometry?.coordinates) {
+      fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
+        .setLngLat(fromLocked.geometry.coordinates)
+        .addTo(mapRef.current);
+    }
+    if (toLocked?.geometry?.coordinates) {
+      toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
+        .setLngLat(toLocked.geometry.coordinates)
+        .addTo(mapRef.current);
+    }
+
+    if (fromLocked?.geometry?.coordinates && toLocked?.geometry?.coordinates) {
+      const bounds = new mapboxgl.LngLatBounds()
+        .extend(fromLocked.geometry.coordinates)
+        .extend(toLocked.geometry.coordinates);
+      mapRef.current.fitBounds(bounds, { padding: 110, duration: 1500 });
+    } else if (fromLocked?.geometry?.coordinates) {
+      mapRef.current.flyTo({ center: fromLocked.geometry.coordinates, zoom: 15, duration: 1500 });
+    }
+  }, [fromLocked, toLocked]);
+
+  /*  Fly to selected area and disable interactions until finished  */
   useEffect(() => {
     if (!mapRef.current || !selectedArea) return;
 
-    mapRef.current.flyTo({
+    const map = mapRef.current;
+
+    /* Disable all user interactions */
+    map.dragPan.disable();
+    map.scrollZoom.disable();
+    map.boxZoom.disable();
+    map.doubleClickZoom.disable();
+    map.keyboard.disable();
+    map.touchZoomRotate.disable();
+
+    const onMoveEnd = () => {
+      map.dragPan.enable();
+      map.scrollZoom.enable();
+      map.boxZoom.enable();
+      map.doubleClickZoom.enable();
+      map.keyboard.enable();
+      map.touchZoomRotate.enable();
+      map.off('moveend', onMoveEnd);
+    };
+
+    map.on('moveend', onMoveEnd);
+
+    map.flyTo({
       center: selectedArea.focus_point,
-      zoom: selectedArea.zoom,
+      zoom: 13.5,
       duration: 2000,
       essential: true,
     });
   }, [selectedArea]);
 
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    fromMarkerRef.current?.remove()
-    toMarkerRef.current?.remove()
-
-    if (fromLocked?.geometry?.coordinates) {
-      fromMarkerRef.current = new mapboxgl.Marker({color: "red"})
-      .setLngLat([fromLocked.geometry.coordinates[0], fromLocked.geometry.coordinates[1]])
-      .addTo(mapRef.current)
-    }
-
-    if (toLocked?.geometry?.coordinates) {
-      toMarkerRef.current = new mapboxgl.Marker({color: "red"})
-      .setLngLat([toLocked.geometry.coordinates[0], toLocked.geometry.coordinates[1]])
-      .addTo(mapRef.current)
-    }    
-  },[fromLocked, toLocked]);
-
-
-  useEffect(() => {
-    /*
-    Zooms the map to fit both From and To locations if both are set.
-    */
-    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
-
-    const bounds = new mapboxgl.LngLatBounds()
-      .extend(fromLocked.geometry.coordinates)
-      .extend(toLocked.geometry.coordinates);
-
-    mapRef.current.fitBounds(bounds, {
-      padding: 80,
-      duration: 1500
-    });
-  }, [fromLocked, toLocked]);
-
-
-  useEffect(() => {
-    /*
-    Zooms the map to From location if only From is set.
-    */
-    if (!mapRef.current || !fromLocked?.geometry?.coordinates) return;
-    
-    if (fromLocked && (!toLocked || !toLocked.geometry?.coordinates)) {
-      mapRef.current.flyTo({
-        center: fromLocked.geometry.coordinates,
-        zoom: 15,
-        duration: 1500
-      });
-    }
-  }, [fromLocked, toLocked]);
-
-
-  useEffect(() => {
-    /*
-    Zooms the map to fit both From and To locations if both are set.
-    */
-    if (!mapRef.current || !fromLocked?.geometry?.coordinates || !toLocked?.geometry?.coordinates) return;
-
-    const bounds = new mapboxgl.LngLatBounds()
-      .extend(fromLocked.geometry.coordinates)
-      .extend(toLocked.geometry.coordinates);
-
-    mapRef.current.fitBounds(bounds, {
-      padding: 110,
-      duration: 1500
-    });
-  }, [fromLocked, toLocked]);
-
-
   if (mapboxToken) {
     return (
-      <div style={{ position: "relative", height: "100%", width: "100%" }}>
-        <div
-          ref={mapboxRef}
-          data-testid="mapbox-map"
-          style={{ height: "100%", width: "100%" }}
-        />
-
+      <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+        <div ref={mapboxRef} data-testid="mapbox-map" style={{ height: '100%', width: '100%' }} />
         <div className="location-button-container">
           <LocationButton onLocationFound={handleLocationFound} />
         </div>
@@ -189,29 +197,21 @@ const MapComponent: React.FC<MapComponentProps> = ({
     );
   }
 
-
-return (
-  <div style={{ height: "100%", width: "100%" }}>
-    <MapContainer
-      center={selectedArea?.focus_point || initialMapCenter}
-      zoom={selectedArea?.zoom || initialMapZoom}
-      style={{ height: "100%", width: "100%" }}
-    >
+  /*  Fallback Leaflet map */
+  return (
+    <div style={{ height: '100%', width: '100%' }}>
+      <MapContainer
+        center={selectedArea?.focus_point || initialMapCenter}
+        zoom={selectedArea?.zoom || initialMapZoom}
+        style={{ height: '100%', width: '100%' }}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
       </MapContainer>
     </div>
-  
   );
-
-
-/* We ignore this line in coverage report, because it is unreachable.
-However, typescript requires handling this corner case */
-//istanbul ignore next
-
-return null;
-}
+};
 
 export default MapComponent;

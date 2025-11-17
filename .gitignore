@@ -6,6 +6,7 @@ build
 *.log
 *.tmp
 frontend/env.example
+venv/
 
 # Backend
 .venv/
@@ -32,6 +33,7 @@ Thumbs.db
 node_modules/
 /package.json
 /package-lock.json
+database_dump.backup
 
 
 # Redis

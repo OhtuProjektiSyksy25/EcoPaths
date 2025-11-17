@@ -2,15 +2,15 @@
 Root component for the React application. 
 It renders the header and the MapComponent.
 */
-import { useState } from "react";
-import MapComponent from "./components/MapComponent";
-import SideBar from "./components/SideBar";
-import AreaSelector from "./components/AreaSelector";
-import { useRoute } from "./hooks/useRoute";
-import { LockedLocation, Area } from "./types";
-import logo from "./assets/images/ecopaths_logo_no_text.jpg";
-import "./styles/App.css";
-import { Globe } from "lucide-react";
+import { useState } from 'react';
+import MapComponent from './components/MapComponent';
+import SideBar from './components/SideBar';
+import AreaSelector from './components/AreaSelector';
+import { useRoute } from './hooks/useRoute';
+import { LockedLocation, Area } from './types';
+import logo from './assets/images/ecopaths_logo_no_text.jpg';
+import './styles/App.css';
+import { Globe } from 'lucide-react';
 
 /**
  * Root component of the EcoPaths React application.
@@ -37,9 +37,12 @@ function App(): JSX.Element {
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
 
-  const { routes, summaries, loading, balancedLoading, error } = useRoute(
-    fromLocked, 
-    toLocked, 
+  // Route selection state for highlighting routes
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+
+  const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
+    fromLocked,
+    toLocked,
     balancedWeight
   );
 
@@ -51,6 +54,7 @@ function App(): JSX.Element {
     // Clear routes when changing area
     setFromLocked(null);
     setToLocked(null);
+    setSelectedRoute(null);
   };
 
   // Handle changing area from dropdown
@@ -58,17 +62,20 @@ function App(): JSX.Element {
     // Clear locked locations FIRST (this clears routes & DisplayContainers)
     setFromLocked(null);
     setToLocked(null);
-    
+    setSelectedRoute(null);
+
     // Then show area selector
     setShowAreaSelector(true);
   };
 
+  // Handle route selection
+  const handleRouteSelect = (route: string) => {
+    setSelectedRoute(route === selectedRoute ? null : route);
+  };
 
   return (
     <div className="App">
-      {showAreaSelector && (
-        <AreaSelector onAreaSelect={handleAreaSelect} />
-      )}
+      {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
 
       <header className="header">
         <div className="header-content">
@@ -82,7 +89,6 @@ function App(): JSX.Element {
               onClick={handleChangeArea}
               disabled={!!locationError}
             >
-            
               <Globe size={25} />
               {selectedArea.display_name}
             </button>
@@ -96,6 +102,7 @@ function App(): JSX.Element {
             onFromSelect={setFromLocked}
             onToSelect={setToLocked}
             summaries={summaries}
+            aqiDifferences={aqiDifferences}
             showAQIColors={showAQIColors}
             setShowAQIColors={setShowAQIColors}
             selectedArea={selectedArea}
@@ -104,6 +111,8 @@ function App(): JSX.Element {
             setBalancedWeight={setBalancedWeight}
             loading={loading}
             balancedLoading={balancedLoading}
+            selectedRoute={selectedRoute}
+            onRouteSelect={handleRouteSelect}
           >
             {(loading || error) && (
               <div className="route-loading-message">
@@ -119,8 +128,9 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
-            showAQIColors={showAQIColors} 
+            showAQIColors={showAQIColors}
             selectedArea={selectedArea}
+            selectedRoute={selectedRoute}
           />
         </div>
       </main>

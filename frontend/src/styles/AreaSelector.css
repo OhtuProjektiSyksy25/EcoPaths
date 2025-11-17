@@ -136,3 +136,32 @@
 .retry-button:hover {
   background: #2bc654;
 }
+
+
+
+@media (max-width: 800px) {
+  .area-selector-modal {
+    padding: 20px;
+  }
+
+  .area-selector-modal h2 {
+    font-size: 23px;
+    margin-bottom: 20px;
+  }
+
+  .area-grid {
+    grid-template-columns: repeat(2, 1fr);
+
+  }
+  
+  .area-button {
+    padding: 30px 10px;
+  }
+  
+  
+  .area-name {
+    font-size: 16px;
+    text-align: center;
+    word-break: break-word;
+  }
+}
