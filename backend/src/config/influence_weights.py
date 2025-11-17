@@ -1,4 +1,3 @@
-# src/config/influence_weights.py
 """
 Configuration for influence model weights used in edge-based exposure calculations.
 
@@ -16,16 +15,31 @@ Structure:
 
 INFLUENCE_WEIGHTS = {
     "traffic": {
-        "LANE_WEIGHT": 0.01,
-        "SPEED_WEIGHT": 0.01,
-        "BASE_INFLUENCE": 0.1,
-        "MAX_INFLUENCE": 5.0,
+        "BASE_INFLUENCE": 0.08,
+        "MAX_INFLUENCE": 1.0,
         "HIGHWAY_WEIGHTS": {
-            "motorway": 0.3,
-            "primary": 0.2,
-            "secondary": 0.15,
-            "tertiary": 0.1,
-            "residential": 0.05
+            "motorway": 0.25,
+            "primary": 0.15,
+            "secondary": 0.1,
+            "tertiary": 0.08,
+            "residential": 0.03
+        }
+    },
+    "green": {
+        "BASE_BENEFIT": 0.15,
+        "MAX_BENEFIT": 0.9,
+        "GREEN_WEIGHTS": {
+            "forest": 0.3,
+            "wood": 0.25,
+            "meadow": 0.2,
+            "park": 0.2,
+            "garden": 0.15,
+            "allotments": 0.2,
+            "grass": 0.1,
+            "recreation_ground": 0.15,
+            "nature_reserve": 0.3,
+            "playground": 0.1,
+            "tree": 0.05
         }
     }
 }

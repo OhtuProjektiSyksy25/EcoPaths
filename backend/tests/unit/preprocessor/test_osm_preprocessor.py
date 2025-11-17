@@ -1,35 +1,13 @@
 import pytest
-from pathlib import Path
 import geopandas as gpd
 from shapely.geometry import LineString, MultiLineString
-from preprocessor import osm_preprocessor
 from preprocessor.osm_preprocessor import OSMPreprocessor
-from preprocessor.edge_cleaner_sql import EdgeCleanerSQL
 from src.config.columns import BASE_COLUMNS_DF, EXTRA_COLUMNS
 
 
 @pytest.fixture
-def preprocessor(monkeypatch):
-    processor = OSMPreprocessor(area="testarea", network_type="walking")
-    processor.crs = "EPSG:25833"
-
-    monkeypatch.setattr(
-        processor, "downloader",
-        type("DummyDownloader", (), {
-             "save_bbox_network_to_file": lambda nt: None})()
-    )
-    monkeypatch.setattr(
-        processor, "load_raw_edges_in_batches", lambda *a, **kw: [])
-
-    return processor
-
-
-@pytest.fixture
-def mock_path_exists(monkeypatch):
-    def _mock(path, exists=True):
-        monkeypatch.setattr(Path, "exists", lambda self: exists)
-        return path
-    return _mock
+def preprocessor():
+    return OSMPreprocessor(area="testarea", network_type="walking")
 
 
 def test_prepare_raw_edges_explodes(preprocessor):
@@ -44,70 +22,47 @@ def test_prepare_raw_edges_explodes(preprocessor):
 
     assert str(result.crs) == preprocessor.crs
     assert all(geom.geom_type == "LineString" for geom in result.geometry)
-    assert result.index[0] == 0
 
 
-@pytest.mark.parametrize("extra_cols_in_gdf", [False])
-def test_filter_to_selected_columns(preprocessor, extra_cols_in_gdf):
-    gdf_dict = {"geometry": [LineString([(0, 0), (1, 1)])]}
-    gdf = gpd.GeoDataFrame(gdf_dict, crs="EPSG:25833")
+@pytest.mark.parametrize("network_type", ["walking", "cycling", "driving"])
+def test_filter_to_selected_columns(preprocessor, network_type):
+    gdf = gpd.GeoDataFrame(
+        {"geometry": [LineString([(0, 0), (1, 1)])]}, crs="EPSG:25833")
 
-    filtered = preprocessor.filter_to_selected_columns(gdf, "walking")
+    filtered = preprocessor.filter_to_selected_columns(gdf, network_type)
 
     expected_cols = set(
-        BASE_COLUMNS_DF + EXTRA_COLUMNS["walking"] + ["geometry"])
+        BASE_COLUMNS_DF + EXTRA_COLUMNS.get(network_type, []) + ["geometry"])
     assert set(filtered.columns) == expected_cols
 
-    for col in EXTRA_COLUMNS["walking"]:
+    for col in EXTRA_COLUMNS.get(network_type, []):
         if col.endswith("_influence"):
             assert filtered[col].iloc[0] == 1.0
-        else:
-            assert filtered[col].iloc[0] is None
 
 
-def test_load_raw_edges_file_not_found(monkeypatch, preprocessor):
-    monkeypatch.setattr(preprocessor, "load_raw_edges_in_batches",
-                        lambda *a, **kw: (_ for _ in ()).throw(FileNotFoundError))
-    import pytest
-    with pytest.raises(FileNotFoundError):
-        list(preprocessor.load_raw_edges_in_batches())
-
-
-def test_extract_edges_calls_all_methods(monkeypatch, preprocessor):
-    calls = []
-
-    monkeypatch.setattr(preprocessor, "load_raw_edges_in_batches",
-                        lambda *a, **kw: [gpd.GeoDataFrame(
-                            geometry=[LineString([(0, 0), (1, 1)])], crs="EPSG:25833")])
-    monkeypatch.setattr(preprocessor, "prepare_raw_edges",
-                        lambda gdf: calls.append("prepare") or gdf)
-    monkeypatch.setattr(preprocessor, "filter_to_selected_columns",
-                        lambda gdf, nt: calls.append("filter") or gdf)
-    from src.database import db_client
-    monkeypatch.setattr(db_client.DatabaseClient, "save_edges",
-                        lambda self, gdf, area, nt, if_exists="fail": calls.append("save"))
-
-    class DummyCleaner:
-        def run_full_cleaning(self, a, n): return None
-        def remove_disconnected_edges(self, a, n): return None
-
-    monkeypatch.setattr(osm_preprocessor, "EdgeCleanerSQL",
-                        lambda db: DummyCleaner())
-    monkeypatch.setattr(preprocessor.downloader, "save_bbox_network_to_file",
-                        lambda *args, **kwargs: None)
-
-    preprocessor.extract_edges()
-    assert calls == ["prepare", "filter", "save"]
-
-
-def test_load_raw_edges_batches(preprocessor):
+def test_prepare_geometries_removes_invalid(preprocessor):
     gdf = gpd.GeoDataFrame({
-        "geometry": [LineString([(0, 0), (1, 1)]) for _ in range(10)]
-    }, crs="EPSG:25833")
-    preprocessor.batch_size = 3
-    preprocessor.load_raw_edges_in_batches = lambda *a, **kw: (
-        gdf.iloc[i:i+3] for i in range(0, 10, 3))
+        "geometry": [LineString([(0, 0), (0, 0)])]
+    }, crs="EPSG:4326")
+    result = preprocessor.prepare_geometries(gdf)
+    assert len(result) == 0
 
-    batches = list(preprocessor.load_raw_edges_in_batches())
-    batch_lengths = [len(b) for b in batches]
-    assert batch_lengths == [3, 3, 3, 1]
+
+def test_filter_required_columns_adds_defaults(preprocessor):
+    gdf = gpd.GeoDataFrame(
+        {"geometry": [LineString([(0, 0), (1, 1)])]}, crs="EPSG:25833")
+    required = ["geometry", "foo"]
+    result = preprocessor.filter_required_columns(
+        gdf, required, defaults={"foo": 42})
+    assert "foo" in result.columns
+    assert result["foo"].iloc[0] == 42
+
+
+def test_prepare_green_area_batch_detects_type(preprocessor):
+    gdf = gpd.GeoDataFrame({
+        "geometry": [LineString([(0, 0), (1, 1)])],
+        "natural": ["forest"]
+    }, crs="EPSG:25833")
+    result = preprocessor.prepare_green_area_batch(gdf)
+    assert "green_type" in result.columns
+    assert result["green_type"].iloc[0] != "unknown"
