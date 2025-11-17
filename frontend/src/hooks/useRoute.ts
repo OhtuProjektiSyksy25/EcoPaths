@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
 import { Area } from "../types";
+import { normalizeCoords } from "../utils/coordsNormalizer";
 
 
 interface UseRouteReturn {
@@ -62,6 +63,19 @@ export const useRoute = (
       
       setError(null);
       prevWeightRef.current = balancedWeight;
+      // validate and normalize coordinates before sending request
+
+      const normalizedFrom = normalizeCoords(fromLocked?.geometry);
+      const normalizedTo = normalizeCoords(toLocked?.geometry);
+
+      if (!normalizedFrom || !normalizedTo) {
+        const msg = "Invalid start or end geometry - cannot request route";
+        console.warn(msg, { from: fromLocked?.geometry, to: toLocked?.geometry });
+        setError(msg);
+        setLoading(false);
+        setBalancedLoading(false);
+        return;
+      }
 
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute`, {
@@ -75,20 +89,27 @@ export const useRoute = (
               {
                 type: "Feature",
                 properties: { role: "start" },
-                geometry: fromLocked.geometry,
+                geometry: normalizedFrom,
               },
               {
                 type: "Feature",
                 properties: { role: "end" },
-                geometry: toLocked.geometry,
+                geometry: normalizedTo,
               },
             ],
             balanced_weight: balancedWeight,
           }),
         });
-
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
+          // Attempt to include server message if available
+          let bodyText = "";
+          try {
+            const json = await response.json();
+            bodyText = json && json.error ? ` - ${json.error}` : ` - ${JSON.stringify(json)}`;
+          } catch (_e) {
+            bodyText = ` - status ${response.status}`;
+          }
+          throw new Error(`Server error: ${response.status}${bodyText}`);
         }
 
         const data = await response.json();
