@@ -33,16 +33,18 @@ function App(): JSX.Element {
   const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
   const [showAQIColors, setShowAQIColors] = useState(false);
-
+  const [roundTripBool, setRoundTripBool] = useState(true);
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
 
   const { routes, summaries, loading, balancedLoading, error } = useRoute(
     fromLocked, 
     toLocked, 
-    balancedWeight
+    balancedWeight,
+    roundTripBool
   );
 
+  
   // Handle area selection
   const handleAreaSelect = (area: Area) => {
     setSelectedArea(area);
@@ -104,6 +106,20 @@ function App(): JSX.Element {
           loading={loading}
           balancedLoading={balancedLoading}
         >
+          <div
+          onClick={() => setRoundTripBool(prev => !prev)}
+          style={{
+            margin: "10px",
+            padding: "10px",
+            border: "1px solid #aaa",
+            borderRadius: "6px",
+            cursor: "pointer",
+            textAlign: "center",
+            background: "#eee",
+          }}
+        >
+          Toggle Round Trip (currently: {roundTripBool ? "ON" : "OFF"})
+        </div>
           {(loading || error) && (
             <div className="route-loading-message">
               {loading && <p>Loading routes...</p>}

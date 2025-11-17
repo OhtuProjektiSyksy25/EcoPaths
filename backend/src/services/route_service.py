@@ -12,6 +12,7 @@ from services.redis_cache import RedisCache
 from services.redis_service import RedisService
 from utils.route_summary import summarize_route
 from utils.geo_transformer import GeoTransformer
+import matplotlib.pyplot as plt
 
 
 class RouteServiceFactory:
@@ -120,6 +121,95 @@ class RouteService:
         summaries["balanced"] = summary
         return {"routes": results, "summaries": summaries}
 
+    def get_round_trip(self, origin_gdf, distance = 1000):
+        center_tile_buffer = self._create_buffer(origin_gdf, origin_gdf, 1)
+        center_tile = self.db_client.get_tile_ids_by_buffer(self.area, center_tile_buffer)
+
+        if len(center_tile) > 1:
+            center_tile = center_tile[0]
+
+        max_distance = (distance / 2) + 300
+        buffer = self._create_buffer(origin_gdf, origin_gdf, max_distance)
+        tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
+        print(tile_ids)
+        outer_tiles = self._get_outermost_tiles(tile_ids)
+
+        # Get edges for relevant tiles (Redis + enrich new tiles if needed)
+        edges = self._get_tile_edges(tile_ids)
+        # Nodes_gdf from database
+        nodes = self._get_nodes_from_db(tile_ids)
+        if edges is None or edges.empty:
+            raise RuntimeError("No edges found for requested route area.")
+        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+
+        best_edges_by_outer_tiles = self.extract_best_aq_edge_from_tile(edges_subset,outer_tiles)
+        self.current_route_algorithm = RouteAlgorithm(edges_subset, nodes)
+        all_gdf = []
+
+
+        for idx in best_edges_by_outer_tiles.index:
+            single_gdf = best_edges_by_outer_tiles.loc[[idx]]  # note the double brackets, keeps it as GeoDataFrame
+            gdf = self.current_route_algorithm.calculate_round_trip(
+                origin_gdf, single_gdf, balance_factor=0)
+            all_gdf.append(gdf)
+            print("HEP")
+
+
+
+        x = GeoTransformer.gdf_to_feature_collection(
+                gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
+            )
+        return {"routes": x, "summaries": None}
+
+
+    def extract_best_aq_edge_from_tile(self,edges_subset, tile_ids) -> gpd.GeoDataFrame:
+        edges_subset = edges_subset[edges_subset['tile_id'].isin(tile_ids)]
+
+        best_edges = (
+            edges_subset.sort_values("aqi")
+            .groupby("tile_id", as_index=False)
+            .first()
+        )
+        points_gdf = gpd.GeoDataFrame(
+            geometry=best_edges['geometry'].apply(lambda line: line.interpolate(0.5, normalized=True)),
+            crs=edges_subset.crs
+        )
+
+        return points_gdf
+
+
+# tEMP debuggin PRINTING TEMP DELETE DELTE
+    def parse_tiles(self, tiles):
+        
+        return [(int(t.split('_')[0][1:]), int(t.split('_')[1][1:])) for t in tiles]
+
+    def temp_plot(self, tile_ids,origin_gdf):
+        center_tile_buffer = self._create_buffer(origin_gdf, origin_gdf, 1)
+        center_tile = self.db_client.get_tile_ids_by_buffer(self.area, center_tile_buffer)
+
+        x = self._get_outermost_tiles(tile_ids)
+
+        all_coords = self.parse_tiles(tile_ids)
+        outer_coords = self.parse_tiles(x)
+        center_coords = self.parse_tiles(center_tile)  # parse_tiles expects a list
+
+        # Plot
+        plt.figure(figsize=(8,8))
+        all_rows, all_cols = zip(*all_coords)
+        outer_rows, outer_cols = zip(*outer_coords)
+        center_row, center_col = zip(*center_coords)
+
+
+        plt.scatter(all_cols, all_rows, color='lightblue', label='All tiles', s=200)
+        plt.scatter(outer_cols, outer_rows, color='red', label='Outer tiles', s=200)
+        plt.scatter(center_col, center_row, color='green', label='Center tile', s=200)
+
+        plt.gca().invert_yaxis()  # Optional: match typical grid orientation
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+# END OF TEMP DELET EDEBUGGING PRINT OK
+
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """
         Creates a buffer polygon around a straight line between origin and destination points.
@@ -136,9 +226,16 @@ class RouteService:
             Polygon: A Shapely polygon representing the buffered area around 
             the origin-destination line.
         """
+        origin_point = origin_gdf.geometry.iloc[0]
+        destinaion_point = destination_gdf.geometry.iloc[0]
+
+        #if origin_point == destinaion_point:
+
+        #    return origin_point.buffer(buffer_m)
+        
         line = LineString([
-            origin_gdf.geometry.iloc[0],
-            destination_gdf.geometry.iloc[0]
+            origin_point,
+            destinaion_point
         ])
         return line.buffer(buffer_m)
 
@@ -185,6 +282,20 @@ class RouteService:
 
         return None
 
+    def _get_outermost_tiles(self, tile_ids):
+        coordinates = {(int(t.split('_')[0][1:]), int(t.split('_')[1][1:])) for t in tile_ids}
+
+        directions = [(-1,0),(1,0),(0,-1),(0,1)]
+
+        # Outer tiles: has at least one missing neighbor
+        outer_tiles = []
+        for row,column in coordinates:
+            if any((row+row_direction, column+column_direction) not in coordinates for row_direction, column_direction in directions):
+                outer_tiles.append((row,column))
+        # Back to tile strings
+        outer_tiles = [f"r{row}_c{column}" for row,column in outer_tiles]
+        return outer_tiles
+
     def _get_nodes_from_db(self, tile_ids: list) -> gpd.GeoDataFrame:
         """
         Fetch nodes for the given tile_ids from the database.
@@ -223,3 +334,19 @@ class RouteService:
             )
 
         return {"routes": results, "summaries": summaries}
+
+    def _compute_roundtrip(self, edges, nodes, origin_gdf, distance):
+        results, summaries = {}, {}
+        self.current_route_algorithm = RouteAlgorithm(edges, nodes)
+
+        gdf = self.current_route_algorithm.calculate_round_trip(
+                origin_gdf, distance)
+
+        # "balanced" needs to be changed TEMPORARY FIX
+
+        results["balanced"] = GeoTransformer.gdf_to_feature_collection(
+                gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
+            )
+        summaries["balanced"] = summarize_route(gdf)
+        
+        return {"routes":gdf, "summaries": summaries}

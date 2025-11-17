@@ -141,7 +141,7 @@ class RouteAlgorithm:
         self.route_edges_tree = STRtree(
             self.route_specific_gdf.geometry.to_list())
 
-    def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, balance_factor=1):
+    def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, balance_factor=1, specific_graph=None):
         """
         Prepares graph and determines nearest origin and destination node for routing.
         Updates edge weights according to balance_factor
@@ -155,11 +155,6 @@ class RouteAlgorithm:
         Returns:
             tuple: origin_node, destination_node, graph, combined_edges
         """
-        # self.init_route_specific()
-
-        # self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
-        # self.snap_and_split(destination_gdf.geometry.iat[0], "destination")
-
         if "origin" not in self.igraph.vs["name"]:
             self.snap_and_split(origin_gdf.geometry.iat[0], "origin")
         if "destination" not in self.igraph.vs["name"]:
@@ -348,6 +343,23 @@ class RouteAlgorithm:
         self.route_specific_gdf = pd.concat(
             [self.route_specific_gdf, new_edges_gdf], ignore_index=True
         )
+
+
+    def calculate_round_trip(self, origin_gdf, destination_gdf, balance_factor=0, distance=0):
+        self.initial_graph = self.igraph.copy()
+        origin_node, destination_node, graph = self.prepare_graph_and_nodes(
+            origin_gdf, destination_gdf, balance_factor=balance_factor
+        )
+
+        if origin_node not in graph.vs["name"] or destination_node not in graph.vs["name"]:
+            raise ValueError("node not found.")
+
+        path_nodes = self.run_routing_algorithm(
+            graph, origin_node, destination_node)
+        path_edges = self.extract_path_edges(path_nodes)
+        print(f"Extracted {len(path_edges)} edges for final route")
+        self.igraph = self.initial_graph.copy()
+        return path_edges
 
     @staticmethod
     def _compute_split_result(line, snapped_point, offset=0.01):

@@ -22,7 +22,8 @@ interface UseRouteReturn {
 export const useRoute = (
   fromLocked: LockedLocation | null,
   toLocked: LockedLocation | null,
-  balancedWeight: number
+  balancedWeight: number,
+  roundTripBool: boolean
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -87,7 +88,8 @@ export const useRoute = (
               },
             ],
             balanced_weight: balancedWeight,
-            balanced_route: balancedRouteBool
+            balanced_route: balancedRouteBool,
+            roundTripBool: roundTripBool
           }),
         });
 
@@ -96,8 +98,11 @@ export const useRoute = (
         }
 
         const data = await response.json();
-
-        if (isWeightChange) {
+        if (roundTripBool) {
+          setRoutes(data.routes);
+          setSummaries(data.summaries);
+        }
+        else if (isWeightChange) {
           // Only update balanced route and summary
           setRoutes(prev => prev ? { ...prev, balanced: data.routes.balanced } : data.routes);
           setSummaries(prev => prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries);
