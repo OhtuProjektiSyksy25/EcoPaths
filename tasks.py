@@ -41,6 +41,13 @@ def lint_frontend(c):
     with c.cd("frontend"):
         c.run("npm run lint")
 
+@task
+def typecheck_frontend(c):
+    """Run TypeScript compiler in type-check mode (no emit)"""
+    with c.cd("frontend"):
+        c.run("npx tsc --noEmit")
+    print("\n Type checking completed.")
+
 
 # ========================
 # Testing & coverage
@@ -132,7 +139,7 @@ def check_backend(c):
     """Run lint and unit tests with coverage"""
     print("Backend checked.")
 
-@task(pre=[lint_frontend, test_frontend])
+@task(pre=[typecheck_frontend, lint_frontend, test_frontend])
 def check_frontend(c):
     """Run lint and tests for frontend"""
     print("Frontend checked")
