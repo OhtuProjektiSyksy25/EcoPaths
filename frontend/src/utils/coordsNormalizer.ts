@@ -12,7 +12,11 @@ const isValidCoordsArray = (c: any) =>
         // or legacy shape { coordinates: [lng, lat] } or a raw coords array [lng, lat].
         if (!g) return null;
         if (Array.isArray(g)) {
-          return { type: "Point", coordinates: g };
+          // Validate raw coordinate arrays as well (must be two finite numbers)
+          if (isValidCoordsArray(g)) {
+            return { type: "Point", coordinates: g };
+          }
+          return null;
         }
         if (isValidCoordsArray(g.coordinates) && typeof g.type === "string") {
           return { type: g.type, coordinates: g.coordinates };

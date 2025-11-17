@@ -229,7 +229,7 @@ describe("useRoute", () => {
 
     await waitFor(() => { expect(result.current.loading).toBe(false);});
 
-    expect(result.current.error).toBe("Server error: 500");
+    expect(result.current.error).toBe("Server error: 500 - {}");
     expect(result.current.routes).toBeNull();
     expect(result.current.summaries).toBeNull();
   });
