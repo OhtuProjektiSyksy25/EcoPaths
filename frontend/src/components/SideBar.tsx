@@ -81,9 +81,19 @@ const SideBar: React.FC<SideBarProps> = ({
     }
   }, [isMobile, summaries, sidebarStage]);
 
-  // Touch handlers for swipe gestures
+  // Allow dragging only from the handle area
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const touchY = e.touches[0].clientY - rect.top;
+    const handleHeight = 35;
+    
+    if (touchY > handleHeight) {
+      return;
+    }
+
+
     setStartY(e.touches[0].clientY);
     setCurrentY(e.touches[0].clientY);
     setIsDragging(true);
