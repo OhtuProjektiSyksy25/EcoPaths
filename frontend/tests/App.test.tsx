@@ -15,8 +15,8 @@ test('renders App without crashing', () => {
   render(<App />);
   expect(screen.getByText(/EcoPaths/i)).toBeInTheDocument();
   expect(screen.getByTestId('map-component')).toBeInTheDocument();
-  expect(screen.getByTestId('sidebar')).toBeInTheDocument();
   expect(screen.getByTestId('area-selector')).toBeInTheDocument();
+  expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
 });
 
 test('renders EcoPaths header', () => {
