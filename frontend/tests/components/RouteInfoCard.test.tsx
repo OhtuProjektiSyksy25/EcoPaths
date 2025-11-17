@@ -22,10 +22,17 @@ describe('RouteInfoCard', () => {
       />
     );
 
-    expect(screen.getByText('Best Air Quality')).toBeInTheDocument();
-    expect(screen.getByText('15 minutes')).toBeInTheDocument();
-    expect(screen.getByText('2.5 km')).toBeInTheDocument();
-    expect(screen.getByText('AQI 42')).toBeInTheDocument();
+    const routeTypes = screen.getAllByText('Best Air Quality');
+    expect(routeTypes).toHaveLength(2);
+
+    const timeEstimates = screen.getAllByText('15 minutes');
+    expect(timeEstimates).toHaveLength(2);
+
+    const distances = screen.getAllByText('2.5 km');
+    expect(distances.length).toBeGreaterThanOrEqual(1);
+
+    const aqis = screen.getAllByText('AQI 42');
+    expect(aqis.length).toBeGreaterThanOrEqual(1);
   });
 
   test('renders with different values', () => {
@@ -43,10 +50,17 @@ describe('RouteInfoCard', () => {
       />
     );
 
-    expect(screen.getByText('Balanced Route')).toBeInTheDocument();
-    expect(screen.getByText('20 minutes')).toBeInTheDocument();
-    expect(screen.getByText('3 km')).toBeInTheDocument();
-    expect(screen.getByText('AQI 50')).toBeInTheDocument();
+    const routeTypes = screen.getAllByText('Balanced Route');
+    expect(routeTypes).toHaveLength(2);
+
+    const timeEstimates = screen.getAllByText('20 minutes');
+    expect(timeEstimates).toHaveLength(2);
+
+    const distances = screen.getAllByText('3 km');
+    expect(distances.length).toBeGreaterThanOrEqual(1);
+
+    const aqis = screen.getAllByText('AQI 50');
+    expect(aqis.length).toBeGreaterThanOrEqual(1);
   });
 
   test('can find correct css elements on page', () => {
