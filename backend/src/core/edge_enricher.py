@@ -153,16 +153,11 @@ class EdgeEnricher:
 
         enriched["aqi_norm_base"] = enriched["raw_aqi"] / 500.0
 
-        print("aqi_norm_base sample:", enriched["aqi_norm_base"].head(20))
-
         enriched["normalized_aqi"] = enriched["aqi_norm_base"] * \
             enriched["env_influence"]
-        print("normalized_aqi sample:", enriched[[
-              "aqi_norm_base", "env_influence", "normalized_aqi"]].head(20))
 
         enriched["aqi"] = enriched["normalized_aqi"] * 500.0
-        print("aqi sample:", enriched[["normalized_aqi", "aqi"]].head(20))
-
+ 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained
         enriched = enriched.drop(columns=["raw_aqi"])
