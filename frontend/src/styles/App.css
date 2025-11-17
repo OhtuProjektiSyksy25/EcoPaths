@@ -1,4 +1,6 @@
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -45,7 +47,6 @@ html, body, #root {
   font-weight: 700;
   color: black;
   font-family: 'Arial', sans-serif;
-
 }
 
 .main-container {
@@ -85,7 +86,7 @@ html, body, #root {
 
 .InputContainer input:focus {
   outline: none;
-  border-color: #60B45A;
+  border-color: #60b45a;
 }
 
 .InputContainer input::placeholder {
@@ -102,7 +103,7 @@ html, body, #root {
   font-size: 18px;
   color: #222;
   font-family: 'Arial', sans-serif;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-top: 16px;
 }
 
@@ -119,7 +120,9 @@ html, body, #root {
   position: absolute;
   width: calc(100% - 1px);
   background-color: #ffffff;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 8px 0 rgba(0, 0, 0, 0.1),
+    0 6px 20px 0 rgba(0, 0, 0, 0.06);
   max-height: calc(100vh - 57px);
   overflow: auto;
 }
@@ -128,7 +131,9 @@ html, body, #root {
   padding: 7px 8px;
   margin: 8px;
   border-radius: 4px;
-  box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 1px 2px 2px rgba(0, 0, 0, 0.06),
+    0 1px 3px 0 rgba(0, 0, 0, 0.12);
   transition-duration: 0.15s;
   font-family: 'Arial', sans-serif;
   -webkit-transition-duration: 0.15s;
@@ -136,7 +141,9 @@ html, body, #root {
 
 @media (min-width: 600px) {
   .originli:hover {
-    box-shadow: 0 1px 2px 2px rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.16);
+    box-shadow:
+      0 1px 2px 2px rgba(0, 0, 0, 0.1),
+      0 1px 3px 0 rgba(0, 0, 0, 0.16);
   }
 }
 
@@ -151,7 +158,7 @@ html, body, #root {
 .area-dropdown-button {
   display: flex;
   align-items: center;
-  gap: 8px; 
+  gap: 8px;
   background: white;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -213,7 +220,10 @@ html, body, #root {
     height: 10px;
   }
 
-  .App:not(.sidebar-stage-inputs):not(.sidebar-stage-routes):not(.sidebar-stage-routes-only):not(.sidebar-stage-hidden) .map-container {
+  .App:not(.sidebar-stage-inputs):not(.sidebar-stage-routes):not(.sidebar-stage-routes-only):not(
+      .sidebar-stage-hidden
+    )
+    .map-container {
     height: calc(100dvh - 75px);
     margin: 2px;
     margin-bottom: 2px;
@@ -236,4 +246,3 @@ html, body, #root {
     height: calc(100svh - clamp(25px, 5vh, 35px));
   }
 }
-

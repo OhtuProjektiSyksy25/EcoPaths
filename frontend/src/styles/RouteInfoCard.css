@@ -6,7 +6,6 @@
   display: none;
 }
 
-
 .RouteInfoCard {
   position: relative;
   width: 100%;
@@ -77,15 +76,13 @@
   line-height: 1.4;
 }
 
-
-
 /* Mobile Styles */
 
 @media (max-width: 800px) {
   .desktop-layout {
     display: none;
   }
-  
+
   .route-card-content {
     display: flex;
     align-items: center;
@@ -94,7 +91,6 @@
     gap: 8px;
   }
 
-    
   .route_type {
     font-size: 15px;
     color: #61896f;
@@ -106,7 +102,7 @@
   }
 
   .route_type::after {
-    content: "|";
+    content: '|';
     color: #61896f;
     opacity: 0.4;
     margin-left: auto;
@@ -138,5 +134,4 @@
     font-weight: 300;
     margin: 0 4px;
   }
-
 }

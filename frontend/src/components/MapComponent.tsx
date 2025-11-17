@@ -24,7 +24,7 @@ interface MapComponentProps {
   selectedRoute: string | null;
 }
 
-export const updateWaterLayers = (map: mapboxgl.Map) => {
+export const updateWaterLayers = (map: mapboxgl.Map): void => {
   const layers = map.getStyle().layers;
   if (!layers) return;
 
@@ -65,12 +65,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current,
     routes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    selectedRoute
+    selectedRoute,
   );
   useHighlightChosenArea(mapRef.current, selectedArea);
 
   /*  Handle user location */
-  const handleLocationFound = (coords: { lat: number; lng: number }) => {
+  const handleLocationFound = (coords: { lat: number; lon: number }): void => {
     if (!mapRef.current || userUsedLocationRef.current) return;
     userUsedLocationRef.current = true;
     locationMarkerRef.current?.remove();
@@ -79,11 +79,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
     elem.className = 'current-location-dot';
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
-      .setLngLat([coords.lng, coords.lat])
+      .setLngLat([coords.lon, coords.lat])
       .addTo(mapRef.current);
 
     mapRef.current.flyTo({
-      center: [coords.lng, coords.lat],
+      center: [coords.lon, coords.lat],
       zoom: 15,
       duration: 1500,
     });
@@ -166,7 +166,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     map.keyboard.disable();
     map.touchZoomRotate.disable();
 
-    const onMoveEnd = () => {
+    const onMoveEnd = (): void => {
       map.dragPan.enable();
       map.scrollZoom.enable();
       map.boxZoom.enable();
@@ -189,8 +189,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   if (mapboxToken) {
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-        <div ref={mapboxRef} data-testid="mapbox-map" style={{ height: '100%', width: '100%' }} />
-        <div className="location-button-container">
+        <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
+        <div className='location-button-container'>
           <LocationButton onLocationFound={handleLocationFound} />
         </div>
       </div>
@@ -207,7 +207,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         />
       </MapContainer>
     </div>

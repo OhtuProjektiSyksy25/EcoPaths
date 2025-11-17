@@ -26,12 +26,12 @@ const AQI_COLOR_SCALE = [
   '#8F3F97', // Very unhealthy
   301,
   '#7E0023', // Hazardous
-] as any;
+] as mapboxgl.Expression;
 
 /**
  * Removes a layer and source if they exist
  */
-const removeLayerIfExists = (map: mapboxgl.Map, id: string) => {
+const removeLayerIfExists = (map: mapboxgl.Map, id: string): void => {
   if (map.getLayer(id)) map.removeLayer(id);
   if (map.getSource(id)) map.removeSource(id);
 };
@@ -43,10 +43,12 @@ export function useDrawRoutes(
   map: mapboxgl.Map | null,
   routes: RoutesRecord | null,
   showAQIColors: boolean,
-  selectedRoute: string | null = null
-) {
-  useEffect(() => {
-    if (!map || !routes) return;
+  selectedRoute: string | null = null,
+): void {
+  useEffect((): (() => void) => {
+    if (!map || !routes) {
+      return () => undefined;
+    }
 
     Object.keys(ROUTE_COLORS).forEach((mode) => {
       removeLayerIfExists(map, `route-${mode}`);
@@ -143,7 +145,9 @@ export function useDrawRoutes(
     }
 
     /* Cleanup */
-    return () => {
+    return (): void => {
+      if (!map) return;
+
       Object.keys(ROUTE_COLORS).forEach((mode) => {
         removeLayerIfExists(map, `route-${mode}`);
         removeLayerIfExists(map, `route-${mode}-halo`);

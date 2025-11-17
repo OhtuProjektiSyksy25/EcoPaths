@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
-import { Area } from '../types';
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -22,7 +21,7 @@ interface UseRouteReturn {
 export const useRoute = (
   fromLocked: LockedLocation | null,
   toLocked: LockedLocation | null,
-  balancedWeight: number
+  balancedWeight: number,
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -48,7 +47,7 @@ export const useRoute = (
       return;
     }
 
-    const fetchRoute = async () => {
+    const fetchRoute = async (): Promise<void> => {
       // Determine if this is just a weight change (not location change)
       const isWeightChange = !isInitialLoadRef.current && prevWeightRef.current !== balancedWeight;
 
@@ -104,10 +103,10 @@ export const useRoute = (
           // Only update balanced route, summary, and recalculate AQI differences
           setRoutes((prev) => (prev ? { ...prev, balanced: data.routes.balanced } : data.routes));
           setSummaries((prev) =>
-            prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries
+            prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries,
           );
           setAqiDifferences((prev) =>
-            prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences
+            prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences,
           );
         } else {
           // Update all routes

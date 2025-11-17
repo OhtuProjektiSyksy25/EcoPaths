@@ -16,7 +16,9 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
   padding: 0;
 }
 
@@ -32,4 +34,8 @@
 .location-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.location-button svg {
+  color: #333;
 }

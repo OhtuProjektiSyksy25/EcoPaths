@@ -43,11 +43,11 @@ function App(): JSX.Element {
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
     toLocked,
-    balancedWeight
+    balancedWeight,
   );
 
   // Handle area selection
-  const handleAreaSelect = (area: Area) => {
+  const handleAreaSelect = (area: Area): void => {
     setSelectedArea(area);
     setShowAreaSelector(false);
 
@@ -58,7 +58,7 @@ function App(): JSX.Element {
   };
 
   // Handle changing area from dropdown
-  const handleChangeArea = () => {
+  const handleChangeArea = (): void => {
     // Clear locked locations FIRST (this clears routes & DisplayContainers)
     setFromLocked(null);
     setToLocked(null);
@@ -74,18 +74,18 @@ function App(): JSX.Element {
   };
 
   return (
-    <div className="App">
+    <div className='App'>
       {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
 
-      <header className="header">
-        <div className="header-content">
-          <img src={logo} alt="EcoPaths Logo" className="app-logo" />
-          <h1 className="title">EcoPaths</h1>
+      <header className='header'>
+        <div className='header-content'>
+          <img src={logo} alt='EcoPaths Logo' className='app-logo' />
+          <h1 className='title'>EcoPaths</h1>
         </div>
         {selectedArea && !showAreaSelector && (
-          <div className="area-dropdown-container">
+          <div className='area-dropdown-container'>
             <button
-              className="area-dropdown-button"
+              className='area-dropdown-button'
               onClick={handleChangeArea}
               disabled={!!locationError}
             >
@@ -96,7 +96,7 @@ function App(): JSX.Element {
         )}
       </header>
 
-      <main className="main-container">
+      <main className='main-container'>
         {!showAreaSelector && selectedArea && (
           <SideBar
             onFromSelect={setFromLocked}
@@ -115,15 +115,15 @@ function App(): JSX.Element {
             onRouteSelect={handleRouteSelect}
           >
             {(loading || error) && (
-              <div className="route-loading-message">
+              <div className='route-loading-message'>
                 {loading && <p>Loading routes...</p>}
-                {error && <p className="error">{error}</p>}
+                {error && <p className='error'>{error}</p>}
               </div>
             )}
           </SideBar>
         )}
 
-        <div className="map-container">
+        <div className='map-container'>
           <MapComponent
             fromLocked={fromLocked}
             toLocked={toLocked}

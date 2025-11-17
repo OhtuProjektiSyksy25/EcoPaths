@@ -8,18 +8,18 @@ import RouteInfoCard from '../../src/components/RouteInfoCard';
 
 describe('RouteInfoCard', () => {
   test('renders all props correctly', () => {
-
     const testRouteType = 'Best Air Quality';
     const testTimeEstimate = '15 minutes';
     const testTotalLength = 2.5;
     const testAQAverage = 42;
 
-    render(<RouteInfoCard
-      route_type={testRouteType}
-      time_estimate={testTimeEstimate}
-      total_length={testTotalLength}
-      aq_average={testAQAverage}
-      />
+    render(
+      <RouteInfoCard
+        route_type={testRouteType}
+        time_estimate={testTimeEstimate}
+        total_length={testTotalLength}
+        aq_average={testAQAverage}
+      />,
     );
 
     const routeTypes = screen.getAllByText('Best Air Quality');
@@ -36,18 +36,18 @@ describe('RouteInfoCard', () => {
   });
 
   test('renders with different values', () => {
-
     const testRouteType = 'Balanced Route';
     const testTimeEstimate = '20 minutes';
     const testTotalLength = 3;
     const testAQAverage = 50;
 
-    render(<RouteInfoCard
-      route_type={testRouteType}
-      time_estimate={testTimeEstimate}
-      total_length={testTotalLength}
-      aq_average={testAQAverage}
-      />
+    render(
+      <RouteInfoCard
+        route_type={testRouteType}
+        time_estimate={testTimeEstimate}
+        total_length={testTotalLength}
+        aq_average={testAQAverage}
+      />,
     );
 
     const routeTypes = screen.getAllByText('Balanced Route');
@@ -72,13 +72,13 @@ describe('RouteInfoCard', () => {
 
     // Act
     const { container } = render(
-                            <RouteInfoCard
-                            route_type={testRouteType}
-                            time_estimate={testTimeEstimate}
-                            total_length={testTotalLength}
-                            aq_average={testAQAverage}
-                            />
-                          );
+      <RouteInfoCard
+        route_type={testRouteType}
+        time_estimate={testTimeEstimate}
+        total_length={testTotalLength}
+        aq_average={testAQAverage}
+      />,
+    );
 
     // Assert
     const routeInfoCard = container.querySelector('.RouteInfoCard');
@@ -97,5 +97,4 @@ describe('RouteInfoCard', () => {
     expect(totalLength).toHaveTextContent('1.8 km');
     expect(aqAverage).toHaveTextContent('AQI 50');
   });
-
 });

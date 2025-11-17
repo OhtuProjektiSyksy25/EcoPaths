@@ -16,17 +16,22 @@ export interface LockedLocation {
  */
 export interface RouteFeatureProperties {
   route_type?: 'fastest' | 'best_aq' | 'balanced';
-  [key: string]: any; // allow extra metadata
+  [key: string]: string | number | boolean | Array<string | number | boolean> | undefined; // allow extra metadata
 }
 
 /**
  * A single GeoJSON Feature representing a segment or part of a route.
  */
+export type GeoJSONCoordinates =
+  | [number, number] // Point
+  | Array<[number, number]> // LineString
+  | Array<Array<[number, number]>>; // Polygon
+
 export interface RouteFeature {
   type: 'Feature';
   geometry: {
-    type: string;
-    coordinates: any;
+    type: 'Point' | 'LineString' | 'Polygon';
+    coordinates: GeoJSONCoordinates;
   };
   properties?: RouteFeatureProperties;
 }

@@ -35,37 +35,37 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
   return (
     <div className={`RouteInfoCard ${isSelected ? 'selected' : ''}`}>
       {/* Desktop layout */}
-      <div className="desktop-layout">
-        <div className="route-type">
-          <span className="route_type">{route_type}</span>
+      <div className='desktop-layout'>
+        <div className='route-type'>
+          <span className='route_type'>{route_type}</span>
         </div>
-        <div className="time-estimate">
-          <span className="time_estimate">{time_estimate}</span>
+        <div className='time-estimate'>
+          <span className='time_estimate'>{time_estimate}</span>
         </div>
-        <div className="additional-info">
-          <span className="total_length">{total_length} km</span>
-          <span className="aq_average">AQI {aq_average}</span>
+        <div className='additional-info'>
+          <span className='total_length'>{total_length} km</span>
+          <span className='aq_average'>AQI {aq_average}</span>
         </div>
       </div>
 
       {/* Mobile layout */}
-      <div className="route-card-content">
-        <span className="route_type">{route_type}</span>
-        <span className="time-estimate">{time_estimate}</span>
-        <span className="route-stat-divider">|</span>
-        <div className="additional-info">
+      <div className='route-card-content'>
+        <span className='route_type'>{route_type}</span>
+        <span className='time-estimate'>{time_estimate}</span>
+        <span className='route-stat-divider'>|</span>
+        <div className='additional-info'>
           <span>{total_length} km</span>
-          <span className="route-stat-divider">|</span>
+          <span className='route-stat-divider'>|</span>
           <span>AQI {aq_average}</span>
         </div>
       </div>
 
       {isExpanded && hasComparisons && (
-        <div className="route-comparisons">
-          <div className="comparisons-divider"></div>
+        <div className='route-comparisons'>
+          <div className='comparisons-divider'></div>
           {Object.entries(comparisons).map(([comparedMode, data]) => (
-            <div key={comparedMode} className="comparison-item">
-              <span className="comparison-text">{data.comparison_text}</span>
+            <div key={comparedMode} className='comparison-item'>
+              <span className='comparison-text'>{data.comparison_text}</span>
             </div>
           ))}
         </div>
