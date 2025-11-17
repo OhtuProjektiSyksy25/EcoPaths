@@ -83,7 +83,7 @@ describe('useRoute', () => {
       }),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -102,14 +102,14 @@ describe('useRoute', () => {
   });
 
   test('does not fetch if fromLocked or toLocked is incomplete', () => {
-    renderHook(() => useRoute(null, mockTo, 0.5));
+    renderHook(() => useRoute(null, mockTo, 0.5, 'walk'));
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
   test('handles fetch error correctly', async () => {
     (global.fetch as jest.Mock).mockRejectedValue(new Error('Network request failed'));
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -135,9 +135,12 @@ describe('useRoute', () => {
         }),
       });
 
-    const { result, rerender } = renderHook(({ weight }) => useRoute(mockFrom, mockTo, weight), {
-      initialProps: { weight: 0.5 },
-    });
+    const { result, rerender } = renderHook(
+      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk'),
+      {
+        initialProps: { weight: 0.5 },
+      },
+    );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -166,9 +169,12 @@ describe('useRoute', () => {
       })
       .mockRejectedValueOnce(new Error('Partial fetch failed'));
 
-    const { result, rerender } = renderHook(({ weight }) => useRoute(mockFrom, mockTo, weight), {
-      initialProps: { weight: 0.5 },
-    });
+    const { result, rerender } = renderHook(
+      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk'),
+      {
+        initialProps: { weight: 0.5 },
+      },
+    );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     const initialRoutes = result.current.routes;
@@ -200,9 +206,12 @@ describe('useRoute', () => {
         }),
       });
 
-    const { result, rerender } = renderHook(({ from, to, weight }) => useRoute(from, to, weight), {
-      initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
-    });
+    const { result, rerender } = renderHook(
+      ({ from, to, weight }) => useRoute(from, to, weight, 'walk'),
+      {
+        initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
+      },
+    );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -229,7 +238,7 @@ describe('useRoute', () => {
       json: async () => ({}),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk'));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -257,9 +266,12 @@ describe('useRoute', () => {
         }),
       });
 
-    const { result, rerender } = renderHook(({ weight }) => useRoute(mockFrom, mockTo, weight), {
-      initialProps: { weight: 0.5 },
-    });
+    const { result, rerender } = renderHook(
+      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk'),
+      {
+        initialProps: { weight: 0.5 },
+      },
+    );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
