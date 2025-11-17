@@ -157,7 +157,7 @@ class EdgeEnricher:
             enriched["env_influence"]
 
         enriched["aqi"] = enriched["normalized_aqi"] * 500.0
- 
+
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained
         enriched = enriched.drop(columns=["raw_aqi"])
