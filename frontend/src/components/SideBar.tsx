@@ -8,8 +8,9 @@ import InputContainer from './InputContainer';
 import { useGeolocation } from '../hooks/useGeolocationState';
 import RouteInfoCard from './RouteInfoCard';
 import RouteSlider from './RouteSlider';
+import RouteModeSelector from './RouteModeSelector';
 import '../styles/SideBar.css';
-import { Area, Place, RouteSummary, AqiComparison } from '../types';
+import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -27,6 +28,8 @@ interface SideBarProps {
   children?: React.ReactNode;
   selectedRoute: string | null;
   onRouteSelect: (route: string) => void;
+  routeMode: RouteMode;
+  setRouteMode: (mode: RouteMode) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -57,6 +60,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
+  const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
+  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     onErrorChange?.(errorMessage);
@@ -244,6 +249,7 @@ const SideBar: React.FC<SideBarProps> = ({
       )}
 
       <div className='sidebar-content'>
+        <RouteModeSelector mode={routeMode} setMode={setRouteMode} loop={loop} setLoop={setLoop} />
         <h1 className='sidebar-title'>Where would you like to go?</h1>
 
         <div className='input-box'>
@@ -305,12 +311,13 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Best Air Quality'
-                time_estimate={summaries.best_aq.time_estimate}
+                time_estimates={summaries.best_aq.time_estimates}
                 total_length={summaries.best_aq.total_length}
                 aq_average={summaries.best_aq.aq_average}
                 comparisons={aqiDifferences?.best_aq}
                 isSelected={selectedRoute === 'best_aq'}
                 isExpanded={selectedRoute === 'best_aq'}
+                mode={routeMode}
               />
             </div>
 
@@ -321,12 +328,13 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Fastest Route'
-                time_estimate={summaries.fastest.time_estimate}
+                time_estimates={summaries.fastest.time_estimates}
                 total_length={summaries.fastest.total_length}
                 aq_average={summaries.fastest.aq_average}
                 comparisons={aqiDifferences?.fastest}
                 isSelected={selectedRoute === 'fastest'}
                 isExpanded={selectedRoute === 'fastest'}
+                mode={routeMode}
               />
             </div>
 
@@ -342,12 +350,13 @@ const SideBar: React.FC<SideBarProps> = ({
               ) : (
                 <RouteInfoCard
                   route_type='Your Route'
-                  time_estimate={summaries.balanced.time_estimate}
+                  time_estimates={summaries.balanced.time_estimates}
                   total_length={summaries.balanced.total_length}
                   aq_average={summaries.balanced.aq_average}
                   comparisons={aqiDifferences?.balanced}
                   isSelected={selectedRoute === 'balanced'}
                   isExpanded={selectedRoute === 'balanced'}
+                  mode={routeMode}
                 />
               )}
             </div>

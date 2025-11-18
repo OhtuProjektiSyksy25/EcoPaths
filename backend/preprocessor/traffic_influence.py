@@ -25,8 +25,6 @@ class TrafficInfluenceBuilder:
         self.drive_table = f"edges_{self.area}_driving"
 
         weights = INFLUENCE_WEIGHTS["traffic"]
-        self.lane_weight = weights["LANE_WEIGHT"]
-        self.speed_weight = weights["SPEED_WEIGHT"]
         self.base_influence = weights["BASE_INFLUENCE"]
         self.max_influence = weights["MAX_INFLUENCE"]
         self.highway_weights = weights["HIGHWAY_WEIGHTS"]
@@ -59,7 +57,7 @@ class TrafficInfluenceBuilder:
             FROM {self.drive_table}
             WHERE tile_id = '{tile_id}'
             AND highway IN ('{highway_filter}');
-            CREATE INDEX ON temp_drive_buffers USING GIST (buffer_geom);
+            CREATE INDEX IF NOT EXISTS idx_temp_drive_buffers_geom ON temp_drive_buffers USING GIST (buffer_geom);
         """)
 
     def compute_cumulative_influence_by_tile(self):
@@ -80,7 +78,7 @@ class TrafficInfluenceBuilder:
             UPDATE {self.walk_table} w
             SET traffic_influence = ROUND(
                 (1.0 + LEAST({self.max_influence}, COALESCE(
-                    LOG(1 + (
+                    LN(1 + (
                         SELECT SUM(
                             CASE
                                 WHEN ST_Distance(w.geometry, d.buffer_geom) <= 5 THEN
@@ -106,7 +104,7 @@ class TrafficInfluenceBuilder:
             """
             self.db.execute(query)
 
-    def summarize_influence_distribution(self):
+    def summarize_traffic_influence(self):
         """Prints summary of traffic influence values across walking edges."""
         result = self.db.execute(f"""
             SELECT
@@ -114,10 +112,16 @@ class TrafficInfluenceBuilder:
                 COUNT(*) FILTER (
                     WHERE traffic_influence > 1.0
                     AND traffic_influence < {self.max_influence + 1.0}
-                    ) AS partial,
+                ) AS partial,
                 COUNT(*) FILTER (WHERE traffic_influence = {self.max_influence + 1.0}) AS maxed
             FROM {self.walk_table};
         """)
         row = result.fetchone()
         print(
-            f"Traffic inluence. Untouched: {row[0]}, Partial: {row[1]}, Maxed: {row[2]}")
+            f"Traffic influence → Untouched: {row[0]}, Partial: {row[1]}, Maxed: {row[2]}"
+        )
+
+    def run(self):
+        """Run the traffic influence calculation pipeline."""
+        self.compute_cumulative_influence_by_tile()
+        self.summarize_traffic_influence()

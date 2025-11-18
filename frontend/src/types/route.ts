@@ -60,8 +60,11 @@ export interface UseRouteResult {
  */
 export interface RouteSummary {
   total_length: number;
-  time_estimate: string;
   aq_average: number;
+  time_estimates: {
+    walk: string;
+    run: string;
+  };
 }
 
 /**
@@ -72,3 +75,8 @@ export interface AqiComparison {
   percentage_difference: number | null;
   comparison_text: string;
 }
+
+/**
+ * Select route mode
+ */
+export type RouteMode = 'walk' | 'run';

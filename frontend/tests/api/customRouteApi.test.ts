@@ -30,8 +30,11 @@ const mockResponse: CustomRouteResponse = {
   },
   summary: {
     total_length: 1000,
-    time_estimate: '4 min',
     aq_average: 45,
+    time_estimates: {
+      walk: '4 min',
+      run: '2 min',
+    },
   },
 };
 
