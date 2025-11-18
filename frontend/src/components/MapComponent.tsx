@@ -14,6 +14,7 @@ import { LocationButton } from './LocationButton';
 import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import '../styles/MapComponent.css';
+import { isValidCoordsArray } from '../utils/coordsNormalizer';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -121,7 +122,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     elem.className = 'current-location-dot';
 
     // validate coords before using them (use `lon` field produced by geolocation)
-    const validLatLon = (c: any) => Number.isFinite(c?.lat) && Number.isFinite(c?.lon);
+    const validLatLon = (c: { lat: number; lon: number }): boolean =>
+      Number.isFinite(c?.lat) && Number.isFinite(c?.lon);
     if (!validLatLon(coords)) return;
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
@@ -176,15 +178,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (!mapRef.current) return;
     fromMarkerRef.current?.remove();
     toMarkerRef.current?.remove();
-    const validLngLatArray = (c: any) =>
-      Array.isArray(c) && c.length >= 2 && Number.isFinite(c[0]) && Number.isFinite(c[1]);
-
-    if (fromLocked?.geometry?.coordinates && validLngLatArray(fromLocked.geometry.coordinates)) {
+    if (fromLocked?.geometry?.coordinates && isValidCoordsArray(fromLocked.geometry.coordinates)) {
       fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(fromLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
-    if (toLocked?.geometry?.coordinates && validLngLatArray(toLocked.geometry.coordinates)) {
+    if (toLocked?.geometry?.coordinates && isValidCoordsArray(toLocked.geometry.coordinates)) {
       toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(toLocked.geometry.coordinates)
         .addTo(mapRef.current);
@@ -193,8 +192,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (
       fromLocked?.geometry?.coordinates &&
       toLocked?.geometry?.coordinates &&
-      validLngLatArray(fromLocked.geometry.coordinates) &&
-      validLngLatArray(toLocked.geometry.coordinates)
+      isValidCoordsArray(fromLocked.geometry.coordinates) &&
+      isValidCoordsArray(toLocked.geometry.coordinates)
     ) {
       const bounds = new mapboxgl.LngLatBounds()
         .extend(fromLocked.geometry.coordinates)
@@ -202,7 +201,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       mapRef.current.fitBounds(bounds, { padding: 110, duration: 1500 });
     } else if (
       fromLocked?.geometry?.coordinates &&
-      validLngLatArray(fromLocked.geometry.coordinates)
+      isValidCoordsArray(fromLocked.geometry.coordinates)
     ) {
       mapRef.current.flyTo({ center: fromLocked.geometry.coordinates, zoom: 15, duration: 1500 });
     }
