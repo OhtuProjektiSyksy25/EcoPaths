@@ -12,11 +12,7 @@ from services.redis_cache import RedisCache
 from services.redis_service import RedisService
 from utils.route_summary import summarize_route
 from utils.geo_transformer import GeoTransformer
-import matplotlib.pyplot as plt
-import copy
-import hashlib
-import json
-
+from utils.aqi_comparison_utils import calculate_aqi_difference
 
 
 class RouteServiceFactory:
@@ -386,4 +382,10 @@ class RouteService:
                 gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
             )
 
-        return {"routes": results, "summaries": summaries}
+        aqi_differences = calculate_aqi_difference(summaries)
+
+        return {
+            "routes": results,
+            "summaries": summaries,
+            "aqi_differences": aqi_differences
+        }

@@ -4,8 +4,12 @@ import gc
 import subprocess
 import signal
 import socket
+from pathlib import Path
 from invoke import task
 from backend.src.database.db_client import DatabaseClient
+from backend.preprocessor.osm_pipeline_runner import OSMPipelineRunner
+from dotenv import load_dotenv
+
 
 # ========================
 # Code formatting & linting
@@ -36,7 +40,14 @@ def format_frontend(c):
 def lint_frontend(c):
     """Run prettier check on frontend"""
     with c.cd("frontend"):
-        c.run("npm run check-format")
+        c.run("npm run lint")
+
+@task
+def typecheck_frontend(c):
+    """Run TypeScript compiler in type-check mode (no emit)"""
+    with c.cd("frontend"):
+        c.run("npx tsc --noEmit")
+    print("\n Type checking completed.")
 
 
 # ========================
@@ -67,6 +78,40 @@ def test_frontend(c):
         c.run("npm test -- --watchAll=false")
     print("Frontend coverage reports generated in coverage_reports/frontend/")
 
+@task
+def test_playwright(c, flush=False):
+    """
+    Run Playwright end-to-end tests.
+    Usage:
+        inv test-playwright [--flush]
+    Args:
+        flush (bool): If True, flush Redis cache before tests.
+    """
+    from pathlib import Path
+    e2e_path = Path("e2e/playwright")
+    print("Starting Playwright end-to-end tests...")
+
+    if flush:
+        print("Flushing cache...")
+        c.run("redis-cli flushdb", warn=True, hide=True)
+
+    with c.cd(str(e2e_path)):
+        if not (e2e_path / "node_modules").exists():
+            print("Installing E2E test dependencies (npm ci)...")
+            c.run("npm ci", hide="both")
+
+            print("Installing Playwright browsers (npx playwright install)...")
+            c.run("npx playwright install --with-deps", hide="both")
+
+        result = c.run("npx playwright test", warn=True, hide=False)
+
+    if result.ok:
+        print("E2E tests passed!")
+    else:
+        print("E2E tests failed!")
+        raise sys.exit(result.exited)
+
+
 # ========================
 # Utility tasks
 # ========================
@@ -95,7 +140,7 @@ def check_backend(c):
     """Run lint and unit tests with coverage"""
     print("Backend checked.")
 
-@task(pre=[lint_frontend, test_frontend])
+@task(pre=[typecheck_frontend, lint_frontend, test_frontend])
 def check_frontend(c):
     """Run lint and tests for frontend"""
     print("Frontend checked")
@@ -145,10 +190,17 @@ def is_container_running(name):
 
 
 @task
-def run_all(c):
+def run_all(c, test_mode=False):
     """Run both backend, frontend, Redis and database in development mode"""
     db_user = os.getenv("DB_USER_TEST", "pathplanner")
     db_name = os.getenv("DB_NAME_TEST", "ecopaths_test")
+    
+    if test_mode:
+        os.environ["ENV"] = "test"
+        os.environ["TEST_MODE"] = "True"
+        load_dotenv('.env.test', override=True)
+    else:
+        load_dotenv('.env', override=True)
 
     print("Starting full development environment...")
     print("Backend: http://127.0.0.1:8000")
@@ -210,101 +262,46 @@ Includes commands to:
 Usage:
     inv reset-and-populate-area --area=berlin
     inv create-all-tables --area=berlin --network-type=walking
-    inv fill-area-tables --area=berlin --network-type=walking --overwrite-edges
 """
 
 @task
 def reset_and_populate_area(c, area: str):
     """
     Reset and repopulate all tables for a given area.
-    Runs driving and walking networks separately to avoid memory accumulation.
+    Runs grid, green, driving and walking networks.
     """
-    network_types = ["driving", "walking"]
+    print(f"\n[AREA] Resetting tables for area '{area}'")
+    reset_grid_and_green(c, area)
+    create_grid_and_green_tables(c, area)
 
-    print(f"\n[AREA] Resetting grid and tables for area '{area}'")
-    reset_grid(c, area)
+    for network_type in ["driving", "walking"]:
+        reset_area(c, area, network_type)
+        create_network_tables(c, area, network_type)
 
-    for i, network_type in enumerate(network_types):
-        print(f"\n[NETWORK] Starting network '{network_type}'\n")
 
-        subprocess.run([
-            sys.executable, "-m", "invoke",
-            "reset-area", "--area", area, "--network-type", network_type
-        ], check=True)
-
-        subprocess.run([
-            sys.executable, "-m", "invoke",
-            "create-all-tables", "--area", area, "--network-type", network_type
-        ], check=True)
-
-        subprocess.run([
-            sys.executable, "-m", "invoke",
-            "fill-area-tables", "--area", area,
-            "--network-type", network_type,
-            "--overwrite-edges",
-            *(["--overwrite-grid"] if i == 0 else [])
-        ], check=True)
-
-        gc.collect()
-        print(f"[NETWORK] Completed network '{network_type}'\n")
+    runner = OSMPipelineRunner(area)
+    runner.run()
 
 
 @task
-def create_all_tables(c, area: str, network_type: str):
+def create_grid_and_green_tables(c, area: str):
     """
-    Create all ORM-defined tables for a specific area and network type.
+    Create grid and green tables for a specific area.
     """
     db = DatabaseClient()
-    db.create_tables_for_area(area, network_type)
-    print(f"[DB] Tables ensured for area '{area}' ({network_type})")
+    db.create_grid_table(area)
+    db.create_green_table(area)
+    print(f"[DB] Grid and green tables ensured for area '{area}'")
 
 
 @task
-def fill_area_tables(c, area: str, network_type: str, overwrite_edges=False, overwrite_grid=False):
+def create_network_tables(c, area: str, network_type: str):
     """
-    Populate grid and edge tables for a specific area and network type.
-    Prints summarized output of actions performed.
-    """
-    from backend.preprocessor.osm_preprocessor import OSMPreprocessor
-    from backend.src.config.settings import get_settings
-    from backend.src.utils.grid import Grid
-
-    print(f"\n[DB] Starting database population for area '{area}', network '{network_type}'")
-    
-    db_client = DatabaseClient()
-    grid_table = f"grid_{area.lower()}"
-    edge_table = f"edges_{area.lower()}_{network_type.lower()}"
-
-    if not db_client.table_exists(edge_table):
-        raise RuntimeError(f"[ERROR] Edge table '{edge_table}' does not exist. Run 'create-all-tables' first.")
-
-    # GRID
-    grid = Grid(get_settings(area).area)
-    grid_gdf = grid.create_grid()
-    grid_action = "Skipped"
-    if not db_client.table_exists(grid_table) or overwrite_grid:
-        db_client.save_grid(grid_gdf, area=area, if_exists="replace" if overwrite_grid else "fail")
-        grid_action = "Created"
-
-    # EDGES
-    edges_action = "Skipped"
-    if not db_client.table_exists(edge_table) or overwrite_edges:
-        preprocessor = OSMPreprocessor(area=area, network_type=network_type)
-        preprocessor.extract_edges()
-        edges_action = "Created"
-
-    print(f"[GRID] Table: {grid_action}")
-    print(f"[EDGES] Table: {edges_action}")
-    print(f"[DB] Database population complete for area '{area}', network '{network_type}'\n")
-
-@task
-def drop_table(c, table_name: str):
-    """
-    Drop a specific table from the database.
+    Create edge and node tables for a specific area and network type.
     """
     db = DatabaseClient()
-    db.drop_table(table_name)
-
+    db.create_network_tables(area, network_type)
+    print(f"[DB] Network tables ensured for area '{area}' ({network_type})")
 
 @task
 def reset_area(c, area: str, network_type: str):
@@ -318,7 +315,7 @@ def reset_area(c, area: str, network_type: str):
 
     tables = [
         f"edges_{area.lower()}_{network_type.lower()}",
-        f"nodes_{area.lower()}_{network_type.lower()}"
+        f"nodes_{area.lower()}_{network_type.lower()}",
     ]
 
     dropped_tables = []
@@ -334,29 +331,23 @@ def reset_area(c, area: str, network_type: str):
 
 
 @task
-def reset_grid(c, area: str):
+def reset_grid_and_green(c, area: str):
     """
-    Drop grid table and its index for a given area, summarized output.
+    Drop grid and green tables for a given area.
     """
-    from backend.src.database.db_client import DatabaseClient
     db = DatabaseClient()
 
     grid_table = f"grid_{area.lower()}"
-    grid_index = f"idx_{grid_table}_geometry"
+    green_table = f"green_{area.lower()}"
 
     dropped_items = []
 
-    if db.table_exists(grid_table):
-        db.drop_table(grid_table)
-        dropped_items.append(grid_table)
-
-    try:
-        db.execute(f"DROP INDEX IF EXISTS {grid_index};")
-        dropped_items.append(grid_index)
-    except Exception as e:
-        print(f"Warning: failed to drop index {grid_index}: {e}")
+    for table in [grid_table, green_table]:
+        if db.table_exists(table):
+            db.drop_table(table)
+            dropped_items.append(table)
 
     if dropped_items:
-        print(f"Dropped items: {', '.join(dropped_items)}")
+        print(f"[DB] Dropped tables: {', '.join(dropped_items)}")
     else:
-        print(f"No grid table or index existed for area '{area}'")
+        print(f"[DB] No grid or green tables existed for area '{area}'")

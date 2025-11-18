@@ -3,54 +3,56 @@
   view route summaries, and adjust route preferences via a slider.
 */
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import InputContainer from "./InputContainer";
-import { useGeolocation } from "../hooks/useGeolocationState";
-import RouteInfoCard from "./RouteInfoCard";
-import RouteSlider from "./RouteSlider";
-import "../styles/SideBar.css";
-import { RouteSummary } from "@/types/route";
-import { Area } from "../types";
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import InputContainer from './InputContainer';
+import { useGeolocation } from '../hooks/useGeolocationState';
+import RouteInfoCard from './RouteInfoCard';
+import RouteSlider from './RouteSlider';
+import RouteModeSelector from './RouteModeSelector';
+import '../styles/SideBar.css';
+import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 
 interface SideBarProps {
-  onFromSelect: (place: any) => void;
-  onToSelect: (place: any) => void;
+  onFromSelect: (place: Place) => void;
+  onToSelect: (place: Place) => void;
   summaries: Record<string, RouteSummary> | null;
+  aqiDifferences?: Record<string, Record<string, AqiComparison>> | null;
   showAQIColors: boolean;
   setShowAQIColors: (value: boolean) => void;
   selectedArea: Area | null;
-  onErrorChange?: (error: string | null) => void; 
+  onErrorChange?: (error: string | null) => void;
   balancedWeight: number;
   setBalancedWeight: (weight: number) => void;
   loading?: boolean;
   balancedLoading?: boolean;
   children?: React.ReactNode;
+  selectedRoute: string | null;
+  onRouteSelect: (route: string) => void;
+  routeMode: RouteMode;
+  setRouteMode: (mode: RouteMode) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
-  
   onFromSelect,
- 
   onToSelect,
- 
   summaries,
- 
+  aqiDifferences = null,
   showAQIColors,
   setShowAQIColors,
   selectedArea,
   onErrorChange,
- 
   balancedWeight,
   setBalancedWeight,
   loading = false,
   balancedLoading = false,
-  children
-
+  children,
+  selectedRoute,
+  onRouteSelect,
 }) => {
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
-  const [fromSuggestions, setFromSuggestions] = useState<any[]>([]);
-  const [toSuggestions, setToSuggestions] = useState<any[]>([]);
+  const [from, setFrom] = useState<string>('');
+  const [to, setTo] = useState<string>('');
+  const [fromSuggestions, setFromSuggestions] = useState<Place[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<Place[]>([]);
   const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false);
   const [waitingForLocation, setWaitingForLocation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -58,6 +60,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
+  const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
+  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     onErrorChange?.(errorMessage);
@@ -68,25 +72,27 @@ const SideBar: React.FC<SideBarProps> = ({
       if (selectedArea && selectedArea.bbox) {
         const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
         const isInside =
-          coordinates.lng >= minLon &&
-          coordinates.lng <= maxLon &&
+          coordinates.lon >= minLon &&
+          coordinates.lon <= maxLon &&
           coordinates.lat >= minLat &&
           coordinates.lat <= maxLat;
 
         if (!isInside) {
-          setErrorMessage(`Your location is outside ${selectedArea.display_name}. Please select a location within the area.`);
-          setFrom("");
+          setErrorMessage(
+            `Your location is outside ${selectedArea.display_name}. Please select a location within the area.`,
+          );
+          setFrom('');
           setWaitingForLocation(false);
           return;
         }
       }
-      const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
-      const mockPlace = {
+      const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lon.toFixed(6)}`;
+      const mockPlace: Place = {
         full_address: coordsString,
-        center: [coordinates.lng, coordinates.lat],
+        center: [coordinates.lon, coordinates.lat],
         place_name: `Your Location (${coordsString})`,
-        properties: { name: "Your Location" },
-        geometry: { coordinates: [coordinates.lng, coordinates.lat] }
+        properties: { name: 'Your Location' },
+        geometry: { coordinates: [coordinates.lon, coordinates.lat] },
       };
 
       setFrom(coordsString);
@@ -94,7 +100,7 @@ const SideBar: React.FC<SideBarProps> = ({
       setShowFromCurrentLocation(false);
       setWaitingForLocation(false);
     }
-  }, [coordinates, waitingForLocation, onFromSelect]);
+  }, [coordinates, waitingForLocation, onFromSelect, selectedArea]);
 
   const handleCurrentLocationSelect = useCallback(async () => {
     try {
@@ -106,48 +112,50 @@ const SideBar: React.FC<SideBarProps> = ({
         if (selectedArea && selectedArea.bbox) {
           const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
           const isInside =
-            coordinates.lng >= minLon &&
-            coordinates.lng <= maxLon &&
+            coordinates.lon >= minLon &&
+            coordinates.lon <= maxLon &&
             coordinates.lat >= minLat &&
             coordinates.lat <= maxLat;
 
           if (!isInside) {
             setErrorMessage(`Your location is outside ${selectedArea.display_name}.`);
-            setFrom("");
+            setFrom('');
             setWaitingForLocation(false);
             return;
           }
         }
 
-        const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
-        const mockPlace = {
+        const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lon.toFixed(6)}`;
+        const mockPlace: Place = {
           full_address: coordsString,
-          center: [coordinates.lng, coordinates.lat],
+          center: [coordinates.lon, coordinates.lat],
           place_name: `Your Location (${coordsString})`,
-          properties: { name: "Your Location" },
-          geometry: { coordinates: [coordinates.lng, coordinates.lat] }
+          properties: { name: 'Your Location' },
+          geometry: { coordinates: [coordinates.lon, coordinates.lat] },
         };
 
         setFrom(coordsString);
         onFromSelect(mockPlace);
       }
+      setShowFromCurrentLocation(false);
+      setWaitingForLocation(false);
     } catch (error) {
-      console.log("Error getting current location:", error);
+      console.log('Error getting current location:', error);
       setWaitingForLocation(false);
     }
   }, [coordinates, getCurrentLocation, onFromSelect, selectedArea]);
 
-  const handleFromFocus = () => {
+  const handleFromFocus = (): void => {
     setShowFromCurrentLocation(true);
   };
 
-  const handleFromBlur = () => {
+  const handleFromBlur = (): void => {
     setTimeout(() => {
       setShowFromCurrentLocation(false);
     }, 200);
   };
 
-  const HandleFromChange = async (value: string) => {
+  const HandleFromChange = async (value: string): Promise<void> => {
     setFrom(value);
     setShowFromCurrentLocation(false);
 
@@ -164,7 +172,9 @@ const SideBar: React.FC<SideBarProps> = ({
         return;
       }
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`);
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`,
+        );
         if (!response.ok) {
           throw new Error(`server error: ${response.status}`);
         }
@@ -176,7 +186,7 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 400);
   };
 
-  const HandleToChange = async (value: string) => {
+  const HandleToChange = async (value: string): Promise<void> => {
     setTo(value);
 
     if (toInputSelected.current) {
@@ -192,7 +202,9 @@ const SideBar: React.FC<SideBarProps> = ({
         return;
       }
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`);
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`,
+        );
         if (!response.ok) {
           throw new Error(`server error: ${response.status}`);
         }
@@ -207,28 +219,28 @@ const SideBar: React.FC<SideBarProps> = ({
   useEffect(() => {
     // Clear inputs when area changes
     if (selectedArea) {
-      setFrom("");
-      setTo("");
+      setFrom('');
+      setTo('');
       setFromSuggestions([]);
       setToSuggestions([]);
       setErrorMessage(null);
     }
-  }, [selectedArea?.id]);
+  }, [selectedArea]);
 
   useEffect(() => {
     // Notify parent when error changes (to disable area button)
     onErrorChange?.(errorMessage);
-  }, [errorMessage, onErrorChange]);
+  }, [errorMessage, onErrorChange, selectedArea]);
 
   return (
-    <div className="sidebar">
-            {errorMessage && (
-        <div className="error-popup-overlay" onClick={() => setErrorMessage(null)}>
-          <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="error-popup-content">
+    <div className='sidebar'>
+      {errorMessage && (
+        <div className='error-popup-overlay' onClick={() => setErrorMessage(null)}>
+          <div className='error-popup-modal' onClick={(e) => e.stopPropagation()}>
+            <div className='error-popup-content'>
               <h3>Location Error</h3>
               <p>{errorMessage}</p>
-              <button className="error-popup-button" onClick={() => setErrorMessage(null)}>
+              <button className='error-popup-button' onClick={() => setErrorMessage(null)}>
                 OK
               </button>
             </div>
@@ -236,25 +248,28 @@ const SideBar: React.FC<SideBarProps> = ({
         </div>
       )}
 
-      <div className="sidebar-content">
-        <h1 className="sidebar-title">Where would you like to go?</h1>
+      <div className='sidebar-content'>
+        <RouteModeSelector mode={routeMode} setMode={setRouteMode} loop={loop} setLoop={setLoop} />
+        <h1 className='sidebar-title'>Where would you like to go?</h1>
 
-        <div className="input-box">
+        <div className='input-box'>
           <InputContainer
-            placeholder="Start location"
+            placeholder='Start location'
             value={from}
             onChange={HandleFromChange}
             suggestions={
               /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
                 ? []
-                : (showFromCurrentLocation && !from
-                  ? [{
-                      full_address: "Use my current location",
-                      place_name: "Your Location",
-                      properties: { name: "Your Location", isCurrentLocation: true },
-                      geometry: { coordinates: [0, 0] }
-                    }]
-                  : fromSuggestions)
+                : showFromCurrentLocation && !from
+                  ? [
+                      {
+                        full_address: 'Use my current location',
+                        place_name: 'Your Location',
+                        properties: { name: 'Your Location', isCurrentLocation: true },
+                        geometry: { coordinates: [0, 0] },
+                      },
+                    ]
+                  : fromSuggestions
             }
             onSelect={(place) => {
               setShowFromCurrentLocation(false);
@@ -270,11 +285,11 @@ const SideBar: React.FC<SideBarProps> = ({
           />
         </div>
 
-        <div className="divider"/>
+        <div className='divider' />
 
-        <div className="input-box">
+        <div className='input-box'>
           <InputContainer
-            placeholder="Destination"
+            placeholder='Destination'
             value={to}
             onChange={HandleToChange}
             suggestions={toSuggestions}
@@ -289,35 +304,59 @@ const SideBar: React.FC<SideBarProps> = ({
 
         {summaries && !children && (
           <>
-            <div className="best-aq-container">
+            <div
+              className='best-aq-container route-container'
+              onClick={() => onRouteSelect('best_aq')}
+              onMouseDown={(e) => e.preventDefault()}
+            >
               <RouteInfoCard
-                route_type="Best Air Quality"
-                time_estimate={summaries.best_aq.time_estimate}
+                route_type='Best Air Quality'
+                time_estimates={summaries.best_aq.time_estimates}
                 total_length={summaries.best_aq.total_length}
                 aq_average={summaries.best_aq.aq_average}
+                comparisons={aqiDifferences?.best_aq}
+                isSelected={selectedRoute === 'best_aq'}
+                isExpanded={selectedRoute === 'best_aq'}
+                mode={routeMode}
               />
             </div>
 
-            <div className="fastest-route-container">
+            <div
+              className='fastest-route-container route-container'
+              onClick={() => onRouteSelect('fastest')}
+              onMouseDown={(e) => e.preventDefault()}
+            >
               <RouteInfoCard
-                route_type="Fastest Route"
-                time_estimate={summaries.fastest.time_estimate}
+                route_type='Fastest Route'
+                time_estimates={summaries.fastest.time_estimates}
                 total_length={summaries.fastest.total_length}
                 aq_average={summaries.fastest.aq_average}
+                comparisons={aqiDifferences?.fastest}
+                isSelected={selectedRoute === 'fastest'}
+                isExpanded={selectedRoute === 'fastest'}
+                mode={routeMode}
               />
             </div>
 
-            <div className="balanced-route-container">
+            <div
+              className='balanced-route-container route-container'
+              onClick={() => onRouteSelect('balanced')}
+              onMouseDown={(e) => e.preventDefault()}
+            >
               {balancedLoading ? (
-                <div className="route-loading-overlay">
+                <div className='route-loading-overlay'>
                   <h4>Getting route...</h4>
                 </div>
               ) : (
                 <RouteInfoCard
-                  route_type="Your Route"
-                  time_estimate={summaries.balanced.time_estimate}
+                  route_type='Your Route'
+                  time_estimates={summaries.balanced.time_estimates}
                   total_length={summaries.balanced.total_length}
                   aq_average={summaries.balanced.aq_average}
+                  comparisons={aqiDifferences?.balanced}
+                  isSelected={selectedRoute === 'balanced'}
+                  isExpanded={selectedRoute === 'balanced'}
+                  mode={routeMode}
                 />
               )}
             </div>
@@ -327,11 +366,11 @@ const SideBar: React.FC<SideBarProps> = ({
               disabled={loading || balancedLoading}
             />
 
-          <div className="aqi-toggle-button">
-            <button onClick={() => setShowAQIColors(!showAQIColors)}>
-              {showAQIColors ? "Hide air quality on map" : "Show air quality on map"}
-            </button>
-          </div>
+            <div className='aqi-toggle-button'>
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? 'Hide air quality on map' : 'Show air quality on map'}
+              </button>
+            </div>
           </>
         )}
       </div>

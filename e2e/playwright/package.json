@@ -1,0 +1,13 @@
+{
+  "name": "ecopaths-e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "TEST_MODE=True npx playwright test",
+    "test:e2e:headed": "TEST_MODE=True npx playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^24.9.1"
+  }
+}
