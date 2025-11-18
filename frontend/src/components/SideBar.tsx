@@ -97,12 +97,12 @@ const SideBar: React.FC<SideBarProps> = ({
     }
   }, [coordinates, waitingForLocation, onFromSelect, selectedArea]);
 
-  const handleCurrentLocationSelect = useCallback(async () => {
+  const handleCurrentLocationSelect = useCallback(() => {
     try {
       setWaitingForLocation(true);
-
       if (!coordinates) {
-        await getCurrentLocation();
+        // getCurrentLocation uses callbacks and does not return a Promise, so don't await it
+        getCurrentLocation();
       } else {
         if (selectedArea && selectedArea.bbox) {
           const [minLon, minLat, maxLon, maxLat] = selectedArea.bbox;
@@ -131,11 +131,10 @@ const SideBar: React.FC<SideBarProps> = ({
 
         setFrom(coordsString);
         onFromSelect(mockPlace);
+        setShowFromCurrentLocation(false);
+        setWaitingForLocation(false);
       }
-      setShowFromCurrentLocation(false);
-      setWaitingForLocation(false);
     } catch (error) {
-      console.log('Error getting current location:', error);
       setWaitingForLocation(false);
     }
   }, [coordinates, getCurrentLocation, onFromSelect, selectedArea]);

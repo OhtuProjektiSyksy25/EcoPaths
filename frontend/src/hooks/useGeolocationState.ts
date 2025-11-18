@@ -37,13 +37,12 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+        console.log('[useGeolocation] got position', coords);
         setState({
           loading: false,
           error: null,
-          coordinates: {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          },
+          coordinates: coords,
         });
       },
       (error) => {
@@ -52,6 +51,7 @@ export const useGeolocation = (): UseGeolocationReturn => {
             ? 'Location access denied. Please enable location in your browser.'
             : error.message;
 
+        console.warn('[useGeolocation] error getting position', errorMessage);
         setState((prev) => ({
           ...prev,
           loading: false,

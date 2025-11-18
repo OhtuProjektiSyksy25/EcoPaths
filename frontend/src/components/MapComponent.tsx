@@ -71,16 +71,24 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   /*  Handle user location */
   const handleLocationFound = (coords: { lat: number; lon: number }): void => {
-    if (!mapRef.current || userUsedLocationRef.current) return;
+    console.log('[MapComponent] handleLocationFound called with', coords);
+    if (!mapRef.current) {
+      console.warn('[MapComponent] no mapRef available');
+      return;
+    }
+    if (userUsedLocationRef.current) {
+      console.log('[MapComponent] userAlreadyUsedLocation, ignoring');
+      return;
+    }
     userUsedLocationRef.current = true;
     locationMarkerRef.current?.remove();
 
-    const elem = document.createElement("div");
-    elem.className = "current-location-dot";
+    const elem = document.createElement('div');
+    elem.className = 'current-location-dot';
 
-    // validate coords before using them
-    const validLatLng = (c: any) => Number.isFinite(c?.lat) && Number.isFinite(c?.lng);
-    if (!validLatLng(coords)) return;
+    // validate coords before using them (use `lon` field produced by geolocation)
+    const validLatLon = (c: any) => Number.isFinite(c?.lat) && Number.isFinite(c?.lon);
+    if (!validLatLon(coords)) return;
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
       .setLngLat([coords.lon, coords.lat])
@@ -138,12 +146,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
       Array.isArray(c) && c.length >= 2 && Number.isFinite(c[0]) && Number.isFinite(c[1]);
 
     if (fromLocked?.geometry?.coordinates && validLngLatArray(fromLocked.geometry.coordinates)) {
-      fromMarkerRef.current = new mapboxgl.Marker({ color: "red" })
+      fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(fromLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
     if (toLocked?.geometry?.coordinates && validLngLatArray(toLocked.geometry.coordinates)) {
-      toMarkerRef.current = new mapboxgl.Marker({ color: "red" })
+      toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(toLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
@@ -158,7 +166,10 @@ const MapComponent: React.FC<MapComponentProps> = ({
         .extend(fromLocked.geometry.coordinates)
         .extend(toLocked.geometry.coordinates);
       mapRef.current.fitBounds(bounds, { padding: 110, duration: 1500 });
-    } else if (fromLocked?.geometry?.coordinates && validLngLatArray(fromLocked.geometry.coordinates)) {
+    } else if (
+      fromLocked?.geometry?.coordinates &&
+      validLngLatArray(fromLocked.geometry.coordinates)
+    ) {
       mapRef.current.flyTo({ center: fromLocked.geometry.coordinates, zoom: 15, duration: 1500 });
     }
   }, [fromLocked, toLocked]);

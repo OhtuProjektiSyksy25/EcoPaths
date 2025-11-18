@@ -1,8 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { LockedLocation, RouteGeoJSON, RouteSummary } from "../types/route";
-import { normalizeCoords } from "../utils/coordsNormalizer";
-
-
+import { useState, useEffect, useRef } from 'react';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
+import { normalizeCoords } from '../utils/coordsNormalizer';
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -77,7 +75,7 @@ export const useRoute = (
       const normalizedTo = normalizeCoords(toLocked?.geometry);
 
       if (!normalizedFrom || !normalizedTo) {
-        const msg = "Invalid start or end geometry - cannot request route";
+        const msg = 'Invalid start or end geometry - cannot request route';
         console.warn(msg, { from: fromLocked?.geometry, to: toLocked?.geometry });
         setError(msg);
         setLoading(false);
@@ -95,13 +93,13 @@ export const useRoute = (
             type: 'FeatureCollection',
             features: [
               {
-                type: "Feature",
-                properties: { role: "start" },
+                type: 'Feature',
+                properties: { role: 'start' },
                 geometry: normalizedFrom,
               },
               {
-                type: "Feature",
-                properties: { role: "end" },
+                type: 'Feature',
+                properties: { role: 'end' },
                 geometry: normalizedTo,
               },
             ],
@@ -110,7 +108,7 @@ export const useRoute = (
         });
         if (!response.ok) {
           // Attempt to include server message if available
-          let bodyText = "";
+          let bodyText = '';
           try {
             const json = await response.json();
             bodyText = json && json.error ? ` - ${json.error}` : ` - ${JSON.stringify(json)}`;
