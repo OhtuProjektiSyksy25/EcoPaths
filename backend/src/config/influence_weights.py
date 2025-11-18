@@ -26,20 +26,20 @@ INFLUENCE_WEIGHTS = {
         }
     },
     "green": {
-        "BASE_BENEFIT": 0.15,
+        "BASE_BENEFIT": 0.08,
         "MAX_BENEFIT": 0.9,
         "GREEN_WEIGHTS": {
-            "forest": 0.3,
+            "forest": 0.25,
             "wood": 0.25,
-            "meadow": 0.2,
-            "park": 0.2,
+            "meadow": 0.15,
+            "park": 0.15,
             "garden": 0.15,
-            "allotments": 0.2,
+            "allotments": 0.15,
             "grass": 0.1,
             "recreation_ground": 0.15,
-            "nature_reserve": 0.3,
+            "nature_reserve": 0.25,
             "playground": 0.1,
-            "tree": 0.05
+            "tree": 0.02
         }
     }
 }

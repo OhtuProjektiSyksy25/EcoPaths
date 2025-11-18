@@ -87,6 +87,9 @@ class OSMPreprocessor:
         if "green_type" not in batch.columns:
             batch["green_type"] = batch.apply(self.detect_green_type, axis=1)
 
+        if "tile_id" not in batch.columns:
+            batch["tile_id"] = None
+
         required_columns = ["geometry", "green_type", "tile_id"]
         return self.filter_required_columns(batch, required_columns)
 

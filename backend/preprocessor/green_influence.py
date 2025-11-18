@@ -82,9 +82,9 @@ class GreenInfluenceBuilder:
                             CASE
                                 WHEN ST_Distance(w.geometry, g.buffer_geom) <= 3 THEN
                                     {self.base_benefit} + {green_case_sql}
-                                WHEN ST_Distance(w.geometry, g.buffer_geom) <= 10 THEN
+                                WHEN ST_Distance(w.geometry, g.buffer_geom) <= 6 THEN
                                     ({self.base_benefit} *
-                                    (1 - (ST_Distance(w.geometry, g.buffer_geom) - 3)/7))
+                                    (1 - (ST_Distance(w.geometry, g.buffer_geom) - 3)/3))
                                     + {green_case_sql}
                                 ELSE 0
                             END
@@ -111,7 +111,7 @@ class GreenInfluenceBuilder:
                     WHERE green_influence < 1.0
                     AND green_influence > 0.0
                 ) AS partial,
-                COUNT(*) FILTER (WHERE green_influence = 0.0) AS maxed
+                COUNT(*) FILTER (WHERE green_influence = 0.1) AS maxed
             FROM {self.walk_table};
         """)
         row = result.fetchone()
