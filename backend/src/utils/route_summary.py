@@ -6,14 +6,21 @@ including total distance, average air quality, and estimated walking time.
 import geopandas as gpd
 import pandas as pd
 
+SPEEDS = {
+    "walk": 1.4,   # ~5 km/h
+    "run": 3.0     # ~10.8 km/h
+}
 
-def format_walk_time(length_m: float) -> str:
+
+def format_travel_time(length_m: float, mode: str = "walk") -> str:
     """
-    Formats estimated walking time based on distance in meters.
-    Assumes an average walking speed of 1.4 meters per second.
+    Formats estimated travel time based on distance in meters and mode.
+    Modes: 'walk' or 'run'.
+
 
     Args:
         length_m (float): Distance in meters.
+        mode (str): Travel mode ('walk' or 'run').
 
     Returns:
         str: Formatted time estimate (e.g., "1h 5 min" or "15 min").
@@ -21,7 +28,7 @@ def format_walk_time(length_m: float) -> str:
     if length_m is None or pd.isna(length_m):
         return "unknown"
 
-    avg_speed_mps = 1.4
+    avg_speed_mps = SPEEDS.get(mode, SPEEDS["walk"])
     seconds = length_m / avg_speed_mps
 
     hours = int(seconds // 3600)
@@ -83,6 +90,9 @@ def summarize_route(route: gpd.GeoDataFrame) -> dict:
 
     return {
         "total_length": round(length_m / 1000, 2),
-        "time_estimate": format_walk_time(length_m),
+        "time_estimates": {
+            "walk": format_travel_time(length_m, mode="walk"),
+            "run": format_travel_time(length_m, mode="run"),
+        },
         "aq_average": round(aq_avg, 0) if aq_avg is not None else None,
     }

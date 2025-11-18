@@ -60,8 +60,11 @@ export interface UseRouteResult {
  */
 export interface RouteSummary {
   total_length: number;
-  time_estimate: string;
   aq_average: number;
+  time_estimates: {
+    walk: string;
+    run: string;
+  };
 }
 
 /**

@@ -50,13 +50,19 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
 const mockSummaries: Record<string, RouteSummary> = {
   fastest: {
     total_length: 1200,
-    time_estimate: '5 min',
     aq_average: 42,
+    time_estimates: {
+      walk: '5 min',
+      run: '2 min',
+    },
   },
   balanced: {
     total_length: 1300,
-    time_estimate: '6 min',
     aq_average: 38,
+    time_estimates: {
+      walk: '6 min',
+      run: '3 min',
+    },
   },
 };
 

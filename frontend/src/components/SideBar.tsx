@@ -311,12 +311,13 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Best Air Quality'
-                time_estimate={summaries.best_aq.time_estimate}
+                time_estimates={summaries.best_aq.time_estimates}
                 total_length={summaries.best_aq.total_length}
                 aq_average={summaries.best_aq.aq_average}
                 comparisons={aqiDifferences?.best_aq}
                 isSelected={selectedRoute === 'best_aq'}
                 isExpanded={selectedRoute === 'best_aq'}
+                mode={routeMode}
               />
             </div>
 
@@ -327,12 +328,13 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Fastest Route'
-                time_estimate={summaries.fastest.time_estimate}
+                time_estimates={summaries.fastest.time_estimates}
                 total_length={summaries.fastest.total_length}
                 aq_average={summaries.fastest.aq_average}
                 comparisons={aqiDifferences?.fastest}
                 isSelected={selectedRoute === 'fastest'}
                 isExpanded={selectedRoute === 'fastest'}
+                mode={routeMode}
               />
             </div>
 
@@ -348,12 +350,13 @@ const SideBar: React.FC<SideBarProps> = ({
               ) : (
                 <RouteInfoCard
                   route_type='Your Route'
-                  time_estimate={summaries.balanced.time_estimate}
+                  time_estimates={summaries.balanced.time_estimates}
                   total_length={summaries.balanced.total_length}
                   aq_average={summaries.balanced.aq_average}
                   comparisons={aqiDifferences?.balanced}
                   isSelected={selectedRoute === 'balanced'}
                   isExpanded={selectedRoute === 'balanced'}
+                  mode={routeMode}
                 />
               )}
             </div>
