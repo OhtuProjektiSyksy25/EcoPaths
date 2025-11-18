@@ -8,11 +8,11 @@ import { cilWalk, cilRunning, cilLoop } from '@coreui/icons';
 interface Props {
   mode: RouteMode;
   setMode: (mode: RouteMode) => void;
-  roundtrip: boolean;
-  setRoundtrip: (value: boolean) => void;
+  loop: boolean;
+  setLoop: (value: boolean) => void;
 }
 
-export const RouteModeSelector: React.FC<Props> = ({ mode, setMode, roundtrip, setRoundtrip }) => {
+export const RouteModeSelector: React.FC<Props> = ({ mode, setMode, loop, setLoop }) => {
   return (
     <div className='route-mode-selector'>
       <button
@@ -30,9 +30,9 @@ export const RouteModeSelector: React.FC<Props> = ({ mode, setMode, roundtrip, s
         <CIcon icon={cilRunning} style={{ width: '30px', height: '30px' }} />
       </button>
       <button
-        className={`icon-button ${roundtrip ? 'active' : ''}`}
-        onClick={() => setRoundtrip(!roundtrip)}
-        title='Roundtrip'
+        className={`icon-button ${loop ? 'active' : ''} loop-button`}
+        onClick={() => setLoop(!loop)}
+        title='Loop'
       >
         <CIcon icon={cilLoop} style={{ width: '30px', height: '30px' }} />
       </button>

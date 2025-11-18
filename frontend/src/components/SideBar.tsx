@@ -61,7 +61,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
   const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
-  const [roundtrip, setRoundtrip] = useState(false);
+  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     onErrorChange?.(errorMessage);
@@ -249,12 +249,7 @@ const SideBar: React.FC<SideBarProps> = ({
       )}
 
       <div className='sidebar-content'>
-        <RouteModeSelector
-          mode={routeMode}
-          setMode={setRouteMode}
-          roundtrip={roundtrip}
-          setRoundtrip={setRoundtrip}
-        />
+        <RouteModeSelector mode={routeMode} setMode={setRouteMode} loop={loop} setLoop={setLoop} />
         <h1 className='sidebar-title'>Where would you like to go?</h1>
 
         <div className='input-box'>

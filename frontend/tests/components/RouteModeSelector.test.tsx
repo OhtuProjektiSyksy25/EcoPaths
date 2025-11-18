@@ -8,14 +8,14 @@ describe('RouteModeSelector', () => {
       <RouteModeSelector
         mode={'walk' as RouteMode}
         setMode={jest.fn()}
-        roundtrip={false}
-        setRoundtrip={jest.fn()}
+        loop={false}
+        setLoop={jest.fn()}
       />,
     );
 
     expect(screen.getByTitle('Walk')).toBeInTheDocument();
     expect(screen.getByTitle('Run')).toBeInTheDocument();
-    expect(screen.getByTitle('Roundtrip')).toBeInTheDocument();
+    expect(screen.getByTitle('Loop')).toBeInTheDocument();
   });
 
   it('applies active class to walk button when mode is walk', () => {
@@ -23,8 +23,8 @@ describe('RouteModeSelector', () => {
       <RouteModeSelector
         mode={'walk' as RouteMode}
         setMode={jest.fn()}
-        roundtrip={false}
-        setRoundtrip={jest.fn()}
+        loop={false}
+        setLoop={jest.fn()}
       />,
     );
 
@@ -38,8 +38,8 @@ describe('RouteModeSelector', () => {
       <RouteModeSelector
         mode={'walk' as RouteMode}
         setMode={setModeMock}
-        roundtrip={false}
-        setRoundtrip={jest.fn()}
+        loop={false}
+        setLoop={jest.fn()}
       />,
     );
 
@@ -47,32 +47,32 @@ describe('RouteModeSelector', () => {
     expect(setModeMock).toHaveBeenCalledWith('run');
   });
 
-  it('toggles roundtrip when roundtrip button is clicked', () => {
-    const setRoundtripMock = jest.fn();
+  it('toggles loop when loop button is clicked', () => {
+    const setLoopMock = jest.fn();
     render(
       <RouteModeSelector
         mode={'walk' as RouteMode}
         setMode={jest.fn()}
-        roundtrip={false}
-        setRoundtrip={setRoundtripMock}
+        loop={false}
+        setLoop={setLoopMock}
       />,
     );
 
-    fireEvent.click(screen.getByTitle('Roundtrip'));
-    expect(setRoundtripMock).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByTitle('Loop'));
+    expect(setLoopMock).toHaveBeenCalledWith(true);
   });
 
-  it('applies active class to roundtrip button when roundtrip is true', () => {
+  it('applies active class to loop button when loop is true', () => {
     render(
       <RouteModeSelector
         mode={'walk' as RouteMode}
         setMode={jest.fn()}
-        roundtrip={true}
-        setRoundtrip={jest.fn()}
+        loop={true}
+        setLoop={jest.fn()}
       />,
     );
 
-    const roundtripButton = screen.getByTitle('Roundtrip');
-    expect(roundtripButton).toHaveClass('active');
+    const LoopButton = screen.getByTitle('Loop');
+    expect(LoopButton).toHaveClass('active');
   });
 });

@@ -26,6 +26,7 @@
   background-color: #e8f7ec;
   border-color: #2e7d32;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: scale(1.05);
 }
 
 .icon-button.active {
@@ -34,4 +35,16 @@
   color: #fff;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(102, 187, 106, 0.4);
+}
+
+.route-mode-selector .loop-button {
+  margin-left: 20px;
+}
+
+.icon-button.loop-button.active {
+  background-color: #337036;
+  border-color: #2e7d32;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102, 187, 106, 0.5);
 }
