@@ -47,6 +47,21 @@ describe('RouteModeSelector', () => {
     expect(setModeMock).toHaveBeenCalledWith('run');
   });
 
+  it('calls setMode with "walk" when walk button is clicked', () => {
+    const setModeMock = jest.fn();
+    render(
+      <RouteModeSelector
+        mode={'run' as RouteMode}
+        setMode={setModeMock}
+        loop={false}
+        setLoop={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle('Walk'));
+    expect(setModeMock).toHaveBeenCalledWith('walk');
+  });
+
   it('toggles loop when loop button is clicked', () => {
     const setLoopMock = jest.fn();
     render(
