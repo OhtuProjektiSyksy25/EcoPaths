@@ -2,15 +2,15 @@
 Root component for the React application. 
 It renders the header and the MapComponent.
 */
-import { useState } from "react";
-import MapComponent from "./components/MapComponent";
-import SideBar from "./components/SideBar";
-import AreaSelector from "./components/AreaSelector";
-import { useRoute } from "./hooks/useRoute";
-import { LockedLocation, Area } from "./types";
-import logo from "./assets/images/ecopaths_logo_no_text.jpg";
-import "./styles/App.css";
-import { Globe } from "lucide-react";
+import { useState } from 'react';
+import MapComponent from './components/MapComponent';
+import SideBar from './components/SideBar';
+import AreaSelector from './components/AreaSelector';
+import { useRoute } from './hooks/useRoute';
+import { LockedLocation, Area } from './types';
+import logo from './assets/images/ecopaths_logo_no_text.jpg';
+import './styles/App.css';
+import { Globe } from 'lucide-react';
 
 /**
  * Root component of the EcoPaths React application.
@@ -37,52 +37,58 @@ function App(): JSX.Element {
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
 
-  const { routes, summaries, loading, balancedLoading, error } = useRoute(
-    fromLocked, 
-    toLocked, 
-    balancedWeight
+  // Route selection state for highlighting routes
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+
+  const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
+    fromLocked,
+    toLocked,
+    balancedWeight,
   );
 
   // Handle area selection
-  const handleAreaSelect = (area: Area) => {
+  const handleAreaSelect = (area: Area): void => {
     setSelectedArea(area);
     setShowAreaSelector(false);
 
     // Clear routes when changing area
     setFromLocked(null);
     setToLocked(null);
+    setSelectedRoute(null);
   };
 
   // Handle changing area from dropdown
-  const handleChangeArea = () => {
+  const handleChangeArea = (): void => {
     // Clear locked locations FIRST (this clears routes & DisplayContainers)
     setFromLocked(null);
     setToLocked(null);
-    
+    setSelectedRoute(null);
+
     // Then show area selector
     setShowAreaSelector(true);
   };
 
+  // Handle route selection
+  const handleRouteSelect = (route: string): void => {
+    setSelectedRoute(route === selectedRoute ? null : route);
+  };
 
   return (
-    <div className="App">
-      {showAreaSelector && (
-        <AreaSelector onAreaSelect={handleAreaSelect} />
-      )}
+    <div className='App'>
+      {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
 
-      <header className="header">
-        <div className="header-content">
-          <img src={logo} alt="EcoPaths Logo" className="app-logo" />
-          <h1 className="title">EcoPaths</h1>
+      <header className='header'>
+        <div className='header-content'>
+          <img src={logo} alt='EcoPaths Logo' className='app-logo' />
+          <h1 className='title'>EcoPaths</h1>
         </div>
         {selectedArea && !showAreaSelector && (
-          <div className="area-dropdown-container">
+          <div className='area-dropdown-container'>
             <button
-              className="area-dropdown-button"
+              className='area-dropdown-button'
               onClick={handleChangeArea}
               disabled={!!locationError}
             >
-            
               <Globe size={25} />
               {selectedArea.display_name}
             </button>
@@ -90,11 +96,12 @@ function App(): JSX.Element {
         )}
       </header>
 
-      <main className="main-container">
+      <main className='main-container'>
         <SideBar
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
           summaries={summaries}
+          aqiDifferences={aqiDifferences}
           showAQIColors={showAQIColors}
           setShowAQIColors={setShowAQIColors}
           selectedArea={selectedArea}
@@ -103,22 +110,25 @@ function App(): JSX.Element {
           setBalancedWeight={setBalancedWeight}
           loading={loading}
           balancedLoading={balancedLoading}
+          selectedRoute={selectedRoute}
+          onRouteSelect={handleRouteSelect}
         >
           {(loading || error) && (
-            <div className="route-loading-message">
+            <div className='route-loading-message'>
               {loading && <p>Loading routes...</p>}
-              {error && <p className="error">{error}</p>}
+              {error && <p className='error'>{error}</p>}
             </div>
           )}
         </SideBar>
 
-        <div className="map-container">
+        <div className='map-container'>
           <MapComponent
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
-            showAQIColors={showAQIColors} 
+            showAQIColors={showAQIColors}
             selectedArea={selectedArea}
+            selectedRoute={selectedRoute}
           />
         </div>
       </main>
