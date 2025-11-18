@@ -3,7 +3,7 @@ Service that computes routes and returns them as GeoJSON LineStrings.
 """
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString, Polygon, shape, mapping, Point
 from config.settings import AreaConfig, get_settings
 from core.route_algorithm import RouteAlgorithm
 from core.edge_enricher import EdgeEnricher
@@ -13,6 +13,10 @@ from services.redis_service import RedisService
 from utils.route_summary import summarize_route
 from utils.geo_transformer import GeoTransformer
 import matplotlib.pyplot as plt
+import copy
+import hashlib
+import json
+
 
 
 class RouteServiceFactory:
@@ -121,17 +125,26 @@ class RouteService:
         summaries["balanced"] = summary
         return {"routes": results, "summaries": summaries}
 
-    def get_round_trip(self, origin_gdf, distance = 1000):
-        center_tile_buffer = self._create_buffer(origin_gdf, origin_gdf, 1)
-        center_tile = self.db_client.get_tile_ids_by_buffer(self.area, center_tile_buffer)
 
-        if len(center_tile) > 1:
-            center_tile = center_tile[0]
+    def get_round_trip(self, origin_gdf, distance = 2000):
+        """
+            Computes a round-trip route starting and ending at `origin_gdf`.
 
-        max_distance = (distance / 2) + 300
+            The method selects candidate points on the outermost tiles, calculates
+            routes to each, ranks them by air quality, and returns the full route
+            with the best air quality.
+
+            Args:
+                origin_gdf (GeoDataFrame): Starting point for the round trip.
+                distance (float, optional): Approximate total distance of the trip. Defaults to 2000.
+
+            Returns:
+                dict: Full round-trip route and summary under the key "balanced"
+        """
+
+        max_distance = distance / 3
         buffer = self._create_buffer(origin_gdf, origin_gdf, max_distance)
         tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
-        print(tile_ids)
         outer_tiles = self._get_outermost_tiles(tile_ids)
 
         # Get edges for relevant tiles (Redis + enrich new tiles if needed)
@@ -140,75 +153,116 @@ class RouteService:
         nodes = self._get_nodes_from_db(tile_ids)
         if edges is None or edges.empty:
             raise RuntimeError("No edges found for requested route area.")
-        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+        #edges = edges[edges.geometry.intersects(buffer)].copy()  #Should work now, didnt have time to test
 
-        best_edges_by_outer_tiles = self.extract_best_aq_edge_from_tile(edges_subset,outer_tiles)
-        self.current_route_algorithm = RouteAlgorithm(edges_subset, nodes)
+        best_edges_by_outer_tiles = self.extract_best_aq_point_from_tile(edges, outer_tiles)
+
         all_gdf = []
 
-
         for idx in best_edges_by_outer_tiles.index:
-            single_gdf = best_edges_by_outer_tiles.loc[[idx]]  # note the double brackets, keeps it as GeoDataFrame
-            gdf = self.current_route_algorithm.calculate_round_trip(
-                origin_gdf, single_gdf, balance_factor=0)
-            all_gdf.append(gdf)
-            print("HEP")
+            edges_x = edges.copy()
+            nodes_x = nodes.copy()
+
+            current_route_algorithm = RouteAlgorithm(edges_x, nodes_x)
+            for e in current_route_algorithm.igraph.es:
+                if 'length_m' not in e.attributes():
+                    print("Missing length_m:", e.tuple)
+            single_gdf = best_edges_by_outer_tiles.loc[[idx]]
+            try:
+                gdf, epath = current_route_algorithm.calculate_round_trip(
+                    origin_gdf, single_gdf, current_route_algorithm.igraph, balance_factor=0.15)
+            except Exception as exc:
+                print(f"first part of round trip failed for candidate: {exc}")
+                continue
+
+            data_entry = {}
+            data_entry["destination"] = single_gdf
+            data_entry["route"] = gdf
+            data_entry["summary"] = summarize_route(gdf)
+            epath_gdf_ids = []
+
+            for eid in epath:
+                if 0 <= eid < current_route_algorithm.igraph.ecount():
+                    epath_gdf_ids.append(current_route_algorithm.igraph.es[eid]["gdf_edge_id"])
+            data_entry["epath_gdf_ids"] = epath_gdf_ids
+            all_gdf.append(data_entry)
+
+        all_gdf.sort(key=lambda x: x["summary"]["aq_average"])
+
+        for candidate in all_gdf:
+            try:
+                full_route = self.get_round_trip_back(origin_gdf, edges, nodes, candidate)
+                print(full_route["summaries"]["balanced"])
+                return full_route
+            except Exception as exc:
+                print(f"round trip back failed for: {exc}")
+                continue
+        return full_route
+
+
+    def get_round_trip_back(self, destination, edges, nodes, first_path_data):
+        """
+            Compute the return trip from "destination" back to the original origin.
+
+            Args:
+                destination (GeoDataFrame): Destination point for the return leg.
+                edges (GeoDataFrame): Edges for the routing graph.
+                nodes (GeoDataFrame): Nodes for the routing graph.
+                first_path_data (dict): Data from the first leg, including:
+                                        origin, route, and previous edge IDs.
+
+            Returns:
+                dict: Routes and summaries for the full round-trip under key ..
+        """
+        current_route_algorithm = RouteAlgorithm(edges, nodes)
+        origin = first_path_data["destination"]
+        prev_gdf_ids = first_path_data.get("epath_gdf_ids", None)
+        gdf, _ = current_route_algorithm.calculate_round_trip(
+            destination, origin, current_route_algorithm.igraph,
+            balance_factor=0.15, reverse=True, previous_edges=prev_gdf_ids)
+
+        combined_gdf = pd.concat([first_path_data["route"], gdf], ignore_index=True)
+        full_path = GeoTransformer.gdf_to_feature_collection(
+            combined_gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
+        )
+        results, summaries = {}, {}
+        results["balanced"] = full_path
+        summaries["balanced"] = summarize_route(combined_gdf)
+        return {"routes": results, "summaries": summaries} #FIX BALANCED
 
 
 
-        x = GeoTransformer.gdf_to_feature_collection(
-                gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
-            )
-        return {"routes": x, "summaries": None}
+        
+    def extract_best_aq_point_from_tile(self,edges, tile_ids) -> gpd.GeoDataFrame:
+        """Extracts the best air quality point for each tile in tile_ids.
+           edge_id is also used for sorting to make extracting determenistic
+           gets point by getting the start of linestring coordinates of edge.
+           
 
+        Args:
+            edges (gpd.GeoDataFrame): GeoDataFrame containing edge geometries 
+                                      with columns, tile_id, aqi, edge_id
+                                      and geometry (LineString).
+            tile_ids (list): List of tile identifiers to consider.
 
-    def extract_best_aq_edge_from_tile(self,edges_subset, tile_ids) -> gpd.GeoDataFrame:
-        edges_subset = edges_subset[edges_subset['tile_id'].isin(tile_ids)]
-
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame containing a single Point per tile,
+            representing the start point of the edge with the best air quality.
+        """
+        edges = edges[edges['tile_id'].isin(tile_ids)]
         best_edges = (
-            edges_subset.sort_values("aqi")
+            edges.sort_values(["aqi", "edge_id"], ascending=[True, True])
             .groupby("tile_id", as_index=False)
             .first()
         )
-        points_gdf = gpd.GeoDataFrame(
-            geometry=best_edges['geometry'].apply(lambda line: line.interpolate(0.5, normalized=True)),
-            crs=edges_subset.crs
-        )
+        all_gdfs = []
+        for _, row in best_edges.iterrows():
+            geometry = row['geometry']
+            first_point = Point(geometry.coords[0]) 
+            gdf = gpd.GeoDataFrame(geometry=[shape(first_point)], crs=edges.crs)
+            all_gdfs.append(gdf)
+        return pd.concat(all_gdfs, ignore_index=True)
 
-        return points_gdf
-
-
-# tEMP debuggin PRINTING TEMP DELETE DELTE
-    def parse_tiles(self, tiles):
-        
-        return [(int(t.split('_')[0][1:]), int(t.split('_')[1][1:])) for t in tiles]
-
-    def temp_plot(self, tile_ids,origin_gdf):
-        center_tile_buffer = self._create_buffer(origin_gdf, origin_gdf, 1)
-        center_tile = self.db_client.get_tile_ids_by_buffer(self.area, center_tile_buffer)
-
-        x = self._get_outermost_tiles(tile_ids)
-
-        all_coords = self.parse_tiles(tile_ids)
-        outer_coords = self.parse_tiles(x)
-        center_coords = self.parse_tiles(center_tile)  # parse_tiles expects a list
-
-        # Plot
-        plt.figure(figsize=(8,8))
-        all_rows, all_cols = zip(*all_coords)
-        outer_rows, outer_cols = zip(*outer_coords)
-        center_row, center_col = zip(*center_coords)
-
-
-        plt.scatter(all_cols, all_rows, color='lightblue', label='All tiles', s=200)
-        plt.scatter(outer_cols, outer_rows, color='red', label='Outer tiles', s=200)
-        plt.scatter(center_col, center_row, color='green', label='Center tile', s=200)
-
-        plt.gca().invert_yaxis()  # Optional: match typical grid orientation
-        plt.grid(True)
-        plt.legend()
-        plt.show()
-# END OF TEMP DELET EDEBUGGING PRINT OK
 
     def _create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """
@@ -229,9 +283,8 @@ class RouteService:
         origin_point = origin_gdf.geometry.iloc[0]
         destinaion_point = destination_gdf.geometry.iloc[0]
 
-        #if origin_point == destinaion_point:
-
-        #    return origin_point.buffer(buffer_m)
+        if origin_point == destinaion_point:
+            return origin_point.buffer(buffer_m)
         
         line = LineString([
             origin_point,
@@ -326,7 +379,7 @@ class RouteService:
 
         for mode, balance_factor in modes.items():
             gdf = self.current_route_algorithm.calculate_path(
-                origin_gdf, destination_gdf, balance_factor=balance_factor)
+                origin_gdf, destination_gdf, graph=None, balance_factor=balance_factor)
             gdf["mode"] = mode
             summaries[mode] = summarize_route(gdf)
             results[mode] = GeoTransformer.gdf_to_feature_collection(
@@ -334,19 +387,3 @@ class RouteService:
             )
 
         return {"routes": results, "summaries": summaries}
-
-    def _compute_roundtrip(self, edges, nodes, origin_gdf, distance):
-        results, summaries = {}, {}
-        self.current_route_algorithm = RouteAlgorithm(edges, nodes)
-
-        gdf = self.current_route_algorithm.calculate_round_trip(
-                origin_gdf, distance)
-
-        # "balanced" needs to be changed TEMPORARY FIX
-
-        results["balanced"] = GeoTransformer.gdf_to_feature_collection(
-                gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
-            )
-        summaries["balanced"] = summarize_route(gdf)
-        
-        return {"routes":gdf, "summaries": summaries}
