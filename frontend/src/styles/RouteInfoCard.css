@@ -13,7 +13,7 @@
 .route_type {
   display: flex;
   flex-direction: row;
-  font-size: 15px;
+  font-size: 16px;
   color: #61896f;
   font-weight: 300;
 }
@@ -31,10 +31,16 @@
 .additional-info {
   display: flex;
   flex-direction: row;
-  font-size: 15px;
+  font-size: 18px;
   color: #61896f;
   font-weight: 300;
-  gap: 8px;
+  gap: 16px;
+}
+
+.route-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 .route-comparisons {
