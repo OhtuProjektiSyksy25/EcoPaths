@@ -76,10 +76,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
       console.warn('[MapComponent] no mapRef available');
       return;
     }
-    if (userUsedLocationRef.current) {
-      console.log('[MapComponent] userAlreadyUsedLocation, ignoring');
-      return;
-    }
     userUsedLocationRef.current = true;
     locationMarkerRef.current?.remove();
 
