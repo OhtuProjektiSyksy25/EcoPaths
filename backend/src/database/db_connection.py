@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from config.settings import DatabaseConfig
+from src.logging.logger import log
 
 # ENVIRONMENT SETUP
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -16,9 +17,11 @@ dotenv_path = BASE_DIR / ".env"
 
 if dotenv_path.exists():
     load_dotenv(dotenv_path)
-    print(f".env loaded from {dotenv_path}")
+    log.debug(
+        f".env loaded from {dotenv_path}", path=str(dotenv_path))
 else:
-    print(f"WARNING: .env not found at {dotenv_path}")
+    log.warning(
+        f".env not found at {dotenv_path}", path=str(dotenv_path))
 
 
 # DECLARATIVE BASE (SQLAlchemy 2.x)

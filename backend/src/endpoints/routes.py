@@ -7,6 +7,7 @@ import time
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from utils.geo_transformer import GeoTransformer
+from src.logging.logger import log
 
 router = APIRouter()
 
@@ -75,6 +76,7 @@ async def getroute(request: Request):
         origin_gdf, destination_gdf, balanced_weight)
 
     duration = time.time() - start_time
-    print(f"/getroute took {duration:.3f} seconds")
+    log.debug(
+        f"/getroute took {duration:.3f} seconds", duration=duration)
 
     return JSONResponse(content=response)

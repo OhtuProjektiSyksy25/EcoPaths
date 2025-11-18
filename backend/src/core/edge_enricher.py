@@ -2,6 +2,7 @@
 
 import geopandas as gpd
 from config.settings import AreaConfig
+from src.logging.logger import log
 from services.google_api_service import GoogleAPIService
 from database.db_client import DatabaseClient
 
@@ -43,7 +44,8 @@ class EdgeEnricher:
         Returns:
             GeoDataFrame: Road network edges enriched with AQ data (if available).
         """
-        print(f"EdgeEnricher: Enriching {len(tile_ids)} tiles")
+        log.debug(
+            f"Enriching {len(tile_ids)} tiles", tile_count=len(tile_ids))
         # Load edges and AQ data for the tiles
         self.edges_gdf = self.load_edges_from_db(tile_ids, network_type)
         self.aq_gdf = self.load_aq_tiles(tile_ids)
@@ -82,7 +84,9 @@ class EdgeEnricher:
             "to_node",
             "env_influence"
         ]
-        print(f"Loading edges from '{table_name}' for tiles: {tile_ids}...")
+        log.debug(
+            f"Loading edges from '{table_name}' for tiles: {tile_ids}...",
+            table=table_name, tile_count=len(tile_ids))
 
         return self.db_client.load_edges_for_tiles(
             area=self.area,
@@ -107,7 +111,8 @@ class EdgeEnricher:
         )
 
         if aq_gdf.empty:
-            print("No AQ data from API. Returning edges without enrichment.")
+            log.warning(
+                "No AQ data from API. Returning edges without enrichment.")
             return gpd.GeoDataFrame(
                 columns=["tile_id", "raw_aqi", "geometry"],
                 crs=self.edges_gdf.crs
@@ -136,14 +141,17 @@ class EdgeEnricher:
             GeoDataFrame: Enriched edges with AQ values.
         """
         if aq.empty:
-            print("AQ data empty. Returning original edges.")
+            log.warning(
+                "AQ data empty. Returning original edges.")
             return edges
 
         if "tile_id" not in aq.columns or "raw_aqi" not in aq.columns:
-            print("AQ data missing required columns. Returning original edges.")
+            log.warning(
+                "AQ data missing required columns. Returning original edges.")
             return edges
 
-        print("Merging AQ data by tile_id.")
+        log.info(
+            "Merging AQ data by tile_id.")
         enriched = edges.merge(
             aq[["tile_id", "raw_aqi"]],
             on="tile_id",
@@ -169,5 +177,6 @@ class EdgeEnricher:
         # only derived values are retained
         enriched = enriched.drop(columns=["raw_aqi"])
 
-        print("Enrichment complete.")
+        log.info(
+            "Enrichment complete.")
         return enriched

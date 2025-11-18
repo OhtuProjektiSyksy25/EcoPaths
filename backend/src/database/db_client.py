@@ -7,6 +7,7 @@ and saving GeoDataFrames to PostGIS using SQLAlchemy and GeoPandas.
 
 import geopandas as gpd
 from sqlalchemy import text
+from src.logging.logger import log
 from config.columns import BASE_COLUMNS
 from database.db_connection import get_engine, get_session, Base
 from database.db_models import (
@@ -67,8 +68,9 @@ class DatabaseClient:
 
         self._create_indexes(area_name, network_type)
 
-        print(
-            f"Database tables ensured for area '{area_name}' ({network_type})")
+        log.debug(
+            f"Database tables ensured for area '{area_name}' ({network_type})",
+            area=area_name, network_type=network_type)
 
     def _create_indexes(self, area: str, network_type: str):
         """
@@ -159,7 +161,8 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"  Saved {len(gdf)} edges to table '{table_name}'")
+        log.debug(
+            "Saved edges to table", table=table_name, count=len(gdf))
 
     def save_grid(self, gdf: gpd.GeoDataFrame, area: str, if_exists="fail"):
         """
@@ -181,7 +184,8 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"  Saved {len(gdf)} tiles to table '{table_name}'")
+        log.debug(
+            "Saved edges to table", table=table_name, count=len(gdf))
 
     def save_nodes(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -204,7 +208,8 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"  Saved {len(gdf)} nodes to table '{table_name}'")
+        log.debug(
+            "Saved edges to table", table=table_name, count=len(gdf))
 
     def load_edges(self, area: str, network_type: str) -> gpd.GeoDataFrame:
         """
@@ -219,7 +224,8 @@ class DatabaseClient:
         """
         table_name = f"edges_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
-        print(f"Loading all edges from table: {table_name}")
+        log.debug(
+            "Loading all edges from table", table=table_name)
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
@@ -243,7 +249,8 @@ class DatabaseClient:
         """
         table_name = f"grid_{area.lower()}"
         query = f"SELECT * FROM {table_name}"
-        print(f"Loading grid from table: {table_name}")
+        log.debug(
+            "Loading grid from table:", table=table_name)
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
@@ -265,7 +272,8 @@ class DatabaseClient:
         table_name = f"nodes_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
         gdf = gpd.read_postgis(query, con=self.engine, geom_col="geometry")
-        print(f"Loaded {len(gdf)} nodes from table '{table_name}'")
+        log.debug(
+            "Loaded edges from table", table=table_name, count=len(gdf))
         return gdf
 
     def load_edges_for_tiles(
@@ -305,7 +313,8 @@ class DatabaseClient:
             query += " WHERE tile_id = ANY(%(tile_ids)s)"
             params["tile_ids"] = tile_ids
 
-        print(f"Executing query: {query}")
+        log.debug(
+            f"Excecuting query {query}", query=query)
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry", params=params)
         except Exception as e:
@@ -401,4 +410,5 @@ class DatabaseClient:
         with self.engine.begin() as conn:
             full_name = f"{schema}.{table_name}"
             conn.execute(text(f"DROP TABLE IF EXISTS {full_name} CASCADE;"))
-            print(f"Dropped table '{full_name}'")
+            log.debug(
+                "Dropped table", table=full_name)
