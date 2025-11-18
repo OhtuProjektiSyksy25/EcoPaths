@@ -15,7 +15,7 @@ export interface LockedLocation {
  * Includes optional route type and any additional metadata.
  */
 export interface RouteFeatureProperties {
-  route_type?: 'fastest' | 'best_aq' | 'balanced';
+  route_type?: 'fastest' | 'best_aq' | 'balanced' | 'loop';
   [key: string]: string | number | boolean | Array<string | number | boolean> | undefined; // allow extra metadata
 }
 
@@ -39,10 +39,7 @@ export interface RouteFeature {
 /**
  * A GeoJSON FeatureCollection representing a complete route.
  */
-export interface RouteGeoJSON {
-  type: 'FeatureCollection';
-  features: RouteFeature[];
-}
+export type RouteGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>;
 
 /**
  * Return type for the `useRoute` hook.

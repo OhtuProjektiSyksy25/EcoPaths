@@ -3,7 +3,7 @@ import { useDrawRoutes } from '../../src/hooks/useDrawRoutes';
 import { FeatureCollection } from 'geojson';
 import mapboxgl from 'mapbox-gl';
 
-function createMockRoute(type: 'fastest' | 'balanced' | 'best_aq'): FeatureCollection {
+function createMockRoute(type: 'fastest' | 'balanced' | 'best_aq' | 'loop'): FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: [
@@ -14,6 +14,8 @@ function createMockRoute(type: 'fastest' | 'balanced' | 'best_aq'): FeatureColle
           coordinates: [
             [0, 0],
             [1, 1],
+            [2, 0],
+            [0, 0], // suljettu neliö
           ],
         },
         properties: {
@@ -28,6 +30,7 @@ const mockRoutes = {
   fastest: createMockRoute('fastest'),
   balanced: createMockRoute('balanced'),
   best_aq: createMockRoute('best_aq'),
+  loop: createMockRoute('loop'),
 };
 
 describe('useDrawRoutes hook', () => {
@@ -38,10 +41,25 @@ describe('useDrawRoutes hook', () => {
     jest.clearAllMocks();
   });
 
-  test('adds sources and layers for all route modes', () => {
+  test('adds sources and layers for all route modes including loop', () => {
     renderHook(() => useDrawRoutes(map, mockRoutes, false));
-    expect(map.addSource).toHaveBeenCalledTimes(3);
-    expect(map.addLayer).toHaveBeenCalledTimes(4);
+    // nyt pitäisi olla 4 sourcea ja 5 layeria (balanced halo + 4 varsinaista)
+    expect(map.addSource).toHaveBeenCalledTimes(4);
+    expect(map.addLayer).toHaveBeenCalledTimes(5);
+    // loop‑layer mukana
+    expect(map.addSource).toHaveBeenCalledWith(
+      'route-loop',
+      expect.objectContaining({ type: 'geojson' }),
+    );
+    expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'route-loop' }));
+  });
+
+  test('fits bounds when loop route is drawn', () => {
+    renderHook(() => useDrawRoutes(map, mockRoutes, false));
+    expect(map.fitBounds).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ padding: 40, duration: 1500 }),
+    );
   });
 
   test('removes existing layers and sources before drawing', () => {

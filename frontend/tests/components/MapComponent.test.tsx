@@ -42,6 +42,9 @@ describe('MapComponent', () => {
         showAQIColors={false}
         selectedArea={null}
         selectedRoute={null}
+        loopRoutes={null}
+        showLoopOnly={false}
+        loop={false}
       />,
     );
 
@@ -59,6 +62,9 @@ describe('MapComponent', () => {
         showAQIColors={false}
         selectedArea={null}
         selectedRoute={null}
+        loopRoutes={null}
+        showLoopOnly={false}
+        loop={false}
       />,
     );
 
@@ -76,6 +82,9 @@ describe('MapComponent', () => {
         showAQIColors={false}
         selectedArea={null}
         selectedRoute={null}
+        loopRoutes={null}
+        showLoopOnly={false}
+        loop={false}
       />,
     );
 
@@ -95,6 +104,9 @@ describe('MapComponent', () => {
         showAQIColors={false}
         selectedArea={null}
         selectedRoute={null}
+        loopRoutes={null}
+        showLoopOnly={false}
+        loop={false}
       />,
     );
 
@@ -111,6 +123,9 @@ describe('MapComponent', () => {
         showAQIColors={false}
         selectedArea={null}
         selectedRoute={null}
+        loopRoutes={null}
+        showLoopOnly={false}
+        loop={false}
       />,
     );
 
@@ -127,6 +142,9 @@ describe('MapComponent', () => {
         showAQIColors={false}
         selectedArea={null}
         selectedRoute={null}
+        loopRoutes={null}
+        showLoopOnly={false}
+        loop={false}
       />,
     );
 

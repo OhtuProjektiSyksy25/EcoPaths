@@ -10,9 +10,18 @@ interface Props {
   setMode: (mode: RouteMode) => void;
   loop: boolean;
   setLoop: (value: boolean) => void;
+  showLoopOnly: boolean;
+  setShowLoopOnly: (value: boolean) => void;
 }
 
-export const RouteModeSelector: React.FC<Props> = ({ mode, setMode, loop, setLoop }) => {
+export const RouteModeSelector: React.FC<Props> = ({
+  mode,
+  setMode,
+  loop,
+  setLoop,
+  showLoopOnly,
+  setShowLoopOnly,
+}) => {
   return (
     <div className='route-mode-selector'>
       <button
@@ -31,7 +40,10 @@ export const RouteModeSelector: React.FC<Props> = ({ mode, setMode, loop, setLoo
       </button>
       <button
         className={`icon-button ${loop ? 'active' : ''} loop-button`}
-        onClick={() => setLoop(!loop)}
+        onClick={() => {
+          setLoop(!loop);
+          setShowLoopOnly(!showLoopOnly); // toggle näkyvyys
+        }}
         title='Loop'
       >
         <CIcon icon={cilLoop} style={{ width: '30px', height: '30px' }} />
