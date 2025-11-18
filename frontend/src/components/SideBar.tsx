@@ -260,6 +260,7 @@ const SideBar: React.FC<SideBarProps> = ({
       }
     } catch (error) {
       setWaitingForLocation(false);
+      console.log('Error getting current location:', error);
     }
   }, [coordinates, getCurrentLocation, onFromSelect, selectedArea]);
 

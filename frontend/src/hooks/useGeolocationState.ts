@@ -37,12 +37,13 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
-        console.log('[useGeolocation] got position', coords);
         setState({
           loading: false,
           error: null,
-          coordinates: coords,
+          coordinates: {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          },
         });
       },
       (error) => {
