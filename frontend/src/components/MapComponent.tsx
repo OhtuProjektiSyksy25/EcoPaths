@@ -19,9 +19,12 @@ interface MapComponentProps {
   fromLocked: LockedLocation | null;
   toLocked: LockedLocation | null;
   routes: Record<string, RouteGeoJSON> | null;
+  loopRoutes: Record<string, RouteGeoJSON> | null;
   showAQIColors: boolean;
   selectedArea: Area | null;
   selectedRoute: string | null;
+  showLoopOnly: boolean;
+  loop: boolean;
 }
 
 export const updateWaterLayers = (map: mapboxgl.Map): void => {
@@ -47,9 +50,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
+  loopRoutes,
   showAQIColors,
   selectedArea,
   selectedRoute,
+  showLoopOnly,
+  loop,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -59,14 +65,25 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
+  const combinedRoutes: Record<string, RouteGeoJSON> = {
+    ...(routes || {}),
+    ...(loopRoutes || {}),
+  };
 
-  /*  Draw routes and highlight area hooks */
+  let visibleRoutes = combinedRoutes;
+  if (showLoopOnly) {
+    visibleRoutes = loopRoutes || {};
+  } else if (loop) {
+    visibleRoutes = routes || {};
+  }
+
   useDrawRoutes(
     mapRef.current,
-    routes as Record<string, GeoJSON.FeatureCollection>,
+    visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
     selectedRoute,
   );
+
   useHighlightChosenArea(mapRef.current, selectedArea);
 
   /*  Handle user location */

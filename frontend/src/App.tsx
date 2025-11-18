@@ -7,6 +7,7 @@ import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
+import { useLoopRoute } from './hooks/useLoopRoute';
 import { LockedLocation, Area } from './types';
 import logo from './assets/images/ecopaths_logo_no_text.jpg';
 import './styles/App.css';
@@ -41,12 +42,21 @@ function App(): JSX.Element {
   // Route selection state for highlighting routes
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
 
+  const [loop, setLoop] = useState(false);
+  const [loopDistance, setLoopDistance] = useState<number>(0);
+  const [showLoopOnly, setShowLoopOnly] = useState(false);
+
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
     toLocked,
     balancedWeight,
-    routeMode,
   );
+
+  const {
+    routes: loopRoutes,
+    summaries: loopSummaries,
+    loading: loopLoading,
+  } = useLoopRoute(fromLocked, loopDistance, loop);
 
   // Handle area selection
   const handleAreaSelect = (area: Area): void => {
@@ -116,6 +126,14 @@ function App(): JSX.Element {
           onRouteSelect={handleRouteSelect}
           routeMode={routeMode}
           setRouteMode={setRouteMode}
+          loop={loop}
+          setLoop={setLoop}
+          loopDistance={loopDistance}
+          setLoopDistance={setLoopDistance}
+          loopSummaries={loopSummaries}
+          loopLoading={loopLoading}
+          showLoopOnly={showLoopOnly}
+          setShowLoopOnly={setShowLoopOnly}
         >
           {(loading || error) && (
             <div className='route-loading-message'>
@@ -130,9 +148,12 @@ function App(): JSX.Element {
             fromLocked={fromLocked}
             toLocked={toLocked}
             routes={routes}
+            loopRoutes={loopRoutes}
             showAQIColors={showAQIColors}
             selectedArea={selectedArea}
             selectedRoute={selectedRoute}
+            showLoopOnly={showLoopOnly} // 🔽 uusi
+            loop={loop}
           />
         </div>
       </main>

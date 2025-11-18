@@ -78,3 +78,70 @@ async def getroute(request: Request):
     print(f"/getroute took {duration:.3f} seconds")
 
     return JSONResponse(content=response)
+
+
+@router.post("/getloop")
+async def getloop(request: Request):
+    """
+    Mock endpoint for loop route.
+    Accepts a start point and desired distance, returns a fake loop route.
+    """
+    start_time = time.time()
+    data = await request.json()
+    features = data.get("features", [])
+    distance = float(request.query_params.get("distance", 7))
+
+    if len(features) != 1:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "GeoJSON must contain one start feature"}
+        )
+
+    start_feature = features[0]
+    lon, lat = start_feature["geometry"]["coordinates"]
+
+    # Mock loop geometry: square around start point
+    loop_coords = [
+        [lon, lat],
+        [lon + 0.01, lat],
+        [lon + 0.01, lat + 0.01],
+        [lon, lat + 0.01],
+        [lon, lat],  # back to start
+    ]
+
+    route_geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "route_type": "loop",
+                    "aqi": 42
+                },
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": loop_coords,
+                },
+            }
+        ],
+    }
+
+    summary = {
+        "total_length": distance,  # km
+        "time_estimates": {
+            "walk": f"{distance * 12} min",
+            "run": f"{distance * 6} min"
+        },
+        "aq_average": 42,
+    }
+
+    response = {
+        "routes": {"loop": route_geojson},
+        "summaries": {"loop": summary},
+    }
+
+    duration = time.time() - start_time
+    print(f"/getloop took {duration:.3f} seconds")
+
+    return JSONResponse(content=response)
+

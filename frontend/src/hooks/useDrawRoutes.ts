@@ -1,5 +1,6 @@
 // src/hooks/useDrawRoutes.ts
 import { useEffect } from 'react';
+import type { Feature, LineString } from 'geojson';
 import mapboxgl from 'mapbox-gl';
 
 type RoutesRecord = Record<string, GeoJSON.FeatureCollection>;
@@ -8,6 +9,7 @@ const ROUTE_COLORS: Record<string, string> = {
   fastest: '#003cff',
   best_aq: '#008b23',
   balanced: '#00f5e0',
+  loop: '#b302b3',
 };
 
 const AQI_COLOR_SCALE = [
@@ -46,18 +48,20 @@ export function useDrawRoutes(
   selectedRoute: string | null = null,
 ): void {
   useEffect((): (() => void) => {
+    console.log('Drawing routes:', routes);
     if (!map || !routes) {
       return () => undefined;
     }
 
+    // Poista vanhat layerit
     Object.keys(ROUTE_COLORS).forEach((mode) => {
       removeLayerIfExists(map, `route-${mode}`);
       removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
-    const routeTypes = ['fastest', 'balanced', 'best_aq'];
+    const routeTypes = ['fastest', 'balanced', 'best_aq', 'loop'];
 
-    // Draw non-selected routes
+    // Piirrä kaikki muut reitit paitsi valittu
     routeTypes.forEach((mode) => {
       if (mode === selectedRoute) return;
 
@@ -66,7 +70,6 @@ export function useDrawRoutes(
 
       const sourceId = `route-${mode}`;
       const layerId = `route-${mode}`;
-      const isSelected = mode === selectedRoute;
 
       map.addSource(sourceId, { type: 'geojson', data: geojson });
 
@@ -91,20 +94,30 @@ export function useDrawRoutes(
         source: sourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color':
-            selectedRoute && !isSelected
-              ? '#838383'
-              : showAQIColors
-                ? AQI_COLOR_SCALE
-                : ROUTE_COLORS[mode],
+          'line-color': selectedRoute
+            ? '#838383'
+            : showAQIColors
+              ? AQI_COLOR_SCALE
+              : ROUTE_COLORS[mode],
           'line-width': mode === 'balanced' ? 2.5 : 3.5,
-          'line-opacity': selectedRoute && !isSelected ? 0.5 : 1,
+          'line-opacity': selectedRoute ? 0.5 : 1,
           'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
         },
       });
+
+      if (mode === 'loop') {
+        const feature = geojson.features[0] as Feature<LineString>;
+        const coords = feature.geometry.coordinates;
+
+        const bounds = new mapboxgl.LngLatBounds(
+          coords[0] as [number, number],
+          coords[0] as [number, number],
+        );
+        coords.forEach((c) => bounds.extend(c as [number, number]));
+        map.fitBounds(bounds, { padding: 40, duration: 1500 });
+      }
     });
 
-    // Draw selected route on top
     if (selectedRoute && routes[selectedRoute]) {
       const geojson = routes[selectedRoute];
       if (geojson && geojson.features?.length) {
@@ -144,10 +157,9 @@ export function useDrawRoutes(
       }
     }
 
-    /* Cleanup */
+    // Cleanup
     return (): void => {
       if (!map) return;
-
       Object.keys(ROUTE_COLORS).forEach((mode) => {
         removeLayerIfExists(map, `route-${mode}`);
         removeLayerIfExists(map, `route-${mode}-halo`);
