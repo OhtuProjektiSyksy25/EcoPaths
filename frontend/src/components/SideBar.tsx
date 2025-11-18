@@ -8,8 +8,9 @@ import InputContainer from './InputContainer';
 import { useGeolocation } from '../hooks/useGeolocationState';
 import RouteInfoCard from './RouteInfoCard';
 import RouteSlider from './RouteSlider';
+import RouteModeSelector from './RouteModeSelector';
 import '../styles/SideBar.css';
-import { Area, Place, RouteSummary, AqiComparison } from '../types';
+import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 
 interface SideBarProps {
@@ -28,9 +29,9 @@ interface SideBarProps {
   children?: React.ReactNode;
   selectedRoute: string | null;
   onRouteSelect: (route: string) => void;
+  routeMode: RouteMode;
+  setRouteMode: (mode: RouteMode) => void;
 }
-
-type SidebarStage = 'inputs' | 'routes' | 'routes-only' | 'hidden';
 
 const SideBar: React.FC<SideBarProps> = ({
   onFromSelect,
@@ -71,13 +72,15 @@ const SideBar: React.FC<SideBarProps> = ({
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => {
+    const checkMobile = (): void => {
       setIsMobile(window.innerWidth <= 800);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [selectedArea]);
+  const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
+  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     if (isMobile && summaries && sidebarStage === 'inputs') {
@@ -86,7 +89,7 @@ const SideBar: React.FC<SideBarProps> = ({
   }, [isMobile, summaries, sidebarStage]);
 
   // Allow dragging only from the handle area
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent): void => {
     if (!isMobile) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -102,12 +105,12 @@ const SideBar: React.FC<SideBarProps> = ({
     setIsDragging(true);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent): void => {
     if (!isMobile || !isDragging) return;
     setCurrentY(e.touches[0].clientY);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (): void => {
     if (!isMobile || !isDragging) return;
 
     const deltaY = startY - currentY;
@@ -126,7 +129,7 @@ const SideBar: React.FC<SideBarProps> = ({
     setCurrentY(0);
   };
 
-  const handleSwipeUp = () => {
+  const handleSwipeUp = (): void => {
     if (sidebarStage === 'hidden') {
       // From hidden -> show routes only
       setSidebarStage('routes-only');
@@ -136,7 +139,7 @@ const SideBar: React.FC<SideBarProps> = ({
     }
   };
 
-  const handleSwipeDown = () => {
+  const handleSwipeDown = (): void => {
     if (sidebarStage === 'routes') {
       // From full routes -> routes only (hide inputs)
       setSidebarStage('routes-only');
@@ -146,13 +149,14 @@ const SideBar: React.FC<SideBarProps> = ({
     }
   };
 
-  const handleMobileSidebarClick = (e: React.MouseEvent) => {
+  const handleMobileSidebarClick = (e: React.MouseEvent): void => {
     if (!isMobile) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const clickY = e.clientY - rect.top;
+    const handleHeight = 35;
 
-    if (clickY <= 80) {
+    if (clickY <= handleHeight) {
       if (sidebarStage === 'hidden') {
         setSidebarStage('routes-only');
       } else if (sidebarStage === 'routes-only') {
@@ -328,7 +332,7 @@ const SideBar: React.FC<SideBarProps> = ({
         setSidebarStage('inputs');
       }
     }
-  }, [selectedArea?.id, isMobile]);
+  }, [selectedArea?.id, isMobile, selectedArea]);
 
   useEffect(() => {
     // Notify parent when error changes (to disable area button)
@@ -363,6 +367,7 @@ const SideBar: React.FC<SideBarProps> = ({
       )}
 
       <div className='sidebar-content'>
+        <RouteModeSelector mode={routeMode} setMode={setRouteMode} loop={loop} setLoop={setLoop} />
         <h1 className='sidebar-title'>Where would you like to go?</h1>
 
         <div className='input-box'>
@@ -424,12 +429,13 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Best Air Quality'
-                time_estimate={summaries.best_aq.time_estimate}
+                time_estimates={summaries.best_aq.time_estimates}
                 total_length={summaries.best_aq.total_length}
                 aq_average={summaries.best_aq.aq_average}
                 comparisons={aqiDifferences?.best_aq}
                 isSelected={selectedRoute === 'best_aq'}
                 isExpanded={selectedRoute === 'best_aq'}
+                mode={routeMode}
               />
             </div>
 
@@ -440,12 +446,13 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Fastest Route'
-                time_estimate={summaries.fastest.time_estimate}
+                time_estimates={summaries.fastest.time_estimates}
                 total_length={summaries.fastest.total_length}
                 aq_average={summaries.fastest.aq_average}
                 comparisons={aqiDifferences?.fastest}
                 isSelected={selectedRoute === 'fastest'}
                 isExpanded={selectedRoute === 'fastest'}
+                mode={routeMode}
               />
             </div>
 
@@ -461,12 +468,13 @@ const SideBar: React.FC<SideBarProps> = ({
               ) : (
                 <RouteInfoCard
                   route_type='Your Route'
-                  time_estimate={summaries.balanced.time_estimate}
+                  time_estimates={summaries.balanced.time_estimates}
                   total_length={summaries.balanced.total_length}
                   aq_average={summaries.balanced.aq_average}
                   comparisons={aqiDifferences?.balanced}
                   isSelected={selectedRoute === 'balanced'}
                   isExpanded={selectedRoute === 'balanced'}
+                  mode={routeMode}
                 />
               )}
             </div>

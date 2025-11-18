@@ -270,12 +270,12 @@
 
   .sidebar-stage-routes-only {
     transform: translateY(
-      calc(100% - clamp(150px, 28vh, 450px) + env(safe-area-inset-bottom, 0px))
+      calc(100% - clamp(150px, 38vh, 450px) + env(safe-area-inset-bottom, 0px))
     );
   }
 
   .sidebar-stage-routes {
-    transform: translateY(calc(100% - clamp(400px, 68vh, 80vh) + env(safe-area-inset-bottom, 0px)));
+    transform: translateY(calc(100% - clamp(400px, 82vh, 90vh) + env(safe-area-inset-bottom, 0px)));
   }
 
   /* --------------------- HANDLE AREA ------------------------ */
@@ -372,5 +372,24 @@
 
   .balanced-route-container {
     margin-bottom: 7px; /* Space below last route card */
+  }
+
+  .sidebar-stage-routes-only .sidebar-content {
+    padding-top: clamp(40px, 2vh, 55px) !important;
+  }
+
+  /* Hide route mode buttons in routes-only stage */
+  .sidebar-stage-routes-only .route-mode-selector {
+    display: none;
+  }
+
+  /* Routes-only stage: hide title, inputs, divider */
+  .sidebar-stage-routes-only .sidebar-title,
+  .sidebar-stage-routes-only .input-box,
+  .sidebar-stage-routes-only .divider,
+  .sidebar-stage-routes-only .route-mode-selector,
+  .sidebar-stage-routes-only .aqi-toggle-button,
+  .sidebar-stage-routes-only .route-slider-container {
+    display: none !important;
   }
 }

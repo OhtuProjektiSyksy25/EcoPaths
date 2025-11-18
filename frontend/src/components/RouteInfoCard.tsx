@@ -7,14 +7,16 @@ import React from 'react';
 import { AqiComparison } from '@/types/route';
 import '../styles/RouteInfoCard.css';
 
-interface RouteInfoCardProps {
+export interface RouteInfoCardProps {
   route_type: string;
-  time_estimate: string;
+  time_estimates: { walk: string; run: string };
   total_length: number;
   aq_average: number;
   comparisons?: Record<string, AqiComparison>;
   isSelected?: boolean;
   isExpanded?: boolean;
+  mode?: 'walk' | 'run';
+  onToggleMode?: () => void;
 }
 
 /*
@@ -23,12 +25,14 @@ Can be expanded to show comparisons with other routes.
 */
 const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
   route_type,
-  time_estimate,
+  time_estimates,
   total_length,
   aq_average,
   comparisons = {},
   isSelected = false,
   isExpanded = false,
+  mode = 'walk',
+  onToggleMode: _onToggleMode,
 }) => {
   const hasComparisons = Object.keys(comparisons).length > 0;
 
@@ -39,19 +43,21 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
         <div className='route-type'>
           <span className='route_type'>{route_type}</span>
         </div>
-        <div className='time-estimate'>
-          <span className='time_estimate'>{time_estimate}</span>
-        </div>
-        <div className='additional-info'>
-          <span className='total_length'>{total_length} km</span>
-          <span className='aq_average'>AQI {aq_average}</span>
+        <div className='route-details'>
+          <div className='time-estimate'>
+            <span className='time_estimate'>{time_estimates[mode]}</span>
+          </div>
+          <div className='additional-info'>
+            <span className='total_length'>{total_length} km</span>
+            <span className='aq_average'>AQI {aq_average}</span>
+          </div>
         </div>
       </div>
 
       {/* Mobile layout */}
       <div className='route-card-content'>
         <span className='route_type'>{route_type}</span>
-        <span className='time-estimate'>{time_estimate}</span>
+        <span className='time-estimate'>{time_estimates[mode]}</span>
         <span className='route-stat-divider'>|</span>
         <div className='additional-info'>
           <span>{total_length} km</span>
