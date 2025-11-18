@@ -37,16 +37,17 @@ class EnvInfluenceBuilder:
                 MIN(env_influence),
                 MAX(env_influence),
                 AVG(env_influence),
+                COUNT(*) FILTER (WHERE env_influence = 1.0) AS no_effect,
                 COUNT(*) FILTER (WHERE env_influence < 0.5) AS very_low,
                 COUNT(*) FILTER (WHERE env_influence >= 0.5 AND env_influence < 1.5) AS low,
-                COUNT(*) FILTER (WHERE env_influence >= 1.5 AND env_influence < 3.0) AS moderate,
-                COUNT(*) FILTER (WHERE env_influence >= 3.0) AS high
+                COUNT(*) FILTER (WHERE env_influence >= 1.5 AND env_influence < 2.0) AS moderate,
+                COUNT(*) FILTER (WHERE env_influence >= 2.0) AS high
             FROM {self.walk_table};
         """)
         row = result.fetchone()
         print(
             f"Env influence stats → min: {row[0]:.2f}, max: {row[1]:.2f}, avg: {row[2]:.2f}\n"
-            f"Very low: {row[3]}, Low: {row[4]}, Moderate: {row[5]}, High: {row[6]}"
+            f"Very low: {row[4]}, Low: {row[5]}, No effect: {row[3]}, Moderate: {row[6]}, High: {row[7]}"
         )
 
     def run(self):

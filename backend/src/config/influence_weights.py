@@ -26,7 +26,7 @@ INFLUENCE_WEIGHTS = {
         }
     },
     "green": {
-        "BASE_BENEFIT": 0.08,
+        "BASE_BENEFIT": 0.06,
         "MAX_BENEFIT": 0.9,
         "GREEN_WEIGHTS": {
             "forest": 0.25,
@@ -39,7 +39,7 @@ INFLUENCE_WEIGHTS = {
             "recreation_ground": 0.15,
             "nature_reserve": 0.25,
             "playground": 0.1,
-            "tree": 0.02
+            "tree": 0.01
         }
     }
 }
