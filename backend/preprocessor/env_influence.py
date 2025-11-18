@@ -47,7 +47,8 @@ class EnvInfluenceBuilder:
         row = result.fetchone()
         print(
             f"Env influence stats → min: {row[0]:.2f}, max: {row[1]:.2f}, avg: {row[2]:.2f}\n"
-            f"Very low: {row[4]}, Low: {row[5]}, No effect: {row[3]}, Moderate: {row[6]}, High: {row[7]}"
+            f"Very low: {row[4]}, Low: {row[5]}, No effect: {row[3]}, "
+            f"Moderate: {row[6]}, High: {row[7]}"
         )
 
     def run(self):
