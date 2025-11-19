@@ -42,7 +42,7 @@ export const RouteModeSelector: React.FC<Props> = ({
         className={`icon-button ${loop ? 'active' : ''} loop-button`}
         onClick={() => {
           setLoop(!loop);
-          setShowLoopOnly(!showLoopOnly); // toggle näkyvyys
+          setShowLoopOnly(!showLoopOnly);
         }}
         title='Loop'
       >

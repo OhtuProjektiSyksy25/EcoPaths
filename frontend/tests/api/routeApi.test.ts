@@ -1,65 +1,95 @@
-import { fetchRoute } from '../../src/api/routeApi';
+import { fetchRoute, fetchLoopRoute } from '../../src/api/routeApi';
 import { LockedLocation } from '@/types/route';
 
-describe('fetchRoute', () => {
+describe('routeApi', () => {
   const fromLocked: LockedLocation = {
     full_address: 'Start',
     geometry: { coordinates: [13.4, 52.5] },
   };
-
   const toLocked: LockedLocation = {
     full_address: 'End',
     geometry: { coordinates: [13.41, 52.51] },
   };
 
   beforeEach(() => {
-    // Reset fetch mock before every test
     global.fetch = jest.fn() as jest.Mock;
     process.env.REACT_APP_API_URL = 'http://localhost:8000';
   });
 
-  it('sends correct POST request and returns JSON', async () => {
-    const mockResponse = { type: 'Feature', properties: {}, geometry: {} };
+  describe('fetchRoute', () => {
+    it('sends correct POST request and returns JSON', async () => {
+      const mockResponse = { routes: {}, summaries: {} };
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      });
 
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
+      const result = await fetchRoute(fromLocked, toLocked);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/getroute',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      expect(result).toEqual(mockResponse);
     });
 
-    const result = await fetchRoute(fromLocked, toLocked);
+    it('appends balancedWeight query param when provided', async () => {
+      const mockResponse = { routes: {}, summaries: {} };
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      });
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:8000/api/getroute',
-      expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              properties: { role: 'start' },
-              geometry: { type: 'Point', coordinates: [13.4, 52.5] },
-            },
-            {
-              type: 'Feature',
-              properties: { role: 'end' },
-              geometry: { type: 'Point', coordinates: [13.41, 52.51] },
-            },
-          ],
-        }),
-      }),
-    );
+      await fetchRoute(fromLocked, toLocked, 0.75);
 
-    expect(result).toEqual(mockResponse);
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/getroute?balanced_weight=0.75',
+        expect.any(Object),
+      );
+    });
+
+    it('throws an error if response is not ok', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 500 });
+      await expect(fetchRoute(fromLocked, toLocked)).rejects.toThrow('Server error: 500');
+    });
   });
 
-  it('throws an error if response is not ok', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 500,
+  describe('fetchLoopRoute', () => {
+    it('sends correct POST request with distance param and returns JSON', async () => {
+      const mockResponse = { routes: {}, summaries: {} };
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await fetchLoopRoute(fromLocked, 10);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/getloop?distance=10',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: { role: 'start' },
+                geometry: { type: 'Point', coordinates: [13.4, 52.5] },
+              },
+            ],
+          }),
+        }),
+      );
+      expect(result).toEqual(mockResponse);
     });
 
-    await expect(fetchRoute(fromLocked, toLocked)).rejects.toThrow('Server error: 500');
+    it('throws an error if response is not ok', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 400 });
+      await expect(fetchLoopRoute(fromLocked, 5)).rejects.toThrow('Server error: 400');
+    });
   });
 });
