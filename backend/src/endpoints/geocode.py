@@ -4,6 +4,7 @@ forward geocode suggestions (addresses and POIs) within the selected area.
 """
 from fastapi import APIRouter, Request, Path
 import httpx
+from src.logging.logger import log
 from utils.poi_utils import compose_photon_suggestions
 from utils.decorators import require_area_config
 from utils.poi_utils import remove_double_osm_features
@@ -31,7 +32,8 @@ async def geocode_forward(request: Request, value: str = Path(...)):
                 photon_suggestions.get("features", []))
             photon_suggestions["features"] = trimmed_features
     except httpx.HTTPError as exc:
-        print(f"HTTP Exception for {exc.request.url} - {exc}")
+        log.error(
+            "HTTP Exception for", url=photon_url, error=str(exc))
         return []
 
     return compose_photon_suggestions(photon_suggestions)

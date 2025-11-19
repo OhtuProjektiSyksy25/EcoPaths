@@ -5,6 +5,7 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString, Polygon, shape, Point
 from config.settings import AreaConfig, get_settings
+from src.logging.logger import log
 from core.route_algorithm import RouteAlgorithm
 from core.edge_enricher import EdgeEnricher
 from database.db_client import DatabaseClient
@@ -341,9 +342,11 @@ class RouteService:
                 if saved:
                     all_gdfs.append(new_gdf)
                 else:
-                    print("Warning: Failed to save enriched tiles to Redis.")
+                    log.warning(
+                        "Failed to save enriched tiles to Redis.")
             else:
-                print("Warning: Enrichment failed or returned empty. Skipping save.")
+                log.warning(
+                    "Enrichment failed or returned empty. Skipping save.")
 
         if all_gdfs:
             return pd.concat(all_gdfs, ignore_index=True)

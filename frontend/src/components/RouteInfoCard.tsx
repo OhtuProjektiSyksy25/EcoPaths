@@ -32,13 +32,14 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
   isSelected = false,
   isExpanded = false,
   mode = 'walk',
-  onToggleMode,
+  onToggleMode: _onToggleMode,
 }) => {
   const hasComparisons = Object.keys(comparisons).length > 0;
 
   return (
-    <div className={`RouteInfoCard ${isSelected ? 'selected' : ''}`} onClick={onToggleMode}>
-      <div className='route-card-header'>
+    <div className={`RouteInfoCard ${isSelected ? 'selected' : ''}`}>
+      {/* Desktop layout */}
+      <div className='desktop-layout'>
         <div className='route-type'>
           <span className='route_type'>{route_type}</span>
         </div>
@@ -50,6 +51,18 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
             <span className='total_length'>{total_length} km</span>
             <span className='aq_average'>AQI {aq_average}</span>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile layout */}
+      <div className='route-card-content'>
+        <span className='route_type'>{route_type}</span>
+        <span className='time-estimate'>{time_estimates[mode]}</span>
+        <span className='route-stat-divider'>|</span>
+        <div className='additional-info'>
+          <span>{total_length} km</span>
+          <span className='route-stat-divider'>|</span>
+          <span>AQI {aq_average}</span>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import { LocationButton } from './LocationButton';
 import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import '../styles/MapComponent.css';
+import { isValidCoordsArray } from '../utils/coordsNormalizer';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -109,12 +110,21 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   /*  Handle user location */
   const handleLocationFound = (coords: { lat: number; lon: number }): void => {
-    if (!mapRef.current || userUsedLocationRef.current) return;
+    console.log('[MapComponent] handleLocationFound called with', coords);
+    if (!mapRef.current) {
+      console.warn('[MapComponent] no mapRef available');
+      return;
+    }
     userUsedLocationRef.current = true;
     locationMarkerRef.current?.remove();
 
     const elem = document.createElement('div');
     elem.className = 'current-location-dot';
+
+    // validate coords before using them (use `lon` field produced by geolocation)
+    const validLatLon = (c: { lat: number; lon: number }): boolean =>
+      Number.isFinite(c?.lat) && Number.isFinite(c?.lon);
+    if (!validLatLon(coords)) return;
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
       .setLngLat([coords.lon, coords.lat])
@@ -168,24 +178,31 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (!mapRef.current) return;
     fromMarkerRef.current?.remove();
     toMarkerRef.current?.remove();
-
-    if (fromLocked?.geometry?.coordinates) {
+    if (fromLocked?.geometry?.coordinates && isValidCoordsArray(fromLocked.geometry.coordinates)) {
       fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(fromLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
-    if (toLocked?.geometry?.coordinates) {
+    if (toLocked?.geometry?.coordinates && isValidCoordsArray(toLocked.geometry.coordinates)) {
       toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(toLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
 
-    if (fromLocked?.geometry?.coordinates && toLocked?.geometry?.coordinates) {
+    if (
+      fromLocked?.geometry?.coordinates &&
+      toLocked?.geometry?.coordinates &&
+      isValidCoordsArray(fromLocked.geometry.coordinates) &&
+      isValidCoordsArray(toLocked.geometry.coordinates)
+    ) {
       const bounds = new mapboxgl.LngLatBounds()
         .extend(fromLocked.geometry.coordinates)
         .extend(toLocked.geometry.coordinates);
       mapRef.current.fitBounds(bounds, { padding: 110, duration: 1500 });
-    } else if (fromLocked?.geometry?.coordinates) {
+    } else if (
+      fromLocked?.geometry?.coordinates &&
+      isValidCoordsArray(fromLocked.geometry.coordinates)
+    ) {
       mapRef.current.flyTo({ center: fromLocked.geometry.coordinates, zoom: 15, duration: 1500 });
     }
   }, [fromLocked, toLocked]);
@@ -216,12 +233,18 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     map.on('moveend', onMoveEnd);
 
-    map.flyTo({
-      center: selectedArea.focus_point,
-      zoom: 13.5,
-      duration: 2000,
-      essential: true,
-    });
+    // ensure focus_point is valid before calling flyTo
+    if (Array.isArray(selectedArea.focus_point) && selectedArea.focus_point.length >= 2) {
+      const [lng, lat] = selectedArea.focus_point;
+      if (Number.isFinite(lng) && Number.isFinite(lat)) {
+        map.flyTo({
+          center: selectedArea.focus_point,
+          zoom: 13.5,
+          duration: 2000,
+          essential: true,
+        });
+      }
+    }
   }, [selectedArea]);
 
   if (mapboxToken) {
