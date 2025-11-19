@@ -99,3 +99,43 @@ async def getroute(request: Request):
         f"/getroute took {duration:.3f} seconds", duration=duration)
 
     return JSONResponse(content=response)
+
+
+@router.post("/getloop")
+async def getloop(request: Request):
+    """
+    Mock endpoint for loop route.
+    Accepts a start point and desired distance, returns a fake loop route.
+    """
+    area_config = request.app.state.area_config
+    route_service = request.app.state.route_service
+
+    start_time = time.time()
+    data = await request.json()
+    features = data.get("features", [])
+    distance = float(request.query_params.get("distance", 7)) * 1000
+
+    if len(features) != 1:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "GeoJSON must contain one start feature"}
+        )
+
+    start_feature = features[0]
+    target_crs = area_config.crs
+    origin_gdf = GeoTransformer.geojson_to_projected_gdf(
+        start_feature["geometry"], target_crs)
+
+    if not area_config or not route_service:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
+
+    distance = min(distance, 5000)
+    response = route_service.get_round_trip(origin_gdf, distance)
+
+    duration = time.time() - start_time
+    print(f"/getloop took {duration:.3f} seconds")
+
+    return JSONResponse(content=response)

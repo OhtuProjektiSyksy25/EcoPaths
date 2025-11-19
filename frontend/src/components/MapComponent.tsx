@@ -20,9 +20,12 @@ interface MapComponentProps {
   fromLocked: LockedLocation | null;
   toLocked: LockedLocation | null;
   routes: Record<string, RouteGeoJSON> | null;
+  loopRoutes: Record<string, RouteGeoJSON> | null;
   showAQIColors: boolean;
   selectedArea: Area | null;
   selectedRoute: string | null;
+  showLoopOnly: boolean;
+  loop: boolean;
 }
 
 export const updateWaterLayers = (map: mapboxgl.Map): void => {
@@ -48,9 +51,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
   routes,
+  loopRoutes,
   showAQIColors,
   selectedArea,
   selectedRoute,
+  showLoopOnly,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -61,13 +66,46 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
-  /*  Draw routes and highlight area hooks */
+  let visibleRoutes: Record<string, RouteGeoJSON> = {};
+  if (showLoopOnly) {
+    visibleRoutes = loopRoutes || {};
+  } else {
+    visibleRoutes = routes || {};
+  }
+
   useDrawRoutes(
     mapRef.current,
-    routes as Record<string, GeoJSON.FeatureCollection>,
+    visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    selectedRoute,
+    showLoopOnly ? null : selectedRoute,
   );
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const map = mapRef.current;
+    const activeRoutes = showLoopOnly ? loopRoutes : routes;
+    if (!activeRoutes) return;
+
+    const allCoords: [number, number][] = [];
+    Object.values(activeRoutes).forEach((geojson) => {
+      geojson.features.forEach((f) => {
+        if (f.geometry.type === 'LineString') {
+          allCoords.push(...(f.geometry.coordinates as [number, number][]));
+        }
+      });
+    });
+
+    if (allCoords.length === 0) return;
+
+    const bounds = allCoords.reduce(
+      (b, c) => b.extend(c),
+      new mapboxgl.LngLatBounds(allCoords[0], allCoords[0]),
+    );
+
+    map.fitBounds(bounds, { padding: 60, duration: 1500 });
+  }, [showLoopOnly, routes, loopRoutes]);
+
   useHighlightChosenArea(mapRef.current, selectedArea);
 
   /*  Handle user location */

@@ -9,6 +9,7 @@ import { useGeolocation } from '../hooks/useGeolocationState';
 import RouteInfoCard from './RouteInfoCard';
 import RouteSlider from './RouteSlider';
 import RouteModeSelector from './RouteModeSelector';
+import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
 import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
@@ -31,6 +32,14 @@ interface SideBarProps {
   onRouteSelect: (route: string) => void;
   routeMode: RouteMode;
   setRouteMode: (mode: RouteMode) => void;
+  loop: boolean;
+  setLoop: (val: boolean) => void;
+  loopDistance: number;
+  setLoopDistance: (val: number) => void;
+  loopSummaries: Record<string, RouteSummary> | null;
+  loopLoading?: boolean;
+  showLoopOnly: boolean;
+  setShowLoopOnly: (val: boolean) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -49,6 +58,16 @@ const SideBar: React.FC<SideBarProps> = ({
   children,
   selectedRoute,
   onRouteSelect,
+  routeMode,
+  setRouteMode,
+  loop,
+  setLoop,
+  loopDistance,
+  setLoopDistance,
+  loopSummaries,
+  loopLoading,
+  showLoopOnly,
+  setShowLoopOnly,
 }) => {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
@@ -79,8 +98,6 @@ const SideBar: React.FC<SideBarProps> = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, [selectedArea]);
-  const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
-  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     if (isMobile && summaries && sidebarStage === 'inputs') {
@@ -367,7 +384,14 @@ const SideBar: React.FC<SideBarProps> = ({
       )}
 
       <div className='sidebar-content'>
-        <RouteModeSelector mode={routeMode} setMode={setRouteMode} loop={loop} setLoop={setLoop} />
+        <RouteModeSelector
+          mode={routeMode}
+          setMode={setRouteMode}
+          loop={loop}
+          setLoop={setLoop}
+          showLoopOnly={showLoopOnly}
+          setShowLoopOnly={setShowLoopOnly}
+        />
         <h1 className='sidebar-title'>Where would you like to go?</h1>
 
         <div className='input-box'>
@@ -406,21 +430,56 @@ const SideBar: React.FC<SideBarProps> = ({
         <div className='divider' />
 
         <div className='input-box'>
-          <InputContainer
-            placeholder='Destination'
-            value={to}
-            onChange={HandleToChange}
-            suggestions={toSuggestions}
-            onSelect={(place) => {
-              toInputSelected.current = true;
-              onToSelect(place);
-            }}
-          />
+          {loop ? (
+            <LoopDistanceSlider value={loopDistance} onChange={setLoopDistance} />
+          ) : (
+            <InputContainer
+              placeholder='Destination'
+              value={to}
+              onChange={HandleToChange}
+              suggestions={toSuggestions}
+              onSelect={(place) => {
+                toInputSelected.current = true;
+                onToSelect(place);
+              }}
+            />
+          )}
         </div>
 
         {children}
 
-        {summaries && !children && (
+        {loop && (
+          <>
+            {loopLoading ? (
+              <div className='route-loading-message'>
+                <p>Loading loop route...</p>
+              </div>
+            ) : loopSummaries?.loop ? (
+              <div
+                className='loop-route-container route-container'
+                onClick={() => onRouteSelect('loop')}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                <RouteInfoCard
+                  route_type='Loop Route'
+                  time_estimates={loopSummaries.loop.time_estimates}
+                  total_length={loopSummaries.loop.total_length}
+                  aq_average={loopSummaries.loop.aq_average}
+                  isSelected={selectedRoute === 'loop'}
+                  isExpanded={selectedRoute === 'loop'}
+                  mode={routeMode}
+                />
+              </div>
+            ) : null}
+            <div className='aqi-toggle-button'>
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? 'Hide air quality on map' : 'Show air quality on map'}
+              </button>
+            </div>
+          </>
+        )}
+
+        {!loop && summaries && !children && (
           <>
             <div
               className='best-aq-container route-container'

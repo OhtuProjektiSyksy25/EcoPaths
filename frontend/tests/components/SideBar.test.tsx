@@ -43,6 +43,13 @@ const defaultProps: ComponentProps<typeof SideBar> = {
   onRouteSelect: mockOnRouteSelect,
   routeMode: 'walk',
   setRouteMode: jest.fn(),
+  loop: false,
+  setLoop: jest.fn(),
+  loopDistance: 5,
+  setLoopDistance: jest.fn(),
+  loopSummaries: null,
+  showLoopOnly: false,
+  setShowLoopOnly: jest.fn(),
 };
 
 function renderSideBar(overrides: Partial<typeof defaultProps> = {}) {
@@ -324,6 +331,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -365,6 +379,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -388,6 +409,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -419,6 +447,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -466,6 +501,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -524,6 +566,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -578,6 +627,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -606,6 +662,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -650,6 +713,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -695,6 +765,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -736,6 +813,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -767,6 +851,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -800,6 +891,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -829,6 +927,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -872,6 +977,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -925,6 +1037,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -970,6 +1089,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -989,6 +1115,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -1028,6 +1161,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -1078,6 +1218,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -1123,6 +1270,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 
@@ -1179,6 +1333,13 @@ describe('SideBar', () => {
           onRouteSelect={mockOnRouteSelect}
           routeMode='walk'
           setRouteMode={jest.fn()}
+          loop={false}
+          setLoop={jest.fn()}
+          loopDistance={5}
+          setLoopDistance={jest.fn()}
+          loopSummaries={null}
+          showLoopOnly={false}
+          setShowLoopOnly={jest.fn()}
         />,
       );
 

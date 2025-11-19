@@ -1,0 +1,48 @@
+.loop-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.loop-distance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family:
+    Public Sans,
+    sans-serif;
+}
+
+.loop-distance-header label {
+  font-weight: 500;
+  color: #333;
+}
+
+.loop-slider-number {
+  width: 60px;
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+  font-family:
+    Public Sans,
+    sans-serif;
+  font-size: 16px;
+}
+
+.loop-slider-range {
+  width: 100%;
+  cursor: pointer;
+}
+
+.loop-distance-box {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}

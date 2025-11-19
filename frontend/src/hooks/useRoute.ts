@@ -1,11 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import {
-  LockedLocation,
-  RouteGeoJSON,
-  RouteSummary,
-  AqiComparison,
-  RouteMode,
-} from '../types/route';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
 import { normalizeCoords } from '../utils/coordsNormalizer';
 
 interface UseRouteReturn {
@@ -29,7 +23,6 @@ export const useRoute = (
   fromLocked: LockedLocation | null,
   toLocked: LockedLocation | null,
   balancedWeight: number,
-  routeMode: RouteMode,
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -111,7 +104,6 @@ export const useRoute = (
               },
             ],
             balanced_weight: balancedWeight,
-            mode: routeMode,
           }),
         });
         if (!response.ok) {
@@ -158,7 +150,7 @@ export const useRoute = (
     };
 
     fetchRoute();
-  }, [fromLocked, toLocked, balancedWeight, routeMode]);
+  }, [fromLocked, toLocked, balancedWeight]);
 
   return { routes, summaries, aqiDifferences, loading, balancedLoading, error };
 };

@@ -10,6 +10,8 @@ describe('RouteModeSelector', () => {
         setMode={jest.fn()}
         loop={false}
         setLoop={jest.fn()}
+        showLoopOnly={false}
+        setShowLoopOnly={jest.fn()}
       />,
     );
 
@@ -25,6 +27,8 @@ describe('RouteModeSelector', () => {
         setMode={jest.fn()}
         loop={false}
         setLoop={jest.fn()}
+        showLoopOnly={false}
+        setShowLoopOnly={jest.fn()}
       />,
     );
 
@@ -40,6 +44,8 @@ describe('RouteModeSelector', () => {
         setMode={setModeMock}
         loop={false}
         setLoop={jest.fn()}
+        showLoopOnly={false}
+        setShowLoopOnly={jest.fn()}
       />,
     );
 
@@ -55,6 +61,8 @@ describe('RouteModeSelector', () => {
         setMode={setModeMock}
         loop={false}
         setLoop={jest.fn()}
+        showLoopOnly={false}
+        setShowLoopOnly={jest.fn()}
       />,
     );
 
@@ -70,6 +78,8 @@ describe('RouteModeSelector', () => {
         setMode={jest.fn()}
         loop={false}
         setLoop={setLoopMock}
+        showLoopOnly={false}
+        setShowLoopOnly={jest.fn()}
       />,
     );
 
@@ -84,6 +94,8 @@ describe('RouteModeSelector', () => {
         setMode={jest.fn()}
         loop={true}
         setLoop={jest.fn()}
+        showLoopOnly={false}
+        setShowLoopOnly={jest.fn()}
       />,
     );
 

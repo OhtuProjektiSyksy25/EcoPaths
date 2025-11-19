@@ -8,6 +8,7 @@ const ROUTE_COLORS: Record<string, string> = {
   fastest: '#003cff',
   best_aq: '#008b23',
   balanced: '#00f5e0',
+  loop: '#007259',
 };
 
 const AQI_COLOR_SCALE = [
@@ -37,7 +38,7 @@ const removeLayerIfExists = (map: mapboxgl.Map, id: string): void => {
 };
 
 /**
- * React hook to draw routes on a Mapbox map with highlighting for selected route.
+ * React hook to draw routes on a Mapbox map with optional AQI coloring.
  */
 export function useDrawRoutes(
   map: mapboxgl.Map | null,
@@ -55,9 +56,8 @@ export function useDrawRoutes(
       removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
-    const routeTypes = ['fastest', 'balanced', 'best_aq'];
+    const routeTypes = ['fastest', 'balanced', 'best_aq', 'loop'];
 
-    // Draw non-selected routes
     routeTypes.forEach((mode) => {
       if (mode === selectedRoute) return;
 
@@ -66,9 +66,23 @@ export function useDrawRoutes(
 
       const sourceId = `route-${mode}`;
       const layerId = `route-${mode}`;
-      const isSelected = mode === selectedRoute;
 
       map.addSource(sourceId, { type: 'geojson', data: geojson });
+
+      if (showAQIColors) {
+        map.addLayer({
+          id: `${layerId}-halo`,
+          type: 'line',
+          source: sourceId,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': selectedRoute ? '#cecdcd' : '#505050',
+            'line-width': 5,
+            'line-opacity': 0.6,
+            'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
+          },
+        });
+      }
 
       if (mode === 'balanced' && !showAQIColors && !selectedRoute) {
         map.addLayer({
@@ -91,20 +105,18 @@ export function useDrawRoutes(
         source: sourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color':
-            selectedRoute && !isSelected
-              ? '#838383'
-              : showAQIColors
-                ? AQI_COLOR_SCALE
-                : ROUTE_COLORS[mode],
+          'line-color': selectedRoute
+            ? '#838383'
+            : showAQIColors
+              ? AQI_COLOR_SCALE
+              : ROUTE_COLORS[mode],
           'line-width': mode === 'balanced' ? 2.5 : 3.5,
-          'line-opacity': selectedRoute && !isSelected ? 0.5 : 1,
+          'line-opacity': selectedRoute ? 0.5 : 1,
           'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
         },
       });
     });
 
-    // Draw selected route on top
     if (selectedRoute && routes[selectedRoute]) {
       const geojson = routes[selectedRoute];
       if (geojson && geojson.features?.length) {
@@ -112,6 +124,22 @@ export function useDrawRoutes(
         const layerId = `route-${selectedRoute}`;
 
         map.addSource(sourceId, { type: 'geojson', data: geojson });
+
+        if (showAQIColors) {
+          map.addLayer({
+            id: `${layerId}-halo`,
+            type: 'line',
+            source: sourceId,
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: {
+              'line-color': '#505050',
+              'line-width': 5,
+              'line-opacity': 0.6,
+              'line-offset':
+                selectedRoute === 'balanced' ? 1.5 : selectedRoute === 'fastest' ? -1.5 : 0,
+            },
+          });
+        }
 
         if (selectedRoute === 'balanced' && !showAQIColors) {
           map.addLayer({
@@ -144,10 +172,9 @@ export function useDrawRoutes(
       }
     }
 
-    /* Cleanup */
+    // Cleanup
     return (): void => {
       if (!map) return;
-
       Object.keys(ROUTE_COLORS).forEach((mode) => {
         removeLayerIfExists(map, `route-${mode}`);
         removeLayerIfExists(map, `route-${mode}-halo`);
