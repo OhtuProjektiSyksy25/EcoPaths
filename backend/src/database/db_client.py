@@ -16,6 +16,7 @@ from database.db_models import (
     create_node_class,
     create_green_class
 )
+from src.logging.logger import log
 
 
 class DatabaseClient:
@@ -69,8 +70,11 @@ class DatabaseClient:
 
         self._create_indexes(area_name, network_type)
 
-        print(
-            f"Database tables ensured for area '{area_name}' ({network_type})")
+        log.info(
+            f"Database tables ensured for area '{area_name}' ({network_type})",
+            area=area_name,
+            network_type=network_type
+        )
 
     def create_grid_table(self, area_name: str, base=None):
         """
@@ -166,7 +170,12 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"  Saved {len(gdf)} tiles to table '{table_name}'")
+        log.info(
+            f"Saved {len(gdf)} tiles to table '{table_name}'",
+            area=area,
+            table=table_name,
+            count=len(gdf)
+        )
 
     def save_nodes(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -189,7 +198,13 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        print(f"  Saved {len(gdf)} nodes to table '{table_name}'")
+        log.info(
+            f"Saved {len(gdf)} nodes to table '{table_name}'",
+            area=area,
+            network_type=network_type,
+            table=table_name,
+            count=len(gdf)
+        )
 
     def save_green_areas(self, gdf: gpd.GeoDataFrame, area: str, if_exists="fail"):
         """
@@ -239,7 +254,12 @@ class DatabaseClient:
         """
         table_name = f"edges_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
-        print(f"Loading all edges from table: {table_name}")
+        log.debug(
+            f"Loading all edges from table: {table_name}",
+            area=area,
+            network_type=network_type,
+            table=table_name
+        )
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
@@ -263,7 +283,11 @@ class DatabaseClient:
         """
         table_name = f"grid_{area.lower()}"
         query = f"SELECT * FROM {table_name}"
-        print(f"Loading grid from table: {table_name}")
+        log.debug(
+            f"Loading grid from table: {table_name}",
+            area=area,
+            table=table_name
+        )
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
@@ -286,7 +310,11 @@ class DatabaseClient:
         """
         table_name = f"green_{area.lower()}"
         query = f"SELECT * FROM {table_name}"
-        print(f"Loading green areas data from table: {table_name}")
+        log.debug(
+            f"Loading green areas data from table: {table_name}",
+            area=area,
+            table=table_name
+        )
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
@@ -309,7 +337,13 @@ class DatabaseClient:
         table_name = f"nodes_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
         gdf = gpd.read_postgis(query, con=self.engine, geom_col="geometry")
-        print(f"Loaded {len(gdf)} nodes from table '{table_name}'")
+        log.info(
+            f"Loaded {len(gdf)} nodes from table '{table_name}'",
+            area=area,
+            network_type=network_type,
+            table=table_name,
+            count=len(gdf)
+        )
         return gdf
 
     def load_edges_for_tiles(
@@ -349,7 +383,12 @@ class DatabaseClient:
             query += " WHERE tile_id = ANY(%(tile_ids)s)"
             params["tile_ids"] = tile_ids
 
-        print(f"Executing query: {query}")
+        log.debug(
+            f"Executing query: {query}",
+            area=area,
+            network_type=network_type,
+            query=query
+        )
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry", params=params)
         except Exception as e:

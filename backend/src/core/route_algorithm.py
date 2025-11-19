@@ -2,10 +2,11 @@
 
 import geopandas as gpd
 import igraph as ig
+import pandas as pd
 from shapely.strtree import STRtree
 from shapely.ops import split
 from shapely.geometry import Point, LineString
-import pandas as pd
+from src.logging.logger import log
 
 
 class RouteAlgorithm:
@@ -17,7 +18,7 @@ class RouteAlgorithm:
         Calls graph initialization
 
         Args:
-            edges_gdf (gpd.GeoDataFrame): GeoDataFrame containing 
+            edges_gdf (gpd.GeoDataFrame): GeoDataFrame containing
                 LineString geometries representing edges.
             nodes_gdf (gpd.GeoDataFrame): GeodataFrame containing
                 Point geometries representing nodes.
@@ -111,8 +112,11 @@ class RouteAlgorithm:
 
         path_nodes = self.run_routing_algorithm(
             graph, origin_node, destination_node)
+
         path_edges = self.extract_path_edges(path_nodes, graph)
-        print(f"Extracted {len(path_edges)} edges for final route")
+        log.debug(
+            f"Extracted {len(path_edges)} edges for final route", edge_count=len(path_edges))
+
         return path_edges
 
     def init_route_specific(self):
@@ -185,7 +189,9 @@ class RouteAlgorithm:
                 if not row.empty:
                     edges_gdf_rows.append(row.iloc[0])
             except ig.InternalError:
-                print(f"Missing edge for {from_node_name} ↔ {to_node_name}")
+                log.error(
+                    f"Missing edge for {from_node_name} ↔ {to_node_name}",
+                    from_node=from_node_name, to_node=to_node_name)
 
         edges_gdf = gpd.GeoDataFrame(
             edges_gdf_rows, crs=self.route_specific_gdf.crs)

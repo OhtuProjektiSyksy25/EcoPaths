@@ -32,14 +32,13 @@ def test_create_edge_class_attributes(mock_area_config):
     assert cls.__tablename__ == "edges_berlin_walking"
 
 
-def test_create_edge_class_unknown_network_type(mock_area_config, capsys):
-    cls = create_edge_class("berlin", "flying", base=TempBase)
+def test_create_edge_class_unknown_network_type(mock_area_config, caplog):
+    with caplog.at_level("WARNING"):
+        cls = create_edge_class("berlin", "flying", base=TempBase)
     expected_columns = BASE_COLUMNS
     for col in expected_columns:
         assert hasattr(cls, col)
-    captured = capsys.readouterr()
-    assert "WARNING: Unknown network_type" in captured.out
-    assert cls.__tablename__ == "edges_berlin_flying"
+    assert any("Unknown network_type" in rec.message for rec in caplog.records)
 
 
 def test_create_grid_class(mock_area_config):

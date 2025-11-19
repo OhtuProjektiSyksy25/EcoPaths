@@ -36,3 +36,11 @@
     opacity: 0;
   }
 }
+
+/* MOBILE STYLES */
+@media (max-width: 800px) {
+  .location-button-container {
+    bottom: 75px;
+    right: 4px;
+  }
+}

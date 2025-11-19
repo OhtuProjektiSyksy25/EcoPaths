@@ -166,6 +166,10 @@ TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 DB_URL = os.getenv("DB_URL")
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_JSON = os.getenv("LOG_JSON", "false").lower() == "true"
+LOG_FILE = os.getenv("LOG_FILE", "")
+
 if not DB_URL:
     if os.path.exists(ENV_PATH):
         load_dotenv(dotenv_path=ENV_PATH, override=True)

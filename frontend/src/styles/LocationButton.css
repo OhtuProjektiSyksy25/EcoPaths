@@ -35,3 +35,7 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.location-button svg {
+  color: #333;
+}

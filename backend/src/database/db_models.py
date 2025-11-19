@@ -4,8 +4,9 @@ Dynamic SQLAlchemy ORM models for spatial Edge, Grid, and Node tables.
 
 from sqlalchemy import Column, Integer, String, Float
 from geoalchemy2 import Geometry
-from config.settings import AreaConfig
+from src.logging.logger import log
 from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
+from config.settings import AreaConfig
 from database.db_connection import Base  # default production Base
 
 
@@ -62,8 +63,9 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
     srid = int(area_config.crs.split(":")[-1])
 
     if network_type not in EXTRA_COLUMNS:
-        print(
-            f"WARNING: Unknown network_type '{network_type}', using BASE_COLUMNS only."
+        log.warning(
+            f"Unknown network_type '{network_type}', using BASE_COLUMNS only.",
+            network_type=network_type
         )
 
     columns = BASE_COLUMNS + EXTRA_COLUMNS.get(network_type, [])

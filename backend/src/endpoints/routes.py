@@ -4,9 +4,12 @@ within the selected area.
 Returns multiple route options and route summaries.
 """
 import time
+import math
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
+from src.logging.logger import log
 
 router = APIRouter()
 
@@ -78,8 +81,26 @@ async def getroute(request: Request):
         response = route_service.get_route(
             origin_gdf, destination_gdf, balanced_weight)
 
+    # jsonable_encoder will convert numpy types and other non-serializable
+    # objects into native Python types. After that ensure there are no
+    # NaN/Infinite floats which would make json.dumps() raise ValueError.
+    def _sanitize(obj):
+        if isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return obj
+        if isinstance(obj, dict):
+            return {k: _sanitize(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [_sanitize(v) for v in obj]
+        return obj
+
+    response = jsonable_encoder(response)
+    response = _sanitize(response)
+
     duration = time.time() - start_time
-    print(f"/getroute took {duration:.3f} seconds")
+    log.debug(
+        f"/getroute took {duration:.3f} seconds", duration=duration)
 
     return JSONResponse(content=response)
 
