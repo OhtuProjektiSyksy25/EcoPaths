@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import geopandas as gpd
 import numpy as np
+from src.logging.logger import log
 from config.settings import get_settings
 from database.db_client import DatabaseClient
 
@@ -30,8 +31,6 @@ class GoogleAPIService:
         region_code = settings.area.region_code
 
         # When in test mode, return random AQI instead of making an API call
-        print(
-            f"Fetching AQ data for ({lat}, {lon}){' (TEST MODE)' if self.test_mode else ''}...")
         if self.test_mode:
             return {
                 "aqi": random.randint(5, 150),  # random AQI between 5–150
@@ -98,6 +97,13 @@ class GoogleAPIService:
                 columns=["tile_id", "raw_aqi", "pm2_5", "no2", "geometry"],
                 crs=area_config.crs
             )
+
+        if self.test_mode:
+            log.debug(
+                "GoogleAPIService: Running in TEST MODE - Using mocked AQ data")
+        else:
+            log.debug(
+                "GoogleAPIService: Fetching AQ data from Google API")
 
         # Run parallel API calls for each tile
         results = {}

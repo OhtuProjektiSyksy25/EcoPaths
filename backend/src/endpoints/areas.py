@@ -4,6 +4,7 @@ list areas, select area, get selected area config.
 """
 from fastapi import APIRouter, Request, Path
 from fastapi.responses import JSONResponse
+from src.logging.logger import log
 from config.settings import AREA_SETTINGS
 from services.route_service import RouteServiceFactory
 from utils.decorators import require_area_config
@@ -40,10 +41,12 @@ async def select_area(request: Request, area_id: str = Path(...)):
         request.app.state.route_service = route_service
         request.app.state.area_config = area_config
         request.app.state.selected_area = area_id.lower()
-        print(f"Successfully switched to {area_id}")
+        log.info(
+            f"Successfully switched to {area_id}")
         return area_id.lower()
     except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"Failed to switch to {area_id}: {str(e)}")
+        log.error(
+            f"Failed to switch to {area_id}: {str(e)}", area=area_id, error=str(e))
         return JSONResponse(
             status_code=500,
             content={"error": f"Failed to switch to {area_id}: {str(e)}"}

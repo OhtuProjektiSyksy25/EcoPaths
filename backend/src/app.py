@@ -11,6 +11,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from src.logging.logging_conf import configure_logging
+from src.logging.logger import log
 from config.settings import TEST_MODE
 
 from endpoints import areas, geocode, routes, static
@@ -27,7 +29,8 @@ ALLOWED_ORIGINS = [
 ]
 
 if TEST_MODE:
-    print("Running in TEST MODE - Using mocked air quality data")
+    log.info(
+        "Running in TEST MODE - Using mocked air quality data")
 
 
 @asynccontextmanager
@@ -49,6 +52,8 @@ def create_app(lifespan):
     Returns:
         FastAPI: Configured FastAPI application.
     """
+    configure_logging()
+
     application = FastAPI(lifespan=lifespan)
 
     # Add project root to PYTHONPATH

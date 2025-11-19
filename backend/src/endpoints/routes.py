@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
+from src.logging.logger import log
 
 router = APIRouter()
 
@@ -94,6 +95,7 @@ async def getroute(request: Request):
     response = _sanitize(response)
 
     duration = time.time() - start_time
-    print(f"/getroute took {duration:.3f} seconds")
+    log.debug(
+        f"/getroute took {duration:.3f} seconds", duration=duration)
 
     return JSONResponse(content=response)
