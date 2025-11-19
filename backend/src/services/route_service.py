@@ -5,7 +5,7 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString, Polygon, shape, Point
 from config.settings import AreaConfig, get_settings
-from src.logging.logger import log
+from logger.logger import log
 from core.route_algorithm import RouteAlgorithm
 from core.edge_enricher import EdgeEnricher
 from database.db_client import DatabaseClient

@@ -2,7 +2,7 @@
 Utility module for handling, saving and fetching of GeoDataFrame/geojson data to and from redis
 """
 import geopandas as gpd
-from src.logging.logger import log
+from logger.logger import log
 
 
 class RedisService:

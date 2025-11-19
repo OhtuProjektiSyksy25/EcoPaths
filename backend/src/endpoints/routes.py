@@ -9,8 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
-from services.route_service import RouteServiceFactory
-from src.logging.logger import log
+from logger.logger import log
 
 router = APIRouter()
 

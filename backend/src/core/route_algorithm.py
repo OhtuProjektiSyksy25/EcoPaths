@@ -7,8 +7,7 @@ import pandas as pd
 from shapely.strtree import STRtree
 from shapely.ops import split
 from shapely.geometry import Point, LineString
-from src.logging.logger import log
-from src.logging.logger import log
+from logger.logger import log
 
 
 class RouteAlgorithm:

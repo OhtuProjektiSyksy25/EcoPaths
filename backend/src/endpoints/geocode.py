@@ -4,7 +4,7 @@ forward geocode suggestions (addresses and POIs) within the selected area.
 """
 from fastapi import APIRouter, Path
 import httpx
-from src.logging.logger import log
+from logger.logger import log
 from utils.poi_utils import compose_photon_suggestions
 from utils.poi_utils import remove_double_osm_features
 

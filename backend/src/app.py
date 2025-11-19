@@ -11,8 +11,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from src.logging.logging_conf import configure_logging
-from src.logging.logger import log
+from logger.logging_conf import configure_logging
+from logger.logger import log
 from config.settings import TEST_MODE
 
 from endpoints import areas, geocode, routes, static
