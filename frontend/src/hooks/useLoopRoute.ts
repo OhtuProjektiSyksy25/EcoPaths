@@ -33,7 +33,6 @@ export const useLoopRoute = (
         setError(null);
         try {
           const data = await fetchLoopRoute(fromLocked, distanceKm);
-          // kääritään loop‑avaimen alle
           setRoutes(data.routes ? { loop: data.routes.loop } : null);
           setSummaries(data.summaries ? { loop: data.summaries.loop } : null);
         } catch (err) {
