@@ -6,7 +6,7 @@ Provides methods to interact with a Redis cache.
 import json
 import redis
 from config.settings import RedisConfig
-from src.logging.logger import log
+from logger.logger import log
 
 
 class RedisCache:

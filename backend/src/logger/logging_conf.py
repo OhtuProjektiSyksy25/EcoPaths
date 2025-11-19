@@ -48,7 +48,7 @@ def configure_logging():
         "disable_existing_loggers": False,
         "filters": {
             "exclude_httpx": {
-                "()": "src.logging.logger.ExcludeHttpxFilter"
+                "()": "logger.logger.ExcludeHttpxFilter"
             },
         },
 
@@ -58,7 +58,7 @@ def configure_logging():
                 "datefmt": "%d-%m-%Y %H:%M:%S",
             },
             "json": {
-                "()": "src.logging.formatters.JSONFormatter",
+                "()": "logger.formatters.JSONFormatter",
             },
         },
 

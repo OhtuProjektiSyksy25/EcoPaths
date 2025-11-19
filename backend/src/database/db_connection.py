@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from config.settings import DatabaseConfig
-from src.logging.logger import log
+from logger.logger import log
 
 # ENVIRONMENT SETUP
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
