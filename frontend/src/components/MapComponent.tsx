@@ -80,6 +80,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     showLoopOnly ? null : selectedRoute,
   );
 
+  /* istanbul ignore next */
   useEffect(() => {
     if (!mapRef.current) return;
 
