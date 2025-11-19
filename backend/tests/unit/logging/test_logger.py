@@ -1,8 +1,8 @@
 
 import json
 import logging
-from src.logging.logger import AppLogger, ExcludeHttpxFilter
-from src.logging.formatters import JSONFormatter
+from src.logger.logger import AppLogger, ExcludeHttpxFilter
+from src.logger.formatters import JSONFormatter
 
 
 def test_json_formatter_outputs_valid_json():
