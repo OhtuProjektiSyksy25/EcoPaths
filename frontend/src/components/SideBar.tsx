@@ -11,6 +11,7 @@ import RouteSlider from './RouteSlider';
 import RouteModeSelector from './RouteModeSelector';
 import '../styles/SideBar.css';
 import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
+import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -60,12 +61,111 @@ const SideBar: React.FC<SideBarProps> = ({
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
+
+  // Mobile
+  const [sidebarStage, setSidebarStage] = useState<'inputs' | 'routes' | 'routes-only' | 'hidden'>(
+    'inputs',
+  );
+  const [isMobile, setIsMobile] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [currentY, setCurrentY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = (): void => {
+      setIsMobile(window.innerWidth <= 800);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [selectedArea]);
   const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
   const [loop, setLoop] = useState(false);
 
   useEffect(() => {
-    onErrorChange?.(errorMessage);
-  }, [errorMessage, onErrorChange]);
+    if (isMobile && summaries && sidebarStage === 'inputs') {
+      setSidebarStage('routes');
+    }
+  }, [isMobile, summaries, sidebarStage]);
+
+  // Allow dragging only from the handle area
+  const handleTouchStart = (e: React.TouchEvent): void => {
+    if (!isMobile) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const touchY = e.touches[0].clientY - rect.top;
+    const handleHeight = 35;
+
+    if (touchY > handleHeight) {
+      return;
+    }
+
+    setStartY(e.touches[0].clientY);
+    setCurrentY(e.touches[0].clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent): void => {
+    if (!isMobile || !isDragging) return;
+    setCurrentY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (): void => {
+    if (!isMobile || !isDragging) return;
+
+    const deltaY = startY - currentY;
+    const threshold = 50;
+
+    if (Math.abs(deltaY) > threshold) {
+      if (deltaY > 0) {
+        handleSwipeUp();
+      } else {
+        handleSwipeDown();
+      }
+    }
+
+    setIsDragging(false);
+    setStartY(0);
+    setCurrentY(0);
+  };
+
+  const handleSwipeUp = (): void => {
+    if (sidebarStage === 'hidden') {
+      // From hidden -> show routes only
+      setSidebarStage('routes-only');
+    } else if (sidebarStage === 'routes-only') {
+      // From routes only -> show full routes with inputs
+      setSidebarStage('routes');
+    }
+  };
+
+  const handleSwipeDown = (): void => {
+    if (sidebarStage === 'routes') {
+      // From full routes -> routes only (hide inputs)
+      setSidebarStage('routes-only');
+    } else if (sidebarStage === 'routes-only') {
+      // From routes only -> hidden
+      setSidebarStage('hidden');
+    }
+  };
+
+  const handleMobileSidebarClick = (e: React.MouseEvent): void => {
+    if (!isMobile) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const handleHeight = 35;
+
+    if (clickY <= handleHeight) {
+      if (sidebarStage === 'hidden') {
+        setSidebarStage('routes-only');
+      } else if (sidebarStage === 'routes-only') {
+        setSidebarStage('routes');
+      } else if (sidebarStage === 'routes') {
+        setSidebarStage('routes-only');
+      }
+    }
+  };
 
   useEffect(() => {
     if (waitingForLocation && coordinates) {
@@ -147,6 +247,9 @@ const SideBar: React.FC<SideBarProps> = ({
 
   const handleFromFocus = (): void => {
     setShowFromCurrentLocation(true);
+    if (isMobile && (sidebarStage === 'hidden' || sidebarStage === 'routes-only')) {
+      setSidebarStage(summaries ? 'routes' : 'inputs');
+    }
   };
 
   const handleFromBlur = (): void => {
@@ -216,6 +319,7 @@ const SideBar: React.FC<SideBarProps> = ({
       }
     }, 400);
   };
+
   useEffect(() => {
     // Clear inputs when area changes
     if (selectedArea) {
@@ -224,8 +328,11 @@ const SideBar: React.FC<SideBarProps> = ({
       setFromSuggestions([]);
       setToSuggestions([]);
       setErrorMessage(null);
+      if (isMobile) {
+        setSidebarStage('inputs');
+      }
     }
-  }, [selectedArea]);
+  }, [selectedArea?.id, isMobile, selectedArea]);
 
   useEffect(() => {
     // Notify parent when error changes (to disable area button)
@@ -233,7 +340,18 @@ const SideBar: React.FC<SideBarProps> = ({
   }, [errorMessage, onErrorChange, selectedArea]);
 
   return (
-    <div className='sidebar'>
+    <div
+      className={`sidebar sidebar-stage-${sidebarStage}`}
+      onClick={handleMobileSidebarClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className='sidebar-handle'>
+        {sidebarStage === 'hidden' && <ChevronUp size={24} />}
+        {sidebarStage === 'routes-only' && <MoreHorizontal size={24} />}
+        {sidebarStage === 'routes' && <ChevronDown size={24} />}
+      </div>
       {errorMessage && (
         <div className='error-popup-overlay' onClick={() => setErrorMessage(null)}>
           <div className='error-popup-modal' onClick={(e) => e.stopPropagation()}>
