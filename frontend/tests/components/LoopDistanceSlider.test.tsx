@@ -18,8 +18,8 @@ describe('LoopDistanceSlider', () => {
     render(<LoopDistanceSlider value={5} onChange={handleChange} />);
     const numberInput = screen.getByRole('spinbutton');
 
-    fireEvent.change(numberInput, { target: { value: '10' } });
-    expect(handleChange).toHaveBeenCalledWith(10);
+    fireEvent.change(numberInput, { target: { value: '2' } });
+    expect(handleChange).toHaveBeenCalledWith(2);
   });
 
   it('calls onChange when range slider changes', () => {
@@ -27,8 +27,8 @@ describe('LoopDistanceSlider', () => {
     render(<LoopDistanceSlider value={5} onChange={handleChange} />);
     const rangeInput = screen.getByRole('slider');
 
-    fireEvent.change(rangeInput, { target: { value: '15' } });
-    expect(handleChange).toHaveBeenCalledWith(15);
+    fireEvent.change(rangeInput, { target: { value: '1' } });
+    expect(handleChange).toHaveBeenCalledWith(1);
   });
 
   it('keeps inputs in sync with updated value prop', () => {
@@ -39,8 +39,8 @@ describe('LoopDistanceSlider', () => {
     expect(numberInput).toHaveValue(3);
     expect(rangeInput).toHaveValue('3');
 
-    rerender(<LoopDistanceSlider value={12} onChange={jest.fn()} />);
-    expect(numberInput).toHaveValue(12);
-    expect(rangeInput).toHaveValue('12');
+    rerender(<LoopDistanceSlider value={4} onChange={jest.fn()} />);
+    expect(numberInput).toHaveValue(4);
+    expect(rangeInput).toHaveValue('4');
   });
 });
