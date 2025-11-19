@@ -69,7 +69,8 @@ def test_snap_and_split_adds_vertice_and_edges(algorithm):
     start_edges = len(algorithm.igraph.es)
 
     algorithm.init_route_specific()
-    algorithm.snap_and_split(point, "origin")
+    graph = algorithm.igraph
+    algorithm.snap_and_split(point, "origin", graph)
     end_vertices = len(algorithm.igraph.vs)
     end_edges = len(algorithm.igraph.es)
 
@@ -78,10 +79,11 @@ def test_snap_and_split_adds_vertice_and_edges(algorithm):
 
 
 def test_prepare_graph_and_nodes(algorithm, origin_destination_other):
+    graph = algorithm.igraph
     start, end = origin_destination_other
     start_vertices = len(algorithm.igraph.vs)
     start_edges = len(algorithm.igraph.es)
-    algorithm.prepare_graph_and_nodes(start, end)
+    algorithm.prepare_graph_and_nodes(start, end, graph)
     end_vertices = len(algorithm.igraph.vs)
     end_edges = len(algorithm.igraph.es)
     print(start_vertices, end_vertices)
