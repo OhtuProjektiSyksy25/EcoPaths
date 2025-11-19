@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 router = APIRouter()
 
 
-@router.get("/{full_path:path}")
+@router.get("/{_full_path:path}")
 async def spa_handler(_full_path: str):
     """Catch-all route handler for frontend SPA."""
     index_path = os.path.join("build", "index.html")
