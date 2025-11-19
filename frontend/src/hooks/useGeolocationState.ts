@@ -52,6 +52,7 @@ export const useGeolocation = (): UseGeolocationReturn => {
             ? 'Location access denied. Please enable location in your browser.'
             : error.message;
 
+        console.warn('[useGeolocation] error getting position', errorMessage);
         setState((prev) => ({
           ...prev,
           loading: false,
