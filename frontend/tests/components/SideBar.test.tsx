@@ -43,6 +43,8 @@ const defaultProps: ComponentProps<typeof SideBar> = {
   onRouteSelect: mockOnRouteSelect,
   routeMode: 'walk',
   setRouteMode: jest.fn(),
+  loop: false,
+  handleLoopToggle: jest.fn(),
 };
 
 function renderSideBar(overrides: Partial<typeof defaultProps> = {}) {

@@ -34,6 +34,7 @@ async def getroute(request: Request):
             }
         }
     """
+    destination_gdf = None
     area_config = request.app.state.area_config
     route_service = request.app.state.route_service
 
@@ -64,7 +65,6 @@ async def getroute(request: Request):
         (f for f in features if f["properties"].get("role") == "start"), None)
     end_feature = None
     if not loop_bool:
-        print("Halo")
         end_feature = next(
             (f for f in features if f["properties"].get("role") == "end"), None)
     if not start_feature:
@@ -73,15 +73,14 @@ async def getroute(request: Request):
     if not loop_bool and not end_feature:
         return JSONResponse(status_code=400, content={"error": "Missing end feature"})
 
-
     target_crs = area_config.crs
     origin_gdf = GeoTransformer.geojson_to_projected_gdf(
         start_feature["geometry"], target_crs)
     if not loop_bool:
         destination_gdf = GeoTransformer.geojson_to_projected_gdf(
             end_feature["geometry"], target_crs)
-    
-    if loop_bool == True:
+
+    if loop_bool is True:
         response = route_service.get_round_trip(origin_gdf)
         print("HA")
     elif only_compute_balanced_route:

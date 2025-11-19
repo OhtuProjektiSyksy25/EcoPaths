@@ -54,9 +54,6 @@ export const useRoute = (
       isInitialLoadRef.current = true;
       return;
     }
-    setRoutes(null);
-    setSummaries(null);
-    setAqiDifferences(null);
 
     const fetchRoute = async (): Promise<void> => {
       // Determine if this is just a weight change (not location change)
@@ -118,7 +115,6 @@ export const useRoute = (
         const data = await response.json();
 
         if (loop) {
-          console.log(data.routes.round_trip);
           setRoutes(data.routes);
           setSummaries(data.summaries);
           setAqiDifferences(data.aqi_differences);

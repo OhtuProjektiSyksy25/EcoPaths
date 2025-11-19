@@ -44,15 +44,15 @@ def test_getroute_invalid_features_count(client):
 
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
-def test_getroute_missing_start_or_end(client):
+def test_getroute_missing_start(client):
     response = client.post("/api/getroute", json={
         "features": [
             {"properties": {"role": "end"}, "geometry": {}},
             {"properties": {"role": "start_missing"}, "geometry": {}}
-        ]
+        ],
     })
     assert response.status_code == 400
-    assert response.json() == {"error": "Missing start or end feature"}
+    assert response.json() == {"error": "Missing start feature"}
 
 
 @pytest.mark.usefixtures("setup_mock_lifespan")

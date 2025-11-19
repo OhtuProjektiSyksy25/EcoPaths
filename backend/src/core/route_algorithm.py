@@ -99,7 +99,7 @@ class RouteAlgorithm:
         Returns:
             gpd.GeoDataFrame: GeoDataFrame containing the edges along the calculated route.
         """
-        if graph == None:
+        if graph is None:
             graph = self.igraph
 
         origin_node, destination_node, graph = self.prepare_graph_and_nodes(
@@ -125,7 +125,8 @@ class RouteAlgorithm:
         self.route_edges_tree = STRtree(
             self.route_specific_gdf.geometry.to_list())
 
-    def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, graph, balance_factor=1, no_update=False):
+    def prepare_graph_and_nodes(self, origin_gdf, destination_gdf, graph,
+                                balance_factor=1, no_update=False):
         """
         Prepares graph and determines nearest origin and destination node for routing.
         Updates edge weights according to balance_factor
@@ -148,7 +149,8 @@ class RouteAlgorithm:
         try:
             graph.vs.find(name="destination")
         except ValueError:
-            self.snap_and_split(destination_gdf.geometry.iat[0], "destination", graph)
+            self.snap_and_split(
+                destination_gdf.geometry.iat[0], "destination", graph)
 
         if not no_update:
             self.update_weights(graph, balance_factor=balance_factor)
@@ -336,16 +338,41 @@ class RouteAlgorithm:
             [self.route_specific_gdf, new_edges_gdf], ignore_index=True
         )
 
-    def calculate_round_trip(self, origin_gdf, destination_gdf, inital_graph, balance_factor=0, distance=0, reverse=False, previous_edges=None):
+    def calculate_round_trip(self, origin_gdf, destination_gdf, inital_graph,
+                             balance_factor=0, reverse=False, previous_edges=None):
+        """
+            Compute a forward or return route of a round-trip route.
+
+            Depending on 'reverse', prepares routing nodes and runs the shortest-path
+            algorithm on the provided graph, optionally penalizing edges used in the
+            first route.
+
+            Args:
+                origin_gdf (GeoDataFrame): Start point of this route.
+                destination_gdf (GeoDataFrame): End point of this route.
+                inital_graph (igraph.Graph): Graph containing edges and weights.
+                balance_factor (float, optional): Weight between speed and air quality.
+                reverse (bool, optional): If True, swap origin and destination.
+                previous_edges (list[int] | None): gdf_edge_id values from the
+                    outbound route to heavily penalize for the return route.
+
+            Returns:
+                tuple:
+                    - path_edges (GeoDataFrame): Edges forming the computed route.
+                    - epath (list[int]): List of igraph edge indices representing the path.
+
+            Raises:
+                ValueError: If origin or destination node cannot be found in the graph.
+        """
         if reverse:
             destination_node, origin_node, graph = self.prepare_graph_and_nodes(
-            origin_gdf, destination_gdf, inital_graph, balance_factor=balance_factor
-        )
+                origin_gdf, destination_gdf, inital_graph, balance_factor=balance_factor
+            )
         else:
             origin_node, destination_node, graph = self.prepare_graph_and_nodes(
-            origin_gdf, destination_gdf, inital_graph, balance_factor=balance_factor
-        )
-            
+                origin_gdf, destination_gdf, inital_graph, balance_factor=balance_factor
+            )
+
         if previous_edges is not None:
             # previous_edges is a list of gdf_edge_id values (stable identifiers)
             prev_gdf_ids = previous_edges
@@ -353,8 +380,8 @@ class RouteAlgorithm:
             for gdf_id in prev_gdf_ids:
                 for e in inital_graph.es:
                     if e.attributes().get("gdf_edge_id") == gdf_id:
-                        e["weight"] = 999999  # very large so algorithm avoids it
-
+                        # very large so algorithm avoids it
+                        e["weight"] = 999999
 
         if origin_node not in graph.vs["name"] or destination_node not in graph.vs["name"]:
             raise ValueError("node not found.")
@@ -425,7 +452,7 @@ class RouteAlgorithm:
             name_path = [graph.vs[i]["name"] for i in vpath]
             if epath is True:
                 epath = graph.get_shortest_paths(
-                origin_idx, to=destination_idx, weights="weight", output="epath")[0]
+                    origin_idx, to=destination_idx, weights="weight", output="epath")[0]
                 return name_path, epath
             return name_path
 

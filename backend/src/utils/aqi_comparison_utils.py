@@ -3,6 +3,7 @@ Util for calculating AQI difference between different route modes.
 """
 from collections import defaultdict
 
+
 def calculate_aqi_difference(summaries: dict) -> dict:
     """
     Calculate differences in AQI between different route types.
@@ -42,6 +43,7 @@ def calculate_aqi_difference(summaries: dict) -> dict:
         }
 
     return comparisons
+
 
 def format_comparison_text(percentage_diff: float | None) -> str:
     """

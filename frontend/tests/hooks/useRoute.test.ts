@@ -89,7 +89,7 @@ describe('useRoute', () => {
       }),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk'));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk', false));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -108,14 +108,14 @@ describe('useRoute', () => {
   });
 
   test('does not fetch if fromLocked or toLocked is incomplete', () => {
-    renderHook(() => useRoute(null, mockTo, 0.5, 'walk'));
+    renderHook(() => useRoute(null, mockTo, 0.5, 'walk', false));
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
   test('handles fetch error correctly', async () => {
     (global.fetch as jest.Mock).mockRejectedValue(new Error('Network request failed'));
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk'));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk', false));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -142,7 +142,7 @@ describe('useRoute', () => {
       });
 
     const { result, rerender } = renderHook(
-      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk'),
+      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk', false),
       {
         initialProps: { weight: 0.5 },
       },
@@ -157,7 +157,7 @@ describe('useRoute', () => {
     });
 
     await waitFor(() => expect(result.current.balancedLoading).toBe(false));
- 
+
     expect(result.current.routes?.fastest).toEqual(initialRoutes?.fastest);
     expect(result.current.routes?.balanced).toEqual(mockRoutes.balanced);
     expect(result.current.summaries?.balanced).toEqual(mockSummaries.balanced);
@@ -176,7 +176,7 @@ describe('useRoute', () => {
       .mockRejectedValueOnce(new Error('Partial fetch failed'));
 
     const { result, rerender } = renderHook(
-      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk'),
+      ({ weight }) => useRoute(mockFrom, mockTo, weight, 'walk', false),
       {
         initialProps: { weight: 0.5 },
       },
@@ -213,7 +213,7 @@ describe('useRoute', () => {
       });
 
     const { result, rerender } = renderHook(
-      ({ from, to, weight }) => useRoute(from, to, weight, 'walk'),
+      ({ from, to, weight }) => useRoute(from, to, weight, 'walk', false),
       {
         initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
       },
@@ -244,7 +244,7 @@ describe('useRoute', () => {
       json: async () => ({}),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk'));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, 'walk', false));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -254,3 +254,4 @@ describe('useRoute', () => {
     expect(result.current.routes).toBeNull();
     expect(result.current.summaries).toBeNull();
   });
+});
