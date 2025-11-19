@@ -77,7 +77,6 @@ class EdgeEnricher:
             "geometry",
             "tile_id",
             "length_m",
-            "normalized_length",
             "from_node",
             "to_node",
             "env_influence"
@@ -152,18 +151,12 @@ class EdgeEnricher:
 
         enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
 
-        # Compute derived AQI cost (scaled by environmental influence)
-        enriched["aqi"] = enriched["raw_aqi"] * enriched["env_influence"]
+        enriched["aqi_norm_base"] = enriched["raw_aqi"] / 500.0
 
-        # normalized_aqi is a derived feature used for routing algorithms.
-        # It scales AQI cost between 0–1 for consistent weighting.
-        min_aqi = enriched["aqi"].min()
-        max_aqi = enriched["aqi"].max()
-        if min_aqi == max_aqi:
-            enriched["normalized_aqi"] = 0.0
-        else:
-            enriched["normalized_aqi"] = (
-                enriched["aqi"] - min_aqi) / (max_aqi - min_aqi)
+        enriched["normalized_aqi"] = enriched["aqi_norm_base"] * \
+            enriched["env_influence"]
+
+        enriched["aqi"] = enriched["normalized_aqi"] * 500.0
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained
