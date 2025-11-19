@@ -3,6 +3,7 @@ SQL-based utilities for cleaning and enriching edge tables in a spatial network.
 
 Includes geometry normalization, access filtering, length computation, and tile ID assignment.
 """
+import time
 import geopandas as gpd
 import pandas as pd
 import igraph as ig
@@ -41,16 +42,20 @@ class EdgeCleanerSQL:
         Returns:
             None
         """
+        start_time = time.time()
         self.normalize_geometry(area, network_type)
         self.drop_invalid_geometries(area, network_type)
         self.filter_access(area, network_type)
         self.split_edges_by_tiles(area, network_type)
         self.normalize_geometry(area, network_type)
         self.drop_invalid_geometries(area, network_type)
-        self.compute_lengths(area, network_type)
-        self.assign_edge_ids(area, network_type)
+        if network_type == "walking":
+            self.compute_lengths(area, network_type)
+            self.assign_edge_ids(area, network_type)
 
-        print("Full edge cleaning complete.")
+        end_time = time.time()
+        elapsed = end_time - start_time
+        print(f"Full edge cleaning complete in {elapsed:.2f} seconds.")
 
     def normalize_geometry(self, area: str, network_type: str):
         """
@@ -170,7 +175,8 @@ class EdgeCleanerSQL:
 
             # Create index on geometry
             conn.execute(text(f"""
-                CREATE INDEX idx_{split_table}_geometry ON {split_table} USING GIST (geometry);
+                CREATE INDEX IF NOT EXISTS idx_{split_table}_geometry
+                ON {split_table} USING GIST (geometry);
             """))
 
             # Replace original table with split version
@@ -191,10 +197,7 @@ class EdgeCleanerSQL:
                 FROM {table}
             )
             UPDATE {table}
-            SET
-                length_m = ROUND(ST_Length(geometry)::numeric, 2),
-                normalized_length = ROUND((ST_Length(geometry)::numeric / stats.max_len::numeric), 4)
-            FROM stats;
+            SET length_m = CAST(ROUND(ST_Length(geometry)::numeric, 2) AS double precision);
         """
         with self.engine.begin() as conn:
             conn.execute(text(query))
@@ -223,7 +226,7 @@ class EdgeCleanerSQL:
             geom_col="geometry",
             crs=get_settings(area).area.crs
         )
-        print(f"  Loaded {len(edges):,} edges from database")
+        print(f"  Loaded {len(edges)} edges from database")
 
         # Drop rows with missing node references
         edges = edges.dropna(subset=["from_node", "to_node"])
@@ -248,8 +251,8 @@ class EdgeCleanerSQL:
 
         largest_comp_id = max(set(membership), key=membership.count)
         print(
-            f""" Found {len(components)} components.
-        Largest has {membership.count(largest_comp_id)} nodes.""")
+            f"  Found {len(components)} components.\n"
+            f"  Largest has {membership.count(largest_comp_id)} nodes.")
 
         # Filter edges belonging to largest component
         keep_edges = edges[
@@ -257,7 +260,7 @@ class EdgeCleanerSQL:
             (edges["to_node"].map(node_id_to_comp) == largest_comp_id)
         ].set_crs(get_settings(area).area.crs)
         print(
-            f"  Keeping {len(keep_edges):,} edges ({len(keep_edges)/len(edges):.1%} of total)")
+            f"  Keeping {len(keep_edges)} edges ({len(keep_edges)/len(edges):.1%} of total)")
 
         # Write cleaned edges to database
         with self.engine.begin() as conn:
@@ -325,8 +328,8 @@ class EdgeCleanerSQL:
 
             # Recreate indexes
             conn.execute(text(f"""
-                CREATE INDEX idx_{table}_edge_id ON {table} (edge_id);
-                CREATE INDEX idx_{table}_geometry ON {table} USING GIST (geometry);
+                CREATE INDEX IF NOT EXISTS idx_{table}_edge_id ON {table} (edge_id);
+                CREATE INDEX IF NOT EXISTS idx_{table}_geometry ON {table} USING GIST (geometry);
             """))
 
         print("  edge_id reassignment complete.")

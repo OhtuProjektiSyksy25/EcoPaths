@@ -36,7 +36,6 @@ class TestEdgeCleaner:
             "edge_id": [1, 2, 3, 4, 5],
             "access": ["yes", "private", "permissive", "no", None],
             "length_m": [None] * 5,
-            "normalized_length": [None] * 5,
             "from_node": [100, 101, 102, 103, 104],
             "to_node": [101, 102, 103, 104, 105],
             "tile_id": ["A", "B", "C", "D", "E"],
