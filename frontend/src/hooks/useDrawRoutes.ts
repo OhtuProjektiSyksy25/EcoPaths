@@ -8,6 +8,7 @@ const ROUTE_COLORS: Record<string, string> = {
   fastest: '#003cff',
   best_aq: '#008b23',
   balanced: '#00f5e0',
+  round_trip: '#008b23',
 };
 
 const AQI_COLOR_SCALE = [
@@ -51,11 +52,11 @@ export function useDrawRoutes(
     }
 
     Object.keys(ROUTE_COLORS).forEach((mode) => {
-      removeLayerIfExists(map, `route-${mode}`);
       removeLayerIfExists(map, `route-${mode}-halo`);
+      removeLayerIfExists(map, `route-${mode}`);
     });
 
-    const routeTypes = ['fastest', 'balanced', 'best_aq'];
+    const routeTypes = ['fastest', 'balanced', 'best_aq', 'round_trip'];
 
     // Draw non-selected routes
     routeTypes.forEach((mode) => {
@@ -149,8 +150,8 @@ export function useDrawRoutes(
       if (!map) return;
 
       Object.keys(ROUTE_COLORS).forEach((mode) => {
-        removeLayerIfExists(map, `route-${mode}`);
         removeLayerIfExists(map, `route-${mode}-halo`);
+        removeLayerIfExists(map, `route-${mode}`);
       });
     };
   }, [map, routes, showAQIColors, selectedRoute]);

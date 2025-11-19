@@ -29,6 +29,7 @@ export const useRoute = (
   toLocked: LockedLocation | null,
   balancedWeight: number,
   routeMode: RouteMode,
+  loop: boolean,
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -45,7 +46,7 @@ export const useRoute = (
   const prevWeightRef = useRef(balancedWeight);
 
   useEffect(() => {
-    if (!fromLocked || !toLocked) {
+    if (!fromLocked || (!toLocked && !loop)) {
       setRoutes(null);
       setSummaries(null);
       setAqiDifferences(null);
@@ -53,6 +54,9 @@ export const useRoute = (
       isInitialLoadRef.current = true;
       return;
     }
+    setRoutes(null);
+    setSummaries(null);
+    setAqiDifferences(null);
 
     const fetchRoute = async (): Promise<void> => {
       // Determine if this is just a weight change (not location change)
@@ -60,17 +64,14 @@ export const useRoute = (
 
       if (isInitialLoadRef.current) {
         setLoading(true);
-        balancedRouteBool = false
         setRoutes(null);
         setSummaries(null);
         setAqiDifferences(null);
         isInitialLoadRef.current = false;
       } else if (isWeightChange) {
-        balancedRouteBool = true
         setBalancedLoading(true);
       } else {
         setLoading(true);
-        balancedRouteBool = false
         setRoutes(null);
         setSummaries(null);
         setAqiDifferences(null);
@@ -80,6 +81,22 @@ export const useRoute = (
       prevWeightRef.current = balancedWeight;
 
       try {
+        const features = [
+          {
+            type: 'Feature',
+            properties: { role: 'start' },
+            geometry: fromLocked.geometry,
+          },
+        ];
+
+        if (!loop && toLocked) {
+          features.push({
+            type: 'Feature',
+            properties: { role: 'end' },
+            geometry: toLocked.geometry,
+          });
+        }
+
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute`, {
           method: 'POST',
           headers: {
@@ -87,20 +104,10 @@ export const useRoute = (
           },
           body: JSON.stringify({
             type: 'FeatureCollection',
-            features: [
-              {
-                type: 'Feature',
-                properties: { role: 'start' },
-                geometry: fromLocked.geometry,
-              },
-              {
-                type: 'Feature',
-                properties: { role: 'end' },
-                geometry: toLocked.geometry,
-              },
-            ],
+            features,
             balanced_weight: balancedWeight,
             mode: routeMode,
+            loop: loop,
           }),
         });
 
@@ -110,7 +117,12 @@ export const useRoute = (
 
         const data = await response.json();
 
-        if (isWeightChange) {
+        if (loop) {
+          console.log(data.routes.round_trip);
+          setRoutes(data.routes);
+          setSummaries(data.summaries);
+          setAqiDifferences(data.aqi_differences);
+        } else if (isWeightChange) {
           // Only update balanced route, summary, and recalculate AQI differences
           setRoutes((prev) => (prev ? { ...prev, balanced: data.routes.balanced } : data.routes));
           setSummaries((prev) =>
@@ -140,7 +152,7 @@ export const useRoute = (
     };
 
     fetchRoute();
-  }, [fromLocked, toLocked, balancedWeight, routeMode]);
+  }, [fromLocked, toLocked, balancedWeight, routeMode, loop]);
 
   return { routes, summaries, aqiDifferences, loading, balancedLoading, error };
 };

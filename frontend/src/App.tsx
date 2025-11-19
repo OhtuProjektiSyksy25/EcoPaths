@@ -34,6 +34,7 @@ function App(): JSX.Element {
   const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
   const [showAQIColors, setShowAQIColors] = useState(false);
   const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
+  const [loop, setLoop] = useState<boolean>(false);
 
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
@@ -46,9 +47,9 @@ function App(): JSX.Element {
     toLocked,
     balancedWeight,
     routeMode,
+    loop,
   );
 
-  
   // Handle area selection
   const handleAreaSelect = (area: Area): void => {
     setSelectedArea(area);
@@ -74,6 +75,16 @@ function App(): JSX.Element {
   // Handle route selection
   const handleRouteSelect = (route: string): void => {
     setSelectedRoute(route === selectedRoute ? null : route);
+  };
+
+  const handleLoopToggle = (value: boolean): void => {
+    // Clear locked locations and selected route on lop toggle
+    if (value) {
+      setFromLocked(null);
+      setToLocked(null);
+      setSelectedRoute(null);
+    }
+    setLoop(value);
   };
 
   return (
@@ -117,6 +128,8 @@ function App(): JSX.Element {
           onRouteSelect={handleRouteSelect}
           routeMode={routeMode}
           setRouteMode={setRouteMode}
+          loop={loop}
+          handleLoopToggle={handleLoopToggle}
         >
           {(loading || error) && (
             <div className='route-loading-message'>

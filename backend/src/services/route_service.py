@@ -122,7 +122,7 @@ class RouteService:
         return {"routes": results, "summaries": summaries}
 
 
-    def get_round_trip(self, origin_gdf, distance = 2000):
+    def get_round_trip(self, origin_gdf, distance = 2500):
         """
             Computes a round-trip route starting and ending at `origin_gdf`.
 
@@ -188,7 +188,9 @@ class RouteService:
         for candidate in all_gdf:
             try:
                 full_route = self.get_round_trip_back(origin_gdf, edges, nodes, candidate)
-                print(full_route["summaries"]["balanced"])
+                print("close")
+                print(full_route["summaries"]["round_trip"])
+                print("nocigar")
                 return full_route
             except Exception as exc:
                 print(f"round trip back failed for: {exc}")
@@ -222,9 +224,12 @@ class RouteService:
             combined_gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
         )
         results, summaries = {}, {}
-        results["balanced"] = full_path
-        summaries["balanced"] = summarize_route(combined_gdf)
-        return {"routes": results, "summaries": summaries} #FIX BALANCED
+        results["round_trip"] = full_path
+        summaries["round_trip"] = summarize_route(combined_gdf)
+        
+        print("mad")
+
+        return {"routes": results, "summaries": summaries, "aqi_differences": None} #FIX BALANCED
 
 
 

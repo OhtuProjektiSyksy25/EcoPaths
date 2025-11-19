@@ -30,6 +30,8 @@ interface SideBarProps {
   onRouteSelect: (route: string) => void;
   routeMode: RouteMode;
   setRouteMode: (mode: RouteMode) => void;
+  loop: boolean;
+  handleLoopToggle: (value: boolean) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -48,6 +50,8 @@ const SideBar: React.FC<SideBarProps> = ({
   children,
   selectedRoute,
   onRouteSelect,
+  loop,
+  handleLoopToggle,
 }) => {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
@@ -61,7 +65,6 @@ const SideBar: React.FC<SideBarProps> = ({
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
   const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
-  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     onErrorChange?.(errorMessage);
@@ -228,6 +231,14 @@ const SideBar: React.FC<SideBarProps> = ({
   }, [selectedArea]);
 
   useEffect(() => {
+    // Clear inputs when loop changes
+    setFrom('');
+    setTo('');
+    setFromSuggestions([]);
+    setToSuggestions([]);
+  }, [loop]);
+
+  useEffect(() => {
     // Notify parent when error changes (to disable area button)
     onErrorChange?.(errorMessage);
   }, [errorMessage, onErrorChange, selectedArea]);
@@ -249,7 +260,12 @@ const SideBar: React.FC<SideBarProps> = ({
       )}
 
       <div className='sidebar-content'>
-        <RouteModeSelector mode={routeMode} setMode={setRouteMode} loop={loop} setLoop={setLoop} />
+        <RouteModeSelector
+          mode={routeMode}
+          setMode={setRouteMode}
+          loop={loop}
+          setLoop={handleLoopToggle}
+        />
         <h1 className='sidebar-title'>Where would you like to go?</h1>
 
         <div className='input-box'>
@@ -287,22 +303,41 @@ const SideBar: React.FC<SideBarProps> = ({
 
         <div className='divider' />
 
-        <div className='input-box'>
-          <InputContainer
-            placeholder='Destination'
-            value={to}
-            onChange={HandleToChange}
-            suggestions={toSuggestions}
-            onSelect={(place) => {
-              toInputSelected.current = true;
-              onToSelect(place);
-            }}
-          />
-        </div>
+        {!loop && (
+          <div className='input-box'>
+            <InputContainer
+              placeholder='Destination'
+              value={to}
+              onChange={HandleToChange}
+              suggestions={toSuggestions}
+              onSelect={(place) => {
+                toInputSelected.current = true;
+                onToSelect(place);
+              }}
+            />
+          </div>
+        )}
 
         {children}
+        {summaries && !children && loop && (
+          <div
+            className='best-aq-container route-container'
+            onClick={() => onRouteSelect('roundtrip')}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            <RouteInfoCard
+              route_type='Round Trip'
+              time_estimates={summaries.round_trip?.time_estimates ?? { walk: 0, run: 0 }}
+              total_length={summaries.round_trip?.total_length ?? 0}
+              aq_average={summaries.round_trip?.aq_average ?? 0}
+              isSelected={selectedRoute === 'round_trip'}
+              isExpanded={selectedRoute === 'round_trip'}
+              mode={routeMode}
+            />
+          </div>
+        )}
 
-        {summaries && !children && (
+        {summaries && !children && !loop && (
           <>
             <div
               className='best-aq-container route-container'
@@ -311,9 +346,9 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Best Air Quality'
-                time_estimates={summaries.best_aq.time_estimates}
-                total_length={summaries.best_aq.total_length}
-                aq_average={summaries.best_aq.aq_average}
+                time_estimates={summaries.best_aq?.time_estimates ?? { walk: 0, run: 0 }}
+                total_length={summaries.best_aq?.total_length}
+                aq_average={summaries.best_aq?.aq_average}
                 comparisons={aqiDifferences?.best_aq}
                 isSelected={selectedRoute === 'best_aq'}
                 isExpanded={selectedRoute === 'best_aq'}
@@ -328,9 +363,9 @@ const SideBar: React.FC<SideBarProps> = ({
             >
               <RouteInfoCard
                 route_type='Fastest Route'
-                time_estimates={summaries.fastest.time_estimates}
-                total_length={summaries.fastest.total_length}
-                aq_average={summaries.fastest.aq_average}
+                time_estimates={summaries.fastest?.time_estimates ?? { walk: 0, run: 0 }}
+                total_length={summaries.fastest?.total_length}
+                aq_average={summaries.fastest?.aq_average}
                 comparisons={aqiDifferences?.fastest}
                 isSelected={selectedRoute === 'fastest'}
                 isExpanded={selectedRoute === 'fastest'}
@@ -350,9 +385,9 @@ const SideBar: React.FC<SideBarProps> = ({
               ) : (
                 <RouteInfoCard
                   route_type='Your Route'
-                  time_estimates={summaries.balanced.time_estimates}
-                  total_length={summaries.balanced.total_length}
-                  aq_average={summaries.balanced.aq_average}
+                  time_estimates={summaries.balanced?.time_estimates ?? { walk: 0, run: 0 }}
+                  total_length={summaries.balanced?.total_length}
+                  aq_average={summaries.balanced?.aq_average}
                   comparisons={aqiDifferences?.balanced}
                   isSelected={selectedRoute === 'balanced'}
                   isExpanded={selectedRoute === 'balanced'}

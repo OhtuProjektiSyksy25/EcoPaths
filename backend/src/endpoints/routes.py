@@ -49,32 +49,41 @@ async def getroute(request: Request):
     features = data.get("features", [])
     balanced_weight = data.get("balanced_weight", 0.5)
     only_compute_balanced_route = data.get("balanced_route")
-    roundTripBool = data.get("roundTripBool")
-
+    loop_bool = data.get("loop")
+    print(loop_bool)
     if not isinstance(balanced_weight, (int, float)) or not 0 <= balanced_weight <= 1:
         return JSONResponse(
             status_code=400,
             content={"error": "balanced_weight must be a number between 0 and 1"}
         )
 
-    if len(features) != 2:
+    if len(features) != 2 and not loop_bool:
         return JSONResponse(status_code=400, content={"error": "GeoJSON must contain two features"})
 
     start_feature = next(
         (f for f in features if f["properties"].get("role") == "start"), None)
-    end_feature = next(
-        (f for f in features if f["properties"].get("role") == "end"), None)
-    if not start_feature or not end_feature:
-        return JSONResponse(status_code=400, content={"error": "Missing start or end feature"})
+    end_feature = None
+    if not loop_bool:
+        print("Halo")
+        end_feature = next(
+            (f for f in features if f["properties"].get("role") == "end"), None)
+    if not start_feature:
+        return JSONResponse(status_code=400, content={"error": "Missing start feature"})
+
+    if not loop_bool and not end_feature:
+        return JSONResponse(status_code=400, content={"error": "Missing end feature"})
+
 
     target_crs = area_config.crs
     origin_gdf = GeoTransformer.geojson_to_projected_gdf(
         start_feature["geometry"], target_crs)
-    destination_gdf = GeoTransformer.geojson_to_projected_gdf(
-        end_feature["geometry"], target_crs)
-
-    if roundTripBool:
+    if not loop_bool:
+        destination_gdf = GeoTransformer.geojson_to_projected_gdf(
+            end_feature["geometry"], target_crs)
+    
+    if loop_bool == True:
         response = route_service.get_round_trip(origin_gdf)
+        print("HA")
     elif only_compute_balanced_route:
         response = route_service.compute_balanced_route_only(balanced_weight)
     else:
