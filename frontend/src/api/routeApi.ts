@@ -100,8 +100,6 @@ export async function fetchLoopRoute(
 
   const url = `${process.env.REACT_APP_API_URL}/api/getloop`;
 
-  console.log('fetching loop', { fromLocked, distanceKm });
-
   const response = await fetch(`${url}?distance=${encodeURIComponent(distanceKm)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

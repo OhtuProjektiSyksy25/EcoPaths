@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import mapboxgl from 'mapbox-gl';
 import MapComponent from '../../src/components/MapComponent';
 import { LockedLocation, RouteGeoJSON } from '../../src/types/route';
@@ -114,5 +114,12 @@ describe('MapComponent', () => {
 
     mapInstance.trigger('moveend');
     expect(scaleEl.style.opacity).toBe('1');
+  });
+
+  test('uses loopRoutes when showLoopOnly is true', () => {
+    const loopRoute: RouteGeoJSON = { type: 'FeatureCollection', features: [] };
+    const loopRoutes = { loop: loopRoute };
+
+    render(<MapComponent {...defaultProps} showLoopOnly={true} loopRoutes={loopRoutes} />);
   });
 });
