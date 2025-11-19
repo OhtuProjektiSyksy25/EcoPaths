@@ -109,23 +109,24 @@ function App(): JSX.Element {
       </header>
 
       <main className='main-container'>
-        <SideBar
-          onFromSelect={setFromLocked}
-          onToSelect={setToLocked}
-          summaries={summaries}
-          aqiDifferences={aqiDifferences}
-          showAQIColors={showAQIColors}
-          setShowAQIColors={setShowAQIColors}
-          selectedArea={selectedArea}
-          onErrorChange={setLocationError}
-          balancedWeight={balancedWeight}
-          setBalancedWeight={setBalancedWeight}
-          loading={loading}
-          balancedLoading={balancedLoading}
-          selectedRoute={selectedRoute}
-          onRouteSelect={handleRouteSelect}
-          routeMode={routeMode}
-          setRouteMode={setRouteMode}
+        {!showAreaSelector && selectedArea && (
+          <SideBar
+            onFromSelect={setFromLocked}
+            onToSelect={setToLocked}
+            summaries={summaries}
+            aqiDifferences={aqiDifferences}
+            showAQIColors={showAQIColors}
+            setShowAQIColors={setShowAQIColors}
+            selectedArea={selectedArea}
+            onErrorChange={setLocationError}
+            balancedWeight={balancedWeight}
+            setBalancedWeight={setBalancedWeight}
+            loading={loading}
+            balancedLoading={balancedLoading}
+            selectedRoute={selectedRoute}
+            onRouteSelect={handleRouteSelect}
+            routeMode={routeMode}
+            setRouteMode={setRouteMode}
           loop={loop}
           setLoop={setLoop}
           loopDistance={loopDistance}
@@ -134,14 +135,15 @@ function App(): JSX.Element {
           loopLoading={loopLoading}
           showLoopOnly={showLoopOnly}
           setShowLoopOnly={setShowLoopOnly}
-        >
-          {(loading || error) && (
-            <div className='route-loading-message'>
-              {loading && <p>Loading routes...</p>}
-              {error && <p className='error'>{error}</p>}
-            </div>
-          )}
-        </SideBar>
+          >
+            {(loading || error) && (
+              <div className='route-loading-message'>
+                {loading && <p>Loading routes...</p>}
+                {error && <p className='error'>{error}</p>}
+              </div>
+            )}
+          </SideBar>
+        )}
 
         <div className='map-container'>
           <MapComponent

@@ -175,7 +175,8 @@ class RouteAlgorithm:
         Returns:
             gpd.GeoDataFrame: GeoDataFrame containing the edges of the path
         """
-        name_to_idx = {vertice["name"]: vertice.index for vertice in graph.vs}
+        name_to_idx = {vertice["name"]: vertice.index
+                       for vertice in self.igraph.vs}
 
         edges_gdf_rows = []
 
