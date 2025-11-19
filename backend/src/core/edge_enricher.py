@@ -2,6 +2,7 @@
 
 import geopandas as gpd
 from config.settings import AreaConfig
+from src.logging.logger import log
 from services.google_api_service import GoogleAPIService
 from database.db_client import DatabaseClient
 
@@ -43,7 +44,8 @@ class EdgeEnricher:
         Returns:
             GeoDataFrame: Road network edges enriched with AQ data (if available).
         """
-        print(f"EdgeEnricher: Enriching {len(tile_ids)} tiles")
+        log.debug(
+            f"Enriching {len(tile_ids)} tiles", tile_count=len(tile_ids))
         # Load edges and AQ data for the tiles
         self.edges_gdf = self.load_edges_from_db(tile_ids, network_type)
         self.aq_gdf = self.load_aq_tiles(tile_ids)
@@ -77,12 +79,13 @@ class EdgeEnricher:
             "geometry",
             "tile_id",
             "length_m",
-            "normalized_length",
             "from_node",
             "to_node",
             "env_influence"
         ]
-        print(f"Loading edges from '{table_name}' for tiles: {tile_ids}...")
+        log.debug(
+            f"Loading edges from '{table_name}' for tiles: {tile_ids}...",
+            table=table_name, tile_count=len(tile_ids))
 
         return self.db_client.load_edges_for_tiles(
             area=self.area,
@@ -107,7 +110,8 @@ class EdgeEnricher:
         )
 
         if aq_gdf.empty:
-            print("No AQ data from API. Returning edges without enrichment.")
+            log.warning(
+                "No AQ data from API. Returning edges without enrichment.")
             return gpd.GeoDataFrame(
                 columns=["tile_id", "raw_aqi", "geometry"],
                 crs=self.edges_gdf.crs
@@ -136,39 +140,36 @@ class EdgeEnricher:
             GeoDataFrame: Enriched edges with AQ values.
         """
         if aq.empty:
-            print("AQ data empty. Returning original edges.")
+            log.warning(
+                "AQ data empty. Returning original edges.")
             return edges
 
         if "tile_id" not in aq.columns or "raw_aqi" not in aq.columns:
-            print("AQ data missing required columns. Returning original edges.")
+            log.warning(
+                "AQ data missing required columns. Returning original edges.")
             return edges
 
-        print("Merging AQ data by tile_id.")
+        log.info(
+            "Merging AQ data by tile_id.")
         enriched = edges.merge(
             aq[["tile_id", "raw_aqi"]],
             on="tile_id",
             how="left"
         )
 
-        # Fill missing AQI values with neutral baseline (e.g. 50)
         enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
 
-        # Compute derived AQI cost (scaled by environmental influence)
-        enriched["aqi"] = enriched["raw_aqi"] * (((enriched["env_influence"] - 1) * 0.1) + 1)
+        enriched["aqi_norm_base"] = enriched["raw_aqi"] / 500.0
 
-        # normalized_aqi is a derived feature used for routing algorithms.
-        # It scales AQI cost between 0–1 for consistent weighting.
-        min_aqi = enriched["aqi"].min()
-        max_aqi = enriched["aqi"].max()
-        if min_aqi == max_aqi:
-            enriched["normalized_aqi"] = 0.0
-        else:
-            enriched["normalized_aqi"] = (
-                enriched["aqi"] - min_aqi) / (max_aqi - min_aqi)
+        enriched["normalized_aqi"] = enriched["aqi_norm_base"] * \
+            enriched["env_influence"]
+
+        enriched["aqi"] = enriched["normalized_aqi"] * 500.0
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained
         enriched = enriched.drop(columns=["raw_aqi"])
 
-        print("Enrichment complete.")
+        log.info(
+            "Enrichment complete.")
         return enriched

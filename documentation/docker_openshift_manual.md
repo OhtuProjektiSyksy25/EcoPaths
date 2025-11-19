@@ -187,33 +187,39 @@ docker exec -e PGPASSWORD=<LOCAL_POSTGRES_PASSWORD> <DOCKER_CONTAINER_NAME> pg_d
 unset PGPASSWORD
 ```
 
-3. Check that the dump was created
+3. Copy `database_dump.backup` to the root folder if it was created within a Docker container
+
+```bash
+docker cp <DOCKER_CONTAINER_NAME>:/tmp/database_dump.backup ./database_dump.backup
+```
+
+4. Check that the dump was created
 
 ```bash
 ls -lh database_dump.backup
 ```
 
-4. Connect to the OpenShift client
+5. Connect to the OpenShift client
 
-5. Run a temporary client pod
+6. Run a temporary client pod
 
 ```bash
 oc run pg-client --image=postgres:15 --restart=Never -- sleep infinity
 ```
 
-6. Copy your dump file into the temporary pod
+7. Copy your dump file into the temporary pod
 
 ```bash
 oc cp ./database_dump.backup pg-client:/tmp/database_dump.backup
 ```
 
-7. Connect to your existing database service from inside the cluster
+8. Connect to your existing database service from inside the cluster
 
 ```bash
 oc exec -it pg-client -- bash
 ```
 
-8. Inside the shell, run:
+9. Inside the shell, run:
 
 ```bash
 export PGPASSWORD=<DEPLOYMENT_DB_PASSWORD>
@@ -229,13 +235,13 @@ pg_restore -h <DEPLOYMENT_DB_HOST> -U <DEPLOYMENT_DB_USER> -d <DEPLOYMENT_DB_NAM
 unset PGPASSWORD
 ```
 
-9. When done, exit the shell:
+10. When done, exit the shell:
 
 ```bash
 exit
 ```
 
-10. Delete the pg-client pod:
+11. Delete the pg-client pod:
 
 ```bash
 oc delete pod pg-client

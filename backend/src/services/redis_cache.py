@@ -4,11 +4,9 @@ Provides methods to interact with a Redis cache.
 """
 
 import json
-import logging
 import redis
 from config.settings import RedisConfig
-
-logger = logging.getLogger(__name__)
+from src.logging.logger import log
 
 
 class RedisCache:
@@ -37,15 +35,18 @@ class RedisCache:
                 self.client = redis.from_url(config.url, decode_responses=True)
                 self.client.ping()
                 url_without_credentials = config.url.split('@')[-1]
-                logger.info("Connected to Redis at %s",
-                            url_without_credentials)
+                log.info(
+                    f"Connected to Redis at  {url_without_credentials}",
+                    url=url_without_credentials)
             else:
                 self.client = redis.Redis(
                     host=host, port=port, db=db, decode_responses=True)
                 self.client.ping()
-                logger.info("Connected to Redis at %s:%s", host, port)
+                log.info(
+                    f"Connected to Redis at {host} {port}", host=host, port=port)
         except redis.ConnectionError as e:
-            logger.error("Failed to connect to Redis: %s", e)
+            log.error(
+                f"Failed to connect to Redis:  {e}", error=str(e))
             self.client = None
 
     def _ensure_client(self):
@@ -55,7 +56,8 @@ class RedisCache:
             bool: True if client exists, False otherwise.
         """
         if not self.client:
-            logger.warning("Redis is not connected.")
+            log.warning(
+                "Redis is not connected.")
             return False
         return True
 
@@ -79,10 +81,12 @@ class RedisCache:
             if as_json:
                 value = json.dumps(value, separators=(',', ':'))
             self.client.set(key, value, ex=expire_time)
-            logger.debug("Cached key '%s'", key)
+            log.debug(
+                f"Cached key '{key}'", key=key)
             return True
         except (redis.RedisError, TypeError, ValueError) as e:
-            logger.error("Failed to set cache key '%s': %s", key, e)
+            log.error(
+                f"Failed to set cache key '':  {key} {e}", key=key, error=str(e))
             return False
 
     def _get(self, key, as_json=True):
@@ -103,7 +107,8 @@ class RedisCache:
                 return None
             return json.loads(data) if as_json else data
         except (redis.RedisError, json.JSONDecodeError) as e:
-            logger.error("Failed to get cache key '%s': %s", key, e)
+            log.error(
+                f"Failed to get cache key '':  {key} {e}", key=key, error=str(e))
             return None
 
     # Public methods
@@ -120,7 +125,8 @@ class RedisCache:
             bool: True if successful, False otherwise.
         """
         if not isinstance(geojson_data, dict) or "type" not in geojson_data:
-            logger.warning("Invalid GeoJSON data for key '%s'", key)
+            log.warning(
+                f"Invalid GeoJSON data for key '{key}'", key=key)
             return False
         return self._set(key, geojson_data, expire, as_json=True)
 
@@ -138,8 +144,8 @@ class RedisCache:
         if geojson and isinstance(geojson, dict) and "type" in geojson:
             return geojson
         if geojson:
-            logger.warning(
-                "Cached data for key '%s' is not valid GeoJSON", key)
+            log.warning(
+                f"Cached data for key {key} is not valid GeoJSON: {key} {geojson}", key=key)
         return None
 
     def set(self, key, value, expire=None):
@@ -184,7 +190,8 @@ class RedisCache:
             result = self.client.delete(key)
             return result > 0
         except redis.RedisError as e:
-            logger.error("Failed to delete cache key '%s': %s", key, e)
+            log.error(
+                f"Failed to delete cache key '':  {key} {e}", key=key, error=str(e))
             return False
 
     def exists(self, key):
@@ -202,8 +209,8 @@ class RedisCache:
         try:
             return self.client.exists(key) == 1
         except redis.RedisError as e:
-            logger.error(
-                "Failed to check existence of cache key '%s': %s", key, e)
+            log.error(
+                f"Failed to check existence of cache key '':  {key} {e}", key=key, error=str(e))
             return False
 
     def set_direct(self, key, value, expire=None):
@@ -216,15 +223,19 @@ class RedisCache:
             expire: The expiration time in seconds.
         """
         if not self.client:
-            logger.warning("Redis is not connected. Cannot set value.")
-            print("Redis is not connected. Cannot set value.")
+            log.warning(
+                "Redis is not connected. Cannot set value.")
+            log.error(
+                "Redis is not connected. Cannot set value.")
             return False
 
         try:
             expire_time = expire if expire is not None else self.default_expire
             self.client.set(key, value, ex=expire_time)
-            print(f"Cached value with key '{key}'")
+            log.debug(
+                f"Cached value with key '{key}'", key=key)
             return True
         except (redis.RedisError, TypeError, ValueError) as e:
-            logger.error("Failed to set cache key '%s': %s", key, e)
+            log.error(
+                f"Failed to set cache key '': {key} {e}", key=key, error=str(e))
             return False

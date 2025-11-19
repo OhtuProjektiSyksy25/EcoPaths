@@ -1,72 +1,77 @@
 /*
 RouteInfoCard.test.tsx tests the RouteInfoCard component which displays 
-information such as route type, time estimate, total length, and air quality average.
+information such as route type, time estimates, total length, and air quality average.
 */
 
 import { render, screen } from '@testing-library/react';
-import RouteInfoCard from '../../src/components/RouteInfoCard';
+import RouteInfoCard, { RouteInfoCardProps } from '../../src/components/RouteInfoCard';
+
+const defaultProps = {
+  route_type: 'Fastest Route',
+  time_estimates: { walk: '12 minutes', run: '6 minutes' },
+  total_length: 1.8,
+  aq_average: 50,
+  mode: 'walk',
+} as const;
+
+function renderCard(overrides: Partial<RouteInfoCardProps> = {}) {
+  return render(<RouteInfoCard {...defaultProps} {...overrides} />);
+}
 
 describe('RouteInfoCard', () => {
   test('renders all props correctly', () => {
+    renderCard({
+      route_type: 'Best Air Quality',
+      time_estimates: { walk: '15 minutes', run: '7 minutes' },
+      total_length: 2.5,
+      aq_average: 42,
+      mode: 'walk',
+    });
 
-    const testRouteType = 'Best Air Quality';
-    const testTimeEstimate = '15 minutes';
-    const testTotalLength = 2.5;
-    const testAQAverage = 42;
+    const routeTypes = screen.getAllByText('Best Air Quality');
+    expect(routeTypes).toHaveLength(2);
 
-    render(<RouteInfoCard
-      route_type={testRouteType}
-      time_estimate={testTimeEstimate}
-      total_length={testTotalLength}
-      aq_average={testAQAverage}
-      />
-    );
+    const timeEstimates = screen.getAllByText('15 minutes');
+    expect(timeEstimates).toHaveLength(2);
 
-    expect(screen.getByText('Best Air Quality')).toBeInTheDocument();
-    expect(screen.getByText('15 minutes')).toBeInTheDocument();
-    expect(screen.getByText('2.5 km')).toBeInTheDocument();
-    expect(screen.getByText('AQI 42')).toBeInTheDocument();
+    const distances = screen.getAllByText('2.5 km');
+    expect(distances.length).toBeGreaterThanOrEqual(1);
+
+    const aqis = screen.getAllByText('AQI 42');
+    expect(aqis.length).toBeGreaterThanOrEqual(1);
   });
 
   test('renders with different values', () => {
+    renderCard({
+      route_type: 'Balanced Route',
+      time_estimates: { walk: '20 minutes', run: '10 minutes' },
+      total_length: 3,
+      aq_average: 50,
+      mode: 'walk',
+    });
 
-    const testRouteType = 'Balanced Route';
-    const testTimeEstimate = '20 minutes';
-    const testTotalLength = 3;
-    const testAQAverage = 50;
+    const routeTypes = screen.getAllByText('Balanced Route');
+    expect(routeTypes).toHaveLength(2);
 
-    render(<RouteInfoCard
-      route_type={testRouteType}
-      time_estimate={testTimeEstimate}
-      total_length={testTotalLength}
-      aq_average={testAQAverage}
-      />
-    );
+    const timeEstimates = screen.getAllByText('20 minutes');
+    expect(timeEstimates).toHaveLength(2);
 
-    expect(screen.getByText('Balanced Route')).toBeInTheDocument();
-    expect(screen.getByText('20 minutes')).toBeInTheDocument();
-    expect(screen.getByText('3 km')).toBeInTheDocument();
-    expect(screen.getByText('AQI 50')).toBeInTheDocument();
+    const distances = screen.getAllByText('3 km');
+    expect(distances.length).toBeGreaterThanOrEqual(1);
+
+    const aqis = screen.getAllByText('AQI 50');
+    expect(aqis.length).toBeGreaterThanOrEqual(1);
   });
 
   test('can find correct css elements on page', () => {
-    // Arrange
-    const testRouteType = 'Fastest Route';
-    const testTimeEstimate = '12 minutes';
-    const testTotalLength = 1.8;
-    const testAQAverage = 50;
+    const { container } = renderCard({
+      route_type: 'Fastest Route',
+      time_estimates: { walk: '12 minutes', run: '6 minutes' },
+      total_length: 1.8,
+      aq_average: 50,
+      mode: 'walk',
+    });
 
-    // Act
-    const { container } = render(
-                            <RouteInfoCard
-                            route_type={testRouteType}
-                            time_estimate={testTimeEstimate}
-                            total_length={testTotalLength}
-                            aq_average={testAQAverage}
-                            />
-                          );
-
-    // Assert
     const routeInfoCard = container.querySelector('.RouteInfoCard');
     const routeType = container.querySelector('.route_type');
     const timeEstimate = container.querySelector('.time_estimate');
@@ -84,4 +89,16 @@ describe('RouteInfoCard', () => {
     expect(aqAverage).toHaveTextContent('AQI 50');
   });
 
+  test('renders run mode correctly', () => {
+    renderCard({
+      route_type: 'Fastest Route',
+      time_estimates: { walk: '12 minutes', run: '6 minutes' },
+      total_length: 1.8,
+      aq_average: 50,
+      mode: 'run',
+    });
+
+    const timeElements = screen.getAllByText('6 minutes');
+    expect(timeElements.length).toBeGreaterThanOrEqual(1);
+  });
 });

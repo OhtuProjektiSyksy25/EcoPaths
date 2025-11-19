@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase
 from unittest.mock import MagicMock, patch
 from src.database.db_client import DatabaseClient
+from src.config.columns import BASE_COLUMNS
 
 
 class TempBase(DeclarativeBase):
@@ -143,17 +144,28 @@ class TestDatabaseClient:
         mock_conn.execute.assert_called_once()
 
     def test_save_edges_adds_missing_columns(self):
-        """Ensure save_edges adds missing required columns before to_postgis."""
+        """Ensure save_edges adds missing required columns (except auto-generated 'edge_id')."""
         gdf = gpd.GeoDataFrame(
-            geometry=[LineString([(0, 0), (1, 1)])], crs="EPSG:25833")
-        # Remove 'edge_id' to simulate missing column
+            geometry=[LineString([(0, 0), (1, 1)])], crs="EPSG:25833"
+        )
+        # Remove all BASE_COLUMNS except geometry to simulate missing columns
+        missing_cols = [col for col in BASE_COLUMNS if col !=
+                        "edge_id" and col != "geometry"]
         gdf = gdf.drop(
-            columns=[col for col in gdf.columns if col in ("edge_id",)], errors='ignore')
+            columns=[col for col in gdf.columns if col in missing_cols], errors='ignore')
+
         with patch.object(gdf, "to_postgis") as mock_to_postgis:
             self.db.save_edges(
-                gdf, self.area, self.network_type, if_exists="replace")
+                gdf, self.area, self.network_type, if_exists="replace"
+            )
             mock_to_postgis.assert_called_once()
-            assert "edge_id" in gdf.columns
+
+            # Assert missing columns were added (except 'edge_id')
+            for col in missing_cols:
+                assert col in gdf.columns, f"Missing column added: {col}"
+
+            # edge_id should NOT be added by save_edges
+            assert "edge_id" not in gdf.columns
 
     def test_save_grid_adds_geometry(self):
         """Ensure save_grid correctly calls to_postgis."""

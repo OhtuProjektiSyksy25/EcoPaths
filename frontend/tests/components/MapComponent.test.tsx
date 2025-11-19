@@ -1,79 +1,40 @@
-/*
-MapComponent.test.tsx tests the MapComponent which conditionally renders either a Mapbox map or a Leaflet map 
-based on the presence of a Mapbox token.
-*/
-
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import mapboxgl from 'mapbox-gl';
 import MapComponent from '../../src/components/MapComponent';
 import { LockedLocation, RouteGeoJSON } from '../../src/types/route';
 
-/*
-Mock mapbox-gl, because we cannot test the actual map rendering in Jest.
-*/
-jest.mock('mapbox-gl', () => {
-  return {
-    Map: jest.fn(() => ({
-      addControl: jest.fn(),
-      remove: jest.fn(),
-      getSource: jest.fn(() => ({
-        setData: jest.fn(),
-      })),
-      addSource: jest.fn(),
-      addLayer: jest.fn(),
-      flyTo: jest.fn(),
-      fitBounds: jest.fn(),
-    })),
-    NavigationControl: jest.fn(),
-    Marker: jest.fn(() => ({
-      setLngLat: jest.fn().mockReturnThis(),
-      addTo: jest.fn().mockReturnThis(),
-      remove: jest.fn(),
-    })),
-    LngLatBounds: jest.fn(() => ({
-      extend: jest.fn().mockReturnThis(),
-    })),
-  };
-});
-
-/*
-Mock react-leaflet
-*/
+/* Leaflet mock */
 jest.mock('react-leaflet', () => ({
-  MapContainer: ({ children }: any) => <div data-testid="leaflet-map">{children}</div>,
-  TileLayer: () => <div data-testid="tile-layer" />,
+  MapContainer: ({ children }: any) => <div data-testid='leaflet-map'>{children}</div>,
+  TileLayer: () => <div data-testid='tile-layer' />,
   useMap: () => ({}),
   useMapEvent: () => {},
   useMapEvents: () => ({}),
 }));
 
-/*
-Mock the hook, because we need consistent coordinates for testing
-*/
-jest.mock('../../src/hooks/useCoordinates', () => ({
-  useCoordinates: jest.fn(() => [52.52, 13.405]), // Berlin coordinates
-}));
-
-/*
-Mock LocationButton
-*/
-jest.mock("../../src/components/LocationButton", () => ({
-  LocationButton: (props: any) => <div data-testid="location-button-mock" />,
+/* LocationButton mock */
+jest.mock('../../src/components/LocationButton', () => ({
+  LocationButton: () => <div data-testid='location-button-mock' />,
 }));
 
 const mockLocked: LockedLocation = {
   full_address: 'Test address',
-  geometry: {
-    coordinates: [24.94, 60.17], // Helsinki
-  },
+  geometry: { coordinates: [24.94, 60.17] },
 };
 
-const mockRoute: RouteGeoJSON = {
-  type: 'FeatureCollection',
-  features: [],
-};
+const mockRoute: RouteGeoJSON = { type: 'FeatureCollection', features: [] };
+const mockRoutes: Record<string, RouteGeoJSON> = { fastest: mockRoute };
 
-const mockRoutes: Record<string, RouteGeoJSON> = {
-  fastest: mockRoute
+const defaultProps = {
+  fromLocked: null,
+  toLocked: null,
+  routes: null,
+  loopRoutes: null,
+  showAQIColors: false,
+  selectedArea: null,
+  selectedRoute: null,
+  showLoopOnly: false,
+  loop: false,
 };
 
 describe('MapComponent', () => {
@@ -81,58 +42,84 @@ describe('MapComponent', () => {
     jest.clearAllMocks();
   });
 
-  /*
-  Check that Mapbox container renders when token is provided
-  */
   test('renders Mapbox container when token is provided', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
     render(
       <MapComponent
+        {...defaultProps}
         fromLocked={mockLocked}
         toLocked={mockLocked}
         routes={mockRoutes}
-        showAQIColors={false}
-        selectedArea={null}
-      />
+      />,
     );
 
-    const mapboxDiv = screen.getByTestId('mapbox-map');
-    expect(mapboxDiv).toBeInTheDocument();
+    expect(screen.getByTestId('mapbox-map')).toBeInTheDocument();
   });
 
-  /*
-  Check that the LocationButton is rendered
-  */
-  test("renders LocationButton in the map container", () => {
-    process.env.REACT_APP_MAPBOX_TOKEN = "fake-token";
-    render(<MapComponent fromLocked={null} toLocked={null} routes={null} selectedArea={null} showAQIColors={false}/>);
+  test('renders LocationButton', () => {
+    process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
 
-    const locationButton = screen.getByTestId("location-button-mock"); 
-    expect(locationButton).toBeInTheDocument();
+    render(<MapComponent {...defaultProps} />);
+
+    expect(screen.getByTestId('location-button-mock')).toBeInTheDocument();
   });
 
-  /*
-  Check that Leaflet map renders when no Mapbox token
-  */
   test('renders Leaflet map when no Mapbox token', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = '';
 
     render(
       <MapComponent
+        {...defaultProps}
         fromLocked={mockLocked}
         toLocked={mockLocked}
         routes={mockRoutes}
-        showAQIColors={false}
-        selectedArea={null}
-      />
+      />,
     );
 
-    const leafletMap = screen.getByTestId('leaflet-map');
-    expect(leafletMap).toBeInTheDocument();
+    expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
+    expect(screen.getByTestId('tile-layer')).toBeInTheDocument();
+  });
 
-    const tileLayer = screen.getByTestId('tile-layer');
-    expect(tileLayer).toBeInTheDocument();
+  test('calls setPaintProperty on water layers', () => {
+    process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
+    process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
+
+    render(<MapComponent {...defaultProps} />);
+
+    const mapInstance = (mapboxgl.Map as jest.Mock).mock.results[0].value;
+    expect(mapInstance.setPaintProperty).toHaveBeenCalled();
+  });
+
+  test('adds ScaleControl to the map', () => {
+    render(<MapComponent {...defaultProps} />);
+
+    const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
+    expect(mapInstance.addControl).toHaveBeenCalledWith(expect.anything(), 'bottom-left');
+  });
+
+  test('ScaleControl fades out on movestart and back on moveend', () => {
+    render(<MapComponent {...defaultProps} />);
+
+    const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
+
+    const scaleEl = { style: { opacity: '1' } };
+    mapInstance.getContainer = jest.fn(() => ({
+      querySelector: jest.fn(() => scaleEl),
+    }));
+
+    mapInstance.trigger('movestart');
+    expect(scaleEl.style.opacity).toBe('0');
+
+    mapInstance.trigger('moveend');
+    expect(scaleEl.style.opacity).toBe('1');
+  });
+
+  test('uses loopRoutes when showLoopOnly is true', () => {
+    const loopRoute: RouteGeoJSON = { type: 'FeatureCollection', features: [] };
+    const loopRoutes = { loop: loopRoute };
+
+    render(<MapComponent {...defaultProps} showLoopOnly={true} loopRoutes={loopRoutes} />);
   });
 });

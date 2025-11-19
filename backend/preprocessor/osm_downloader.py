@@ -1,12 +1,16 @@
 """
 Download and load OpenStreetMap (OSM) PBF data for a configured area.
-
-Uses AreaConfig for area settings (URL, local path, bounding box).
-Downloads missing PBF files and returns a pyrosm.OSM instance for data access.
 """
+from pathlib import Path
+import warnings
 import requests
 from pyrosm import OSM
+import pandas as pd
+import geopandas as gpd
 from src.config.settings import AreaConfig
+from src.config.columns import LANDUSE_MAP, LEISURE_MAP, NATURAL_MAP
+
+warnings.filterwarnings("ignore", category=FutureWarning, module="pyrosm")
 
 
 class OSMDownloader:
@@ -46,16 +50,82 @@ class OSMDownloader:
                 f.write(chunk)
         print(f"Downloaded PBF to {self.local_path}")
 
-    def get_osm_instance(self):
+    def write_layer_file(self, gdf: gpd.GeoDataFrame, name: str, file_format: str) -> Path:
         """
-        Ensure PBF exists and return Pyrosm OSM object.
+        Save a GeoDataFrame to disk in the specified format.
+
+        Args:
+            gdf (GeoDataFrame): The data to save.
+            name (str): Name used to generate the output file.
+            file_format (str): File format, either 'gpkg' or 'parquet'.
+
         Returns:
-            pyrosm.OSM: A Pyrosm OSM instance initialized with the area's data.
+            Path: Full path to the saved file.
 
         Raises:
-            ValueError: If no PBF URL is configured and the file is missing.
-            requests.HTTPError: If downloading the file fails.
+            ValueError: If the GeoDataFrame is empty or format unsupported.
         """
+        if gdf.empty:
+            raise ValueError(
+                f"No features found for '{name}' in {self.area_config.area}")
 
+        output_path = self.area_config.get_raw_file_path(name, file_format)
+
+        if file_format == "gpkg":
+            gdf.to_file(output_path, driver="GPKG")
+        elif file_format == "parquet":
+            gdf.to_parquet(output_path)
+        else:
+            raise ValueError(f"Unsupported format: {file_format}")
+
+        print(f"Saved {name} to {output_path}")
+        return output_path
+
+    def extract_and_save_network(self, network_type: str, file_format: str = "gpkg") -> Path:
+        """
+        Extract a road network of the specified type within the bounding box and save to disk.
+        """
         self.download_if_missing()
-        return OSM(str(self.local_path), bounding_box=self.area_config.bbox)
+        osm = OSM(str(self.local_path), bounding_box=self.area_config.bbox)
+        edges = osm.get_network(network_type=network_type)
+        return self.write_layer_file(edges, f"{network_type}", file_format)
+
+    def extract_and_save_green_areas(self, file_format: str = "gpkg") -> Path:
+        """
+        Extract green areas (parks, forests, grass, recreation grounds) and save to disk.
+
+        Combines landuse, leisure, and natural layers from OSM to produce a comprehensive
+        green areas GeoDataFrame with unified 'green_type' column.
+        """
+        self.download_if_missing()
+        osm = OSM(str(self.local_path), bounding_box=self.area_config.bbox)
+
+        # Landuse
+        landuse = osm.get_landuse()
+        green_landuse = landuse[landuse["landuse"].isin(
+            LANDUSE_MAP.keys())].copy()
+        green_landuse["green_type"] = green_landuse["landuse"].map(LANDUSE_MAP)
+
+        # Leisure
+        leisure = osm.get_pois(custom_filter={"leisure": True})
+        green_leisure = leisure[leisure["leisure"].isin(
+            LEISURE_MAP.keys())].copy()
+        green_leisure["green_type"] = green_leisure["leisure"].map(LEISURE_MAP)
+
+        # Natural
+        natural = osm.get_pois(custom_filter={"natural": True})
+        green_natural = natural[natural["natural"].isin(
+            NATURAL_MAP.keys())].copy()
+        green_natural["green_type"] = green_natural["natural"].map(NATURAL_MAP)
+
+        # Combine all
+        green_areas = gpd.GeoDataFrame(pd.concat(
+            [green_landuse, green_leisure, green_natural],
+            ignore_index=True
+        ))
+
+        if green_areas.empty:
+            raise ValueError(
+                f"No green areas found for {self.area_config.area}")
+
+        return self.write_layer_file(green_areas, "green_areas", file_format)

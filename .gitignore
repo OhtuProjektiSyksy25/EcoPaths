@@ -6,6 +6,7 @@ build
 *.log
 *.tmp
 frontend/env.example
+venv/
 
 # Backend
 .venv/
@@ -16,6 +17,7 @@ coverage_reports/
 coverage.xml
 backend/data
 backend/preprocessor/data/
+logs/
 
 # Robot framework
 log.html
@@ -25,14 +27,12 @@ screenshots/
 selenium*.png
 
 # General
-.env
-.env.test
+**/.env
 .DS_Store
 Thumbs.db
 *.swp
 node_modules/
-/package.json
-/package-lock.json
+database_dump.backup
 
 
 # Redis
@@ -41,3 +41,10 @@ backend/dump.rdb
 
 # OpenShift
 manifests/configmap.yaml
+
+# E2E tests
+test-results/
+playwright-report/
+playwright-results/
+e2e/playwright/.cache/
+backend/.env.test

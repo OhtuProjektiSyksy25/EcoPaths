@@ -1,171 +1,104 @@
-"""
-Download and process OpenStreetMap data into a cleaned road network.
-"""
+"""OSM preprocessing utilities for spatial data batches."""
 
-import warnings
 import geopandas as gpd
-from pyrosm import OSM
-from src.database.db_client import DatabaseClient
-from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
-from .edge_cleaner_sql import EdgeCleanerSQL
+from src.config.columns import (
+    BASE_COLUMNS_DF,
+    EXTRA_COLUMNS,
+    NATURAL_MAP,
+    LANDUSE_MAP,
+    LEISURE_MAP
+)
+from src.config.settings import get_settings
 from .osm_downloader import OSMDownloader
-from .node_builder import NodeBuilder
-from .traffic_influence import TrafficInfluenceBuilder
-from .env_influence import EnvInfluenceBuilder
 
 
 class OSMPreprocessor:
     """
-    Downloads and processes OpenStreetMap (OSM) data into a cleaned and enriched road network.
+    Provides preprocessing functions for OSM data batches.
 
-    This class handles:
-    - Area-specific configuration and bounding box setup
-    - Downloading and parsing OSM PBF data
-    - Converting raw network data into GeoDataFrame
-    - Saving raw edges to the database
-    - Cleaning and enriching edges via SQL
-    - Node generation and influence metrics for walking networks
+    Responsibilities:
+    - Normalize geometries (CRS, multipart explode, validity check)
+    - Filter and enforce required columns with defaults
+    - Prepare raw edge batches for database storage
+    - Prepare green area batches and detect green_type from OSM tags
+
+    Note:
+    This class does not handle looping or database persistence.
+    The pipeline runner controls batching and saving.
     """
 
     def __init__(self, area: str, network_type: str):
-        """
-        Initialize the preprocessor with area-specific settings.
-
-        Args:
-            area (str): Area name (e.g., 'berlin').
-            network_type (str): Network type ('walking', 'cycling', 'driving').
-        """
         self.area = area.lower()
         self.network_type = network_type
-        self.downloader = OSMDownloader(self.area)
-        self.area_config = self.downloader.area_config
+        self.settings = get_settings(area)
+        self.area_config = self.settings.area
+        self.batch_size = self.area_config.batch_size
         self.crs = self.area_config.crs
+        self.downloader = OSMDownloader(self.area)
 
-    def extract_edges(self):
+    def prepare_geometries(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Extract and clean road network edges for the configured area.
-
-        Steps:
-        1. Load OSM data using Pyrosm
-        2. Convert to GeoDataFrame and normalize geometries
-        3. Save raw edges to PostGIS
-        4. Clean and enrich edges using SQL-based operations
-        5. If network type is 'walking':
-        - Build nodes and attach to edges
-        - Remove disconnected components
-        - Assign tile IDs
-        - Compute traffic and environmental influence
+        Normalize geometries:
+        - project to target CRS
+        - explode multipart geometries
+        - remove invalid/empty geometries
         """
-        warnings.filterwarnings(
-            "ignore", category=FutureWarning, module="pyrosm")
+        gdf = gdf.to_crs(self.crs)
+        gdf = gdf.explode(index_parts=False).reset_index(drop=True)
+        gdf = gdf[gdf.is_valid & gdf.geometry.notna()]
+        return gdf
 
-        # Step 1–2: Load and prepare raw edges
-        osm = self.downloader.get_osm_instance()
-        edges_gdf = self.prepare_raw_edges(osm)
-        edges_gdf = self.filter_to_selected_columns(
-            edges_gdf, self.network_type)
-        if self.network_type == "driving":
-            edges_gdf = self.clean_maxspeed_column(edges_gdf)
-
-        # Step 3: Save to database
-        db = DatabaseClient()
-        db.save_edges(edges_gdf, self.area,
-                      self.network_type, if_exists="append")
-
-        # Step 4: Clean and enrich via SQL
-        cleaner = EdgeCleanerSQL(db)
-        cleaner.run_full_cleaning(self.area, self.network_type)
-
-        # Step 5
-        if self.network_type == "walking":
-            builder = NodeBuilder(db, self.area, self.network_type)
-            builder.build_nodes_and_attach_to_edges()
-
-            cleaner.remove_disconnected_edges(self.area, self.network_type)
-            builder.remove_unused_nodes()
-            builder.assign_tile_ids()
-
-            tib = TrafficInfluenceBuilder(db, self.area)
-            tib.compute_cumulative_influence_by_tile()
-            tib.summarize_influence_distribution()
-
-            eib = EnvInfluenceBuilder(db, area=self.area)
-            eib.run()
-
-        print(
-            f"Edge preprocessing complete for '{self.area}' ({self.network_type})")
-
-    def prepare_raw_edges(self, osm: OSM) -> gpd.GeoDataFrame:
+    def filter_required_columns(
+        self,
+        gdf: gpd.GeoDataFrame,
+        required_columns,
+        defaults=None
+    ) -> gpd.GeoDataFrame:
         """
-        Prepare raw edge geometries from OSM data.
-
-        - Extracts network edges using the specified network type
-        - Converts geometries to target CRS
-        - Explodes MultiLineStrings into individual LineStrings
-
-        Args:
-            osm (OSM): Pyrosm OSM instance with bounding box and data source.
-
-        Returns:
-            GeoDataFrame: Raw edge geometries in target CRS.
+        Keep only required columns, add missing ones with defaults.
         """
-        edges_raw = osm.get_network(network_type=self.network_type)
-        if edges_raw is None or edges_raw.empty:
-            raise ValueError(
-                f"No '{self.network_type}' network edges found for area '{self.area}'.")
+        filtered = gdf[[c for c in gdf.columns if c in required_columns]].copy()
+        for col in required_columns:
+            if col not in filtered.columns:
+                filtered[col] = defaults.get(col, None) if defaults else None
+        return filtered.set_geometry("geometry")
 
-        edges_raw = edges_raw.to_crs(self.crs)
-        edges_raw = edges_raw.explode(index_parts=False).reset_index(drop=True)
+    def prepare_raw_edges(self, edges_raw: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Prepare raw edge geometries for database storage."""
+        return self.prepare_geometries(edges_raw)
 
-        edges_raw["edge_id"] = range(1, len(edges_raw) + 1)
-
-        return edges_raw
-
-    def filter_to_selected_columns(self, gdf, network_type):
-        """
-        Filters and ensures the GeoDataFrame includes all expected columns
-        defined for the given network type. Missing columns are added
-        with default None or type-appropriate placeholder values.
-        """
-        selected = BASE_COLUMNS + EXTRA_COLUMNS.get(network_type, [])
-
+    def filter_to_selected_columns(
+        self,
+        gdf: gpd.GeoDataFrame,
+        network_type: str
+    ) -> gpd.GeoDataFrame:
+        """Ensure expected edge columns exist."""
+        selected = BASE_COLUMNS_DF + EXTRA_COLUMNS.get(network_type, [])
         if "geometry" not in selected:
             selected.append("geometry")
 
-        filtered = gdf[[col for col in gdf.columns if col in selected]].copy()
+        defaults = {col: 1.0 for col in selected if col.endswith("_influence")}
+        return self.filter_required_columns(gdf, selected, defaults=defaults)
 
-        for col in selected:
-            if col not in filtered.columns:
-                if col.endswith("_influence"):
-                    filtered[col] = 1.0
-                else:
-                    filtered[col] = None
+    def prepare_green_area_batch(self, batch: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Clean and normalize one batch of green areas."""
+        batch = self.prepare_geometries(batch)
 
-        return filtered.set_geometry("geometry")
+        if "green_type" not in batch.columns:
+            batch["green_type"] = batch.apply(self.detect_green_type, axis=1)
 
-    def clean_maxspeed_column(self, gdf):
-        """
-        Cleans the 'maxspeed' column in a GeoDataFrame by retaining only numeric values.
-        Args:
-            gdf (GeoDataFrame): Input GeoDataFrame containing a 'maxspeed' column.
+        if "tile_id" not in batch.columns:
+            batch["tile_id"] = None
 
-        Returns:
-            GeoDataFrame: Modified GeoDataFrame with cleaned 'maxspeed' values (integers or None).
-        """
-        def parse_speed(val):
-            """Parses a speed value into an integer, or returns None if invalid."""
-            try:
-                return int(float(val))
-            except (ValueError, TypeError):
-                return None
+        required_columns = ["geometry", "green_type", "tile_id"]
+        return self.filter_required_columns(batch, required_columns)
 
-        if "maxspeed" in gdf.columns:
-            original_count = len(gdf)
-            gdf["maxspeed"] = gdf["maxspeed"].apply(
-                parse_speed).astype("Int64")
-            valid_count = gdf["maxspeed"].count()  # excludes None
-            null_count = original_count - valid_count
-            print(
-                f"maxspeed cleaned: {valid_count} valid, {null_count} set to NULL")
-
-        return gdf
+    def detect_green_type(self, row):
+        """Map OSM tags to unified green_type using config mappings."""
+        for col, mapping in [("natural", NATURAL_MAP),
+                             ("landuse", LANDUSE_MAP),
+                             ("leisure", LEISURE_MAP)]:
+            val = row.get(col)
+            if val in mapping:
+                return mapping[val]
+        return "unknown"

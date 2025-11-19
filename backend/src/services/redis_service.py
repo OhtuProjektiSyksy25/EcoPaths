@@ -2,6 +2,7 @@
 Utility module for handling, saving and fetching of GeoDataFrame/geojson data to and from redis
 """
 import geopandas as gpd
+from src.logging.logger import log
 
 
 class RedisService:
@@ -44,11 +45,12 @@ class RedisService:
             key = f"{area.area}_{tile_id}"
             current_gdf = current_gdf.to_crs(area.crs)
             feature_collection = current_gdf.to_json()
-            success = redis.set_direct(key, feature_collection, 3600)
+            success = redis.set_direct(key, feature_collection, 10800)
             if not success:
                 failed.append(key)
         if failed:
-            print(f"Following tiles failed to save: {failed}")
+            log.warning(
+                f"Following tiles failed to save: {failed}", failed_tiles=failed)
             return False
         return True
 
@@ -92,7 +94,8 @@ class RedisService:
             key = f"{area.area}_{tile_id}"
             geojson = redis.get_geojson(key)
             if not geojson:
-                print(f"Redis: missing key {key}")
+                log.warning(
+                    f"Redis: missing key {key}", key=key)
                 continue
             features.extend(geojson.get("features", []))
 

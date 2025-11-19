@@ -15,9 +15,11 @@ echo "PostgreSQL is ready!"
 echo "Populating all areas..."
 inv reset-and-populate-area --area=testarea
 inv reset-and-populate-area --area=berlin
-#inv reset-and-populate-area --area=la
-#inv reset-and-populate-area --area=helsinki
-
+inv reset-and-populate-area --area=helsinki
+inv reset-and-populate-area --area=london
+inv reset-and-populate-area --area=la
+inv reset-and-populate-area --area=riyadh
+inv reset-and-populate-area --area=rome
 
 echo "Creating test database if it doesn't exist..."
 PGPASSWORD=sekret psql -h localhost -U pathplanner -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'ecopaths_test'" | grep -q 1 || \

@@ -1,80 +1,68 @@
 import pytest
 import geopandas as gpd
-from shapely.geometry import LineString
+from shapely.geometry import LineString, MultiLineString
 from preprocessor.osm_preprocessor import OSMPreprocessor
-from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
-
-
-class FakeOSM:
-    def get_network(self, network_type):
-        return gpd.GeoDataFrame({
-            "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
-            "highway": ["footway", "footway"]
-        }, crs="EPSG:25833")
+from src.config.columns import BASE_COLUMNS_DF, EXTRA_COLUMNS
 
 
 @pytest.fixture
-def preprocessor(monkeypatch):
-    processor = OSMPreprocessor(area="testarea", network_type="walking")
-    monkeypatch.setattr(processor.downloader,
-                        "get_osm_instance", lambda: FakeOSM())
-    processor.crs = "EPSG:25833"
-    return processor
+def preprocessor():
+    return OSMPreprocessor(area="testarea", network_type="walking")
 
 
-def test_prepare_raw_edges_returns_valid_gdf(preprocessor):
-    osm = preprocessor.downloader.get_osm_instance()
-    gdf = preprocessor.prepare_raw_edges(osm)
+def test_prepare_raw_edges_explodes(preprocessor):
+    raw = gpd.GeoDataFrame({
+        "geometry": [
+            LineString([(0, 0), (1, 1)]),
+            MultiLineString([[(2, 2), (3, 3)], [(4, 4), (5, 5)]])
+        ]
+    }, crs="EPSG:4326")
 
-    assert isinstance(gdf, gpd.GeoDataFrame)
-    assert not gdf.empty
-    assert str(gdf.crs) == str(preprocessor.crs)
-    assert all(gdf.geometry.geom_type == "LineString")
-    assert not any(gdf.geometry.geom_type == "MultiLineString")
+    result = preprocessor.prepare_raw_edges(raw)
 
-
-def test_prepare_raw_edges_explodes_multilinestring(monkeypatch, preprocessor):
-    class MultiLineFakeOSM:
-        def get_network(self, network_type):
-            return gpd.GeoDataFrame({
-                "geometry": [LineString([(0, 0), (1, 1)]), LineString([(1, 1), (2, 2)])],
-                "highway": ["footway", "footway"]
-            }, crs="EPSG:25833").explode(index_parts=False)
-
-    monkeypatch.setattr(preprocessor.downloader,
-                        "get_osm_instance", lambda: MultiLineFakeOSM())
-    gdf = preprocessor.prepare_raw_edges(
-        preprocessor.downloader.get_osm_instance())
-
-    assert len(gdf) >= 2
-    assert all(gdf.geometry.geom_type == "LineString")
+    assert str(result.crs) == preprocessor.crs
+    assert all(geom.geom_type == "LineString" for geom in result.geometry)
 
 
-def test_filter_to_selected_columns_filters_correctly(preprocessor):
-    gdf = gpd.GeoDataFrame({
-        "geometry": [LineString([(0, 0), (1, 1)])],
-        "highway": ["footway"],
-        "access": ["yes"],
-        "bicycle": ["no"],
-        "tile_id": ["A1"],
-        "length_m": [123.45],
-        "extra_column": ["drop me"]
-    }, crs="EPSG:25833")
+@pytest.mark.parametrize("network_type", ["walking", "cycling", "driving"])
+def test_filter_to_selected_columns(preprocessor, network_type):
+    gdf = gpd.GeoDataFrame(
+        {"geometry": [LineString([(0, 0), (1, 1)])]}, crs="EPSG:25833")
 
-    filtered = preprocessor.filter_to_selected_columns(gdf, "walking")
+    filtered = preprocessor.filter_to_selected_columns(gdf, network_type)
 
-    assert isinstance(filtered, gpd.GeoDataFrame)
-    assert filtered.geometry.name == "geometry"
+    expected_cols = set(
+        BASE_COLUMNS_DF + EXTRA_COLUMNS.get(network_type, []) + ["geometry"])
+    assert set(filtered.columns) == expected_cols
 
-    expected_columns = set(BASE_COLUMNS + EXTRA_COLUMNS["walking"])
-    expected_columns.add("geometry")
-
-    assert set(filtered.columns) == expected_columns
-
-    for col in EXTRA_COLUMNS["walking"]:
+    for col in EXTRA_COLUMNS.get(network_type, []):
         if col.endswith("_influence"):
             assert filtered[col].iloc[0] == 1.0
 
-    for col in BASE_COLUMNS:
-        if col not in gdf.columns and col != "geometry":
-            assert filtered[col].iloc[0] is None
+
+def test_prepare_geometries_removes_invalid(preprocessor):
+    gdf = gpd.GeoDataFrame({
+        "geometry": [LineString([(0, 0), (0, 0)])]
+    }, crs="EPSG:4326")
+    result = preprocessor.prepare_geometries(gdf)
+    assert len(result) == 0
+
+
+def test_filter_required_columns_adds_defaults(preprocessor):
+    gdf = gpd.GeoDataFrame(
+        {"geometry": [LineString([(0, 0), (1, 1)])]}, crs="EPSG:25833")
+    required = ["geometry", "foo"]
+    result = preprocessor.filter_required_columns(
+        gdf, required, defaults={"foo": 42})
+    assert "foo" in result.columns
+    assert result["foo"].iloc[0] == 42
+
+
+def test_prepare_green_area_batch_detects_type(preprocessor):
+    gdf = gpd.GeoDataFrame({
+        "geometry": [LineString([(0, 0), (1, 1)])],
+        "natural": ["forest"]
+    }, crs="EPSG:25833")
+    result = preprocessor.prepare_green_area_batch(gdf)
+    assert "green_type" in result.columns
+    assert result["green_type"].iloc[0] != "unknown"

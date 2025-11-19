@@ -1,21 +1,22 @@
-import { renderHook } from "@testing-library/react";
-import { useDrawRoutes } from "../../src/hooks/useDrawRoutes";
-import { RouteGeoJSON } from "../../src/types/route";
-import mapboxgl from "mapbox-gl";
-import { FeatureCollection } from "geojson";
+import { renderHook } from '@testing-library/react';
+import { useDrawRoutes } from '../../src/hooks/useDrawRoutes';
+import { FeatureCollection } from 'geojson';
+import mapboxgl from 'mapbox-gl';
 
-
-const map = new mapboxgl.Map();
-
-function createMockRoute(type: "fastest" | "balanced" | "best_aq"): FeatureCollection {
+function createMockRoute(type: 'fastest' | 'balanced' | 'best_aq' | 'loop'): FeatureCollection {
   return {
-    type: "FeatureCollection",
+    type: 'FeatureCollection',
     features: [
       {
-        type: "Feature",
+        type: 'Feature',
         geometry: {
-          type: "LineString",
-          coordinates: [[0, 0], [1, 1]],
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+            [2, 0],
+            [0, 0], // suljettu neliö
+          ],
         },
         properties: {
           route_type: type,
@@ -25,37 +26,48 @@ function createMockRoute(type: "fastest" | "balanced" | "best_aq"): FeatureColle
   };
 }
 
-const mockRoutes: Record<string, FeatureCollection> = {
-  fastest: createMockRoute("fastest"),
-  balanced: createMockRoute("balanced"),
-  best_aq: createMockRoute("best_aq"),
+const mockRoutes = {
+  fastest: createMockRoute('fastest'),
+  balanced: createMockRoute('balanced'),
+  best_aq: createMockRoute('best_aq'),
+  loop: createMockRoute('loop'),
 };
 
-test("adds sources and layers for all route modes", () => {
-  const map = new mapboxgl.Map();
-  renderHook(() => useDrawRoutes(map, mockRoutes, false));
+describe('useDrawRoutes hook', () => {
+  let map: mapboxgl.Map;
 
-  expect(map.addSource).toHaveBeenCalledTimes(3);
-  expect(map.addLayer).toHaveBeenCalledTimes(3);
+  beforeEach(() => {
+    map = new mapboxgl.Map();
+    jest.clearAllMocks();
+  });
+
+  test('adds sources and layers for all route modes including loop', () => {
+    renderHook(() => useDrawRoutes(map, mockRoutes, false));
+    // nyt pitäisi olla 4 sourcea ja 5 layeria (balanced halo + 4 varsinaista)
+    expect(map.addSource).toHaveBeenCalledTimes(4);
+    expect(map.addLayer).toHaveBeenCalledTimes(5);
+    // loop‑layer mukana
+    expect(map.addSource).toHaveBeenCalledWith(
+      'route-loop',
+      expect.objectContaining({ type: 'geojson' }),
+    );
+    expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'route-loop' }));
+  });
+
+  test('removes existing layers and sources before drawing', () => {
+    (map.getLayer as jest.Mock).mockReturnValue(true);
+    (map.getSource as jest.Mock).mockReturnValue(true);
+
+    renderHook(() => useDrawRoutes(map, mockRoutes, false));
+    expect(map.removeLayer).toHaveBeenCalledWith('route-fastest');
+    expect(map.removeSource).toHaveBeenCalledWith('route-fastest');
+  });
+
+  test('uses AQI color interpolation when showAQIColors is true', () => {
+    renderHook(() => useDrawRoutes(map, mockRoutes, true));
+    const paint = (map.addLayer as jest.Mock).mock.calls.find(
+      (call) => call[0].id === 'route-fastest',
+    )[0].paint;
+    expect(paint['line-color'][0]).toBe('interpolate');
+  });
 });
-
-test("removes existing layers and sources before drawing", () => {
-  const map = new mapboxgl.Map();
-  (map.getLayer as jest.Mock).mockReturnValue(true);
-  (map.getSource as jest.Mock).mockReturnValue(true);
-
-  renderHook(() => useDrawRoutes(map, mockRoutes, false));
-
-  expect(map.removeLayer).toHaveBeenCalledWith("route-fastest");
-  expect(map.removeSource).toHaveBeenCalledWith("route-fastest");
-});
-
-test("uses AQI color interpolation when showAQIColors is true", () => {
-  const map = new mapboxgl.Map();
-  renderHook(() => useDrawRoutes(map, mockRoutes, true));
-
-  const paint = (map.addLayer as jest.Mock).mock.calls[0][0].paint;
-  expect(paint["line-color"][0]).toBe("interpolate");
-});
-
-
