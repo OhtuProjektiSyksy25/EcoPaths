@@ -1,5 +1,6 @@
 import pytest
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import LineString, Point
 from src.services.route_service import RouteService, RouteServiceFactory
 
@@ -99,6 +100,25 @@ def simple_edges_gdf():
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
 
+@pytest.fixture
+def simple_edges_gdf_2():
+    data = {
+        "edge_id": ["t102", "t102", "t102", "t103", "t103", "t103"],
+        "from_node": ["A", "B", "D", "D", "E", "F"],
+        "to_node": ["B", "C", "B", "E", "C", "C"],
+        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0],  # approximate distances
+        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
+        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
+        "geometry": [
+            LineString([(0, 0), (2, 2)]),  # A->B
+            LineString([(2, 2), (4, 4)]),  # B->C
+            LineString([(0, 2), (2, 2)]),  # D->B
+            LineString([(0, 2), (2, 4)]),  # D->E
+            LineString([(2, 4), (4, 4)]),  # E->C
+            LineString([(4, 0), (4, 4)])   # F->C
+        ]
+    }
+    return gpd.GeoDataFrame(data, crs="EPSG:25833")
 
 def test_factory_creates_service_and_config():
     service, config = RouteServiceFactory.from_area("testarea")
@@ -214,3 +234,47 @@ def test_get_route_returns_expected_structure(monkeypatch, route_service, origin
     for mode in ["fastest", "best_aq", "balanced"]:
         assert mode in result["routes"]
         assert result["routes"][mode]["features"]
+
+def test_get_round_trip_returns_valid_structure(monkeypatch, route_service, origin_destination,
+                                                simple_edges_gdf_2, simple_nodes_gdf):
+    origin, _ = origin_destination
+    simple_edges_gdf_2["tile_id"] = ["t102", "t102", "t102", "t103", "t103", "t103"]
+
+    monkeypatch.setattr(route_service, "_get_tile_edges", lambda tile_ids: simple_edges_gdf_2)
+    monkeypatch.setattr(route_service, "_get_nodes_from_db", lambda tile_ids: simple_nodes_gdf)
+    monkeypatch.setattr(route_service, "_get_outermost_tiles", lambda tile_ids: tile_ids)
+
+    def mock_forward(origin_gdf, edges, nodes, best_edges):
+        return [
+            {
+                "destination": gpd.GeoDataFrame(geometry=[Point(1.3,1.4)], crs="EPSG:25833"),
+                "route": gpd.GeoDataFrame({
+                    "geometry": [LineString([(0.1,0.2),(1.3,1.4)])],
+                    "edge_id": [1]
+                }, crs="EPSG:25833"),
+                "summary": {"aq_average": 10},
+                "epath_gdf_ids": [1]
+            }
+        ]
+
+    monkeypatch.setattr(route_service, "get_round_trip_forward", mock_forward)
+
+    def mock_back(destination, edges, nodes, first_path_data):
+        combined_gdf = pd.concat([first_path_data["route"]], ignore_index=True)
+        return {
+            "routes": {"round_trip": {"type": "FeatureCollection", "features": []}},
+            "summaries": {"round_trip": {"length_m": 10, "aq_average": 10}},
+            "aqi_differences": None
+        }
+
+    monkeypatch.setattr(route_service, "get_round_trip_back", mock_back)
+
+    result = route_service.get_round_trip(origin, distance=1000)
+
+    assert "routes" in result
+    assert "summaries" in result
+    assert "round_trip" in result["routes"]
+    assert "round_trip" in result["summaries"]
+    assert isinstance(result["routes"]["round_trip"], dict)
+    assert result["summaries"]["round_trip"]["length_m"] == 10
+    assert result["summaries"]["round_trip"]["aq_average"] == 10
