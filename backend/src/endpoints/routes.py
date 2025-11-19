@@ -157,6 +157,7 @@ async def getloop(request: Request):
     response = _sanitize(response)
 
     duration = time.time() - start_time
-    print(f"/getloop took {duration:.3f} seconds")
+    log.debug(
+        f"/getloop took {duration:.3f} seconds", duration=duration)
 
     return JSONResponse(content=response)

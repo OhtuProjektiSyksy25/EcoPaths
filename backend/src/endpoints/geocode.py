@@ -34,7 +34,8 @@ async def geocode_forward(value: str = Path(...), bbox: str = None):
                 photon_suggestions.get("features", []))
             photon_suggestions["features"] = trimmed_features
     except httpx.HTTPError as exc:
-        log.error("HTTP Exception for", url=photon_url, error=str(exc))
+        log.error(
+            "HTTP Exception for", url=photon_url, error=str(exc))
         return []
 
     return compose_photon_suggestions(photon_suggestions)

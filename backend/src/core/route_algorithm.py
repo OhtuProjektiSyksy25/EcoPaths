@@ -3,9 +3,11 @@
 import geopandas as gpd
 import igraph as ig
 import pandas as pd
+import pandas as pd
 from shapely.strtree import STRtree
 from shapely.ops import split
 from shapely.geometry import Point, LineString
+from src.logging.logger import log
 from src.logging.logger import log
 
 
@@ -112,7 +114,7 @@ class RouteAlgorithm:
 
         path_nodes = self.run_routing_algorithm(
             graph, origin_node, destination_node)
-        path_edges = self.extract_path_edges(path_nodes, graph)
+        path_edges = self.extract_path_edges(path_nodes)
 
         log.debug(
             f"Extracted {len(path_edges)} edges for final route", edge_count=len(path_edges))
