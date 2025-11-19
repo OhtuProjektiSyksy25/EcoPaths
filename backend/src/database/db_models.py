@@ -4,11 +4,10 @@ Dynamic SQLAlchemy ORM models for spatial Edge, Grid, and Node tables.
 
 from sqlalchemy import Column, Integer, String, Float
 from geoalchemy2 import Geometry
-from src.logging.logger import log
-from src.config.columns import BASE_COLUMNS, EXTRA_COLUMNS
+from config.columns import BASE_COLUMNS, EXTRA_COLUMNS
 from config.settings import AreaConfig
 from database.db_connection import Base  # default production Base
-
+from logger.logger import log
 
 def _get_class_from_registry(base, class_name: str):
     """

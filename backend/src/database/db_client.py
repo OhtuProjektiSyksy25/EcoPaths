@@ -8,6 +8,7 @@ and saving GeoDataFrames to PostGIS using SQLAlchemy and GeoPandas.
 import geopandas as gpd
 from sqlalchemy import text
 from config.columns import BASE_COLUMNS
+from logger.logger import log
 from database.db_connection import get_engine, get_session, Base
 from database import db_indexes
 from database.db_models import (
@@ -16,7 +17,6 @@ from database.db_models import (
     create_node_class,
     create_green_class
 )
-from src.logging.logger import log
 
 
 class DatabaseClient:

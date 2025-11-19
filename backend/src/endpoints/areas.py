@@ -4,7 +4,7 @@ list areas, select area, get selected area config.
 """
 from fastapi import APIRouter, Request, Path
 from fastapi.responses import JSONResponse
-from src.logging.logger import log
+from logger.logger import log
 from config.settings import AREA_SETTINGS
 from services.route_service import RouteServiceFactory
 from utils.decorators import require_area_config

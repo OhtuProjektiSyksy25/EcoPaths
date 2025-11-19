@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import geopandas as gpd
 import numpy as np
-from src.logging.logger import log
+from logger.logger import log
 from config.settings import get_settings
 from database.db_client import DatabaseClient
 
