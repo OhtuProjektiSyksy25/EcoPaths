@@ -12,7 +12,6 @@ interface UseLoopRouteReturn {
 export const useLoopRoute = (
   fromLocked: LockedLocation | null,
   distanceKm: number,
-  loop: boolean,
 ): UseLoopRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -20,7 +19,7 @@ export const useLoopRoute = (
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!fromLocked || !loop || distanceKm <= 0) {
+    if (!fromLocked || distanceKm <= 0) {
       setRoutes(null);
       setSummaries(null);
       setError(null);
@@ -48,7 +47,7 @@ export const useLoopRoute = (
     }, 400); // debounce‑viive
 
     return () => clearTimeout(timer);
-  }, [fromLocked, distanceKm, loop]);
+  }, [fromLocked, distanceKm]);
 
   return { routes, summaries, loading, error };
 };

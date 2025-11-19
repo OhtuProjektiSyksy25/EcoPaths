@@ -25,6 +25,18 @@ const mockLocked: LockedLocation = {
 const mockRoute: RouteGeoJSON = { type: 'FeatureCollection', features: [] };
 const mockRoutes: Record<string, RouteGeoJSON> = { fastest: mockRoute };
 
+const defaultProps = {
+  fromLocked: null,
+  toLocked: null,
+  routes: null,
+  loopRoutes: null,
+  showAQIColors: false,
+  selectedArea: null,
+  selectedRoute: null,
+  showLoopOnly: false,
+  loop: false,
+};
+
 describe('MapComponent', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -36,15 +48,10 @@ describe('MapComponent', () => {
 
     render(
       <MapComponent
+        {...defaultProps}
         fromLocked={mockLocked}
         toLocked={mockLocked}
         routes={mockRoutes}
-        showAQIColors={false}
-        selectedArea={null}
-        selectedRoute={null}
-        loopRoutes={null}
-        showLoopOnly={false}
-        loop={false}
       />,
     );
 
@@ -54,19 +61,7 @@ describe('MapComponent', () => {
   test('renders LocationButton', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
 
-    render(
-      <MapComponent
-        fromLocked={null}
-        toLocked={null}
-        routes={null}
-        showAQIColors={false}
-        selectedArea={null}
-        selectedRoute={null}
-        loopRoutes={null}
-        showLoopOnly={false}
-        loop={false}
-      />,
-    );
+    render(<MapComponent {...defaultProps} />);
 
     expect(screen.getByTestId('location-button-mock')).toBeInTheDocument();
   });
@@ -76,15 +71,10 @@ describe('MapComponent', () => {
 
     render(
       <MapComponent
+        {...defaultProps}
         fromLocked={mockLocked}
         toLocked={mockLocked}
         routes={mockRoutes}
-        showAQIColors={false}
-        selectedArea={null}
-        selectedRoute={null}
-        loopRoutes={null}
-        showLoopOnly={false}
-        loop={false}
       />,
     );
 
@@ -92,61 +82,25 @@ describe('MapComponent', () => {
     expect(screen.getByTestId('tile-layer')).toBeInTheDocument();
   });
 
-  test('calls setPaintProperty on water layers', async () => {
+  test('calls setPaintProperty on water layers', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
-    render(
-      <MapComponent
-        fromLocked={null}
-        toLocked={null}
-        routes={null}
-        showAQIColors={false}
-        selectedArea={null}
-        selectedRoute={null}
-        loopRoutes={null}
-        showLoopOnly={false}
-        loop={false}
-      />,
-    );
+    render(<MapComponent {...defaultProps} />);
 
     const mapInstance = (mapboxgl.Map as jest.Mock).mock.results[0].value;
     expect(mapInstance.setPaintProperty).toHaveBeenCalled();
   });
 
   test('adds ScaleControl to the map', () => {
-    render(
-      <MapComponent
-        fromLocked={null}
-        toLocked={null}
-        routes={null}
-        showAQIColors={false}
-        selectedArea={null}
-        selectedRoute={null}
-        loopRoutes={null}
-        showLoopOnly={false}
-        loop={false}
-      />,
-    );
+    render(<MapComponent {...defaultProps} />);
 
     const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
     expect(mapInstance.addControl).toHaveBeenCalledWith(expect.anything(), 'bottom-left');
   });
 
   test('ScaleControl fades out on movestart and back on moveend', () => {
-    render(
-      <MapComponent
-        fromLocked={null}
-        toLocked={null}
-        routes={null}
-        showAQIColors={false}
-        selectedArea={null}
-        selectedRoute={null}
-        loopRoutes={null}
-        showLoopOnly={false}
-        loop={false}
-      />,
-    );
+    render(<MapComponent {...defaultProps} />);
 
     const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
 

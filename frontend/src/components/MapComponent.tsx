@@ -55,7 +55,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   selectedArea,
   selectedRoute,
   showLoopOnly,
-  loop,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -65,15 +64,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
-  const combinedRoutes: Record<string, RouteGeoJSON> = {
-    ...(routes || {}),
-    ...(loopRoutes || {}),
-  };
 
-  let visibleRoutes = combinedRoutes;
+  let visibleRoutes: Record<string, RouteGeoJSON> = {};
   if (showLoopOnly) {
     visibleRoutes = loopRoutes || {};
-  } else if (loop) {
+  } else {
     visibleRoutes = routes || {};
   }
 
@@ -81,8 +76,34 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current,
     visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    selectedRoute,
+    showLoopOnly ? null : selectedRoute,
   );
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const map = mapRef.current;
+    const activeRoutes = showLoopOnly ? loopRoutes : routes;
+    if (!activeRoutes) return;
+
+    const allCoords: [number, number][] = [];
+    Object.values(activeRoutes).forEach((geojson) => {
+      geojson.features.forEach((f) => {
+        if (f.geometry.type === 'LineString') {
+          allCoords.push(...(f.geometry.coordinates as [number, number][]));
+        }
+      });
+    });
+
+    if (allCoords.length === 0) return;
+
+    const bounds = allCoords.reduce(
+      (b, c) => b.extend(c),
+      new mapboxgl.LngLatBounds(allCoords[0], allCoords[0]),
+    );
+
+    map.fitBounds(bounds, { padding: 60, duration: 1500 });
+  }, [showLoopOnly, routes, loopRoutes]);
 
   useHighlightChosenArea(mapRef.current, selectedArea);
 

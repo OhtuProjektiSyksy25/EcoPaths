@@ -43,6 +43,22 @@
   content: '⋮';
 }
 
+.loop-route-container {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  font-family:
+    Public Sans,
+    sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 16px;
+  background-color: rgba(0, 114, 89, 0.1);
+  border: 2px solid #00725995;
+  color: #007259;
+  transition: all 0.3s ease;
+}
+
 .best-aq-container {
   display: flex;
   gap: 8px;

@@ -144,4 +144,3 @@ async def getloop(request: Request):
     print(f"/getloop took {duration:.3f} seconds")
 
     return JSONResponse(content=response)
-
