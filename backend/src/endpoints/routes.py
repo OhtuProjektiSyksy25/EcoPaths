@@ -86,10 +86,13 @@ async def getloop(request: Request):
     Mock endpoint for loop route.
     Accepts a start point and desired distance, returns a fake loop route.
     """
+    area_config = request.app.state.area_config
+    route_service = request.app.state.route_service
+
     start_time = time.time()
     data = await request.json()
     features = data.get("features", [])
-    distance = float(request.query_params.get("distance", 7))
+    distance = float(request.query_params.get("distance", 7)) * 1000
 
     if len(features) != 1:
         return JSONResponse(
@@ -98,47 +101,18 @@ async def getloop(request: Request):
         )
 
     start_feature = features[0]
-    lon, lat = start_feature["geometry"]["coordinates"]
+    target_crs = area_config.crs
+    origin_gdf = GeoTransformer.geojson_to_projected_gdf(
+        start_feature["geometry"], target_crs)
 
-    # Mock loop geometry: square around start point
-    loop_coords = [
-        [lon, lat],
-        [lon + 0.01, lat],
-        [lon + 0.01, lat + 0.01],
-        [lon, lat + 0.01],
-        [lon, lat],  # back to start
-    ]
+    if not area_config or not route_service:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected. Please select an area first."}
+        )
 
-    route_geojson = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    "route_type": "loop",
-                    "aqi": 42
-                },
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": loop_coords,
-                },
-            }
-        ],
-    }
-
-    summary = {
-        "total_length": distance,  # km
-        "time_estimates": {
-            "walk": f"{distance * 12} min",
-            "run": f"{distance * 6} min"
-        },
-        "aq_average": 42,
-    }
-
-    response = {
-        "routes": {"loop": route_geojson},
-        "summaries": {"loop": summary},
-    }
+    distance = min(distance, 5000)
+    response = route_service.get_round_trip(origin_gdf, distance)
 
     duration = time.time() - start_time
     print(f"/getloop took {duration:.3f} seconds")

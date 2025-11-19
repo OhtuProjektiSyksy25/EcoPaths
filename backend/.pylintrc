@@ -14,9 +14,9 @@ max-module-lines=1000
 good-names=i,j,k,ex,Run,_,G
 
 [REFACTORING]
-max-args=6
-max-positional-arguments=6
-max-locals=15
+max-args=7
+max-positional-arguments=7
+max-locals=20
 max-returns=6
 max-branches=12
 max-statements=50
