@@ -15,7 +15,7 @@ describe('useLoopRoute', () => {
       summaries: { loop: {} as any },
     });
 
-    renderHook(() => useLoopRoute(mockLocation, 5, false));
+    renderHook(() => useLoopRoute(mockLocation, 5));
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -26,7 +26,7 @@ describe('useLoopRoute', () => {
       summaries: { loop: {} as any },
     });
 
-    renderHook(() => useLoopRoute(mockLocation, 0, true));
+    renderHook(() => useLoopRoute(mockLocation, 0));
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -37,7 +37,7 @@ describe('useLoopRoute', () => {
       summaries: { loop: {} as any },
     });
 
-    renderHook(() => useLoopRoute(null, 5, true));
+    renderHook(() => useLoopRoute(null, 5));
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -48,7 +48,7 @@ describe('useLoopRoute', () => {
       summaries: { loop: {} as any },
     });
 
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5, true));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
 
     await waitFor(() => {
       expect(result.current.routes).not.toBeNull();

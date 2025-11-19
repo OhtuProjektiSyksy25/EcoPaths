@@ -56,7 +56,7 @@ function App(): JSX.Element {
     routes: loopRoutes,
     summaries: loopSummaries,
     loading: loopLoading,
-  } = useLoopRoute(fromLocked, loopDistance, loop);
+  } = useLoopRoute(fromLocked, loopDistance);
 
   // Handle area selection
   const handleAreaSelect = (area: Area): void => {
@@ -152,7 +152,7 @@ function App(): JSX.Element {
             showAQIColors={showAQIColors}
             selectedArea={selectedArea}
             selectedRoute={selectedRoute}
-            showLoopOnly={showLoopOnly} // 🔽 uusi
+            showLoopOnly={showLoopOnly}
             loop={loop}
           />
         </div>

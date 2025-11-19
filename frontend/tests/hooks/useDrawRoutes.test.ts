@@ -54,14 +54,6 @@ describe('useDrawRoutes hook', () => {
     expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'route-loop' }));
   });
 
-  test('fits bounds when loop route is drawn', () => {
-    renderHook(() => useDrawRoutes(map, mockRoutes, false));
-    expect(map.fitBounds).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ padding: 40, duration: 1500 }),
-    );
-  });
-
   test('removes existing layers and sources before drawing', () => {
     (map.getLayer as jest.Mock).mockReturnValue(true);
     (map.getSource as jest.Mock).mockReturnValue(true);

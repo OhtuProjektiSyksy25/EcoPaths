@@ -355,6 +355,11 @@ const SideBar: React.FC<SideBarProps> = ({
                 />
               </div>
             ) : null}
+            <div className='aqi-toggle-button'>
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? 'Hide air quality on map' : 'Show air quality on map'}
+              </button>
+            </div>
           </>
         )}
 
