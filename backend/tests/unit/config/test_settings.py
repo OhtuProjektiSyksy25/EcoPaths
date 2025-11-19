@@ -23,8 +23,8 @@ def test_valid_area_configs(area_key):
     assert config.batch_size == expected["batch_size"]
 
     # Directories exist
-    assert config.pbf_data_dir.exists()
-    assert config.output_dir.exists()
+    assert config.raw_dir.exists()
+    assert config.gpkg_dir.exists()
 
 
 def test_invalid_area_raises():

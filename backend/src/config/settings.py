@@ -118,15 +118,20 @@ class AreaConfig:
         self.region_code = settings["region_code"]
 
         self.project_root = Path(__file__).resolve().parents[2]
-        self.pbf_data_dir = self.project_root / "preprocessor" / "data"
-        self.output_dir = self.project_root / "data"
-        self.pbf_data_dir.mkdir(parents=True, exist_ok=True)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir = self.project_root / "data"
 
-        # File paths
-        self.pbf_file = self.pbf_data_dir / f"{self.area}-latest.osm.pbf"
+        # Raw PBF files
+        self.raw_dir = self.data_dir / "raw_pbf"
+        self.raw_dir.mkdir(parents=True, exist_ok=True)
 
-    def get_raw_osm_file_path(self, network_type: str, file_format: str = "gpkg") -> Path:
+        # Processed geopackages/parquet
+        self.gpkg_dir = self.data_dir / "raw_gpkg"
+        self.gpkg_dir.mkdir(parents=True, exist_ok=True)
+
+        # Path to PBF file
+        self.pbf_file = self.raw_dir / f"{self.area}-latest.osm.pbf"
+
+    def get_raw_file_path(self, network_type: str, file_format: str = "gpkg") -> Path:
         """
         Construct the file path for the raw OSM network data file.
 
@@ -137,8 +142,8 @@ class AreaConfig:
         Returns:
             Path: Full path to the raw OSM network file.
         """
-        filename = f"{self.area}_{network_type}_raw_osm.{file_format}"
-        return self.output_dir / filename
+        filename = f"{self.area}_{network_type}.{file_format}"
+        return self.gpkg_dir / filename
 
 
 class RedisConfig:

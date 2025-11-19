@@ -51,11 +51,10 @@ def create_edge_class(area_name: str, network_type: str, base=Base) -> type:
             "tile_id": Column(String),
             "geometry": Column(Geometry("LINESTRING", srid=srid)),
             "length_m": Column(Float),
-            "normalized_length": Column(Float),
             "from_node": Column(Integer),
             "to_node": Column(Integer),
             "traffic_influence": Column(Float),
-            "landuse_influence": Column(Float),
+            "green_influence": Column(Float),
             "env_influence": Column(Float),
         }
         return column_map.get(name, Column(String))
@@ -134,6 +133,40 @@ def create_node_class(area_name: str, network_type: str, base=Base) -> type:
         "node_id": Column(Integer, primary_key=True),
         "geometry": Column(Geometry("POINT", srid=srid)),
         "tile_id": Column(String),
+    }
+
+    return type(class_name, (base,), attrs)
+
+
+def create_green_class(area_name: str, base=Base) -> type:
+    """
+    Create a dynamic SQLAlchemy Landuse class for a specific area.
+
+    If a class with the same name already exists in the registry, it will be returned.
+
+    Args:
+        area_name (str): Name of the area (e.g., "berlin").
+        base (DeclarativeMeta, optional): SQLAlchemy base to use. Defaults to production Base.
+
+    Returns:
+        type: SQLAlchemy ORM class representing the landuse table.
+    """
+    class_name = f"Green_{area_name.lower()}"
+    existing = _get_class_from_registry(base, class_name)
+    if existing:
+        return existing
+
+    area_config = AreaConfig(area_name)
+    srid = int(area_config.crs.split(":")[-1])
+
+    attrs = {
+        "__tablename__": f"green_{area_name.lower()}",
+        "__table_args__": {"extend_existing": True},
+        # id / tag fields
+        "land_id": Column(Integer, primary_key=True, autoincrement=True),
+        "green_type": Column(String),          # e.g. 'forest', 'park'
+        "geometry": Column(Geometry("GEOMETRY", srid=srid)),
+        "tile_id": Column(String, index=True),
     }
 
     return type(class_name, (base,), attrs)

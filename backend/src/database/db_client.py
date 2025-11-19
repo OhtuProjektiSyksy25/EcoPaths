@@ -7,13 +7,16 @@ and saving GeoDataFrames to PostGIS using SQLAlchemy and GeoPandas.
 
 import geopandas as gpd
 from sqlalchemy import text
-from src.logging.logger import log
 from config.columns import BASE_COLUMNS
 from database.db_connection import get_engine, get_session, Base
+from database import db_indexes
 from database.db_models import (
     create_edge_class,
     create_grid_class,
-    create_node_class)
+    create_node_class,
+    create_green_class
+)
+from src.logging.logger import log
 
 
 class DatabaseClient:
@@ -46,7 +49,7 @@ class DatabaseClient:
         with self.engine.begin() as conn:
             return conn.execute(text(sql))
 
-    def create_tables_for_area(self, area_name: str, network_type: str, base=None):
+    def create_network_tables(self, area_name: str, network_type: str, base=None):
         """
         Ensure edge, grid, and node tables exist for a specific area and network type.
 
@@ -58,7 +61,6 @@ class DatabaseClient:
 
         table_classes = [
             create_edge_class(area_name, network_type, base=base),
-            create_grid_class(area_name, base=base),
             create_node_class(area_name, network_type, base=base),
         ]
 
@@ -68,72 +70,58 @@ class DatabaseClient:
 
         self._create_indexes(area_name, network_type)
 
-        log.debug(
+        log.info(
             f"Database tables ensured for area '{area_name}' ({network_type})",
-            area=area_name, network_type=network_type)
+            area=area_name,
+            network_type=network_type
+        )
+
+    def create_grid_table(self, area_name: str, base=None):
+        """
+        Ensure a grid table exists for the specified area.
+
+        Args:
+            area_name (str): Name of the area (e.g., "berlin").
+            base (DeclarativeMeta, optional): SQLAlchemy base to use.
+        """
+        base = base or Base
+        grid_class = create_grid_class(area_name, base=base)
+        grid_class.__table__.create(bind=self.engine, checkfirst=True)
+        with self.engine.begin() as conn:
+            db_indexes.create_grid_indexes(conn, area_name)
+
+    def create_green_table(self, area_name: str, base=None):
+        """
+        Ensure a green landuse table exists for the specified area.
+
+        Args:
+            area_name (str): Name of the area (e.g., "berlin").
+            base (DeclarativeMeta, optional): SQLAlchemy base to use.
+        """
+        base = base or Base
+        green_class = create_green_class(area_name, base=base)
+        green_class.__table__.create(bind=self.engine, checkfirst=True)
+        with self.engine.begin() as conn:
+            db_indexes.create_green_indexes(conn, area_name)
 
     def _create_indexes(self, area: str, network_type: str):
         """
         Create spatial and attribute indexes for edge, grid, and node tables of 
         a specific area and network type.
 
-        This method ensures that commonly queried columns in the edges, 
-        grid, and nodes tables have appropriate indexes to improve query performance. 
-        It creates B-tree indexes for identifier and foreign key columns, 
-        and GIST indexes for geometry columns.
-
         Args:
             area (str): Name of the area (e.g., "berlin", "testarea").
             network_type (str): Type of network (e.g., "walking", "cycling", "driving").
         """
-
         with self.engine.begin() as conn:
-            # EDGE
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_edge_id
-                ON edges_{area}_{network_type} (edge_id);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_tile_id
-                ON edges_{area}_{network_type} (tile_id);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_geometry
-                ON edges_{area}_{network_type} USING GIST (geometry);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_from_node
-                ON edges_{area}_{network_type} (from_node);
-            """))
+            db_indexes.create_edge_indexes(conn, area, network_type)
+            db_indexes.create_node_indexes(conn, area, network_type)
 
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_edges_{area}_{network_type}_to_node
-                ON edges_{area}_{network_type} (to_node);
-            """))
-
-            # GRID
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_grid_{area}_tile_id
-                ON grid_{area} (tile_id);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_grid_{area}_geometry
-                ON grid_{area} USING GIST (geometry);
-            """))
-
-            # NODE
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_nodes_{area}_{network_type}_node_id
-                ON nodes_{area}_{network_type} (node_id);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_nodes_{area}_{network_type}_geometry
-                ON nodes_{area}_{network_type} USING GIST (geometry);
-            """))
-            conn.execute(text(f"""
-                CREATE INDEX IF NOT EXISTS idx_nodes_{area}_{network_type}_tile_id
-                ON nodes_{area}_{network_type} (tile_id);
-            """))
+    def create_tables_for_area(self, area_name: str, network_type: str, base=None):
+        """Convenience method to create all tables for an area."""
+        self.create_network_tables(area_name, network_type, base=base)
+        self.create_grid_table(area_name, base=base)
+        self.create_green_table(area_name, base=base)
 
     def save_edges(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -161,8 +149,6 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        log.debug(
-            "Saved edges to table", table=table_name, count=len(gdf))
 
     def save_grid(self, gdf: gpd.GeoDataFrame, area: str, if_exists="fail"):
         """
@@ -184,8 +170,12 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        log.debug(
-            "Saved edges to table", table=table_name, count=len(gdf))
+        log.info(
+            f"Saved {len(gdf)} tiles to table '{table_name}'",
+            area=area,
+            table=table_name,
+            count=len(gdf)
+        )
 
     def save_nodes(self, gdf: gpd.GeoDataFrame, area: str, network_type: str, if_exists="fail"):
         """
@@ -208,8 +198,48 @@ class DatabaseClient:
             name=table_name, con=self.engine,
             if_exists=if_exists, index=False, schema="public"
         )
-        log.debug(
-            "Saved edges to table", table=table_name, count=len(gdf))
+        log.info(
+            f"Saved {len(gdf)} nodes to table '{table_name}'",
+            area=area,
+            network_type=network_type,
+            table=table_name,
+            count=len(gdf)
+        )
+
+    def save_green_areas(self, gdf: gpd.GeoDataFrame, area: str, if_exists="fail"):
+        """
+        Save a landuse GeoDataFrame to a PostGIS table.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame containing landuse polygons.
+                Must include at least columns 'landuse' and 'geometry'.
+            area (str): Area name, used in the table name.
+            if_exists (str, optional): How to behave if the table already exists.
+                Defaults to "fail". Other valid values: "replace", "append".
+
+        Raises:
+            ValueError: If the GeoDataFrame is empty or lacks geometry.
+        """
+        if gdf.empty:
+            raise ValueError("Cannot save empty landuse GeoDataFrame.")
+        if "geometry" not in gdf.columns:
+            raise ValueError("GeoDataFrame must have a 'geometry' column.")
+
+        table_name = f"green_{area.lower()}"
+
+        allowed_cols = ["id", "green_type", "geometry", "tile_id"]
+        gdf = gdf[[c for c in allowed_cols if c in gdf.columns]]
+
+        if "green_type" not in gdf.columns:
+            gdf["green_type"] = None
+
+        gdf.to_postgis(
+            name=table_name,
+            con=self.engine,
+            if_exists=if_exists,
+            index=False,
+            schema="public",
+        )
 
     def load_edges(self, area: str, network_type: str) -> gpd.GeoDataFrame:
         """
@@ -225,7 +255,11 @@ class DatabaseClient:
         table_name = f"edges_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
         log.debug(
-            "Loading all edges from table", table=table_name)
+            f"Loading all edges from table: {table_name}",
+            area=area,
+            network_type=network_type,
+            table=table_name
+        )
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
@@ -250,13 +284,44 @@ class DatabaseClient:
         table_name = f"grid_{area.lower()}"
         query = f"SELECT * FROM {table_name}"
         log.debug(
-            "Loading grid from table:", table=table_name)
+            f"Loading grid from table: {table_name}",
+            area=area,
+            table=table_name
+        )
 
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
         except Exception as e:
             raise RuntimeError(
                 f"Failed to load grid for area '{area}': {e}") from e
+
+    def load_green_areas(self, area: str) -> gpd.GeoDataFrame:
+        """
+        Load green areas polygons from the database for a given area.
+
+        Args:
+            area (str): Area name (e.g., "berlin").
+
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame containing landuse polygons.
+
+        Raises:
+            RuntimeError: If table does not exist or query fails.
+        """
+        table_name = f"green_{area.lower()}"
+        query = f"SELECT * FROM {table_name}"
+        log.debug(
+            f"Loading green areas data from table: {table_name}",
+            area=area,
+            table=table_name
+        )
+
+        try:
+            return gpd.read_postgis(query, con=self.engine, geom_col="geometry")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load green areas data for area '{area}': {e}"
+            ) from e
 
     def load_nodes(self, area: str, network_type: str) -> gpd.GeoDataFrame:
         """
@@ -272,8 +337,13 @@ class DatabaseClient:
         table_name = f"nodes_{area.lower()}_{network_type.lower()}"
         query = f"SELECT * FROM {table_name}"
         gdf = gpd.read_postgis(query, con=self.engine, geom_col="geometry")
-        log.debug(
-            "Loaded edges from table", table=table_name, count=len(gdf))
+        log.info(
+            f"Loaded {len(gdf)} nodes from table '{table_name}'",
+            area=area,
+            network_type=network_type,
+            table=table_name,
+            count=len(gdf)
+        )
         return gdf
 
     def load_edges_for_tiles(
@@ -314,7 +384,11 @@ class DatabaseClient:
             params["tile_ids"] = tile_ids
 
         log.debug(
-            f"Excecuting query {query}", query=query)
+            f"Executing query: {query}",
+            area=area,
+            network_type=network_type,
+            query=query
+        )
         try:
             return gpd.read_postgis(query, con=self.engine, geom_col="geometry", params=params)
         except Exception as e:
@@ -410,5 +484,3 @@ class DatabaseClient:
         with self.engine.begin() as conn:
             full_name = f"{schema}.{table_name}"
             conn.execute(text(f"DROP TABLE IF EXISTS {full_name} CASCADE;"))
-            log.debug(
-                "Dropped table", table=full_name)
