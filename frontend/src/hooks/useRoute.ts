@@ -51,20 +51,24 @@ export const useRoute = (
     const fetchRoute = async (): Promise<void> => {
       // Determine if this is just a weight change (not location change)
       const isWeightChange = !isInitialLoadRef.current && prevWeightRef.current !== balancedWeight;
+      let balancedRouteBool: boolean;
 
       if (isInitialLoadRef.current) {
         setLoading(true);
         setRoutes(null);
         setSummaries(null);
         setAqiDifferences(null);
+        balancedRouteBool = false;
         isInitialLoadRef.current = false;
       } else if (isWeightChange) {
         setBalancedLoading(true);
+        balancedRouteBool = true;
       } else {
         setLoading(true);
         setRoutes(null);
         setSummaries(null);
         setAqiDifferences(null);
+        balancedRouteBool = false;
       }
 
       setError(null);
@@ -104,6 +108,7 @@ export const useRoute = (
               },
             ],
             balanced_weight: balancedWeight,
+            balanced_route: balancedRouteBool,
           }),
         });
         if (!response.ok) {
@@ -122,9 +127,9 @@ export const useRoute = (
 
         if (isWeightChange) {
           // Only update balanced route, summary, and recalculate AQI differences
-          setRoutes((prev) => (prev ? { ...prev, balanced: data.routes.balanced } : data.routes));
+          setRoutes((prev) => (prev ? { ...prev, balanced: data.routes?.balanced } : data.routes));
           setSummaries((prev) =>
-            prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries,
+            prev ? { ...prev, balanced: data.summaries?.balanced } : data.summaries,
           );
           setAqiDifferences((prev) =>
             prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences,

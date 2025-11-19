@@ -398,6 +398,22 @@ class RouteAlgorithm:
         print(f"Extracted {len(path_edges)} edges for final route")
         return path_edges, epath
 
+    def re_calculate_balanced_path(self, balance_factor, graph):
+        """Re calculates only the balanced path for the current graph
+        Args:
+            balance_factor (float): Float value between 0 and 1 that dictates how much the algorithm
+                                    consideres air quality when finding route. Lower values value
+                                    air quality more over distance. Defaults to 1.
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame containing the edges along the balanced route.
+        """
+
+        self.update_weights(graph, balance_factor=balance_factor)
+        path_nodes = self.run_routing_algorithm(
+            graph, "origin", "destination")
+        path_edges = self.extract_path_edges(path_nodes, graph)
+        return path_edges
+
     @staticmethod
     def _compute_split_result(line, snapped_point, offset=0.01):
         """

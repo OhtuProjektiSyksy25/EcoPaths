@@ -421,3 +421,31 @@ class RouteService:
             "summaries": summaries,
             "aqi_differences": aqi_differences
         }
+
+    def compute_balanced_route_only(self, balanced_value):
+        """
+        Computes only the "balanced route" for the given balanced_value
+        Uses a pre-initialized graph
+        Args:
+            balanced_value (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
+        Returns:
+            result (GeoJSON FeatureCollection): Route edges
+            summary (dict): Route data summary
+        """
+        graph = self.current_route_algorithm.igraph
+        gdf = self.current_route_algorithm.re_calculate_balanced_path(
+            balanced_value, graph)
+        summary = summarize_route(gdf)
+        result = GeoTransformer.gdf_to_feature_collection(
+            gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
+        )
+
+        results, summaries, aqi_differences = {}, {}, {}
+        results["balanced"] = result
+        summaries["balanced"] = summary
+        aqi_differences["aqi_differences"] = None
+        print("HERE")
+        x = {"routes": results, "summaries": summaries,
+             "aqi_differences": aqi_differences}
+        print(x.keys())
+        return x
