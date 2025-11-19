@@ -284,4 +284,32 @@ describe('useRoute', () => {
     expect(result.current.summaries?.fastest).toBe(prevSummaries?.fastest);
     expect(result.current.summaries?.balanced.aq_average).toBe(99);
   });
+
+  test('fetches only balanced route when slider (weight) is changed', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        routes: mockRoutes,
+        summaries: mockSummaries,
+      }),
+    });
+
+    const { rerender } = renderHook(({ from, to, weight }) => useRoute(from, to, weight), {
+      initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    rerender({ from: mockFrom, to: mockTo, weight: 0.8 });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    const secondCallBody = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(secondCallBody.balanced_route).toBe(true);
+    expect(secondCallBody.balanced_weight).toBe(0.8);
+  });
 });
