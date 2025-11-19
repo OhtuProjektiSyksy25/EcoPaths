@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../src/App';
 
 jest.mock('../src/assets/images/ecopaths_logo_no_text.jpg', () => 'mocked-logo');
@@ -9,6 +9,16 @@ jest.mock('../src/components/SideBar', () => ({ children }: { children: React.Re
 ));
 jest.mock('../src/components/AreaSelector', () => () => (
   <div data-testid='area-selector'>Select Area</div>
+));
+jest.mock('../src/components/SideBar', () => ({ handleLoopToggle }: any) => (
+  <div data-testid='sidebar'>
+    <button
+      data-testid='loop-toggle'
+      onClick={() => handleLoopToggle(true)}
+    >
+      Toggle Loop
+    </button>
+  </div>
 ));
 
 test('renders App without crashing', () => {
@@ -22,4 +32,10 @@ test('renders App without crashing', () => {
 test('renders EcoPaths header', () => {
   render(<App />);
   expect(screen.getByText(/EcoPaths/i)).toBeInTheDocument();
+});
+
+test('handleLoopToggle clears locked locations and selected route', () => {
+  render(<App />);
+  fireEvent.click(screen.getByTestId('loop-toggle'));
+  expect(screen.getByTestId('loop-toggle')).toBeInTheDocument();
 });
