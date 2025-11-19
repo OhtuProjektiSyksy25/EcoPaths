@@ -103,7 +103,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
       new mapboxgl.LngLatBounds(allCoords[0], allCoords[0]),
     );
 
-    map.fitBounds(bounds, { padding: 60, duration: 1500 });
+    const sidebar = document.getElementById('sidebar');
+    const sidebarWidth = sidebar?.offsetWidth || 0;
+
+    map.fitBounds(bounds, {
+      padding: { top: 70, bottom: 70, left: 100, right: sidebarWidth + 60 },
+      duration: 1500,
+    });
   }, [showLoopOnly, routes, loopRoutes]);
 
   useHighlightChosenArea(mapRef.current, selectedArea);
