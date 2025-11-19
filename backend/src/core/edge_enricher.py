@@ -2,7 +2,7 @@
 
 import geopandas as gpd
 from config.settings import AreaConfig
-from src.logging.logger import log
+from logger.logger import log
 from services.google_api_service import GoogleAPIService
 from database.db_client import DatabaseClient
 

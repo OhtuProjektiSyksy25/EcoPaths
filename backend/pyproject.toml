@@ -7,6 +7,10 @@ packages = [
     { include = "config", from = "src" },
     { include = "core", from = "src" },
     { include = "services", from = "src" },
+    { include = "database", from = "src" },
+    { include = "endpoints", from = "src" },
+    { include = "logger", from = "src" },
+    { include = "utils", from = "src" },
     { include = "preprocessor" }
 ]
 
