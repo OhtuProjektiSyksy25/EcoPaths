@@ -4,6 +4,7 @@ It renders the header and the MapComponent.
 */
 import { useState } from 'react';
 import MapComponent from './components/MapComponent';
+import DisclaimerModal from './components/DisclaimerModal';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
@@ -99,6 +100,7 @@ function App(): JSX.Element {
       </header>
 
       <main className='main-container'>
+        <DisclaimerModal />
         <SideBar
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}

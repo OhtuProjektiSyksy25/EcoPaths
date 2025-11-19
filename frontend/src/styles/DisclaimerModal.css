@@ -1,0 +1,144 @@
+/* DisclaimerModal.css */
+.info-button {
+  position: fixed;
+  top: 5rem;
+  right: 1rem;
+  z-index: 2000;
+
+  /* Square button */
+  width: 35px;
+  height: 35px;
+
+  /* Visual styling */
+  background: white;
+  color: #374151; /* slightly darker for better contrast */
+  border: 1px solid #e5e7eb;
+  border-radius: 12px; /* smooth but not circular */
+
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Interaction + smooth feel */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+}
+
+.info-button:hover {
+  background: #f9fafb;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.info-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 2001;
+}
+.overlay-visible {
+  opacity: 0.5;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 2002;
+  pointer-events: none;
+}
+
+.modal-container {
+  background: white;
+  width: 100%;
+  max-width: 48rem;
+  max-height: 85vh;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: scale(0.95) translateY(1rem);
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: auto;
+}
+.modal-open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lang-buttons button {
+  margin-right: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+.active-lang {
+  color: black;
+}
+.underline {
+  text-decoration: underline;
+}
+
+.close-button {
+  background: transparent;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  color: #9ca3af;
+}
+
+.modal-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(85vh - 73px);
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.warning-box {
+  display: flex;
+  gap: 0.75rem;
+  background: #fef9c3;
+  border-left: 4px solid #facc15;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ok-wrapper {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 1rem;
+}
+.ok-button {
+  background: #22c55e;
+  padding: 0.75rem 2.5rem;
+  color: white;
+  border-radius: 9999px;
+}
+
+.h2 {
+    font-family:'Times New Roman', Times, serif
+}
