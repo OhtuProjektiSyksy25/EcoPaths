@@ -25,6 +25,7 @@ export const useRoute = (
   fromLocked: LockedLocation | null,
   toLocked: LockedLocation | null,
   balancedWeight: number,
+  loop: boolean,
 ): UseRouteReturn => {
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
@@ -42,6 +43,9 @@ export const useRoute = (
   const prevWeightRef = useRef(balancedWeight);
 
   useEffect(() => {
+    if (loop) {
+      return;
+    }
     if (!fromLocked || !toLocked) {
       setRoutes(null);
       setSummaries(null);
@@ -154,7 +158,7 @@ export const useRoute = (
     };
 
     fetchRoute();
-  }, [fromLocked, toLocked, balancedWeight, selectedArea]);
+  }, [fromLocked, toLocked, balancedWeight, loop, selectedArea]);
 
   return { routes, summaries, aqiDifferences, loading, balancedLoading, error };
 };
