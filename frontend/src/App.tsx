@@ -50,6 +50,7 @@ function App(): JSX.Element {
     fromLocked,
     toLocked,
     balancedWeight,
+    loop,
   );
 
   const {
