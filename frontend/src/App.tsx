@@ -8,7 +8,7 @@ import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
-import { LockedLocation, Area } from './types';
+import { useAreaHandlers } from './hooks/useAreaHandlers';
 import logo from './assets/images/ecopaths_logo_no_text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
@@ -26,25 +26,31 @@ import { Globe } from 'lucide-react';
  * @returns JSX.Element representing the full application layout
  */
 function App(): JSX.Element {
-  // Area selection state
-  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
-  const [showAreaSelector, setShowAreaSelector] = useState(true);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const {
+    selectedArea,
+    showAreaSelector,
+    fromLocked,
+    toLocked,
+    selectedRoute,
+    loop,
+    loopDistance,
+    showLoopOnly,
+    setFromLocked,
+    setToLocked,
+    setLoop,
+    setLoopDistance,
+    setShowLoopOnly,
+    handleAreaSelect,
+    handleChangeArea,
+    handleRouteSelect,
+  } = useAreaHandlers(); // Area selection state
 
-  const [fromLocked, setFromLocked] = useState<LockedLocation | null>(null);
-  const [toLocked, setToLocked] = useState<LockedLocation | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [showAQIColors, setShowAQIColors] = useState(false);
   const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
 
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
-
-  // Route selection state for highlighting routes
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
-
-  const [loop, setLoop] = useState(false);
-  const [loopDistance, setLoopDistance] = useState<number>(0);
-  const [showLoopOnly, setShowLoopOnly] = useState(false);
 
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
@@ -58,41 +64,6 @@ function App(): JSX.Element {
     summaries: loopSummaries,
     loading: loopLoading,
   } = useLoopRoute(fromLocked, loopDistance);
-
-  // Handle area selection
-  const handleAreaSelect = (area: Area): void => {
-    setSelectedArea(area);
-    setShowAreaSelector(false);
-
-    // Clear routes when changing area
-    setFromLocked(null);
-    setToLocked(null);
-    setSelectedRoute(null);
-
-    setLoop(false);
-    setLoopDistance(0);
-    setShowLoopOnly(false);
-  };
-
-  // Handle changing area from dropdown
-  const handleChangeArea = (): void => {
-    // Clear locked locations FIRST (this clears routes & DisplayContainers)
-    setFromLocked(null);
-    setToLocked(null);
-    setSelectedRoute(null);
-
-    setLoop(false);
-    setLoopDistance(0);
-    setShowLoopOnly(false);
-
-    // Then show area selector
-    setShowAreaSelector(true);
-  };
-
-  // Handle route selection
-  const handleRouteSelect = (route: string): void => {
-    setSelectedRoute(route === selectedRoute ? null : route);
-  };
 
   return (
     <div className='App'>
