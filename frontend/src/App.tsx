@@ -68,6 +68,10 @@ function App(): JSX.Element {
     setFromLocked(null);
     setToLocked(null);
     setSelectedRoute(null);
+
+    setLoop(false);
+    setLoopDistance(0);
+    setShowLoopOnly(false);
   };
 
   // Handle changing area from dropdown
@@ -76,6 +80,10 @@ function App(): JSX.Element {
     setFromLocked(null);
     setToLocked(null);
     setSelectedRoute(null);
+
+    setLoop(false);
+    setLoopDistance(0);
+    setShowLoopOnly(false);
 
     // Then show area selector
     setShowAreaSelector(true);
