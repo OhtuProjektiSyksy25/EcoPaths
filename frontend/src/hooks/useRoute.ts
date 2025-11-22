@@ -41,8 +41,41 @@ export const useRoute = (
   // Track if this is the initial load or a weight change
   const isInitialLoadRef = useRef(true);
   const prevWeightRef = useRef(balancedWeight);
+  // Remember last successful AB fetch coordinates to avoid refetch when toggling loop
+  const prevFromRef = useRef<string | null>(null);
+  const prevToRef = useRef<string | null>(null);
+  // Track whether we currently have routes stored to avoid adding `routes` to effect deps
+  const routesExistRef = useRef<boolean>(false);
+
+  // keep routesExistRef in sync with `routes` state
+  useEffect(() => {
+    routesExistRef.current = !!routes;
+  }, [routes]);
 
   useEffect(() => {
+    if (loop) {
+      return;
+    }
+
+    // Pre-normalize coordinates so we can decide whether a fetch is necessary
+    const normalizedFromPreview = fromLocked ? normalizeCoords(fromLocked.geometry) : null;
+    const normalizedToPreview = toLocked ? normalizeCoords(toLocked.geometry) : null;
+    if (fromLocked && toLocked) {
+      const sf = normalizedFromPreview ? JSON.stringify(normalizedFromPreview) : null;
+      const st = normalizedToPreview ? JSON.stringify(normalizedToPreview) : null;
+      // If we have previously fetched routes for the same coords and weight, skip fetching
+      if (
+        !isInitialLoadRef.current &&
+        sf &&
+        st &&
+        prevFromRef.current === sf &&
+        prevToRef.current === st &&
+        prevWeightRef.current === balancedWeight &&
+        routesExistRef.current
+      ) {
+        return;
+      }
+    }
     if (!loop && fromLocked && toLocked) {
       const fetchRoute = async (): Promise<void> => {
         // Determine if this is just a weight change (not location change)
@@ -140,6 +173,15 @@ export const useRoute = (
             setSummaries(data.summaries);
             setAqiDifferences(data.aqi_differences);
           }
+          // remember coords of successful fetch so toggling loop back won't refetch
+          try {
+            const nf = normalizeCoords(fromLocked?.geometry);
+            const nt = normalizeCoords(toLocked?.geometry);
+            prevFromRef.current = nf ? JSON.stringify(nf) : null;
+            prevToRef.current = nt ? JSON.stringify(nt) : null;
+          } catch (_e) {
+            // ignore serialization errors
+          }
         } catch (err) {
           console.error('Error fetching route:', err);
           setError(err instanceof Error ? err.message : 'Failed to fetch route');
@@ -160,6 +202,8 @@ export const useRoute = (
       setAqiDifferences(null);
       setError(null);
       isInitialLoadRef.current = true;
+      prevFromRef.current = null;
+      prevToRef.current = null;
     }
   }, [fromLocked, toLocked, balancedWeight, loop, selectedArea]);
 

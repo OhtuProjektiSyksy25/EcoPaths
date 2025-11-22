@@ -56,6 +56,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   selectedArea,
   selectedRoute,
   showLoopOnly,
+  loop,
 }) => {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
   const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
@@ -190,13 +191,19 @@ const MapComponent: React.FC<MapComponentProps> = ({
         .setLngLat(fromLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
-    if (toLocked?.geometry?.coordinates && isValidCoordsArray(toLocked.geometry.coordinates)) {
+    // only show destination marker when not in loop mode
+    if (
+      !loop &&
+      toLocked?.geometry?.coordinates &&
+      isValidCoordsArray(toLocked.geometry.coordinates)
+    ) {
       toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(toLocked.geometry.coordinates)
         .addTo(mapRef.current);
     }
 
     if (
+      !loop &&
       fromLocked?.geometry?.coordinates &&
       toLocked?.geometry?.coordinates &&
       isValidCoordsArray(fromLocked.geometry.coordinates) &&
@@ -212,7 +219,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     ) {
       mapRef.current.flyTo({ center: fromLocked.geometry.coordinates, zoom: 15, duration: 1500 });
     }
-  }, [fromLocked, toLocked]);
+  }, [fromLocked, toLocked, loop]);
 
   /*  Fly to selected area and disable interactions until finished  */
   useEffect(() => {
