@@ -324,4 +324,32 @@ describe('useRoute', () => {
     expect(secondCallBody.balanced_route).toBe(true);
     expect(secondCallBody.balanced_weight).toBe(0.8);
   });
+
+  test('does not refetch when returning from loop mode if coords and weight unchanged', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ routes: mockRoutes, summaries: mockSummaries }),
+    });
+
+    const { result, rerender } = renderHook(({ loop }) => useRoute(mockFrom, mockTo, 0.5, loop), {
+      initialProps: { loop: false },
+    });
+
+    // initial fetch
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rerender({ loop: true });
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rerender({ loop: false });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
 });
