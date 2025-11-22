@@ -59,13 +59,21 @@ body,
 .map-container {
   display: flex;
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  margin: 12px;
   position: relative;
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: margin-bottom 0.3s ease;
+}
+
+.map-container > div {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
 }
 
 .InputContainer {

@@ -9,6 +9,7 @@ from config.settings import AreaConfig
 from database.db_connection import Base  # default production Base
 from logger.logger import log
 
+
 def _get_class_from_registry(base, class_name: str):
     """
     Return a class from the Base.registry if it already exists.
