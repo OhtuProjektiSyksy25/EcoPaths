@@ -6,6 +6,7 @@ import { useState } from 'react';
 import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
+import DisclaimerModal from './components/DisclaimerModal';
 import { useRoute } from './hooks/useRoute';
 import { LockedLocation, Area } from './types';
 import logo from './assets/images/ecopaths_logo_no_text.jpg';
@@ -99,6 +100,7 @@ function App(): JSX.Element {
       </header>
 
       <main className='main-container'>
+        <DisclaimerModal />
         <SideBar
           onFromSelect={setFromLocked}
           onToSelect={setToLocked}
