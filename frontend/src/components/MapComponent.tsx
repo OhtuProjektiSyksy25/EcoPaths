@@ -213,8 +213,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     map.on('moveend', onMoveEnd);
 
-    const [lng, lat] = selectedArea.focus_point || [];
-    if (Number.isFinite(lng) && Number.isFinite(lat)) {
+    const [lon, lat] = selectedArea.focus_point || [];
+    if (Number.isFinite(lon) && Number.isFinite(lat)) {
       map.flyTo({
         center: selectedArea.focus_point,
         zoom: selectedArea.zoom || 13.5,
