@@ -122,4 +122,23 @@ describe('MapComponent', () => {
 
     render(<MapComponent {...defaultProps} showLoopOnly={true} loopRoutes={loopRoutes} />);
   });
+
+  test('does not create destination marker when loop mode is active', async () => {
+    process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
+    process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
+
+    render(
+      <MapComponent
+        {...defaultProps}
+        fromLocked={mockLocked}
+        toLocked={mockLocked}
+        routes={mockRoutes}
+        loop={true}
+      />,
+    );
+
+    // Marker should be created only for the `from` location; destination marker is skipped when loop=true
+    const markerCalls = (mapboxgl as any).Marker.mock.calls.length;
+    expect(markerCalls).toBeLessThanOrEqual(1);
+  });
 });
