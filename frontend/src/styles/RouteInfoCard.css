@@ -1,10 +1,4 @@
-.desktop-layout {
-  display: block;
-}
-
-.route-card-content {
-  display: none;
-}
+/* ROUTE INFO CARD: BASE STYLES*/
 
 .RouteInfoCard {
   position: relative;
@@ -13,46 +7,51 @@
   outline: none;
 }
 
-.route-card-header {
-  display: flex;
-  flex-direction: column;
+/* Desktop layout visible by default */
+.desktop-layout {
+  display: block;
+}
+
+.route-card-content {
+  display: none;
 }
 
 .route_type {
   display: flex;
   flex-direction: row;
-  font-size: 16px;
+  font-size: clamp(14px, 1.2vw, 16px);
   color: #61896f;
   font-weight: 300;
+  flex-wrap: wrap;
 }
 
 .time-estimate {
-  display: flex;
-  flex-direction: row;
-  font-size: 22px;
+  font-size: clamp(18px, 2vw, 22px);
   color: #111813;
   font-weight: 600;
-  padding-bottom: 3px;
-  padding-top: 3px;
+  padding: clamp(2px, 0.3vw, 4px) 0;
+  flex-wrap: wrap;
 }
 
 .additional-info {
   display: flex;
-  flex-direction: row;
-  font-size: 18px;
+  gap: clamp(4px, 0.5vw, 6px);
+  font-size: clamp(16px, 1.8vw, 18px);
   color: #61896f;
   font-weight: 300;
-  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .route-details {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  flex-wrap: wrap;
 }
 
+/*  EXPANDED COMPARISON AREA */
 .route-comparisons {
-  margin-top: 18px;
+  margin-top: clamp(12px, 1.5vw, 18px);
   animation: slideDown 0.3s ease;
 }
 
@@ -70,20 +69,20 @@
 .comparisons-divider {
   height: 1px;
   background: rgba(97, 137, 111, 0.2);
-  margin-bottom: 14px;
+  margin-bottom: clamp(10px, 1vw, 14px);
 }
 
 .comparison-item {
-  font-size: 13.8px;
+  font-size: clamp(12px, 1.2vw, 14px);
   color: #333;
 }
 
 .comparison-text {
   line-height: 1.4;
+  word-break: break-word;
 }
 
-/* Mobile Styles */
-
+/*  MOBILE LAYOUT*/
 @media (max-width: 800px) {
   .desktop-layout {
     display: none;
@@ -91,19 +90,16 @@
 
   .route-card-content {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    gap: 8px;
+    gap: clamp(4px, 2vw, 8px);
   }
 
   .route_type {
-    font-size: 15px;
-    color: #61896f;
-    font-weight: 300;
-    margin: 0;
-    flex: 0 0 120px;
-    min-width: 120px;
+    font-size: clamp(14px, 3vw, 16px);
+    flex: 1 1 auto;
     text-align: left;
   }
 
@@ -112,32 +108,26 @@
     color: #61896f;
     opacity: 0.4;
     margin-left: auto;
-    margin-right: 8px;
-    font-weight: 300;
   }
 
   .time-estimate {
-    display: flex;
-    align-items: center;
-    font-size: 18px;
-    color: #111813;
-    font-weight: 600;
-    padding: 0;
-    flex: 0 0 70px;
-    justify-content: space-between;
+    font-size: clamp(16px, 4vw, 20px);
+    flex: 0 1 auto;
+    white-space: nowrap;
   }
 
   .additional-info {
-    font-size: 15px;
-    color: #61896f;
-    font-weight: 300;
-    flex: 1;
+    font-size: clamp(14px, 3vw, 16px);
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(4px, 2vw, 6px);
+    flex: 1 1 auto;
+    justify-content: flex-end;
   }
 
   .route-stat-divider {
     color: #61896f;
     opacity: 0.5;
-    font-weight: 300;
-    margin: 0 4px;
+    margin: 0 clamp(2px, 1vw, 4px);
   }
 }
