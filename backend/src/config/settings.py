@@ -21,7 +21,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.404954, 52.520008],
-        "zoom": 14,
+        "zoom": 13.5,
         "batch_size": 5000,
         "region_code": "DE"
     },
@@ -31,8 +31,8 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
-        "focus_point": [24.9384, 60.1699],
-        "zoom": 14,
+        "focus_point": [24.96, 60.168],
+        "zoom": 13.5,
         "batch_size": 5000,
         "region_code": "FI"
     },
@@ -57,7 +57,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:2229",
         "tile_size_m": 500,
         "focus_point": [-118.248, 34.049],
-        "zoom": 15.3,
+        "zoom": 14.7,
         "batch_size": 5000,
         "region_code": "US"
     },
@@ -68,7 +68,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:32638",
         "tile_size_m": 500,
         "focus_point": [46.70, 24.70],
-        "zoom": 15.2,
+        "zoom": 14.7,
         "batch_size": 5000,
         "region_code": "SA"
     },
