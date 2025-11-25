@@ -3,6 +3,7 @@ import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { initialMapZoom, initialMapCenter } from '../constants';
 import { LockedLocation, RouteGeoJSON, Area } from '../types';
 import { LocationButton } from './LocationButton';
 import { useDrawRoutes } from '../hooks/useDrawRoutes';
@@ -96,7 +97,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   // Handle user location
   const handleLocationFound = (coords: { lat: number; lon: number }): void => {
-    if (!mapRef.current) return;
+    console.log('[MapComponent] handleLocationFound called with', coords);
+    if (!mapRef.current) {
+      console.warn('[MapComponent] no mapRef available');
+      return;
+    }
     userUsedLocationRef.current = true;
     locationMarkerRef.current?.remove();
 
@@ -124,8 +129,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const map = new mapboxgl.Map({
       container: mapboxRef.current,
       style: mapboxStyle,
-      center: [0, 20],
-      zoom: 2,
+      center: initialMapCenter,
+      zoom: initialMapZoom,
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
