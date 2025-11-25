@@ -451,13 +451,18 @@ const SideBar: React.FC<SideBarProps> = ({
 
         {loop && (
           <>
+            <div className='aqi-toggle-button'>
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+              </button>
+            </div>
             {loopLoading ? (
               <div className='route-loading-message'>
                 <p>Loading loop route...</p>
               </div>
             ) : loopSummaries?.loop ? (
               <div
-                className='loop-route-container route-container'
+                className='route-card-base loop-container route-container'
                 onClick={() => onRouteSelect('loop')}
                 onMouseDown={(e) => e.preventDefault()}
               >
@@ -472,23 +477,23 @@ const SideBar: React.FC<SideBarProps> = ({
                 />
               </div>
             ) : null}
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide air quality on map' : 'Show air quality on map'}
-              </button>
-            </div>
           </>
         )}
 
         {!loop && summaries && !children && (
           <>
+            <div className='aqi-toggle-button'>
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+              </button>
+            </div>
             <div
-              className='best-aq-container route-container'
+              className='route-card-base best-aq-container route-container'
               onClick={() => onRouteSelect('best_aq')}
               onMouseDown={(e) => e.preventDefault()}
             >
               <RouteInfoCard
-                route_type='Best Air Quality'
+                route_type='Best AQ Route'
                 time_estimates={summaries.best_aq.time_estimates}
                 total_length={summaries.best_aq.total_length}
                 aq_average={summaries.best_aq.aq_average}
@@ -500,7 +505,7 @@ const SideBar: React.FC<SideBarProps> = ({
             </div>
 
             <div
-              className='fastest-route-container route-container'
+              className='route-card-base fastest-container route-container'
               onClick={() => onRouteSelect('fastest')}
               onMouseDown={(e) => e.preventDefault()}
             >
@@ -517,13 +522,13 @@ const SideBar: React.FC<SideBarProps> = ({
             </div>
 
             <div
-              className='balanced-route-container route-container'
+              className='route-card-base balanced-container route-container'
               onClick={() => onRouteSelect('balanced')}
               onMouseDown={(e) => e.preventDefault()}
             >
               {balancedLoading ? (
                 <div className='route-loading-overlay'>
-                  <h4>Getting route...</h4>
+                  <h4>Loading route...</h4>
                 </div>
               ) : (
                 <RouteInfoCard
@@ -543,12 +548,6 @@ const SideBar: React.FC<SideBarProps> = ({
               onChange={setBalancedWeight}
               disabled={loading || balancedLoading}
             />
-
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide air quality on map' : 'Show air quality on map'}
-              </button>
-            </div>
           </>
         )}
       </div>
