@@ -21,6 +21,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.404954, 52.520008],
+        "zoom": 13.5,
         "batch_size": 5000,
         "region_code": "DE"
     },
@@ -30,7 +31,8 @@ AREA_SETTINGS = {
         "pbf_url": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
         "crs": "EPSG:3067",  # ETRS-TM35FIN
         "tile_size_m": 500,
-        "focus_point": [24.9384, 60.1699],
+        "focus_point": [24.96, 60.168],
+        "zoom": 13.5,
         "batch_size": 5000,
         "region_code": "FI"
     },
@@ -44,16 +46,18 @@ AREA_SETTINGS = {
         "crs": "EPSG:27700",
         "tile_size_m": 500,
         "focus_point": [-0.105, 51.507],
+        "zoom": 14,
         "batch_size": 5000,
         "region_code": "GB"
     },
     "la": {
         "display_name": "Los Angeles",
-        "bbox": [-118.28, 34.02, -118.22, 34.085],  # WGS84 (EPSG:4326)
+        "bbox": [-118.31, 34.00, -118.22, 34.075],  # WGS84 (EPSG:4326)
         "pbf_url": "https://download.geofabrik.de/north-america/us/california/socal-latest.osm.pbf",
         "crs": "EPSG:2229",
         "tile_size_m": 500,
         "focus_point": [-118.248, 34.049],
+        "zoom": 14.7,
         "batch_size": 5000,
         "region_code": "US"
     },
@@ -64,6 +68,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:32638",
         "tile_size_m": 500,
         "focus_point": [46.70, 24.70],
+        "zoom": 14.7,
         "batch_size": 5000,
         "region_code": "SA"
     },
@@ -74,6 +79,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:3003",
         "tile_size_m": 500,
         "focus_point": [12.496366, 41.902782],
+        "zoom": 14.5,
         "batch_size": 5000,
         "region_code": "IT"
     },
@@ -84,6 +90,7 @@ AREA_SETTINGS = {
         "crs": "EPSG:25833",
         "tile_size_m": 500,
         "focus_point": [13.385, 52.51],
+        "zoom": 16,
         "batch_size": 1000,
         "region_code": "DE"
     },
@@ -114,6 +121,7 @@ class AreaConfig:
         self.crs = settings["crs"]
         self.tile_size_m = settings.get("tile_size_m", 500)
         self.focus_point = settings["focus_point"]
+        self.zoom = settings["zoom"]
         self.batch_size = settings.get("batch_size", 5000)
         self.region_code = settings["region_code"]
 

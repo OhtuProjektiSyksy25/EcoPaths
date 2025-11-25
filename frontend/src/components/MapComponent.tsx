@@ -1,8 +1,3 @@
-/*
-MapComponent.tsx renders a Mapbox map or Leaflet fallback.
-It handles markers for From/To locations and user location,
-updates water layer styling, and fits the map to selected areas/routes.
-*/
 import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -13,8 +8,9 @@ import { LockedLocation, RouteGeoJSON, Area } from '../types';
 import { LocationButton } from './LocationButton';
 import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
-import '../styles/MapComponent.css';
 import { isValidCoordsArray } from '../utils/coordsNormalizer';
+import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/mapBounds';
+import '../styles/MapComponent.css';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -28,13 +24,16 @@ interface MapComponentProps {
   loop: boolean;
 }
 
+interface MapWithLock extends mapboxgl.Map {
+  interactionLocked?: boolean;
+}
+
 export const updateWaterLayers = (map: mapboxgl.Map): void => {
   const layers = map.getStyle().layers;
   if (!layers) return;
 
   layers.forEach((layer) => {
-    if (!layer.id) return;
-    if (layer.id.includes('water')) {
+    if (layer.id?.includes('water')) {
       try {
         map.setPaintProperty(layer.id, 'fill-color', 'hsl(200, 80%, 80%)');
         map.setPaintProperty(layer.id, 'fill-outline-color', 'hsl(200, 70%, 75%)');
@@ -42,10 +41,6 @@ export const updateWaterLayers = (map: mapboxgl.Map): void => {
     }
   });
 };
-
-interface MapWithLock extends mapboxgl.Map {
-  interactionLocked?: boolean;
-}
 
 const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
@@ -67,13 +62,9 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const userUsedLocationRef = useRef(false);
 
-  let visibleRoutes: Record<string, RouteGeoJSON> = {};
-  if (showLoopOnly) {
-    visibleRoutes = loopRoutes || {};
-  } else {
-    visibleRoutes = routes || {};
-  }
+  const visibleRoutes = showLoopOnly ? loopRoutes || {} : routes || {};
 
+  // Draw routes
   useDrawRoutes(
     mapRef.current,
     visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
@@ -81,42 +72,30 @@ const MapComponent: React.FC<MapComponentProps> = ({
     showLoopOnly ? null : selectedRoute,
   );
 
-  /* istanbul ignore next */
+  // Fit map to active routes
   useEffect(() => {
     if (!mapRef.current) return;
-
     const map = mapRef.current;
     const activeRoutes = showLoopOnly ? loopRoutes : routes;
     if (!activeRoutes) return;
 
-    const allCoords: [number, number][] = [];
-    Object.values(activeRoutes).forEach((geojson) => {
-      geojson.features.forEach((f) => {
-        if (f.geometry.type === 'LineString') {
-          allCoords.push(...(f.geometry.coordinates as [number, number][]));
-        }
-      });
-    });
+    const coords = extractRouteCoordinates(activeRoutes);
+    const bounds = calculateBounds(coords);
+    if (!bounds) return;
 
-    if (allCoords.length === 0) return;
-
-    const bounds = allCoords.reduce(
-      (b, c) => b.extend(c),
-      new mapboxgl.LngLatBounds(allCoords[0], allCoords[0]),
-    );
-
-    const sidebar = document.getElementById('sidebar');
-    const sidebarWidth = sidebar?.offsetWidth || 0;
+    const isMobile = window.innerWidth <= 800;
+    const padding = getPadding(isMobile);
 
     map.fitBounds(bounds, {
-      padding: { top: 70, bottom: 70, left: 100, right: sidebarWidth + 60 },
+      padding,
       duration: 1500,
     });
   }, [showLoopOnly, routes, loopRoutes]);
 
+  // Highlight selected area
   useHighlightChosenArea(mapRef.current, selectedArea);
 
-  /*  Handle user location */
+  // Handle user location
   const handleLocationFound = (coords: { lat: number; lon: number }): void => {
     console.log('[MapComponent] handleLocationFound called with', coords);
     if (!mapRef.current) {
@@ -129,10 +108,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const elem = document.createElement('div');
     elem.className = 'current-location-dot';
 
-    // validate coords before using them (use `lon` field produced by geolocation)
-    const validLatLon = (c: { lat: number; lon: number }): boolean =>
-      Number.isFinite(c?.lat) && Number.isFinite(c?.lon);
-    if (!validLatLon(coords)) return;
+    if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lon)) return;
 
     locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
       .setLngLat([coords.lon, coords.lat])
@@ -140,12 +116,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     mapRef.current.flyTo({
       center: [coords.lon, coords.lat],
-      zoom: 15,
+      zoom: 13,
       duration: 1500,
     });
   };
 
-  /*  Initialize Mapbox map */
+  // Initialize Mapbox map
   useEffect(() => {
     if (!mapboxToken || !mapboxRef.current) return;
 
@@ -158,11 +134,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-
-    const scale = new mapboxgl.ScaleControl({
-      maxWidth: 100,
-      unit: 'metric',
-    });
+    const scale = new mapboxgl.ScaleControl({ maxWidth: 100, unit: 'metric' });
     map.addControl(scale, 'bottom-left');
 
     map.on('movestart', () => {
@@ -181,17 +153,20 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return () => map.remove();
   }, [mapboxToken, mapboxStyle]);
 
-  /*  Update markers */
+  // Update From/To markers
   useEffect(() => {
     if (!mapRef.current) return;
+    const map = mapRef.current;
+
     fromMarkerRef.current?.remove();
     toMarkerRef.current?.remove();
+
     if (fromLocked?.geometry?.coordinates && isValidCoordsArray(fromLocked.geometry.coordinates)) {
       fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(fromLocked.geometry.coordinates)
-        .addTo(mapRef.current);
+        .addTo(map);
     }
-    // only show destination marker when not in loop mode
+
     if (
       !loop &&
       toLocked?.geometry?.coordinates &&
@@ -199,35 +174,31 @@ const MapComponent: React.FC<MapComponentProps> = ({
     ) {
       toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
         .setLngLat(toLocked.geometry.coordinates)
-        .addTo(mapRef.current);
+        .addTo(map);
     }
 
-    if (
-      !loop &&
-      fromLocked?.geometry?.coordinates &&
-      toLocked?.geometry?.coordinates &&
-      isValidCoordsArray(fromLocked.geometry.coordinates) &&
-      isValidCoordsArray(toLocked.geometry.coordinates)
-    ) {
-      const bounds = new mapboxgl.LngLatBounds()
-        .extend(fromLocked.geometry.coordinates)
-        .extend(toLocked.geometry.coordinates);
-      mapRef.current.fitBounds(bounds, { padding: 110, duration: 1500 });
-    } else if (
-      fromLocked?.geometry?.coordinates &&
-      isValidCoordsArray(fromLocked.geometry.coordinates)
-    ) {
-      mapRef.current.flyTo({ center: fromLocked.geometry.coordinates, zoom: 15, duration: 1500 });
+    const points: [number, number][] = [];
+    if (fromLocked?.geometry?.coordinates) points.push(fromLocked.geometry.coordinates);
+    if (toLocked?.geometry?.coordinates && !loop) points.push(toLocked.geometry.coordinates);
+
+    if (points.length > 1) {
+      const bounds = points.reduce(
+        (b, c) => b.extend(c),
+        new mapboxgl.LngLatBounds(points[0], points[0]),
+      );
+      const isMobile = window.innerWidth <= 800;
+      const padding = getPadding(isMobile);
+      map.fitBounds(bounds, { padding, duration: 1500 });
+    } else if (points.length === 1) {
+      map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
     }
   }, [fromLocked, toLocked, loop]);
 
-  /*  Fly to selected area and disable interactions until finished  */
+  // Fly to selected area and disable interactions until finished
   useEffect(() => {
     if (!mapRef.current || !selectedArea) return;
-
     const map = mapRef.current;
 
-    /* Disable all user interactions */
     map.dragPan.disable();
     map.scrollZoom.disable();
     map.boxZoom.disable();
@@ -247,17 +218,14 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     map.on('moveend', onMoveEnd);
 
-    // ensure focus_point is valid before calling flyTo
-    if (Array.isArray(selectedArea.focus_point) && selectedArea.focus_point.length >= 2) {
-      const [lng, lat] = selectedArea.focus_point;
-      if (Number.isFinite(lng) && Number.isFinite(lat)) {
-        map.flyTo({
-          center: selectedArea.focus_point,
-          zoom: 13.5,
-          duration: 2000,
-          essential: true,
-        });
-      }
+    const [lon, lat] = selectedArea.focus_point || [];
+    if (Number.isFinite(lon) && Number.isFinite(lat)) {
+      map.flyTo({
+        center: selectedArea.focus_point,
+        zoom: selectedArea.zoom || 13.5,
+        duration: 2000,
+        essential: true,
+      });
     }
   }, [selectedArea]);
 
@@ -272,12 +240,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
     );
   }
 
-  /*  Fallback Leaflet map */
+  // Leaflet fallback
   return (
     <div style={{ height: '100%', width: '100%' }}>
       <MapContainer
-        center={selectedArea?.focus_point || initialMapCenter}
-        zoom={selectedArea?.zoom || initialMapZoom}
+        center={selectedArea?.focus_point}
+        zoom={selectedArea?.zoom}
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
