@@ -23,7 +23,7 @@ async def get_areas():
             "id": area_id,
             "display_name": settings.get("display_name", area_id.title()),
             "focus_point": settings.get("focus_point"),
-            "zoom": 12,
+            "zoom": settings.get("zoom", 13.5),
             "bbox": settings.get("bbox"),
         })
     return {"areas": areas}
