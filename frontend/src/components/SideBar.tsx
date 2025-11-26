@@ -451,11 +451,6 @@ const SideBar: React.FC<SideBarProps> = ({
 
         {loop && (
           <>
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
-              </button>
-            </div>
             {loopLoading ? (
               <div className='route-loading-message'>
                 <p>Loading loop route...</p>
@@ -477,16 +472,16 @@ const SideBar: React.FC<SideBarProps> = ({
                 />
               </div>
             ) : null}
-          </>
-        )}
-
-        {!loop && summaries && !children && (
-          <>
             <div className='aqi-toggle-button'>
               <button onClick={() => setShowAQIColors(!showAQIColors)}>
                 {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
               </button>
             </div>
+          </>
+        )}
+
+        {!loop && summaries && !children && (
+          <>
             <div
               className='route-card-base best-aq-container route-container'
               onClick={() => onRouteSelect('best_aq')}
@@ -548,6 +543,11 @@ const SideBar: React.FC<SideBarProps> = ({
               onChange={setBalancedWeight}
               disabled={loading || balancedLoading}
             />
+            <div className='aqi-toggle-button'>
+              <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+              </button>
+            </div>
           </>
         )}
       </div>

@@ -33,8 +33,12 @@ test.describe('EcoPaths E2E - Full Routing Flow', () => {
 
     await page.waitForSelector('text=Your Route', { timeout: 20000 });
 
-    await expect(page.getByText('Best Air Quality')).toBeVisible();
-    await expect(page.getByText('Fastest Route')).toBeVisible();
+  await expect(
+    page.locator('span.route_type', { hasText: 'Best AQ Route' }).first()
+  ).toBeVisible();
+  await expect(
+    page.locator('span.route_type', { hasText: 'Fastest Route' }).first()
+  ).toBeVisible();
     await expect(page.locator('span.route_type').first()).toBeVisible();
   });
 
@@ -81,7 +85,7 @@ test.describe('EcoPaths E2E - Full Routing Flow', () => {
 
     await page.waitForSelector('text=Your Route', { timeout: 20000 });
 
-    const toggleButton = page.getByRole('button', { name: /(Show|Hide) air quality on map/i });
+    const toggleButton = page.getByRole('button', { name: /(Show|Hide) AQ on map/i });
     await expect(toggleButton).toBeVisible({ timeout: 20000 });
   });
 });
