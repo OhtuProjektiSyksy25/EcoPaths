@@ -11,10 +11,10 @@
 }
 
 .sidebar-content {
-  padding: clamp(12px, 4vw, 18px);
+  padding: clamp(10px, 4vw, 12px);
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 2vw, 10px);
+  gap: clamp(2px, 2vw, 8px);
 }
 
 .sidebar-title {
@@ -29,14 +29,15 @@
 .input-box {
   display: flex;
   flex-direction: column;
-  gap: clamp(4px, 1.5vw, 8px);
+  gap: clamp(1px, 1.5vw, 6px);
 }
 
 .divider {
   text-align: center;
   color: #999;
-  font-size: clamp(14px, 3vw, 18px);
-  line-height: 5px;
+  font-size: clamp(2px, 3vw, 12px);
+  line-height: clamp(1px, 1.5vw, 4px);
+  margin: clamp(1px, 1.5vw, 4px) 0;
 }
 
 .divider::before {
@@ -49,11 +50,13 @@
   justify-content: space-between;
   gap: clamp(6px, 2vw, 10px);
   padding: clamp(8px, 3vw, 14px);
-  border-radius: clamp(8px, 2vw, 12px);
+  border-radius: clamp(10px, 2vw, 12px);
   font-family: 'Public Sans', sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   min-height: clamp(40px, 10vw, 65px);
+  margin-top: clamp(6px, 2vw, 12px);
+  user-select: none;
 }
 .best-aq-container {
   background-color: rgba(0, 184, 46, 0.1);
@@ -70,10 +73,11 @@
   border: 2px solid #0051d495;
   color: #0051d4;
 }
-.loop-container { 
-  background-color: rgba(0,114,89,0.1);
-  border: 2px solid #00725995; 
-  color: #007259; }
+.loop-container {
+  background-color: rgba(0, 114, 89, 0.1);
+  border: 2px solid #00725995;
+  color: #007259;
+}
 
 .route-container * {
   user-select: none;
@@ -106,11 +110,10 @@
 }
 
 .aqi-toggle-button {
-  margin-top: clamp(12px, 3vw, 14px);
+  margin-top: clamp(8px, 3vw, 14px);
   display: flex;
   justify-content: center;
 }
-
 .aqi-toggle-button button {
   padding: clamp(8px, 2vw, 10px) clamp(12px, 4vw, 18px);
   background-color: #ffffff;
@@ -126,6 +129,7 @@
 }
 
 .aqi-toggle-button button:hover {
+  transform: scale(1.02);
   background-color: #e8f7ec;
   border-color: #60b45a;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
@@ -215,6 +219,10 @@
   backdrop-filter: blur(2px);
 }
 
+.sidebar-handle {
+  display: none;
+}
+
 /* MOBILE STYLES */
 
 @media (max-width: 800px) {
@@ -292,35 +300,43 @@
 
   /* --------------------- SIDEBAR CONTENT AREA ------------------------ */
   .sidebar-content {
-    padding-top: clamp(20px, 3dvh, 50px);
-    padding-left: clamp(16px, 4vw, 24px);
-    padding-right: clamp(16px, 4vw, 24px);
-    padding-bottom: calc(clamp(20px, 4dvh, 40px));
-    height: calc(100% - clamp(20px, 4dvh, 40px));
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 2vw, 4px);
+    padding: clamp(10px, 3dvh, 50px) clamp(10px, 4vw, 24px) clamp(10px, 4dvh, 40px)
+      clamp(10px, 4vw, 24px);
+    height: 100%;
+    overflow-y: auto;
+  }
+  /* Input box adjustments */
+  .input-box {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 1.5vw, 4px);
   }
 
-  /* Inputs stage: adjust content padding */
-  .sidebar-stage-inputs .sidebar-content {
-    padding-top: 50px !important;
-    height: 100% !important;
+  .InputContainer {
+    margin-bottom: 0;
   }
 
-  /* Routes stage: more bottom padding */
-  .sidebar-stage-routes .sidebar-content {
-    padding-top: clamp(45px, 2dvh, 65px);
-    padding-bottom: max(clamp(40px, 8dvh, 80px));
+  .InputContainer input {
+    width: 100%;
+    padding: clamp(6px, 1.5vw, 10px) clamp(8px, 2vw, 14px);
+    font-size: clamp(14px, 3vw, 16px);
+    border: 2px solid #ebebeb;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
   }
 
-  /* Routes-only stage: hide title, inputs, divider */
-  .sidebar-stage-routes-only .sidebar-title,
-  .sidebar-stage-routes-only .input-box,
-  .sidebar-stage-routes-only .divider {
-    display: none;
+  .InputContainer input:focus {
+    outline: none;
+    border-color: #60b45a;
   }
 
-  .aqi-toggle-button {
-    margin-top: clamp(8px, 3vw, 14px);
-    padding-bottom: clamp(8px, 2dvh, 14px);
+  .InputContainer input::placeholder {
+    color: #999;
+    font-size: clamp(14px, 3vw, 16px);
   }
 
   /* TITLE */
@@ -331,37 +347,45 @@
   }
 
   /* ROUTE CARDS */
-  .best-aq-container,
-  .balanced-route-container,
-  .fastest-route-container {
-    padding: clamp(10px, 3vw, 16px);
-    margin-top: -2px;
-    border-radius: clamp(8px, 2vw, 12px);
-    font-size: clamp(14px, 3.5vw, 16px);
-    line-height: 1.4;
-    min-height: clamp(20px, 5vw, 65px);
-    gap: clamp(8px, 2vw, 12px);
-
+  .route-card-base {
+    display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: clamp(2px, 2vw, 4px);
+    padding: clamp(4px, 3vw, 14px);
+    min-height: clamp(20px, 5vw, 65px);
+    font-size: clamp(14px, 3.5vw, 16px);
+    line-height: 1.4;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-top: clamp(4px, 2vw, 12px);
   }
 
-  /* First route card: more top spacing */
   .best-aq-container {
-    margin-top: 20px;
+    margin-top: clamp(10px, 3vw, 22px);
   }
 
-  .balanced-route-container {
-    margin-bottom: 7px; /* Space below last route card */
+  .balanced-container {
+    margin-bottom: clamp(4px, 1.5vw, 10px);
+  }
+
+  /* STAGE-SPECIFIC ADJUSTMENTS */
+
+  /* Inputs stage: adjust content padding */
+  .sidebar-stage-inputs .sidebar-content {
+    padding-top: 50px !important;
+    height: 100% !important;
+  }
+
+  /* Routes stage: more bottom padding */
+  .sidebar-stage-routes .sidebar-content {
+    padding-top: clamp(45px, 2dvh, 65px);
+    padding-bottom: max(clamp(30px, 8dvh, 80px));
   }
 
   .sidebar-stage-routes-only .sidebar-content {
     padding-top: clamp(40px, 2vh, 55px) !important;
-  }
-
-  /* Hide route mode buttons in routes-only stage */
-  .sidebar-stage-routes-only .route-mode-selector {
-    display: none;
   }
 
   /* Routes-only stage: hide title, inputs, divider */
