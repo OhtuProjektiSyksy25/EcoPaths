@@ -5,13 +5,11 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { initialMapZoom, initialMapCenter } from '../constants';
 import { LockedLocation, RouteGeoJSON, Area } from '../types';
-import { LocationButton } from './LocationButton';
 import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import { isValidCoordsArray } from '../utils/coordsNormalizer';
 import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/mapBounds';
 import { getEnvVar } from '../utils/config';
-import '../styles/MapComponent.css';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -60,8 +58,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const locationMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const userUsedLocationRef = useRef(false);
 
   const visibleRoutes = showLoopOnly ? loopRoutes || {} : routes || {};
 
@@ -95,32 +91,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   // Highlight selected area
   useHighlightChosenArea(mapRef.current, selectedArea);
-
-  // Handle user location
-  const handleLocationFound = (coords: { lat: number; lon: number }): void => {
-    console.log('[MapComponent] handleLocationFound called with', coords);
-    if (!mapRef.current) {
-      console.warn('[MapComponent] no mapRef available');
-      return;
-    }
-    userUsedLocationRef.current = true;
-    locationMarkerRef.current?.remove();
-
-    const elem = document.createElement('div');
-    elem.className = 'current-location-dot';
-
-    if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lon)) return;
-
-    locationMarkerRef.current = new mapboxgl.Marker({ element: elem })
-      .setLngLat([coords.lon, coords.lat])
-      .addTo(mapRef.current);
-
-    mapRef.current.flyTo({
-      center: [coords.lon, coords.lat],
-      zoom: 13,
-      duration: 1500,
-    });
-  };
 
   // Initialize Mapbox map
   useEffect(() => {
@@ -234,9 +204,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
-        <div className='location-button-container'>
-          <LocationButton onLocationFound={handleLocationFound} />
-        </div>
       </div>
     );
   }
