@@ -10,6 +10,7 @@ import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import { isValidCoordsArray } from '../utils/coordsNormalizer';
 import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/mapBounds';
+import { getEnvVar } from '../utils/config';
 import '../styles/MapComponent.css';
 
 interface MapComponentProps {
@@ -53,8 +54,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   showLoopOnly,
   loop,
 }) => {
-  const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
-  const mapboxStyle = process.env.REACT_APP_MAPBOX_STYLE || '';
+  const mapboxToken = getEnvVar('REACT_APP_MAPBOX_TOKEN');
+  const mapboxStyle = getEnvVar('REACT_APP_MAPBOX_STYLE');
   const mapboxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
