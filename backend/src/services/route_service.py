@@ -89,6 +89,8 @@ class RouteService:
         # Nodes_gdf from database
         nodes = self._get_nodes_from_db(tile_ids)
         if edges is None or edges.empty:
+            log.debug(
+                f" No edges found for requested route area: {self.area}")
             raise RuntimeError("No edges found for requested route area.")
 
         edges_subset = edges[edges.geometry.intersects(buffer)].copy()

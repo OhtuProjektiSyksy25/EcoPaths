@@ -1,23 +1,10 @@
 import pytest
-import warnings
 from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from src.main import app
 
-
-class MockAreaConfig:
-    crs = "EPSG:25833"
-    area = "test_area"
-    bbox = [13.30, 52.46, 13.51, 52.59]
-    focus_point = [13.404954, 52.520008]
-
-
-@pytest.fixture
-def setup_mock_lifespan():
-    app.state.area_config = MockAreaConfig()
-    app.state.route_service = Mock()
-    app.state.selected_area = "test_area"
-    yield
+# Import the module where getroute is defined so monkeypatch paths match
+import src.endpoints.routes as routes_module
 
 
 @pytest.fixture
@@ -25,77 +12,93 @@ def client():
     return TestClient(app)
 
 
-def test_getroute_no_area_selected(client):
-    client.app.state.area_config = None
-    client.app.state.route_service = None
-
+def test_getroute_missing_required_fields(client):
+    """Missing area or wrong number of features -> 400"""
     response = client.post("/api/getroute", json={"features": []})
     assert response.status_code == 400
-    assert response.json() == {
-        "error": "No area selected. Please select an area first."}
+    assert response.json() == {"error": "Missing required fields"}
 
 
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_getroute_invalid_features_count(client):
-    response = client.post(
-        "/api/getroute", json={"features": [{"properties": {"role": "start"}}]})
-    assert response.status_code == 400
-    assert response.json() == {"error": "GeoJSON must contain two features"}
-
-
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_getroute_missing_start_or_end(client):
-    response = client.post("/api/getroute", json={
+def test_getroute_invalid_balanced_weight(client):
+    """balanced_weight must be 0..1"""
+    body = {
+        "area": "berlin",
         "features": [
+            {"properties": {"role": "start"}, "geometry": {}},
             {"properties": {"role": "end"}, "geometry": {}},
-            {"properties": {"role": "start_missing"}, "geometry": {}}
-        ]
-    })
+        ],
+        "balanced_weight": -1.5,
+    }
+
+    response = client.post("/api/getroute", json=body)
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": "balanced_weight must be a number between 0 and 1"
+    }
+
+
+def test_getroute_missing_start_or_end_feature(client):
+    body = {
+        "area": "berlin",
+        "features": [
+            {"properties": {"role": "start_missing"}, "geometry": {}},
+            {"properties": {"role": "end"}, "geometry": {}},
+        ],
+    }
+
+    response = client.post("/api/getroute", json=body)
     assert response.status_code == 400
     assert response.json() == {"error": "Missing start or end feature"}
 
 
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_getroute_invalid_balanced_weight(client):
-    features = [
-        {"properties": {"role": "start"}, "geometry": {}},
-        {"properties": {"role": "end"}, "geometry": {}}
-    ]
-    response = client.post(
-        "/api/getroute", json={"features": features, "balanced_weight": 1.5})
-    assert response.status_code == 400
-    assert response.json() == {
-        "error": "balanced_weight must be a number between 0 and 1"}
+def test_getroute_route_service_chain(monkeypatch, client):
 
-
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_getroute_success(monkeypatch, client):
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    features = [
-        {"properties": {"role": "start"}, "geometry": {
-            "type": "Point", "coordinates": [0, 0]}},
-        {"properties": {"role": "end"}, "geometry": {
-            "type": "Point", "coordinates": [1, 1]}}
-    ]
-
-    mock_response = {
-        "routes": {"fastest": {}, "best_aq": {}, "balanced": {}},
-        "summaries": {"fastest": {}, "best_aq": {}, "balanced": {}}
-    }
+    class MockAreaConfig:
+        crs = "EPSG:25833"
 
     class MockRouteService:
         def get_route(self, origin, dest, weight):
-            return mock_response
+            return {"routes": {"fastest": {}}, "summaries": {"fastest": {}}}
+
+    def mock_from_area(area):
+        return MockRouteService(), MockAreaConfig()
+
+    monkeypatch.setattr(
+        routes_module.RouteServiceFactory,
+        "from_area",
+        staticmethod(mock_from_area)
+    )
 
     class MockGeoTransformer:
         @staticmethod
         def geojson_to_projected_gdf(geom, crs):
-            return geom
+            return {"mock": geom}
 
     monkeypatch.setattr(
-        "src.endpoints.routes.GeoTransformer", MockGeoTransformer)
-    client.app.state.route_service = MockRouteService()
+        routes_module,
+        "GeoTransformer",
+        MockGeoTransformer
+    )
 
-    response = client.post("/api/getroute", json={"features": features})
+    body = {
+        "area": "berlin",
+        "balanced_weight": 0.5,
+        "features": [
+            {
+                "properties": {"role": "start"},
+                "geometry": {"type": "Point", "coordinates": [0, 0]},
+            },
+            {
+                "properties": {"role": "end"},
+                "geometry": {"type": "Point", "coordinates": [1, 1]},
+            },
+        ],
+    }
+
+    response = client.post("/api/getroute", json=body)
+
     assert response.status_code == 200
-    assert response.json() == mock_response
+    data = response.json()
+    assert "routes" in data
+    assert "summaries" in data
+    assert "fastest" in data["routes"]

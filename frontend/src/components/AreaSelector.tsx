@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/AreaSelector.css';
 import { Area } from '../types';
+import { useArea } from '../areaContext';
 
 interface AreaSelectorProps {
   onAreaSelect: (area: Area) => void;
@@ -10,7 +11,7 @@ export const AreaSelector: React.FC<AreaSelectorProps> = ({ onAreaSelect }): JSX
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedArea, setSelectedArea] = useState<string>('');
+  const { selectedArea, setSelectedArea } = useArea();
 
   useEffect((): void => {
     const fetchAreas = async (): Promise<void> => {
@@ -36,7 +37,7 @@ export const AreaSelector: React.FC<AreaSelectorProps> = ({ onAreaSelect }): JSX
   }, []);
 
   const handleAreaClick = async (area: Area): Promise<void> => {
-    setSelectedArea(area.display_name);
+    setSelectedArea(area);
 
     // Call backend to switch the selected area
     const area_id = area.id;
@@ -97,7 +98,7 @@ export const AreaSelector: React.FC<AreaSelectorProps> = ({ onAreaSelect }): JSX
           {areas.map((area) => (
             <button
               key={area.display_name}
-              className={`area-button ${selectedArea === area.display_name ? 'selected' : ''}`}
+              className={`area-button ${selectedArea?.display_name === area.display_name ? 'selected' : ''}`}
               onClick={() => handleAreaClick(area)}
             >
               <span className='area-name'>{area.display_name}</span>
