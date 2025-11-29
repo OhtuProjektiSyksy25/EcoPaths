@@ -151,7 +151,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (fromLocked?.geometry?.coordinates) points.push(fromLocked.geometry.coordinates);
     if (toLocked?.geometry?.coordinates && !loop) points.push(toLocked.geometry.coordinates);
 
-    if (points.length > 1) {
+    if (!loop && points.length > 1) {
       const bounds = points.reduce(
         (b, c) => b.extend(c),
         new mapboxgl.LngLatBounds(points[0], points[0]),
@@ -159,7 +159,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       const isMobile = window.innerWidth <= 800;
       const padding = getPadding(isMobile);
       map.fitBounds(bounds, { padding, duration: 1500 });
-    } else if (points.length === 1) {
+    } else if (!loop && points.length === 1) {
       map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
     }
   }, [fromLocked, toLocked, loop]);

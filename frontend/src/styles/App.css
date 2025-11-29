@@ -84,8 +84,8 @@ body,
 
 .InputContainer input {
   width: 100%;
-  padding: 10px 14px;
-  font-size: 16px;
+  padding: clamp(10px, 1.5vw, 12px) clamp(12px, 2.5vw, 14px);
+  font-size: clamp(14px, 3vw, 16px);
   border: 2px solid #ebebeb;
   border-radius: 8px;
   transition: border-color 0.2s;
@@ -99,7 +99,7 @@ body,
 
 .InputContainer input::placeholder {
   color: #999;
-  font-size: 16px;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .route-loading-message p {

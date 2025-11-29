@@ -28,6 +28,26 @@ describe('mapBounds utils', () => {
     },
   };
 
+  let originalQuerySelector: any;
+
+  beforeAll(() => {
+    originalQuerySelector = document.querySelector;
+
+    document.querySelector = jest.fn().mockImplementation((selector) => {
+      if (selector === '.sidebar') {
+        // Mocked sidebar element with dynamic width
+        return {
+          offsetWidth: 400, // matches old padding tests
+        } as any;
+      }
+      return originalQuerySelector(selector);
+    });
+  });
+
+  afterAll(() => {
+    document.querySelector = originalQuerySelector;
+  });
+
   test('extractRouteCoordinates returns all LineString coordinates', () => {
     const coords = extractRouteCoordinates(routes);
     expect(coords).toEqual([
@@ -60,13 +80,13 @@ describe('mapBounds utils', () => {
       top: 80,
       bottom: 80,
       left: 80,
-      right: 480,
+      right: 80 + 400,
     });
 
     const paddingMobile = getPadding(true);
     expect(paddingMobile).toEqual({
       top: 80,
-      bottom: 480,
+      bottom: 80 + 400,
       left: 30,
       right: 30,
     });
