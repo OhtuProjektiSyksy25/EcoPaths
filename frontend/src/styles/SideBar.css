@@ -54,7 +54,6 @@
   font-family: 'Public Sans', sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  min-height: clamp(40px, 10vw, 65px);
   margin-top: clamp(6px, 2vw, 12px);
   user-select: none;
 }
