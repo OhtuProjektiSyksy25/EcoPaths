@@ -1,13 +1,13 @@
 .location-button-container {
   position: absolute;
-  bottom: 62px;
-  right: 4.5px;
+  bottom: clamp(55px, 7vw, 62px);
+  right: clamp(4px, 1vw, 4.5px);
   z-index: 2;
 }
 
 .current-location-dot {
-  width: 16px;
-  height: 16px;
+  width: clamp(14px, 3vw, 16px);
+  height: clamp(14px, 3vw, 16px);
   background-color: #1e90ff;
   border-radius: 50%;
   position: relative;
@@ -18,8 +18,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 16px;
-  height: 16px;
+  width: clamp(14px, 3vw, 16px);
+  height: clamp(14px, 3vw, 16px);
   background-color: rgba(30, 144, 255, 0.4);
   border-radius: 50%;
   transform: translate(-50%, -50%);
@@ -40,7 +40,17 @@
 /* MOBILE STYLES */
 @media (max-width: 800px) {
   .location-button-container {
-    bottom: 75px;
-    right: 4px;
+    bottom: clamp(65px, 8vw, 75px);
+    right: clamp(3px, 1vw, 4px);
+  }
+
+  .current-location-dot {
+    width: clamp(12px, 4vw, 14px);
+    height: clamp(12px, 4vw, 14px);
+  }
+
+  .current-location-dot::after {
+    width: clamp(12px, 4vw, 14px);
+    height: clamp(12px, 4vw, 14px);
   }
 }
