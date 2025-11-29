@@ -29,13 +29,29 @@ export const calculateBounds = (coords: [number, number][]): mapboxgl.LngLatBoun
 
 export const getPadding = (
   isMobile: boolean,
-): { top: number; bottom: number; left: number; right: number } => {
+): {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+} => {
   const basePadding = 80;
+
+  let sidebarWidth = 0;
+
+  if (typeof window !== 'undefined') {
+    const sidebar = document.querySelector('.sidebar') as HTMLElement | null;
+    if (sidebar) {
+      sidebarWidth = sidebar.offsetWidth;
+    }
+  }
+
+  if (!sidebarWidth) sidebarWidth = 300;
 
   if (isMobile) {
     return {
       top: basePadding,
-      bottom: basePadding + 400,
+      bottom: basePadding + sidebarWidth,
       left: 30,
       right: 30,
     };
@@ -45,6 +61,6 @@ export const getPadding = (
     top: basePadding,
     bottom: basePadding,
     left: basePadding,
-    right: basePadding + 400,
+    right: basePadding + sidebarWidth,
   };
 };
