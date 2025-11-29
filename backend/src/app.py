@@ -64,7 +64,7 @@ def create_app(lifespan):
         sys.path.append(project_root)
 
     # Mount static files if available
-    build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "build"))
+    build_dir = os.path.abspath(os.path.join(os.getcwd(), "build"))
     static_dir = os.path.join(build_dir, "static")
     if os.path.isdir(static_dir):
         application.mount(
