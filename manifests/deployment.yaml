@@ -38,6 +38,21 @@ spec:
                 secretKeyRef:
                   name: ecopaths-upstash-redis
                   key: REDIS_URL
+            - name: REACT_APP_API_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ecopaths-app-api-url
+                  key: REACT_APP_API_URL
+            - name: REACT_APP_MAPBOX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ecopaths-mapbox-token
+                  key: REACT_APP_MAPBOX_TOKEN
+            - name: REACT_APP_MAPBOX_STYLE
+              valueFrom:
+                secretKeyRef:
+                  name: ecopaths-mapbox-style
+                  key: REACT_APP_MAPBOX_STYLE
           resources:
             limits:
               memory: "512Mi"
