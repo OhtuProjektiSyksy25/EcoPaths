@@ -113,7 +113,8 @@ class EdgeEnricher:
             log.warning(
                 "No AQ data from API. Returning edges without enrichment.")
             return gpd.GeoDataFrame(
-                columns=["tile_id", "raw_aqi", "geometry"],
+                columns=["tile_id", "raw_aqi",
+                         "raw_pm2_5", "raw_pm10", "geometry"],
                 crs=self.edges_gdf.crs
             )
 
@@ -152,23 +153,35 @@ class EdgeEnricher:
         log.info(
             "Merging AQ data by tile_id.")
         enriched = edges.merge(
-            aq[["tile_id", "raw_aqi"]],
+            aq[["tile_id", "raw_aqi",  "raw_pm2_5", "raw_pm10"]],
             on="tile_id",
             how="left"
         )
 
         enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
+        enriched["raw_pm2_5"] = enriched["raw_pm2_5"].fillna(15)
+        enriched["raw_pm10"] = enriched["raw_pm10"].fillna(25)
 
         enriched["aqi_norm_base"] = enriched["raw_aqi"] / 500.0
 
         enriched["normalized_aqi"] = enriched["aqi_norm_base"] * \
             enriched["env_influence"]
 
-        enriched["aqi"] = enriched["normalized_aqi"] * 500.0
+        enriched["aqi"] = (enriched["normalized_aqi"] * 500.0).round(2)
+        enriched["pm2_5"] = (enriched["raw_pm2_5"] *
+                             enriched["env_influence"]).round(2)
+        enriched["pm10"] = (enriched["raw_pm10"] *
+                            enriched["env_influence"]).round(2)
+
+        preview_cols = ["tile_id", "raw_aqi", "aqi", "raw_pm2_5",
+                        "pm2_5", "raw_pm10", "pm10", "env_influence"]
+        preview_str = enriched[preview_cols].sample(
+            min(10, len(enriched))).to_string(index=False)
+        log.info(f"Enriched edges preview:\n{preview_str}")
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained
-        enriched = enriched.drop(columns=["raw_aqi"])
+        enriched = enriched.drop(columns=["raw_aqi", "raw_pm2_5", "raw_pm10"])
 
         log.info(
             "Enrichment complete.")
