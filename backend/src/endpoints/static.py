@@ -15,4 +15,11 @@ async def spa_handler(_full_path: str):
     """Catch-all route handler for frontend SPA."""
     root_dir = Path(__file__).parent.parent.parent
     index_path = root_dir / "build" / "index.html"
-    return FileResponse(index_path)
+    return FileResponse(
+        index_path,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
