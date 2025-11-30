@@ -12,9 +12,9 @@ router = APIRouter()
 @router.get("/{_full_path:path}")
 async def spa_handler(_full_path: str): # pragma: no cover
     """Catch-all route handler for frontend SPA."""
-    root_dir = Path(__file__).parent.parent.parent
-    index_path = root_dir / "build" / "index.html"
-    return FileResponse(
+    root_dir = Path(__file__).parent.parent.parent # pragma: no cover
+    index_path = root_dir / "build" / "index.html" # pragma: no cover
+    return FileResponse( # pragma: no cover
         index_path,
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",

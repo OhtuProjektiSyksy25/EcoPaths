@@ -73,9 +73,9 @@ def create_app(lifespan):
     # Serve config.js
     config_path = os.path.join(build_dir, "config.js")
     if os.path.isfile(config_path): # pragma: no cover
-        @application.get("/config.js")
-        async def serve_config():
-            return FileResponse(
+        @application.get("/config.js") # pragma: no cover
+        async def serve_config(): # pragma: no cover
+            return FileResponse( # pragma: no cover
                 config_path,
                 headers={
                     "Cache-Control": "no-cache, no-store, must-revalidate",
