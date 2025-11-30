@@ -24,12 +24,26 @@ Create and run a container:
 docker run -p 8000:8000 <IMAGE_NAME>
 ```
 
-### Docker Compose
+## Docker Compose
 
-Alternatively, you can also build the Docker image and start the container with the command:
+Alternatively, you can also use Docker Compose to build the Docker image(s) and start the container(s). The Docker Compose includes three services: db, redis and app. Any combination of these services can be started with Docker Compose.
+
+To start all three services, use the command:
 
 ```bash
-docker compose up -d app
+docker compose up -d
+```
+
+To start a single service, use the command:
+
+```bash
+docker compose up -d <SERVICE_NAME>
+```
+
+To start a subset of services, use the command:
+
+```bash
+docker compose up -d <SERVICE1_NAME> <SERVICE2_NAME>
 ```
 
 ## Docker Hub
