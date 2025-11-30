@@ -75,7 +75,14 @@ def create_app(lifespan):
     if os.path.isfile(config_path):
         @application.get("/config.js")
         async def serve_config():
-            return FileResponse(config_path)
+            return FileResponse(
+                config_path,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            )
 
     application.add_middleware(
         CORSMiddleware,
