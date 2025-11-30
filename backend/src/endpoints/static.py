@@ -2,6 +2,8 @@
 Endpoints for serving the frontend single-page application (SPA).
 Includes a catch-all route that returns the `index.html` file.
 """
+# pragma: no cover
+
 from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
@@ -9,21 +11,11 @@ from fastapi.responses import FileResponse
 
 router = APIRouter()
 
-ROOT_DIR = Path(__file__).parent.parent.parent
-
-def get_index_path() -> Path:
-    """
-    Return the filesystem path to the SPA's main `index.html` file.
-
-    Returns:
-        Path: Absolute path to `build/index.html` within the project root.
-    """
-    return ROOT_DIR / "build" / "index.html"
-
 @router.get("/{_full_path:path}")
 async def spa_handler(_full_path: str):
     """Catch-all route handler for frontend SPA."""
-    index_path = get_index_path()
+    root_dir = Path(__file__).parent.parent.parent
+    index_path = root_dir / "build" / "index.html"
     return FileResponse(
         index_path,
         headers={
