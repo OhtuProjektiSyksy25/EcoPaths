@@ -25,8 +25,13 @@ def client():
     return TestClient(app)
 
 
+def _bbox_str():
+    cfg = app.state.area_config
+    return ",".join(map(str, cfg.bbox))
+
+
 def test_geocode_forward_too_short_value(client, setup_mock_lifespan):
-    response = client.get("/api/geocode-forward/al")
+    response = client.get(f"/api/geocode-forward/al?bbox={_bbox_str()}")
     assert response.status_code == 200
     assert response.json() == []
 
@@ -50,7 +55,7 @@ def test_geocode_forward_valid_value(client, setup_mock_lifespan, monkeypatch):
 
     monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
 
-    response = client.get("/api/geocode-forward/unt")
+    response = client.get(f"/api/geocode-forward/unt?bbox={_bbox_str()}")
     suggestions = response.json()
 
     assert response.status_code == 200
@@ -87,7 +92,7 @@ def test_geocode_forward_with_all_fields(client, setup_mock_lifespan, monkeypatc
 
     monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
 
-    response = client.get("/api/geocode-forward/unt")
+    response = client.get(f"/api/geocode-forward/unt?bbox={_bbox_str()}")
     suggestions = response.json()
 
     assert response.status_code == 200
@@ -114,7 +119,8 @@ def test_geocode_forward_outside_bbox(client, setup_mock_lifespan, monkeypatch):
 
     monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
 
-    response = client.get("/api/geocode-forward/mannerheimintie")
+    response = client.get(
+        f"/api/geocode-forward/mannerheimintie?bbox={_bbox_str()}")
     suggestions = response.json()
     assert response.status_code == 200
     assert "features" in suggestions
@@ -131,7 +137,7 @@ def test_geocode_forward_http_error(client, monkeypatch, setup_mock_lifespan):
 
     monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
 
-    response = client.get("/api/geocode-forward/test")
+    response = client.get(f"/api/geocode-forward/test?bbox={_bbox_str()}")
     assert response.status_code == 200
     assert response.json() == []
 
@@ -150,12 +156,12 @@ def test_geocode_forward_check_photon_url(client, setup_mock_lifespan, monkeypat
 
     monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
 
-    response = client.get("/api/geocode-forward/alexander")
+    value = "alexander"
+    response = client.get(f"/api/geocode-forward/{value}?bbox={_bbox_str()}")
 
     assert response.status_code == 200
     assert test_photon_url is not None
 
-    value = "alexander"
     bbox_str = "13.3,52.46,13.51,52.59"
 
     assert value in test_photon_url

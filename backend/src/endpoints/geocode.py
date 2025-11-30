@@ -2,27 +2,29 @@
 API endpoints for geocoding: 
 forward geocode suggestions (addresses and POIs) within the selected area.
 """
-from fastapi import APIRouter, Request, Path
+from fastapi import APIRouter, Path
 import httpx
 from logger.logger import log
 from utils.poi_utils import compose_photon_suggestions
-from utils.decorators import require_area_config
 from utils.poi_utils import remove_double_osm_features
 
 router = APIRouter()
 
 
 @router.get("/geocode-forward/{value:path}")
-@require_area_config
-async def geocode_forward(request: Request, value: str = Path(...)):
-    """Return suggested addresses/POIs for the given value."""
+async def geocode_forward(value: str = Path(...), bbox: str = None):
+    """
+    Forward geocode 'value' (address or POI) within the selected area.
+
+    returns a list of GeoJSON Feature suggestions.
+    """
     if len(value) < 3:
         return []
 
-    area_config = request.app.state.area_config
-    bbox = area_config.bbox
-    bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
-    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
+    if not bbox:
+        return []
+
+    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox}"
 
     try:
         async with httpx.AsyncClient() as client:
