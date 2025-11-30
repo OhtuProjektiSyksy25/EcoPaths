@@ -72,17 +72,17 @@ def create_app(lifespan):
 
     # Serve config.js
     config_path = os.path.join(build_dir, "config.js")
-    if os.path.isfile(config_path): # pragma: no cover
-        @application.get("/config.js") # pragma: no cover
-        async def serve_config(): # pragma: no cover
-            return FileResponse( # pragma: no cover
-                config_path, # pragma: no cover
-                headers={ # pragma: no cover
-                    "Cache-Control": "no-cache, no-store, must-revalidate", # pragma: no cover
-                    "Pragma": "no-cache", # pragma: no cover
-                    "Expires": "0" # pragma: no cover
-                } # pragma: no cover
-            ) # pragma: no cover
+    if os.path.isfile(config_path):
+        @application.get("/config.js")
+        async def serve_config():
+            return FileResponse(
+                config_path,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            )
 
     application.add_middleware(
         CORSMiddleware,
