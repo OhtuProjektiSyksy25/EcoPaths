@@ -12,7 +12,7 @@ import RouteModeSelector from './RouteModeSelector';
 import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
 import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
-import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { getEnvVar } from '../utils/config';
 
 interface SideBarProps {
@@ -82,14 +82,13 @@ const SideBar: React.FC<SideBarProps> = ({
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
 
-  // Mobile
-  const [sidebarStage, setSidebarStage] = useState<'inputs' | 'routes' | 'routes-only' | 'hidden'>(
-    'inputs',
-  );
+  // Mobile - Dynamic dragging
   const [isMobile, setIsMobile] = useState(false);
-  const [startY, setStartY] = useState(0);
-  const [currentY, setCurrentY] = useState(0);
+  const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [startDragY, setStartDragY] = useState(0);
+  const [sidebarHeight, setSidebarHeight] = useState(280);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkMobile = (): void => {
@@ -98,91 +97,49 @@ const SideBar: React.FC<SideBarProps> = ({
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [selectedArea]);
-
-  useEffect(() => {
-    if (isMobile && summaries && sidebarStage === 'inputs') {
-      setSidebarStage('routes');
-    }
-  }, [isMobile, summaries, sidebarStage]);
-
-  // Allow dragging only from the handle area
-  const handleTouchStart = (e: React.TouchEvent): void => {
-    if (!isMobile) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const touchY = e.touches[0].clientY - rect.top;
-    const handleHeight = 35;
-
-    if (touchY > handleHeight) {
-      return;
-    }
-
-    setStartY(e.touches[0].clientY);
-    setCurrentY(e.touches[0].clientY);
-    setIsDragging(true);
-  };
+  }, []);
 
   const handleTouchMove = (e: React.TouchEvent): void => {
     if (!isMobile || !isDragging) return;
-    setCurrentY(e.touches[0].clientY);
+
+    const currentY = e.touches[0].clientY;
+    const delta = startDragY - currentY;
+
+    const newHeight = sidebarHeight + delta;
+    const minHeight = 40;
+    const maxHeight = window.innerHeight - 60;
+
+    const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+    const clampedDelta = clampedHeight - sidebarHeight;
+
+    setDragY(clampedDelta);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent): void => {
+    if (!isMobile) return;
+
+    setStartDragY(e.touches[0].clientY);
+    setDragY(0);
+    setIsDragging(true);
   };
 
   const handleTouchEnd = (): void => {
     if (!isMobile || !isDragging) return;
 
-    const deltaY = startY - currentY;
-    const threshold = 50;
-
-    if (Math.abs(deltaY) > threshold) {
-      if (deltaY > 0) {
-        handleSwipeUp();
-      } else {
-        handleSwipeDown();
-      }
-    }
+    const newHeight = Math.max(40, Math.min(window.innerHeight - 60, sidebarHeight + dragY));
+    setSidebarHeight(newHeight);
 
     setIsDragging(false);
-    setStartY(0);
-    setCurrentY(0);
+    setDragY(0);
+    setStartDragY(0);
   };
 
-  const handleSwipeUp = (): void => {
-    if (sidebarStage === 'hidden') {
-      // From hidden -> show routes only
-      setSidebarStage('routes-only');
-    } else if (sidebarStage === 'routes-only') {
-      // From routes only -> show full routes with inputs
-      setSidebarStage('routes');
-    }
-  };
-
-  const handleSwipeDown = (): void => {
-    if (sidebarStage === 'routes') {
-      // From full routes -> routes only (hide inputs)
-      setSidebarStage('routes-only');
-    } else if (sidebarStage === 'routes-only') {
-      // From routes only -> hidden
-      setSidebarStage('hidden');
-    }
-  };
-
-  const handleMobileSidebarClick = (e: React.MouseEvent): void => {
-    if (!isMobile) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickY = e.clientY - rect.top;
-    const handleHeight = 35;
-
-    if (clickY <= handleHeight) {
-      if (sidebarStage === 'hidden') {
-        setSidebarStage('routes-only');
-      } else if (sidebarStage === 'routes-only') {
-        setSidebarStage('routes');
-      } else if (sidebarStage === 'routes') {
-        setSidebarStage('routes-only');
-      }
-    }
+  // Calculate transform based on height and drag
+  const getTransform = (): string => {
+    if (!isMobile) return 'none';
+    const baseOffset = window.innerHeight - sidebarHeight;
+    const currentOffset = isDragging ? baseOffset - dragY : baseOffset;
+    return `translateY(${Math.max(0, currentOffset)}px)`;
   };
 
   useEffect(() => {
@@ -263,13 +220,6 @@ const SideBar: React.FC<SideBarProps> = ({
     }
   }, [coordinates, getCurrentLocation, onFromSelect, selectedArea]);
 
-  const handleFromFocus = (): void => {
-    setShowFromCurrentLocation(true);
-    if (isMobile && (sidebarStage === 'hidden' || sidebarStage === 'routes-only')) {
-      setSidebarStage(summaries ? 'routes' : 'inputs');
-    }
-  };
-
   const handleFromBlur = (): void => {
     setTimeout(() => {
       setShowFromCurrentLocation(false);
@@ -346,9 +296,6 @@ const SideBar: React.FC<SideBarProps> = ({
       setFromSuggestions([]);
       setToSuggestions([]);
       setErrorMessage(null);
-      if (isMobile) {
-        setSidebarStage('inputs');
-      }
     }
   }, [selectedArea?.id, isMobile, selectedArea]);
 
@@ -359,17 +306,20 @@ const SideBar: React.FC<SideBarProps> = ({
 
   return (
     <div
-      className={`sidebar sidebar-stage-${sidebarStage}`}
-      onClick={handleMobileSidebarClick}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      ref={sidebarRef}
+      className={`sidebar ${isMobile ? 'sidebar-mobile' : ''}`}
+      style={isMobile ? { transform: getTransform() } : undefined}
     >
-      <div className='sidebar-handle'>
-        {sidebarStage === 'hidden' && <ChevronUp size={24} />}
-        {sidebarStage === 'routes-only' && <MoreHorizontal size={24} />}
-        {sidebarStage === 'routes' && <ChevronDown size={24} />}
+      {/* Sidebar handle */}
+      <div
+        className='sidebar-handle'
+        onTouchStartCapture={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <MoreHorizontal size={24} />
       </div>
+
       {errorMessage && (
         <div className='error-popup-overlay' onClick={() => setErrorMessage(null)}>
           <div className='error-popup-modal' onClick={(e) => e.stopPropagation()}>
@@ -384,7 +334,16 @@ const SideBar: React.FC<SideBarProps> = ({
         </div>
       )}
 
-      <div className='sidebar-content'>
+      <div
+        className='sidebar-content'
+        style={
+          isMobile
+            ? {
+                height: `calc(100dvh - ${window.innerHeight - (isDragging ? sidebarHeight + dragY : sidebarHeight)}px - 40px)`,
+              }
+            : undefined
+        }
+      >
         <RouteModeSelector
           mode={routeMode}
           setMode={setRouteMode}
@@ -423,7 +382,7 @@ const SideBar: React.FC<SideBarProps> = ({
                 onFromSelect(place);
               }
             }}
-            onFocus={handleFromFocus}
+            onFocus={() => setShowFromCurrentLocation(true)}
             onBlur={handleFromBlur}
           />
         </div>
