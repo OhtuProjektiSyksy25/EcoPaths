@@ -15,6 +15,39 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7
+    container_name: ecopaths_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecopaths_app
+    restart: always
+    env_file:
+      - ./backend/.env
+      - ./frontend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - DB_URL=postgresql://${DB_USER:-pathplanner}:${DB_PASSWORD:-sekret}@db:5432/${DB_NAME:-ecopaths}
+
 volumes:
   pgdata:
 

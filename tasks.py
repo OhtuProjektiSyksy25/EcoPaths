@@ -169,12 +169,12 @@ def run_frontend(c):
 
 @task
 def run_redis(c):
-    """Start Redis server locally"""
+    """Start Redis container via Docker Compose"""
     if is_redis_running():
         print("Redis is already running.")
     else:
-        print("Starting Redis server...")
-        c.run("redis-server", pty=True)
+        print("Starting Redis container...")
+        c.run("docker compose up -d redis", pty=True)
 
 def is_redis_running(host="127.0.0.1", port=6379):
     """Return True if Redis port is already in use."""
@@ -208,22 +208,22 @@ def run_all(c, test_mode=False):
     print("Redis: redis://localhost:6379")
     print(f"Database: postgresql://{db_user}@localhost:5432/{db_name}")
 
-    # Start Docker Compose
+    # Start Database via Docker Compose
     container_name = "my_postgis"
 
     if is_container_running(container_name):
         print(f"Docker container '{container_name}' is already running.")
     else:
         print(f"Starting Docker container '{container_name}'...")
-        c.run("docker compose up -d", pty=True)
+        c.run("docker compose up -d db", pty=True)
 
-    # Start Redis
+    # Start Redis container via Docker Compose
     redis_proc = None
     if is_redis_running():
         print("Redis already running.")
     else:
-        print("Starting Redis...")
-        redis_proc = subprocess.Popen(["redis-server"])
+        print("Starting Redis container...")
+        c.run("docker compose up -d redis", pty=True)
 
     backend_proc = subprocess.Popen(
         ["poetry", "run", "uvicorn", "src.main:app", "--reload"],

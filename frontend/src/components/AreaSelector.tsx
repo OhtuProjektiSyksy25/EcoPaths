@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/AreaSelector.css';
 import { Area } from '../types';
+import { getEnvVar } from '../utils/config';
 import { useArea } from '../areaContext';
 
 interface AreaSelectorProps {
@@ -16,7 +17,7 @@ export const AreaSelector: React.FC<AreaSelectorProps> = ({ onAreaSelect }): JSX
   useEffect((): void => {
     const fetchAreas = async (): Promise<void> => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/areas`);
+        const response = await fetch(`${getEnvVar('REACT_APP_API_URL')}/api/areas`);
 
         if (!response.ok) {
           throw new Error(`Backend returned ${response.status}`);
@@ -41,7 +42,7 @@ export const AreaSelector: React.FC<AreaSelectorProps> = ({ onAreaSelect }): JSX
 
     // Call backend to switch the selected area
     const area_id = area.id;
-    await fetch(`${process.env.REACT_APP_API_URL}/api/select-area/${area_id}`, { method: 'POST' });
+    await fetch(`${getEnvVar('REACT_APP_API_URL')}/api/select-area/${area_id}`, { method: 'POST' });
 
     // Update frontend state
     setTimeout(() => {

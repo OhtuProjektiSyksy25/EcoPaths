@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
 import { normalizeCoords } from '../utils/coordsNormalizer';
+import { getEnvVar } from '../utils/config';
 import { useArea } from '../areaContext';
 
 interface UseRouteReturn {
@@ -117,7 +118,7 @@ export const useRoute = (
         }
 
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/getroute`, {
+          const response = await fetch(`${getEnvVar('REACT_APP_API_URL')}/api/getroute`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

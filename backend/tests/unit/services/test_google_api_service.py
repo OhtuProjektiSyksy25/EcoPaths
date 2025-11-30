@@ -48,25 +48,34 @@ class TestGoogleAPIService:
 
     @patch("src.services.google_api_service.requests.post")
     def test_fetch_single_tile_success(self, mock_post, api_service):
-        """_fetch_single_tile returns correct aqi value from mocked API."""
+        """_fetch_single_tile returns correct aqi and pollutants."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"indexes": [{"aqi": 42}]}
+        mock_response.json.return_value = {
+            "indexes": [{"aqi": 42}],
+            "pollutants": [
+                {"code": "pm2p5", "concentration": {"value": 12.3}},
+                {"code": "pm10", "concentration": {"value": 25.0}}
+            ]
+        }
         mock_post.return_value = mock_response
+
         result = api_service._fetch_single_tile(52.52, 13.405, "berlin")
 
         assert isinstance(result, dict)
-        assert set(result.keys()) == {"aqi", "pm2_5", "no2"}
+        assert set(result.keys()) == {"aqi", "pm2_5", "pm10"}
         assert isinstance(result["aqi"], (int, type(None)))
-        if isinstance(result["aqi"], int):
-            assert 0 < result["aqi"] <= 150
+        assert isinstance(result["pm2_5"], (float, type(None)))
+        assert isinstance(result["pm10"], (float, type(None)))
 
     @patch("src.services.google_api_service.requests.post", side_effect=RequestException("API down"))
     def test_fetch_single_tile_failure(self, mock_post, api_service):
-        """Handles failed requests gracefully, even in test mode."""
+        """Handles failed requests gracefully, returning None values."""
         result = api_service._fetch_single_tile(52.52, 13.405, "berlin")
-        assert set(result.keys()) == {"aqi", "pm2_5", "no2"}
+        assert set(result.keys()) == {"aqi", "pm2_5", "pm10"}
         assert isinstance(result["aqi"], (int, type(None)))
+        assert isinstance(result["pm2_5"], (float, type(None)))
+        assert isinstance(result["pm10"], (float, type(None)))
 
     @patch("src.services.google_api_service.requests.post")
     def test_get_aq_data_for_tiles(self, mock_post, api_service, mock_load_grid):
@@ -74,15 +83,34 @@ class TestGoogleAPIService:
         def side_effect(url, json, params, headers, timeout):
             tile_lat = json["location"]["latitude"]
             if tile_lat == 52.52:
-                return Mock(status_code=200, json=lambda: {"indexes": [{"aqi": 10}]})
-            return Mock(status_code=200, json=lambda: {"indexes": [{"aqi": 20}]})
+                return Mock(
+                    status_code=200,
+                    json=lambda: {
+                        "indexes": [{"aqi": 10}],
+                        "pollutants": [
+                            {"code": "pm2p5", "concentration": {"value": 12}},
+                            {"code": "pm10", "concentration": {"value": 20}}
+                        ]
+                    }
+                )
+            return Mock(
+                status_code=200,
+                json=lambda: {
+                    "indexes": [{"aqi": 20}],
+                    "pollutants": [
+                        {"code": "pm2p5", "concentration": {"value": 15}},
+                        {"code": "pm10", "concentration": {"value": 25}}
+                    ]
+                }
+            )
+
         mock_post.side_effect = side_effect
 
         tile_ids = ["t1", "t2"]
         gdf = api_service.get_aq_data_for_tiles(tile_ids, "berlin")
 
-        assert set(gdf.columns) == {"tile_id",
-                                    "raw_aqi", "pm2_5", "no2", "geometry"}
+        assert set(gdf.columns) == {
+            "tile_id", "raw_aqi", "raw_pm2_5", "raw_pm10", "geometry"}
         assert set(gdf["tile_id"]) == set(tile_ids)
         assert gdf.crs.to_string() == "EPSG:25833"
 
@@ -96,5 +124,6 @@ class TestGoogleAPIService:
         """Returns empty GeoDataFrame if none of the requested tiles exist."""
         gdf = api_service.get_aq_data_for_tiles(["nonexistent_tile"], "berlin")
         assert gdf.empty
-        assert set(gdf.columns) == {"tile_id",
-                                    "raw_aqi", "pm2_5", "no2", "geometry"}
+        assert set(gdf.columns) == {
+            "tile_id", "raw_aqi", "raw_pm2_5", "raw_pm10", "geometry"}
+        assert gdf.crs.to_string() == "EPSG:25833"

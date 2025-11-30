@@ -29,6 +29,8 @@ class DummyGoogleAPIService:
         return gpd.GeoDataFrame({
             "tile_id": ["r1_c1", "r1_c2"],
             "raw_aqi": [30, 60],
+            "raw_pm2_5": [10, 20],
+            "raw_pm10": [15, 25],
             "geometry": [
                 Polygon([(-0.5, -0.5), (-0.5, 0.5), (0.5, 0.5), (0.5, -0.5)]),
                 Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)])
@@ -59,6 +61,8 @@ def test_load_aq_tiles(enricher):
     aq = enricher.load_aq_tiles(["r1_c1"])
     assert not aq.empty
     assert "raw_aqi" in aq.columns
+    assert "raw_pm2_5" in aq.columns
+    assert "raw_pm10" in aq.columns
     assert aq.crs == enricher.edges_gdf.crs
 
 
@@ -68,8 +72,14 @@ def test_enrich_data(enricher):
         ["r1_c1", "r1_c2"], "testarea")
     enriched = enricher.enrich_data(edges, aq)
     assert "aqi" in enriched.columns
+    assert "pm2_5" in enriched.columns
+    assert "pm10" in enriched.columns
+    assert "aqi_norm_base" in enriched.columns
+    assert "normalized_aqi" in enriched.columns
     assert all(enriched["aqi"] > 0)
     assert "raw_aqi" not in enriched.columns
+    assert "raw_pm2_5" not in enriched.columns
+    assert "raw_pm10" not in enriched.columns
 
 
 def test_enrich_data_with_empty_aq(enricher):

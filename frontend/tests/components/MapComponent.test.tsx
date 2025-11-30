@@ -12,11 +12,6 @@ jest.mock('react-leaflet', () => ({
   useMapEvents: () => ({}),
 }));
 
-/* LocationButton mock */
-jest.mock('../../src/components/LocationButton', () => ({
-  LocationButton: () => <div data-testid='location-button-mock' />,
-}));
-
 const mockLocked: LockedLocation = {
   full_address: 'Test address',
   geometry: { coordinates: [24.94, 60.17] },
@@ -56,14 +51,6 @@ describe('MapComponent', () => {
     );
 
     expect(screen.getByTestId('mapbox-map')).toBeInTheDocument();
-  });
-
-  test('renders LocationButton', () => {
-    process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
-
-    render(<MapComponent {...defaultProps} />);
-
-    expect(screen.getByTestId('location-button-mock')).toBeInTheDocument();
   });
 
   test('renders Leaflet map when no Mapbox token', () => {

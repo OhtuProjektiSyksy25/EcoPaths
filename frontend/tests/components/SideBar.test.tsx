@@ -723,7 +723,7 @@ describe('SideBar', () => {
         />,
       );
 
-      const bestAqCards = screen.getAllByText('Best Air Quality');
+      const bestAqCards = screen.getAllByText('Best AQ Route');
       expect(bestAqCards.length).toBeGreaterThanOrEqual(1);
 
       const fastestCards = screen.getAllByText('Fastest Route');
@@ -775,7 +775,7 @@ describe('SideBar', () => {
         />,
       );
 
-      const bestAqCard = screen.getAllByText('Best Air Quality')[0].closest('.route-container');
+      const bestAqCard = screen.getAllByText('Best AQ Route')[0].closest('.route-container');
       fireEvent.click(bestAqCard!);
 
       expect(mockOnRouteSelect).toHaveBeenCalledWith('best_aq');

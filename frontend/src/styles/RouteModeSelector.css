@@ -1,25 +1,27 @@
 .route-mode-selector {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: clamp(6px, 2vw, 12px);
+  margin-bottom: clamp(8px, 2vw, 14px);
   justify-content: center;
 }
 
 .icon-button {
-  min-width: 70px;
-  height: 36px;
+  min-width: clamp(60px, 18vw, 80px);
+  height: clamp(32px, 6vw, 38px);
   border-radius: 999px;
   border: 2px solid #2e7d32;
   background-color: #ffffff;
   color: #333;
-  font-size: 18px;
+  font-size: clamp(14px, 4vw, 18px);
   cursor: pointer;
   transition: all 0.25s ease;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  padding: 0 12px;
+  padding: 0 clamp(8px, 3vw, 14px);
 }
 
 .icon-button:hover {
@@ -38,7 +40,7 @@
 }
 
 .route-mode-selector .loop-button {
-  margin-left: 20px;
+  margin-left: clamp(8px, 4vw, 20px);
 }
 
 .icon-button.loop-button.active {

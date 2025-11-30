@@ -1,8 +1,8 @@
 .loop-slider {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 8px 0;
+  gap: clamp(6px, 1.5vw, 10px);
+  margin: clamp(6px, 2vw, 12px) 0;
 }
 
 .loop-distance-header {
@@ -12,6 +12,7 @@
   font-family:
     Public Sans,
     sans-serif;
+  font-size: clamp(14px, 2.5vw, 18px);
 }
 
 .loop-distance-header label {
@@ -20,15 +21,15 @@
 }
 
 .loop-slider-number {
-  width: 60px;
-  padding: 4px;
+  width: clamp(48px, 12vw, 70px);
+  padding: clamp(3px, 1vw, 6px);
   border: 1px solid #ccc;
   border-radius: 8px;
   text-align: center;
   font-family:
     Public Sans,
     sans-serif;
-  font-size: 16px;
+  font-size: clamp(13px, 3vw, 16px);
 }
 
 .loop-slider-range {
@@ -39,10 +40,10 @@
 .loop-distance-box {
   background-color: #ffffff;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
+  border-radius: clamp(6px, 2vw, 10px);
+  padding: clamp(8px, 3vw, 14px);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: clamp(6px, 2vw, 10px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }

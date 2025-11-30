@@ -93,7 +93,6 @@ The project is done in collaboration with MegaSense Oy.
    POSTGRES_USER=pathplanner
    POSTGRES_PASSWORD=sekret
    POSTGRES_DB=ecopaths
-   DB_HOST=localhost
    DB_PORT=5432
    DB_USER=pathplanner
    DB_PASSWORD=sekret

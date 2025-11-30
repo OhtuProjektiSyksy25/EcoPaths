@@ -2,8 +2,8 @@
 
 set -e
 
-echo "Starting Docker Compose..."
-docker compose up -d
+echo "Starting Database via Docker Compose..."
+docker compose up -d db
 
 echo "Waiting for PostgreSQL to be ready..."
 until pg_isready -h localhost -p 5432 -U pathplanner > /dev/null 2>&1; do

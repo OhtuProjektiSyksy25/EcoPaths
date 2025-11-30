@@ -9,14 +9,6 @@ RUN npm install
 
 COPY frontend/ ./
 
-ARG REACT_APP_MAPBOX_TOKEN=dev-default-token
-ARG REACT_APP_MAPBOX_STYLE=dev-style
-ARG REACT_APP_API_URL=https://ecopaths-ohtuprojekti-staging.ext.ocp-test-0.k8s.it.helsinki.fi
-
-ENV REACT_APP_MAPBOX_TOKEN=$REACT_APP_MAPBOX_TOKEN
-ENV REACT_APP_MAPBOX_STYLE=$REACT_APP_MAPBOX_STYLE
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-
 RUN npm run build:ui
 
 # Stage 2 - build the backend
@@ -44,7 +36,13 @@ COPY backend/ ./backend/
 
 COPY tasks.py ./tasks.py
 
+RUN mkdir -p backend/build
+
 COPY --from=frontend /app/build ./backend/build
+
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+RUN chmod a+x /app/docker-entrypoint.sh 
 
 RUN chmod -R a+rwX /app
 
@@ -53,5 +51,7 @@ ENV PYTHONPATH="${PYTHONPATH}:/app:/app/backend/src"
 WORKDIR /app/backend
 
 EXPOSE 8000
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 CMD ["poetry", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
