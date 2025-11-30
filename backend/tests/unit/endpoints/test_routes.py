@@ -3,7 +3,6 @@ from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from src.main import app
 
-# Import the module where getroute is defined so monkeypatch paths match
 import src.endpoints.routes as routes_module
 
 
@@ -13,14 +12,12 @@ def client():
 
 
 def test_getroute_missing_required_fields(client):
-    """Missing area or wrong number of features -> 400"""
     response = client.post("/api/getroute", json={"features": []})
     assert response.status_code == 400
     assert response.json() == {"error": "Missing required fields"}
 
 
 def test_getroute_invalid_balanced_weight(client):
-    """balanced_weight must be 0..1"""
     body = {
         "area": "berlin",
         "features": [
@@ -102,3 +99,53 @@ def test_getroute_route_service_chain(monkeypatch, client):
     assert "routes" in data
     assert "summaries" in data
     assert "fastest" in data["routes"]
+
+
+def test_getroute_calls_get_route_correctly(monkeypatch, client):
+    """New behavior: always calls get_route(), never compute_balanced_route_only()."""
+
+    # --- Mock area_config + service returned by factory ---
+    class MockAreaConfig:
+        crs = "EPSG:25833"
+
+    mock_service = Mock()
+    mock_service.get_route.return_value = {"ok": True}
+
+    def mock_from_area(area):
+        return mock_service, MockAreaConfig()
+
+    monkeypatch.setattr(
+        routes_module.RouteServiceFactory,
+        "from_area",
+        staticmethod(mock_from_area)
+    )
+
+    # --- Mock GeoTransformer ---
+    class MockGT:
+        @staticmethod
+        def geojson_to_projected_gdf(geom, crs):
+            return geom  # passthrough
+
+    monkeypatch.setattr(routes_module, "GeoTransformer", MockGT)
+
+    body = {
+        "area": "berlin",
+        "balanced_weight": 0.7,
+        "features": [
+            {"properties": {"role": "start"},
+             "geometry": {"type": "Point", "coordinates": [5, 5]}},
+            {"properties": {"role": "end"},
+             "geometry": {"type": "Point", "coordinates": [6, 6]}},
+        ]
+    }
+
+    response = client.post("/api/getroute", json=body)
+
+    assert response.status_code == 200
+
+    # Ensure correct function was called
+    mock_service.get_route.assert_called_once()
+
+    args, kwargs = mock_service.get_route.call_args
+    assert len(args) == 3
+    assert args[2] == 0.7   # balanced_weight forwarded properly

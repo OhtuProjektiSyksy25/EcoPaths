@@ -44,6 +44,7 @@ async def getroute(request: Request):
     data = await request.json()
     features = data.get("features", [])
     balanced_weight = data.get("balanced_weight", 0.5)
+    only_compute_balanced_route = data.get("balanced_route")
     area = data.get("area")
 
     if not area or len(features) != 2:
@@ -77,8 +78,11 @@ async def getroute(request: Request):
     destination_gdf = GeoTransformer.geojson_to_projected_gdf(
         end_feature["geometry"], target_crs)
 
-    response = route_service.get_route(
-        origin_gdf, destination_gdf, balanced_weight)
+    if only_compute_balanced_route:
+        response = route_service.compute_balanced_route_only(balanced_weight)
+    else:
+        response = route_service.get_route(
+            origin_gdf, destination_gdf, balanced_weight)
     if not response:
         log.error("Error: Could not get route")
         return "Error: Could not get route"
@@ -157,8 +161,25 @@ async def getloop(request: Request):
     response = jsonable_encoder(response)
     response = _sanitize(response)
 
+    # jsonable_encoder will convert numpy types and other non-serializable
+    # objects into native Python types. After that ensure there are no
+    # NaN/Infinite floats which would make json.dumps() raise ValueError.
+    def _sanitize(obj):
+        if isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return obj
+        if isinstance(obj, dict):
+            return {k: _sanitize(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [_sanitize(v) for v in obj]
+        return obj
+
+    response = jsonable_encoder(response)
+    response = _sanitize(response)
+
     duration = time.time() - start_time
     log.debug(
-        f"/getloop took {duration:.3f} seconds", duration=duration)
+        f"/getroute took {duration:.3f} seconds", duration=duration)
 
     return JSONResponse(content=response)

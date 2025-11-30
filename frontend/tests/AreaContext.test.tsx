@@ -25,9 +25,9 @@ const HookTester: React.FC<{
 describe('AreaContext', () => {
   test('useArea throws error when used outside AreaProvider', () => {
     // Expect using useArea outside provider to throw
-    expect(() =>
-      render(<HookTester callback={() => {}} />)
-    ).toThrow('useArea must be used within AreaProvider');
+    expect(() => render(<HookTester callback={() => {}} />)).toThrow(
+      'useArea must be used within AreaProvider',
+    );
   });
 
   test('AreaProvider provides default null selectedArea', () => {
@@ -36,7 +36,7 @@ describe('AreaContext', () => {
     render(
       <AreaProvider>
         <HookTester callback={(ctx) => (contextValue = ctx)} />
-      </AreaProvider>
+      </AreaProvider>,
     );
 
     expect(contextValue?.selectedArea).toBeNull();
@@ -49,7 +49,7 @@ describe('AreaContext', () => {
     render(
       <AreaProvider>
         <HookTester callback={(ctx) => (contextValue = ctx)} />
-      </AreaProvider>
+      </AreaProvider>,
     );
 
     act(() => {
@@ -68,8 +68,8 @@ describe('AreaContext', () => {
   test('AreaProvider renders children', () => {
     render(
       <AreaProvider>
-        <div data-testid="child">Hello</div>
-      </AreaProvider>
+        <div data-testid='child'>Hello</div>
+      </AreaProvider>,
     );
 
     expect(screen.getByTestId('child')).toBeInTheDocument();
