@@ -4,7 +4,6 @@ Service that computes routes and returns them as GeoJSON LineStrings.
 import geopandas as gpd
 import pandas as pd
 import math
-
 from shapely.geometry import LineString, Polygon, shape, Point
 from config.settings import AreaConfig, get_settings
 from logger.logger import log
@@ -183,7 +182,6 @@ class RouteService:
 
             # Nodes_gdf from database
             nodes = self._get_nodes_from_db(tile_ids)
-            #HERE
             for idx in gdf.index:
                 edges_x = edges.copy()
                 nodes_x = nodes.copy()
@@ -192,12 +190,9 @@ class RouteService:
                     if 'length_m' not in e.attributes():
                         print("Missing length_m:", e.tuple)
                 single_gdf = gdf.loc[[idx]]
-                start = time.time()
                 try:
                     gdf, epath = current_route_algorithm.calculate_round_trip(
                         origin_gdf, single_gdf, current_route_algorithm.igraph, balance_factor=0.15)
-                    end = time.time()
-                    print("time",end-start)
                     break
                 except (ValueError, KeyError) as exc:
                     print(f"first part of round trip failed for candidate: {exc}")
@@ -459,10 +454,8 @@ class RouteService:
         results["balanced"] = result
         summaries["balanced"] = summary
         aqi_differences["aqi_differences"] = None
-        print("HERE")
         x = {"routes": results, "summaries": summaries,
              "aqi_differences": aqi_differences}
-        print(x.keys())
         return x
 
 
