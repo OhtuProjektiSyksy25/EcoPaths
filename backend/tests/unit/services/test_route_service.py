@@ -42,6 +42,7 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "from_node": [1, 2],
         "to_node": [2, 3],
         "aqi": [20.0, 40.0],
+        "normalized_aqi":[15.0, 42.0],
         "pm2_5": [10.0, 12.0],
         "pm10": [20.0, 22.0]
     }, crs="EPSG:25833")
@@ -283,3 +284,23 @@ def test_compute_balanced_route_only_returns_only_one_route(
     assert isinstance(result, dict)
     assert isinstance(result["routes"], dict)
     assert result["routes"]["balanced"].get("type") == "FeatureCollection"
+
+
+def test_route_trip_forward_handles_empty_gdf(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
+    origin, destination = origin_destination
+
+    monkeypatch.setattr(route_service, "_get_tile_edges",
+                        lambda ids: simple_edges_gdf)
+    monkeypatch.setattr(route_service, "_get_nodes_from_db",
+                        lambda ids: simple_nodes_gdf)
+
+    empty_gdf = gpd.GeoDataFrame()
+    empty_gdf_2 = gpd.GeoDataFrame()
+
+    result = route_service.get_round_trip_forward(
+        origin, [empty_gdf,empty_gdf_2, destination],)
+    assert len(result) == 1
+    assert isinstance(result, list)
+    assert isinstance(result[0], dict)
+    assert "geometry" in result[0]["destination"]
+
