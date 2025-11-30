@@ -13,6 +13,7 @@ import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
 import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 import { MoreHorizontal } from 'lucide-react';
+import { getEnvVar } from '../utils/config';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -243,7 +244,7 @@ const SideBar: React.FC<SideBarProps> = ({
       }
       try {
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`,
+          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
         );
         if (!response.ok) {
           throw new Error(`server error: ${response.status}`);
@@ -273,7 +274,7 @@ const SideBar: React.FC<SideBarProps> = ({
       }
       try {
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/api/geocode-forward/${value}`,
+          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
         );
         if (!response.ok) {
           throw new Error(`server error: ${response.status}`);

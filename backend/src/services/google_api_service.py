@@ -5,7 +5,6 @@ import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import geopandas as gpd
-import numpy as np
 from logger.logger import log
 from config.settings import get_settings
 from database.db_client import DatabaseClient
@@ -34,8 +33,8 @@ class GoogleAPIService:
         if self.test_mode:
             return {
                 "aqi": random.randint(5, 150),  # random AQI between 5–150
-                "pm2_5": None,
-                "no2": None
+                "pm2_5": random.uniform(5, 50),  # test value PM2.5 µg/m³
+                "pm10": random.uniform(10, 60)  # test value PM10 µg/m³
             }
 
         payload = {
@@ -61,23 +60,30 @@ class GoogleAPIService:
             )
             response.raise_for_status()
             data = response.json()
+
             indexes = data.get("indexes", [])
+            pollutants = data.get("pollutants", [])
 
             aqi = None
-
             if indexes:
                 aqi = indexes[0].get("aqi")
 
-            # Pollutants can be extracted from this variable if needed
-            # pollutants = data.get("pollutants", [])
+            pm2_5 = None
+            pm10 = None
+
+            for p in pollutants:
+                if p.get("code") == "pm2p5":
+                    pm2_5 = p["concentration"].get("value")
+                elif p.get("code") == "pm10":
+                    pm10 = p["concentration"].get("value")
 
             return {
                 "aqi": aqi,
-                "pm2_5": None,  # placeholder
-                "no2": None     # placeholder
+                "pm2_5": pm2_5,
+                "pm10": pm10
             }
         except requests.RequestException:
-            return {"aqi": None, "pm2_5": None, "no2": None}
+            return {"aqi": None, "pm2_5": None, "pm10": None}
 
     def get_aq_data_for_tiles(self, tile_ids: list[str], area: str) -> gpd.GeoDataFrame:
         """Fetch air quality data for given tile IDs using parallel requests."""
@@ -94,7 +100,8 @@ class GoogleAPIService:
         # Return empty GeoDataFrame if no tiles found
         if tiles.empty:
             return gpd.GeoDataFrame(
-                columns=["tile_id", "raw_aqi", "pm2_5", "no2", "geometry"],
+                columns=["tile_id", "raw_aqi",
+                         "raw_pm2_5", "raw_pm10", "geometry"],
                 crs=area_config.crs
             )
 
@@ -121,8 +128,11 @@ class GoogleAPIService:
         # Merge results into GeoDataFrame
         tiles["raw_aqi"] = tiles["tile_id"].map(
             lambda tid: results[tid]["aqi"])
-        tiles["pm2_5"] = np.nan  # placeholder
-        tiles["no2"] = np.nan    # placeholder
+        tiles["raw_pm2_5"] = tiles["tile_id"].map(
+            lambda tid: results[tid]["pm2_5"])
+        tiles["raw_pm10"] = tiles["tile_id"].map(
+            lambda tid: results[tid]["pm10"])
 
         # Return result with correct CRS
-        return tiles[["tile_id", "raw_aqi", "pm2_5", "no2", "geometry"]].set_crs(area_config.crs)
+        return tiles[
+            ["tile_id", "raw_aqi", "raw_pm2_5", "raw_pm10", "geometry"]].set_crs(area_config.crs)

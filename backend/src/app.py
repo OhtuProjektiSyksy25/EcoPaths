@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from logger.logging_conf import configure_logging
 from logger.logger import log
 from config.settings import TEST_MODE
@@ -63,10 +64,18 @@ def create_app(lifespan):
         sys.path.append(project_root)
 
     # Mount static files if available
-    static_dir = "build/static"
+    build_dir = os.path.abspath(os.path.join(os.getcwd(), "build"))
+    static_dir = os.path.join(build_dir, "static")
     if os.path.isdir(static_dir):
         application.mount(
             "/static", StaticFiles(directory=static_dir), name="static")
+
+    # Serve config.js
+    config_path = os.path.join(build_dir, "config.js")
+    if os.path.isfile(config_path):
+        @application.get("/config.js")
+        async def serve_config():
+            return FileResponse(config_path)
 
     application.add_middleware(
         CORSMiddleware,

@@ -80,6 +80,9 @@ class RouteAlgorithm:
         min_normalized_aqi = 0.001 if balance_factor == 0 else 0
 
         for edge in graph.es:
+            length = edge["length_m"]
+            if length is None:
+                continue
             edge["weight"] = (
                 balance_factor * edge["length_m"] +
                 (1 - balance_factor) * (edge["length_m"]
