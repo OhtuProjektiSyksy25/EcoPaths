@@ -4,7 +4,7 @@ Test for the static SPA handler endpoint.
 import pytest
 from fastapi.testclient import TestClient
 from src.app import create_app, lifespan_context
-import os
+from src.endpoints import static
 
 
 @pytest.fixture
@@ -14,23 +14,14 @@ def client():
     return TestClient(app)
 
 
-def test_spa_handler_cache_control_headers(client, tmp_path):
-    """
-    Test that SPA handler serves index.html with proper no-cache headers.
-    """
+def test_spa_handler_cache_control_headers(client, tmp_path, monkeypatch):
     build_dir = tmp_path / "build"
     build_dir.mkdir()
-    index_file = build_dir / "index.html"
-    index_file.write_text("<html></html>")
+    (build_dir / "index.html").write_text("<html></html>")
 
-    cwd = os.getcwd()
-    try:
-        os.chdir(tmp_path)
+    monkeypatch.setattr(static, "ROOT_DIR", tmp_path)
 
-        response = client.get("/")
-
-    finally:
-        os.chdir(cwd)
+    response = client.get("/")
 
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
