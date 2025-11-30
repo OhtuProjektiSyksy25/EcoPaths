@@ -9,7 +9,7 @@ import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
-import logo from './assets/images/ecopaths_logo_no_text.jpg';
+import logo from './assets/images/ecopaths-logo-with-text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
 
@@ -72,7 +72,6 @@ function App(): JSX.Element {
       <header className='header'>
         <div className='header-content'>
           <img src={logo} alt='EcoPaths Logo' className='app-logo' />
-          <h1 className='title'>EcoPaths</h1>
         </div>
         {selectedArea && !showAreaSelector && (
           <div className='area-dropdown-container'>
