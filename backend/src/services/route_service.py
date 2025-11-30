@@ -15,6 +15,7 @@ from services.redis_service import RedisService
 from utils.route_summary import summarize_route
 from utils.geo_transformer import GeoTransformer
 from utils.aqi_comparison_utils import calculate_aqi_difference
+from utils.exposure_calculator import compute_exposure
 
 
 class RouteServiceFactory:
@@ -216,6 +217,8 @@ class RouteService:
                         f"first part of round trip failed for candidate: {exc}")
                     continue
 
+            gdf = compute_exposure(gdf)
+
             data_entry = {}
             data_entry["destination"] = single_gdf
             data_entry["route"] = gdf
@@ -254,6 +257,8 @@ class RouteService:
         gdf, _ = current_route_algorithm.calculate_round_trip(
             destination, origin, current_route_algorithm.igraph,
             balance_factor=0.15, reverse=True, previous_edges=prev_gdf_ids)
+
+        gdf = compute_exposure(gdf)
 
         combined_gdf = pd.concat(
             [first_path_data["route"], gdf], ignore_index=True)
@@ -435,6 +440,7 @@ class RouteService:
         for mode, balance_factor in modes.items():
             gdf = self.current_route_algorithm.calculate_path(
                 origin_gdf, destination_gdf, graph=None, balance_factor=balance_factor)
+            gdf = compute_exposure(gdf)
             gdf["mode"] = mode
             summaries[mode] = summarize_route(gdf)
             results[mode] = GeoTransformer.gdf_to_feature_collection(
@@ -462,6 +468,7 @@ class RouteService:
         graph = self.current_route_algorithm.igraph
         gdf = self.current_route_algorithm.re_calculate_balanced_path(
             balanced_value, graph)
+        gdf = compute_exposure(gdf)
         summary = summarize_route(gdf)
         result = GeoTransformer.gdf_to_feature_collection(
             gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
