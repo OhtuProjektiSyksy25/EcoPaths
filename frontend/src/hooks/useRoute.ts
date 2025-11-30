@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
 import { normalizeCoords } from '../utils/coordsNormalizer';
 import { getEnvVar } from '../utils/config';
+import { useArea } from '../AreaContext';
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -35,6 +36,7 @@ export const useRoute = (
   const [loading, setLoading] = useState(false);
   const [balancedLoading, setBalancedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { selectedArea } = useArea();
 
   // Track if this is the initial load or a weight change
   const isInitialLoadRef = useRef(true);
@@ -137,6 +139,7 @@ export const useRoute = (
               ],
               balanced_weight: balancedWeight,
               balanced_route: balancedRouteBool,
+              area: selectedArea?.id ?? null,
             }),
           });
           if (!response.ok) {
@@ -202,7 +205,7 @@ export const useRoute = (
       prevFromRef.current = null;
       prevToRef.current = null;
     }
-  }, [fromLocked, toLocked, balancedWeight, loop]);
+  }, [fromLocked, toLocked, balancedWeight, loop, selectedArea]);
 
   return { routes, summaries, aqiDifferences, loading, balancedLoading, error };
 };
