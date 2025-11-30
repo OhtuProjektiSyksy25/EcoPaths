@@ -98,8 +98,6 @@ const SideBar: React.FC<SideBarProps> = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, [selectedArea]);
-  const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
-  const [loop, setLoop] = useState(false);
 
   useEffect(() => {
     if (isMobile && summaries && sidebarStage === 'inputs') {

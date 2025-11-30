@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from "../types/route";
-import { Area } from "../types";
-import { normalizeCoords } from "../utils/coordsNormalizer";
-
+import { useState, useEffect, useRef } from 'react';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
+import { normalizeCoords } from '../utils/coordsNormalizer';
+import { useArea } from '../areaContext';
 
 interface UseRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -158,9 +157,7 @@ export const useRoute = (
 
           if (isWeightChange) {
             // Only update balanced route, summary, and recalculate AQI differences
-            setRoutes((prev) =>
-              prev ? { ...prev, balanced: data.routes.balanced } : data.routes,
-            );
+            setRoutes((prev) => (prev ? { ...prev, balanced: data.routes.balanced } : data.routes));
             setSummaries((prev) =>
               prev ? { ...prev, balanced: data.summaries.balanced } : data.summaries,
             );

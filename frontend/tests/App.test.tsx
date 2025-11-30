@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { AreaProvider } from '../src/areaContext';
 import App from '../src/App';
 
 jest.mock('../src/assets/images/ecopaths_logo_no_text.jpg', () => 'mocked-logo');
@@ -12,7 +13,11 @@ jest.mock('../src/components/AreaSelector', () => () => (
 ));
 
 test('renders App without crashing', () => {
-  render(<App />);
+  render(
+    <AreaProvider>
+      <App />
+    </AreaProvider>,
+  );
   expect(screen.getByText(/EcoPaths/i)).toBeInTheDocument();
   expect(screen.getByTestId('map-component')).toBeInTheDocument();
   expect(screen.getByTestId('area-selector')).toBeInTheDocument();
@@ -20,6 +25,10 @@ test('renders App without crashing', () => {
 });
 
 test('renders EcoPaths header', () => {
-  render(<App />);
+  render(
+    <AreaProvider>
+      <App />
+    </AreaProvider>,
+  );
   expect(screen.getByText(/EcoPaths/i)).toBeInTheDocument();
 });

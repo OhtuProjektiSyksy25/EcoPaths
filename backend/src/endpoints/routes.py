@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
+from services.route_service import RouteServiceFactory
 from logger.logger import log
 
 router = APIRouter()
@@ -86,6 +87,7 @@ async def getroute(request: Request):
               duration=time.time() - start_time)
 
     return JSONResponse(content=response)
+
 
 @router.post("/getloop")
 async def getloop(request: Request):

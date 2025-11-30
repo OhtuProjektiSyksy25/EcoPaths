@@ -3,7 +3,6 @@
 import geopandas as gpd
 import igraph as ig
 import pandas as pd
-import pandas as pd
 from shapely.strtree import STRtree
 from shapely.ops import split
 from shapely.geometry import Point, LineString
@@ -19,7 +18,7 @@ class RouteAlgorithm:
         Calls graph initialization
 
         Args:
-            edges_gdf (gpd.GeoDataFrame): GeoDataFrame containing 
+            edges_gdf (gpd.GeoDataFrame): GeoDataFrame containing
                 LineString geometries representing edges.
             nodes_gdf (gpd.GeoDataFrame): GeodataFrame containing
                 Point geometries representing nodes.
@@ -113,8 +112,8 @@ class RouteAlgorithm:
 
         path_nodes = self.run_routing_algorithm(
             graph, origin_node, destination_node)
-        path_edges = self.extract_path_edges(path_nodes)
 
+        path_edges = self.extract_path_edges(path_nodes, graph)
         log.debug(
             f"Extracted {len(path_edges)} edges for final route", edge_count=len(path_edges))
 
@@ -176,8 +175,7 @@ class RouteAlgorithm:
         Returns:
             gpd.GeoDataFrame: GeoDataFrame containing the edges of the path
         """
-        name_to_idx = {vertice["name"]: vertice.index
-                       for vertice in self.igraph.vs}
+        name_to_idx = {vertice["name"]: vertice.index for vertice in graph.vs}
 
         edges_gdf_rows = []
 
@@ -399,6 +397,22 @@ class RouteAlgorithm:
         path_edges = self.extract_path_edges(path_nodes, graph)
         print(f"Extracted {len(path_edges)} edges for final route")
         return path_edges, epath
+
+    def re_calculate_balanced_path(self, balance_factor, graph):
+        """Re calculates only the balanced path for the current graph
+        Args:
+            balance_factor (float): Float value between 0 and 1 that dictates how much the algorithm
+                                    consideres air quality when finding route. Lower values value
+                                    air quality more over distance. Defaults to 1.
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame containing the edges along the balanced route.
+        """
+
+        self.update_weights(graph, balance_factor=balance_factor)
+        path_nodes = self.run_routing_algorithm(
+            graph, "origin", "destination")
+        path_edges = self.extract_path_edges(path_nodes, graph)
+        return path_edges
 
     @staticmethod
     def _compute_split_result(line, snapped_point, offset=0.01):

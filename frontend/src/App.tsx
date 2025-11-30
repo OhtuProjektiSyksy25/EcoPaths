@@ -107,14 +107,14 @@ function App(): JSX.Element {
             onRouteSelect={handleRouteSelect}
             routeMode={routeMode}
             setRouteMode={setRouteMode}
-          loop={loop}
-          setLoop={setLoop}
-          loopDistance={loopDistance}
-          setLoopDistance={setLoopDistance}
-          loopSummaries={loopSummaries}
-          loopLoading={loopLoading}
-          showLoopOnly={showLoopOnly}
-          setShowLoopOnly={setShowLoopOnly}
+            loop={loop}
+            setLoop={setLoop}
+            loopDistance={loopDistance}
+            setLoopDistance={setLoopDistance}
+            loopSummaries={loopSummaries}
+            loopLoading={loopLoading}
+            showLoopOnly={showLoopOnly}
+            setShowLoopOnly={setShowLoopOnly}
           >
             {(loading || error) && (
               <div className='route-loading-message'>
