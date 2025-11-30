@@ -17,9 +17,10 @@ def client():
 def test_spa_handler_cache_control_headers(client, tmp_path, monkeypatch):
     build_dir = tmp_path / "build"
     build_dir.mkdir()
-    (build_dir / "index.html").write_text("<html></html>")
+    index_file = build_dir / "index.html"
+    index_file.write_text("<html></html>")
 
-    monkeypatch.setattr(static, "ROOT_DIR", tmp_path)
+    monkeypatch.setattr(static, "get_index_path", lambda: index_file)
 
     response = client.get("/")
 
