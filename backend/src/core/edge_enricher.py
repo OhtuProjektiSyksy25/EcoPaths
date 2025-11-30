@@ -118,7 +118,7 @@ class EdgeEnricher:
             )
 
         if aq_gdf.crs != self.edges_gdf.crs:
-            aq_gdf = aq_gdf.to_crs(self.edges_gdf.crs)
+            aq_gdf = aq_gdf.to_crs(self.config.crs)
 
         return aq_gdf
 
