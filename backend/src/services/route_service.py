@@ -1,10 +1,10 @@
 """
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
+import math
 import geopandas as gpd
 import pandas as pd
-import math
-from shapely.geometry import LineString, Polygon, shape, Point
+from shapely.geometry import LineString, Polygon, Point
 from config.settings import AreaConfig, get_settings
 from logger.logger import log
 from core.route_algorithm import RouteAlgorithm
@@ -15,6 +15,7 @@ from services.redis_service import RedisService
 from utils.route_summary import summarize_route
 from utils.geo_transformer import GeoTransformer
 from utils.aqi_comparison_utils import calculate_aqi_difference
+
 
 class RouteServiceFactory:
     """
@@ -115,10 +116,11 @@ class RouteService:
                 dict: Full round-trip route and summary under the key "balanced"
         """
 
-        max_distance = distance / 2.2 -100  #needs fine tuning
+        max_distance = distance / 2.2 - 100  # needs fine tuning
         buffer = self._create_buffer(origin_gdf, origin_gdf, max_distance)
         origin_buffer = self._create_buffer(origin_gdf, origin_gdf, 1)
-        origin_tile = self.db_client.get_tile_ids_by_buffer(self.area, origin_buffer)
+        origin_tile = self.db_client.get_tile_ids_by_buffer(
+            self.area, origin_buffer)
 
         tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
         outer_tiles = self._get_outermost_tiles(tile_ids)
@@ -132,11 +134,16 @@ class RouteService:
             edges, outer_tiles)
         first_tile_id = best_edges_by_outer_tiles.iloc[0]["tile_id"]
 
-        tile_rotated_right = self.rotate_tile_about_center(first_tile_id, origin_tile[0], outer_tiles)
-        tile_rotated_left = self.rotate_tile_about_center(first_tile_id, origin_tile[0], outer_tiles, degrees=-120)
-        tile_rotated_right_edges = best_edges_by_outer_tiles[best_edges_by_outer_tiles["tile_id"] == tile_rotated_right]
-        tile_rotated_left_edges = best_edges_by_outer_tiles[best_edges_by_outer_tiles["tile_id"] == tile_rotated_left]
-        best_3 = [best_edges_by_outer_tiles.iloc[[0]], tile_rotated_right_edges, tile_rotated_left_edges]
+        tile_rotated_right = self.rotate_tile_about_center(
+            first_tile_id, origin_tile[0], outer_tiles)
+        tile_rotated_left = self.rotate_tile_about_center(
+            first_tile_id, origin_tile[0], outer_tiles, degrees=-120)
+        tile_rotated_right_edges = best_edges_by_outer_tiles[
+            best_edges_by_outer_tiles["tile_id"] == tile_rotated_right]
+        tile_rotated_left_edges = best_edges_by_outer_tiles[
+            best_edges_by_outer_tiles["tile_id"] == tile_rotated_left]
+        best_3 = [best_edges_by_outer_tiles.iloc[[0]],
+                  tile_rotated_right_edges, tile_rotated_left_edges]
 
         all_gdf = self.get_round_trip_forward(
             origin_gdf, best_3)
@@ -169,9 +176,21 @@ class RouteService:
         return full_route
 
     def get_round_trip_forward(self, origin_gdf, best_3):
+        """
+        Compute forward routes to candidate outer-tile points.
+
+        Args:
+            origin_gdf (GeoDataFrame): Starting point of the round trip.
+            best_3 (list): List of gdfs per tile with top aq edges.
+
+        Returns:
+            list: Forward route candidates sorted by air-quality average.
+        """
         all_gdf = []
-        
+
         for gdf in best_3:
+            if gdf.empty:
+                continue
             buffer = self._create_buffer(origin_gdf, gdf.iloc[[0]])
             tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
 
@@ -193,9 +212,10 @@ class RouteService:
                         origin_gdf, single_gdf, current_route_algorithm.igraph, balance_factor=0.15)
                     break
                 except (ValueError, KeyError) as exc:
-                    print(f"first part of round trip failed for candidate: {exc}")
+                    print(
+                        f"first part of round trip failed for candidate: {exc}")
                     continue
-                                
+
             data_entry = {}
             data_entry["destination"] = single_gdf
             data_entry["route"] = gdf
@@ -272,7 +292,8 @@ class RouteService:
         )
         all_gdfs = []
         best_edges = best_edges.copy()
-        best_edges["geometry"] = best_edges["geometry"].apply(lambda g: Point(g.coords[0]))
+        best_edges["geometry"] = best_edges["geometry"].apply(
+            lambda g: Point(g.coords[0]))
         best_edges = gpd.GeoDataFrame(best_edges, crs=edges.crs)
 
         for _, row in best_edges.iterrows():
@@ -281,8 +302,8 @@ class RouteService:
             gdf = gpd.GeoDataFrame({
                 "geometry": [first_point],
                 "tile_id": [row["tile_id"]]
-            },crs=edges.crs)
-                
+            }, crs=edges.crs)
+
             all_gdfs.append(gdf)
         return pd.concat(all_gdfs, ignore_index=True)
 
@@ -454,7 +475,6 @@ class RouteService:
              "aqi_differences": aqi_differences}
         return x
 
-
     def decode_tile(self, tile):
         """Decodes tile str to integers
            Example: r14_c12 -> 14, 12
@@ -469,7 +489,6 @@ class RouteService:
         row = int(tile.split("_")[0][1:])
         col = int(tile.split("_")[1][1:])
         return row, col
-
 
     def rotate_tile_about_center(self, tile, center_tile, candidate_tiles, degrees=120.0):
         """Given a center tile and target tile, returns tile that is
@@ -497,7 +516,10 @@ class RouteService:
 
         new_row = int(round(center_row + ry))
         new_col = int(round(center_col + rx))
-        return self.get_closest_tile_match(f"r{new_row}_c{new_col}", candidate_tiles)
+
+        closest_match = self.get_closest_tile_match(
+            f"r{new_row}_c{new_col}", candidate_tiles)
+        return closest_match
 
     def get_closest_tile_match(self, tile, tiles):
         """Gets closes tile match of given tile to list of tiles
@@ -515,10 +537,11 @@ class RouteService:
         decoded_tiles = []
         for single_tile in tiles:
             row, col = self.decode_tile(single_tile)
-            decoded_tiles.append((row,col))
-        for dr in [0,1,-1]:
-            for dc in [0,1,-1]:
+            decoded_tiles.append((row, col))
+        for dr in [0, 1, -1]:
+            for dc in [0, 1, -1]:
                 if dr == 0 and dc == 0:
                     continue
-                if (r+dr,c+dc) in decoded_tiles:
+                if (r+dr, c+dc) in decoded_tiles:
                     return f"r{r+dr}_c{c+dc}"
+        return tiles[0]
