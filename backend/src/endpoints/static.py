@@ -12,6 +12,12 @@ router = APIRouter()
 ROOT_DIR = Path(__file__).parent.parent.parent
 
 def get_index_path() -> Path:
+    """
+    Return the filesystem path to the SPA's main `index.html` file.
+
+    Returns:
+        Path: Absolute path to `build/index.html` within the project root.
+    """
     return ROOT_DIR / "build" / "index.html"
 
 @router.get("/{_full_path:path}")
