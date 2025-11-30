@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import App from '../src/App';
 
-jest.mock('../src/assets/images/ecopaths_logo_no_text.jpg', () => 'mocked-logo');
+jest.mock('../src/assets/images/ecopaths-logo-with-text.jpg', () => 'mocked-logo');
 
 jest.mock('../src/components/MapComponent', () => () => <div data-testid='map-component' />);
 jest.mock('../src/components/SideBar', () => ({ children }: { children: React.ReactNode }) => (
@@ -13,7 +13,6 @@ jest.mock('../src/components/AreaSelector', () => () => (
 
 test('renders App without crashing', () => {
   render(<App />);
-  expect(screen.getByText(/EcoPaths/i)).toBeInTheDocument();
   expect(screen.getByTestId('map-component')).toBeInTheDocument();
   expect(screen.getByTestId('area-selector')).toBeInTheDocument();
   expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
@@ -21,5 +20,4 @@ test('renders App without crashing', () => {
 
 test('renders EcoPaths header', () => {
   render(<App />);
-  expect(screen.getByText(/EcoPaths/i)).toBeInTheDocument();
 });

@@ -222,11 +222,7 @@
   display: none;
 }
 
-.sidebar-handle {
-  display: none;
-}
-
-/* MOBILE */
+/* MOBILE LAYOUT */
 @media (max-width: 800px) {
   /* SIDEBAR CONTAINER */
   .sidebar-mobile {
@@ -273,12 +269,12 @@
 
   /* SCROLLABLE CONTENT */
   .sidebar-content {
-    height: calc(100% - 40px);
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    position: relative;
   }
 
   .sidebar-content > *:last-child {

@@ -12,7 +12,7 @@ import RouteModeSelector from './RouteModeSelector';
 import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
 import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
-import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -86,7 +86,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startDragY, setStartDragY] = useState(0);
-  const [sidebarHeight, setSidebarHeight] = useState(295);
+  const [sidebarHeight, setSidebarHeight] = useState(280);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -103,7 +103,15 @@ const SideBar: React.FC<SideBarProps> = ({
 
     const currentY = e.touches[0].clientY;
     const delta = startDragY - currentY;
-    setDragY(delta);
+
+    const newHeight = sidebarHeight + delta;
+    const minHeight = 40;
+    const maxHeight = window.innerHeight - 60;
+
+    const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+    const clampedDelta = clampedHeight - sidebarHeight;
+
+    setDragY(clampedDelta);
   };
 
   const handleTouchStart = (e: React.TouchEvent): void => {
@@ -117,7 +125,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const handleTouchEnd = (): void => {
     if (!isMobile || !isDragging) return;
 
-    const newHeight = Math.max(40, Math.min(window.innerHeight * 0.9, sidebarHeight + dragY));
+    const newHeight = Math.max(40, Math.min(window.innerHeight - 60, sidebarHeight + dragY));
     setSidebarHeight(newHeight);
 
     setIsDragging(false);
@@ -330,7 +338,7 @@ const SideBar: React.FC<SideBarProps> = ({
         style={
           isMobile
             ? {
-                height: `${isDragging ? sidebarHeight + dragY - 40 : sidebarHeight - 40}px`,
+                height: `calc(100dvh - ${window.innerHeight - (isDragging ? sidebarHeight + dragY : sidebarHeight)}px - 40px)`,
               }
             : undefined
         }

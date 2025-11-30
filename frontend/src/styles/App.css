@@ -86,7 +86,7 @@ body,
 .InputContainer input {
   width: 100%;
   padding: clamp(10px, 1.5vw, 12px) clamp(12px, 2.5vw, 14px);
-  font-size: clamp(14px, 3vw, 16px);
+  font-size: clamp(16px, 3vw, 18px);
   border: 2px solid #ebebeb;
   border-radius: 8px;
   transition: border-color 0.2s;
@@ -100,7 +100,7 @@ body,
 
 .InputContainer input::placeholder {
   color: #999;
-  font-size: clamp(14px, 3vw, 16px);
+  font-size: clamp(16px, 3vw, 18px);
 }
 
 .route-loading-message p {
@@ -195,8 +195,8 @@ body,
   flex-shrink: 0;
 }
 
+/* MOBILE LAYOUT */
 @media (max-width: 800px) {
-  /* --- Header: Smaller on mobile --- */
   .header-content {
     height: 65px;
   }
@@ -238,5 +238,11 @@ body,
   .map-icon {
     width: 10px;
     height: 10px;
+  }
+
+  .originul {
+    max-height: min(200px, 40vh) !important;
+    margin: 2px 0 0 0 !important;
+    width: 100% !important;
   }
 }
