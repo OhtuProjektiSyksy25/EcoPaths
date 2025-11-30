@@ -150,8 +150,6 @@ class RouteService:
         Args:
             all_gdf (list): Candidate forward route data entries.
             origin_gdf (GeoDataFrame): Original starting point.
-            edges (GeoDataFrame): Edge data for routing.
-            nodes (GeoDataFrame): Node data for routing.
 
         Returns:
             dict: Full round-trip route and summaries for the first valid candidate.
@@ -219,8 +217,6 @@ class RouteService:
 
             Args:
                 destination (GeoDataFrame): Destination point for the return leg.
-                edges (GeoDataFrame): Edges for the routing graph.
-                nodes (GeoDataFrame): Nodes for the routing graph.
                 first_path_data (dict): Data from the first leg, including:
                                         origin, route, and previous edge IDs.
 
