@@ -55,8 +55,8 @@ spec:
                   key: REACT_APP_MAPBOX_STYLE
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "350m"
+              memory: "750Mi"
+              cpu: "500m"
             requests:
               memory: "128Mi"
-              cpu: "10m"
+              cpu: "100m"

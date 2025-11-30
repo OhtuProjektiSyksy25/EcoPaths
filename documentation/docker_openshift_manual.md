@@ -29,7 +29,7 @@ docker run -p 8000:8000 <IMAGE_NAME>
 Alternatively, you can also build the Docker image and start the container with the command:
 
 ```bash
-docker compose up -d
+docker compose up -d app
 ```
 
 ## Docker Hub
