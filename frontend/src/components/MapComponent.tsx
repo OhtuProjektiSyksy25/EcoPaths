@@ -155,7 +155,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
         isValidCoordsArray(fromLocked.geometry.coordinates)
       ) {
         toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
-          .setLngLat(fromLocked.geometry.coordinates) // sama piste kuin fromMarker
+          .setLngLat(fromLocked.geometry.coordinates)
           .addTo(map);
 
         map.flyTo({ center: fromLocked.geometry.coordinates, zoom: 16, duration: 1500 });
