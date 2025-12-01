@@ -149,19 +149,32 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
 
     const points: [number, number][] = [];
-    if (fromLocked?.geometry?.coordinates) points.push(fromLocked.geometry.coordinates);
-    if (toLocked?.geometry?.coordinates && !loop) points.push(toLocked.geometry.coordinates);
+    if (loop) {
+      if (
+        fromLocked?.geometry?.coordinates &&
+        isValidCoordsArray(fromLocked.geometry.coordinates)
+      ) {
+        toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
+          .setLngLat(fromLocked.geometry.coordinates) // sama piste kuin fromMarker
+          .addTo(map);
 
-    if (!loop && points.length > 1) {
-      const bounds = points.reduce(
-        (b, c) => b.extend(c),
-        new mapboxgl.LngLatBounds(points[0], points[0]),
-      );
-      const isMobile = window.innerWidth <= 800;
-      const padding = getPadding(isMobile);
-      map.fitBounds(bounds, { padding, duration: 1500 });
-    } else if (!loop && points.length === 1) {
-      map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
+        map.flyTo({ center: fromLocked.geometry.coordinates, zoom: 16, duration: 1500 });
+      }
+    } else {
+      if (fromLocked?.geometry?.coordinates) points.push(fromLocked.geometry.coordinates);
+      if (toLocked?.geometry?.coordinates && !loop) points.push(toLocked.geometry.coordinates);
+
+      if (!loop && points.length > 1) {
+        const bounds = points.reduce(
+          (b, c) => b.extend(c),
+          new mapboxgl.LngLatBounds(points[0], points[0]),
+        );
+        const isMobile = window.innerWidth <= 800;
+        const padding = getPadding(isMobile);
+        map.fitBounds(bounds, { padding, duration: 1500 });
+      } else if (!loop && points.length === 1) {
+        map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
+      }
     }
   }, [fromLocked, toLocked, loop]);
 
