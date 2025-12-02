@@ -125,7 +125,39 @@ describe('MapComponent', () => {
     );
 
     // Marker should be created only for the `from` location; destination marker is skipped when loop=true
-    const markerCalls = (mapboxgl as any).Marker.mock.calls.length;
-    expect(markerCalls).toBeLessThanOrEqual(1);
+    const instances = (mapboxgl as any).Marker.mock.instances as any[];
+    const coordsJSON = JSON.stringify(mockLocked.geometry.coordinates);
+
+    const toMarkerInstance = instances.find((inst: any) => {
+      if (!inst.setLngLat || !inst.setLngLat.mock) return false;
+      return inst.setLngLat.mock.calls.some((c: any) => JSON.stringify(c[0]) === coordsJSON);
+    });
+
+    expect(toMarkerInstance).toBeUndefined();
+  });
+
+  test('flys to fromLocked coordinates when loop mode is active', async () => {
+    process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
+    process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
+
+    render(
+      <MapComponent
+        {...defaultProps}
+        fromLocked={mockLocked}
+        toLocked={mockLocked}
+        routes={mockRoutes}
+        loop={true}
+      />,
+    );
+
+    const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
+
+    await waitFor(() => {
+      expect(mapInstance.flyTo).toHaveBeenCalledWith({
+        center: mockLocked.geometry.coordinates,
+        zoom: 16,
+        duration: 1500,
+      });
+    });
   });
 });
