@@ -397,7 +397,7 @@ const SideBar: React.FC<SideBarProps> = ({
               placeholder='Destination'
               value={to}
               onChange={HandleToChange}
-              suggestions={toSuggestions}
+              suggestions={toInputSelected.current ? [] : toSuggestions}
               onSelect={(place) => {
                 toInputSelected.current = true;
                 onToSelect(place);
