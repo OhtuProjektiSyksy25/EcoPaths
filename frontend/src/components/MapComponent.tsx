@@ -124,59 +124,90 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return () => map.remove();
   }, [mapboxToken, mapboxStyle]);
 
-  // Update From/To markers
+  // Update markers & zoom logic for loop / non-loop modes
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
+    // Clear old markers
     fromMarkerRef.current?.remove();
     toMarkerRef.current?.remove();
 
-    if (fromLocked?.geometry?.coordinates && isValidCoordsArray(fromLocked.geometry.coordinates)) {
+    const fromCoords =
+      fromLocked?.geometry?.coordinates && isValidCoordsArray(fromLocked.geometry.coordinates)
+        ? fromLocked.geometry.coordinates
+        : null;
+
+    const toCoords =
+      toLocked?.geometry?.coordinates && isValidCoordsArray(toLocked.geometry.coordinates)
+        ? toLocked.geometry.coordinates
+        : null;
+
+    // Draw markers
+    if (fromCoords) {
       fromMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
-        .setLngLat(fromLocked.geometry.coordinates)
+        .setLngLat(fromCoords)
         .addTo(map);
     }
 
-    if (
-      !loop &&
-      toLocked?.geometry?.coordinates &&
-      isValidCoordsArray(toLocked.geometry.coordinates)
-    ) {
-      toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
-        .setLngLat(toLocked.geometry.coordinates)
-        .addTo(map);
+    if (!loop && toCoords) {
+      toMarkerRef.current = new mapboxgl.Marker({ color: 'red' }).setLngLat(toCoords).addTo(map);
     }
 
-    const points: [number, number][] = [];
+    // Determine zoom behaviour
+    // CASE A: LOOP MODE
     if (loop) {
-      if (
-        fromLocked?.geometry?.coordinates &&
-        isValidCoordsArray(fromLocked.geometry.coordinates)
-      ) {
-        toMarkerRef.current = new mapboxgl.Marker({ color: 'red' })
-          .setLngLat(fromLocked.geometry.coordinates)
-          .addTo(map);
+      const hasLoopRoute = loopRoutes && Object.keys(loopRoutes).length > 0;
 
-        map.flyTo({ center: fromLocked.geometry.coordinates, zoom: 16, duration: 1500 });
+      if (hasLoopRoute) {
+        // (A1) LOOP ROUTE EXISTS -> center to route
+        const coords = extractRouteCoordinates(loopRoutes);
+        const bounds = calculateBounds(coords);
+        if (bounds) {
+          const isMobile = window.innerWidth <= 800;
+          const padding = getPadding(isMobile);
+          map.fitBounds(bounds, { padding, duration: 1500 });
+        }
+      } else if (fromCoords) {
+        // (A2) route has not loaded yet -> center to marker
+        map.flyTo({ center: fromCoords, zoom: 16, duration: 1500 });
       }
-    } else {
-      if (fromLocked?.geometry?.coordinates) points.push(fromLocked.geometry.coordinates);
-      if (toLocked?.geometry?.coordinates && !loop) points.push(toLocked.geometry.coordinates);
 
-      if (!loop && points.length > 1) {
-        const bounds = points.reduce(
-          (b, c) => b.extend(c),
-          new mapboxgl.LngLatBounds(points[0], points[0]),
-        );
+      return;
+    }
+
+    // CASE B: NORMAL ROUTING MODE
+    const hasRoutes = routes && Object.keys(routes).length > 0;
+
+    if (hasRoutes) {
+      // (B1) route exists -> focus full route
+      const coords = extractRouteCoordinates(routes);
+      const bounds = calculateBounds(coords);
+      if (bounds) {
         const isMobile = window.innerWidth <= 800;
         const padding = getPadding(isMobile);
         map.fitBounds(bounds, { padding, duration: 1500 });
-      } else if (!loop && points.length === 1) {
-        map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
       }
+      return;
     }
-  }, [fromLocked, toLocked, loop]);
+
+    // (B2) No route -> focus markers
+    const points: [number, number][] = [];
+    if (fromCoords) points.push(fromCoords);
+    if (toCoords) points.push(toCoords);
+
+    if (points.length >= 2) {
+      const bounds = points.reduce(
+        (b, c) => b.extend(c),
+        new mapboxgl.LngLatBounds(points[0], points[0]),
+      );
+      const isMobile = window.innerWidth <= 800;
+      const padding = getPadding(isMobile);
+      map.fitBounds(bounds, { padding, duration: 1500 });
+    } else if (points.length === 1) {
+      map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
+    }
+  }, [fromLocked, toLocked, loop, routes, loopRoutes]);
 
   // Fly to selected area and disable interactions until finished
   useEffect(() => {
