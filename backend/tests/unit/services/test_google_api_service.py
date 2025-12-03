@@ -43,7 +43,7 @@ class TestGoogleAPIService:
     def test_init_with_api_key(self, mock_api_key):
         """Service initializes correctly with API key."""
         service = GoogleAPIService()
-        assert service.api_key == "test_api_key"
+        assert service.api_key == "dummy_key"
         assert service.endpoint == "https://airquality.googleapis.com/v1/currentConditions:lookup"
 
     @patch("src.services.google_api_service.requests.post")
