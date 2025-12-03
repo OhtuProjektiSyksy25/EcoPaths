@@ -31,7 +31,7 @@ test.describe('EcoPaths E2E - Full Routing Flow', () => {
     await page.waitForSelector('text=Checkpoint Charlie');
     await page.locator('text=Checkpoint Charlie').first().click();
 
-    await page.waitForSelector('text=Your Route', { timeout: 20000 });
+    await page.waitForSelector('text=Custom Route', { timeout: 20000 });
 
   await expect(
     page.locator('span.route_type', { hasText: 'Best AQ Route' }).first()
@@ -51,7 +51,7 @@ test.describe('EcoPaths E2E - Full Routing Flow', () => {
     await page.waitForSelector('text=Checkpoint Charlie');
     await page.locator('text=Checkpoint Charlie').first().click();
 
-    await page.waitForSelector('text=Your Route', { timeout: 20000 });
+    await page.waitForSelector('text=Custom Route', { timeout: 20000 });
 
     await expect(page.locator('.time_estimate').first()).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.total_length').first()).toContainText(/km/, { timeout: 10000 });
@@ -83,7 +83,7 @@ test.describe('EcoPaths E2E - Full Routing Flow', () => {
     await page.waitForSelector('text=Checkpoint Charlie');
     await page.locator('text=Checkpoint Charlie').first().click();
 
-    await page.waitForSelector('text=Your Route', { timeout: 20000 });
+    await page.waitForSelector('text=Custom Route', { timeout: 20000 });
 
     const toggleButton = page.getByRole('button', { name: /(Show|Hide) AQ on map/i });
     await expect(toggleButton).toBeVisible({ timeout: 20000 });
