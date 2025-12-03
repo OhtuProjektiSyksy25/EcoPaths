@@ -103,7 +103,7 @@ const InputContainer: React.FC<InputContainerProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         onFocus={() => {
-          suggestions.length > 0 && inputSelected.current === false && setIsOpen(true);
+          suggestions?.length > 0 && inputSelected.current === false && setIsOpen(true);
           onFocus?.();
         }}
         onBlur={() => {
