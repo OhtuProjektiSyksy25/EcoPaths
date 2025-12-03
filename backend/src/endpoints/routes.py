@@ -6,7 +6,7 @@ Returns multiple route options and route summaries.
 import time
 import math
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
 from logger.logger import log
@@ -114,7 +114,6 @@ async def getloop(request: Request):
     area_config = request.app.state.area_config
     route_service = request.app.state.route_service
 
-    start_time = time.time()
     data = await request.json()
     features = data.get("features", [])
     distance = float(request.query_params.get("distance", 7)) * 1000
@@ -137,9 +136,5 @@ async def getloop(request: Request):
         )
 
     distance = min(distance, 5000)
-    response = route_service.get_round_trip(origin_gdf, distance)
 
-    duration = time.time() - start_time
-    print(f"/getloop took {duration:.3f} seconds")
-
-    return JSONResponse(content=response)
+    return StreamingResponse(route_service.get_round_trip(origin_gdf, distance),media_type="text/event-stream")

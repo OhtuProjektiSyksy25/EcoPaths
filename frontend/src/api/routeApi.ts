@@ -111,5 +111,29 @@ export async function fetchLoopRoute(
     throw new Error(`Server error: ${response.status}`);
   }
 
-  return (await response.json()) as LoopApiResponse;
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+
+  if (!reader) {
+    console.log('No response body!');
+    return {} as LoopApiResponse;
+  }
+
+  let lastChunk; // testing to see that chunks are correct form
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    console.log('Chunk received:', chunk); // testing to see that chunks are got in order
+    lastChunk = decoder.decode(value, { stream: true }); // for testing, can delete
+  }
+
+  // Drawing routes as they come could be implemented by:
+  // Having a useState for loops that gets updated here
+
+  if (lastChunk != undefined) {
+    return JSON.parse(lastChunk) as LoopApiResponse; // now returning only last chunk
+  }
+  return (await response.json()) as LoopApiResponse; // can delete
 }

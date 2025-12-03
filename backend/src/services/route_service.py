@@ -2,6 +2,7 @@
 Service that computes routes and returns them as GeoJSON LineStrings.
 """
 import math
+import json
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString, Polygon, Point
@@ -167,14 +168,13 @@ class RouteService:
             try:
                 full_route = self.get_round_trip_back(
                     origin_gdf, candidate)
-                return full_route
+                yield json.dumps(full_route) + "\n"
             except RuntimeError as exc:
                 print(f"round trip back failed for: {exc}")
                 continue
             except ValueError as exc:
                 print(f"round trip back failed for: {exc}")
                 continue
-        return full_route
 
     def get_round_trip_forward(self, origin_gdf, best_3):
         """
@@ -538,6 +538,7 @@ class RouteService:
         Returns:
             tile (str): closest match tile
         """
+        # FIX: CHECK THAT CLOSEST MATCH ISNT ARLEADY USED
         if tile in tiles:
             return tile
         r, c = self.decode_tile(tile)
