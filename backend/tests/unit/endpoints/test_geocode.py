@@ -128,19 +128,26 @@ def test_geocode_forward_outside_bbox(client, setup_mock_lifespan, monkeypatch):
 
 
 def test_geocode_forward_http_error(client, monkeypatch, setup_mock_lifespan):
-    async def mock_get(*args, **kwargs):
-        mock_request = Mock()
-        mock_request.url = "fake-url"
-        error = httpx.HTTPError("HTTP error")
-        error._request = mock_request
-        raise error
+    async def mock_get(self, url, *args, **kwargs):
+        if "photon.komoot.io" in url:
+            mock_request = Mock()
+            mock_request.url = url
+            error = httpx.HTTPError("HTTP error")
+            error._request = mock_request
+            raise error
+        else:
+            class MockResponse:
+                def raise_for_status(self): pass
+                def json(self): return {"features": []}
+            return MockResponse()
 
     monkeypatch.setattr("httpx.AsyncClient.get", mock_get)
 
     response = client.get(f"/api/geocode-forward/test?bbox={_bbox_str()}")
     assert response.status_code == 200
-    assert response.json() == []
-
+    result = response.json()
+    assert "features" in result
+    assert result["features"] == []
 
 def test_geocode_forward_check_photon_url(client, setup_mock_lifespan, monkeypatch):
     test_photon_url = None

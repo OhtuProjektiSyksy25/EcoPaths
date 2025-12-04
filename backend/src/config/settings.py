@@ -241,6 +241,7 @@ class Settings:
         self.redis = RedisConfig()
         self.db = DatabaseConfig()
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.geoapify_api_key = os.getenv("GEOAPIFY_API_KEY")
         self.TEST_MODE = TEST_MODE
 
 

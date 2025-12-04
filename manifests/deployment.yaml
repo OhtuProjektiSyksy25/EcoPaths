@@ -53,6 +53,11 @@ spec:
                 secretKeyRef:
                   name: ecopaths-mapbox-style
                   key: REACT_APP_MAPBOX_STYLE
+            - name: GEOAPIFY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ecopaths-geoapify-key
+                  key: GEOAPIFY_API_KEY
           resources:
             limits:
               memory: "750Mi"
