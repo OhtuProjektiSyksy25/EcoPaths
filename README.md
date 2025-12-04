@@ -90,6 +90,7 @@ The project is done in collaboration with MegaSense Oy.
 
    ```env
    GOOGLE_API_KEY=your_google_api_key_here
+   GEOAPIFY_API_KEY=your_api_key_here
    POSTGRES_USER=pathplanner
    POSTGRES_PASSWORD=sekret
    POSTGRES_DB=ecopaths
