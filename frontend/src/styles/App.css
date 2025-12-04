@@ -37,6 +37,7 @@ body,
   object-fit: contain;
   object-position: center;
   transform: scale(1);
+  transform: scale(1);
   flex-shrink: 0;
   clip-path: inset(0px);
   padding-left: 10px;
