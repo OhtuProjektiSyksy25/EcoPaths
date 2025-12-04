@@ -42,7 +42,7 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "from_node": [1, 2],
         "to_node": [2, 3],
         "aqi": [20.0, 40.0],
-        "normalized_aqi":[15.0, 42.0],
+        "normalized_aqi": [15.0, 42.0],
         "pm2_5": [10.0, 12.0],
         "pm10": [20.0, 22.0]
     }, crs="EPSG:25833")
@@ -70,11 +70,12 @@ def origin_destination():
 @pytest.fixture
 def simple_nodes_gdf():
     data = {
-        "node_id": ["A", "B", "C", "D", "E", "F"],
-        "tile_id": [1, 1, 1, 1, 1, 1],
+        "node_id": ["A", "B", "C", "D", "E", "F", "G", "H"],
+        "tile_id": [1, 1, 1, 1, 1, 1, 1, 1],
         "geometry": [
             Point(0, 0), Point(2, 2), Point(4, 4),
-            Point(0, 2), Point(2, 4), Point(4, 0)
+            Point(0, 2), Point(2, 4), Point(4, 0),
+            Point(35, 35), Point(36, 36)
         ]
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
@@ -83,21 +84,22 @@ def simple_nodes_gdf():
 @pytest.fixture
 def simple_edges_gdf():
     data = {
-        "edge_id": [1, 2, 3, 4, 5, 6],
-        "from_node": ["A", "B", "D", "D", "E", "F"],
-        "to_node": ["B", "C", "B", "E", "C", "C"],
-        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0],
-        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
-        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
-        "pm2_5": [10.0, 12.0, 11.0, 13.0, 14.0, 15.0],
-        "pm10": [20.0, 22.0, 21.0, 23.0, 24.0, 25.0],
+        "edge_id": [1, 2, 3, 4, 5, 6, 7],
+        "from_node": ["A", "B", "D", "D", "E", "F", "G"],
+        "to_node": ["B", "C", "B", "E", "C", "C", "H"],
+        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0, 1],
+        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6, 1],
+        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0, 1],
+        "pm2_5": [10.0, 12.0, 11.0, 13.0, 14.0, 15.0, 1],
+        "pm10": [20.0, 22.0, 21.0, 23.0, 24.0, 25.0, 1],
         "geometry": [
             LineString([(0, 0), (2, 2)]),
             LineString([(2, 2), (4, 4)]),
             LineString([(0, 2), (2, 2)]),
             LineString([(0, 2), (2, 4)]),
             LineString([(2, 4), (4, 4)]),
-            LineString([(4, 0), (4, 4)])
+            LineString([(4, 0), (4, 4)]),
+            LineString([(35, 35), (36, 36)])
         ]
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
@@ -298,9 +300,22 @@ def test_route_trip_forward_handles_empty_gdf(monkeypatch, route_service, origin
     empty_gdf_2 = gpd.GeoDataFrame()
 
     result = route_service.get_round_trip_forward(
-        origin, [empty_gdf,empty_gdf_2, destination],)
+        origin, [empty_gdf, empty_gdf_2, destination],)
     assert len(result) == 1
     assert isinstance(result, list)
     assert isinstance(result[0], dict)
     assert "geometry" in result[0]["destination"]
 
+
+@pytest.mark.filterwarnings("ignore:Couldn't reach some vertices:RuntimeWarning")
+def test_get_route_raises_runtimeerror_when_cant_find_route(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
+    origin, destination = origin_destination
+    destination = gpd.GeoDataFrame(geometry=[Point(33, 33)], crs="EPSG:25833")
+
+    monkeypatch.setattr(route_service, "_get_tile_edges",
+                        lambda ids: simple_edges_gdf)
+    monkeypatch.setattr(route_service, "_get_nodes_from_db",
+                        lambda ids: simple_nodes_gdf)
+
+    with pytest.raises(RuntimeError, match="No edges found|Routing failed"):
+        route_service.get_route(origin, destination)
