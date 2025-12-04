@@ -39,7 +39,7 @@ body,
   transform: scale(1);
   flex-shrink: 0;
   clip-path: inset(0px);
-  padding-left: 70px;
+  padding-left: 10px;
 }
 
 .title {
@@ -207,10 +207,11 @@ body,
   }
 
   .app-logo {
-    height: 45px;
-    transform: scale(1.4);
+    height: 40px;
+    transform: scale(1.45);
     padding-left: 20px;
     padding-bottom: 5px;
+    padding-top: 5px;
   }
 
   .main-container {

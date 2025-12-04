@@ -9,7 +9,7 @@ import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
-import logo from './assets/images/ecopaths-logo-with-text.jpg';
+import logo from './assets/images/ecopaths_logo_with_text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
 
