@@ -164,9 +164,7 @@ export const useRoute = (
             setSummaries((prev) =>
               prev ? { ...prev, balanced: data.summaries?.balanced } : data.summaries,
             );
-            setAqiDifferences((prev) =>
-              prev ? { ...prev, balanced: data.aqi_differences.balanced } : data.aqi_differences,
-            );
+            setAqiDifferences((prev) => (prev ? { ...prev, balanced: {} } : { balanced: {} }));
           } else {
             // Update all routes
             setRoutes(data.routes);

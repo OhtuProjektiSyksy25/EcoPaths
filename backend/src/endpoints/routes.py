@@ -87,7 +87,9 @@ async def getroute(request: Request):
 
     # Compute route
     if only_compute_balanced_route:
-        response = route_service.compute_balanced_route_only(balanced_weight)
+        response = route_service.compute_balanced_route_only(
+            origin_gdf, destination_gdf, balanced_weight
+        )
     else:
         response = route_service.get_route(
             origin_gdf, destination_gdf, balanced_weight)
@@ -127,7 +129,6 @@ async def getloop(request: Request):
             content={"error": "Missing required fields: 'area' or 'features'"}
         )
 
-    # Create stateless route service for this area
     route_service, area_config = RouteServiceFactory.from_area(area)
     if not route_service or not area_config:
         return JSONResponse(

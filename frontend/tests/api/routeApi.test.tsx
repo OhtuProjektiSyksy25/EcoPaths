@@ -1,5 +1,7 @@
 import { fetchRoute, fetchLoopRoute } from '../../src/api/routeApi';
 import { LockedLocation } from '@/types/route';
+import { AreaProvider, useArea } from '../../src/AreaContext';
+import { Area } from '@/types';
 
 describe('routeApi', () => {
   const fromLocked: LockedLocation = {
@@ -15,6 +17,14 @@ describe('routeApi', () => {
     global.fetch = jest.fn() as jest.Mock;
     process.env.REACT_APP_API_URL = 'http://localhost:8000';
   });
+  const area: Area = {
+    id: 'area1',
+    display_name: 'test_area',
+    focus_point: [13.4, 52.5],
+    zoom: 12,
+    bbox: [13.0, 52.0, 14.0, 53.0],
+  };
+
 
   describe('fetchRoute', () => {
     it('sends correct POST request and returns JSON', async () => {
@@ -65,7 +75,7 @@ describe('routeApi', () => {
         json: async () => mockResponse,
       });
 
-      const result = await fetchLoopRoute(fromLocked, 10);
+      const result = await fetchLoopRoute(fromLocked, 10, area.id);
 
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:8000/api/getloop?distance=10',
@@ -81,6 +91,7 @@ describe('routeApi', () => {
                 geometry: { type: 'Point', coordinates: [13.4, 52.5] },
               },
             ],
+            area: area.id,
           }),
         }),
       );
@@ -89,7 +100,7 @@ describe('routeApi', () => {
 
     it('throws an error if response is not ok', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 400 });
-      await expect(fetchLoopRoute(fromLocked, 5)).rejects.toThrow('Server error: 400');
+      await expect(fetchLoopRoute(fromLocked, 5, area.id)).rejects.toThrow('Server error: 400');
     });
   });
 });

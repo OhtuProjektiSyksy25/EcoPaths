@@ -279,7 +279,8 @@ def test_compute_balanced_route_only_returns_only_one_route(
                         lambda ids: simple_nodes_gdf)
 
     route_service.get_route(origin, destination)
-    result = route_service.compute_balanced_route_only(0.1)
+    result = route_service.compute_balanced_route_only(
+        origin, destination, 0.1)
 
     assert isinstance(result, dict)
     assert isinstance(result["routes"], dict)

@@ -455,34 +455,58 @@ class RouteService:
             "aqi_differences": aqi_differences
         }
 
-    def compute_balanced_route_only(self, balanced_value):
+    def compute_balanced_route_only(self, origin_gdf: gpd.GeoDataFrame,
+                                    destination_gdf: gpd.GeoDataFrame,
+                                    balanced_value: float) -> dict:
         """
-        Computes only the "balanced route" for the given balanced_value
-        Uses a pre-initialized graph
+        Computes only the "balanced route" for the given balanced_value.
+        Works statelessly by rebuilding the graph from scratch.
+
         Args:
+            origin_gdf (GeoDataFrame): Origin point.
+            destination_gdf (GeoDataFrame): Destination point.
             balanced_value (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
+
         Returns:
-            result (GeoJSON FeatureCollection): Route edges
-            summary (dict): Route data summary
+            dict: Contains routes, summaries, and aqi_differences keys.
         """
-        graph = self.current_route_algorithm.igraph
-        gdf = self.current_route_algorithm.re_calculate_balanced_path(
-            balanced_value, graph)
+        buffer = self._create_buffer(origin_gdf, destination_gdf)
+        tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
+
+        edges = self._get_tile_edges(tile_ids)
+
+        nodes = self._get_nodes_from_db(tile_ids)
+
+        if edges is None or edges.empty:
+            raise RuntimeError("No edges found for requested route area.")
+
+        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+
+        route_algorithm = RouteAlgorithm(edges_subset, nodes)
+
+        gdf = route_algorithm.calculate_path(
+            origin_gdf,
+            destination_gdf,
+            graph=None,
+            balance_factor=balanced_value
+        )
+
         gdf = compute_exposure(gdf)
+        gdf["mode"] = "balanced"
+
         summary = summarize_route(gdf)
         result = GeoTransformer.gdf_to_feature_collection(
             gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
         )
 
-        results, summaries, aqi_differences = {}, {}, {}
-        results["balanced"] = result
-        summaries["balanced"] = summary
-        aqi_differences["aqi_differences"] = None
-        x = {"routes": results, "summaries": summaries,
-             "aqi_differences": aqi_differences}
-        return x
+        return {
+            "routes": {"balanced": result},
+            "summaries": {"balanced": summary},
+            "aqi_differences": None
+        }
 
-    def decode_tile(self, tile):
+    @staticmethod
+    def decode_tile(tile):
         """Decodes tile str to integers
            Example: r14_c12 -> 14, 12
 
@@ -493,8 +517,10 @@ class RouteService:
             row (int): row
             col (int): column
         """
+        
         row = int(tile.split("_")[0][1:])
-        col = int(tile.split("_")[1][1:])
+        col = int(tile.split("_")[0][1:])
+        print(f"col {col}, row {row}")
         return row, col
 
     def rotate_tile_about_center(self, tile, center_tile, candidate_tiles, degrees=120.0):
@@ -511,8 +537,8 @@ class RouteService:
         Returns:
             tile (str): tile id of rotated tile
         """
-        row, col = self.decode_tile(tile)
-        center_row, center_col = self.decode_tile(center_tile)
+        row, col = RouteService.decode_tile(tile)
+        center_row, center_col = RouteService.decode_tile(center_tile)
 
         vx = col - center_col
         vy = row - center_row
@@ -524,11 +550,12 @@ class RouteService:
         new_row = int(round(center_row + ry))
         new_col = int(round(center_col + rx))
 
-        closest_match = self.get_closest_tile_match(
+        closest_match = RouteService.get_closest_tile_match(
             f"r{new_row}_c{new_col}", candidate_tiles)
         return closest_match
 
-    def get_closest_tile_match(self, tile, tiles):
+    @staticmethod
+    def get_closest_tile_match(tile, tiles):
         """Gets closes tile match of given tile to list of tiles
 
         Args:
@@ -540,10 +567,10 @@ class RouteService:
         """
         if tile in tiles:
             return tile
-        r, c = self.decode_tile(tile)
+        r, c = RouteService.decode_tile(tile)
         decoded_tiles = []
         for single_tile in tiles:
-            row, col = self.decode_tile(single_tile)
+            row, col = RouteService.decode_tile(single_tile)
             decoded_tiles.append((row, col))
         for dr in [0, 1, -1]:
             for dc in [0, 1, -1]:
