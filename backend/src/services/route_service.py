@@ -68,6 +68,7 @@ class RouteService:
         self.db_client = DatabaseClient()
         self.network_type = network_type
         self.current_route_algorithm = None
+        self.fastest_route_summary = None
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
                   balanced_value: float = 0.5) -> dict:
@@ -447,6 +448,7 @@ class RouteService:
                 gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
             )
 
+        self.fastest_route_summary = summaries["fastest"]
         aqi_differences = calculate_aqi_difference(summaries)
 
         return {
@@ -477,7 +479,14 @@ class RouteService:
         results, summaries, aqi_differences = {}, {}, {}
         results["balanced"] = result
         summaries["balanced"] = summary
-        aqi_differences["aqi_differences"] = None
+
+        temp_summaries = {
+            "fastest": self.fastest_route_summary,
+            "balanced": summary
+        }
+
+        aqi_differences = calculate_aqi_difference(temp_summaries)
+
         x = {"routes": results, "summaries": summaries,
              "aqi_differences": aqi_differences}
         return x

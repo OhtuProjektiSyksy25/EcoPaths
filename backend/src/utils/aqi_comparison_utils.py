@@ -15,13 +15,12 @@ def calculate_aqi_difference(summaries: dict) -> dict:
         dict: Differences in AQI between route modes.
     """
 
-    modes = ["fastest", "best_aq", "balanced"]
     comparisons = defaultdict(dict)
 
     baseline_mode = "fastest"
     baseline_aqi = summaries["fastest"]["aq_average"]
 
-    for mode in modes:
+    for mode in summaries.keys():
         if mode == baseline_mode:
             continue
 
