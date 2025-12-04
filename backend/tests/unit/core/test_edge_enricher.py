@@ -8,7 +8,7 @@ class DummyDBClient:
     """Mock database client that returns fake edges for testing."""
 
     def load_edges_for_tiles(self, area, network_type, tile_ids, include_columns=None):
-        return gpd.GeoDataFrame({
+        df = gpd.GeoDataFrame({
             "edge_id": [1, 2],
             "tile_id": ["r1_c1", "r1_c2"],
             "length_m": [100, 200],
@@ -20,6 +20,7 @@ class DummyDBClient:
                 LineString([(1, 1), (2, 2)])
             ],
         }, crs="EPSG:25833")
+        return df[df["tile_id"].isin(tile_ids)]
 
 
 class DummyGoogleAPIService:
@@ -96,3 +97,8 @@ def test_get_enriched_tiles(enricher):
     assert isinstance(enriched, gpd.GeoDataFrame)
     assert not enriched.empty
     assert "aqi" in enriched.columns
+
+
+def test_get_enriched_tiles_returns_false_for_empty_tile(enricher):
+    enriched = enricher.get_enriched_tiles(["r8_c18"])
+    assert enriched is None
