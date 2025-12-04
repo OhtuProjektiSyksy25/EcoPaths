@@ -75,13 +75,13 @@
 .loop-slider-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--thumb-bg);
   border: 2px solid var(--thumb-border);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
-  margin-top: -3px;
+  margin-top: -4px;
   transition:
     transform 0.12s ease,
     background 0.12s ease;
