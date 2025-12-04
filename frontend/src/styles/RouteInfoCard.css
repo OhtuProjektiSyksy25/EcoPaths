@@ -89,6 +89,48 @@
   word-break: break-word;
 }
 
+/* exposure action (text + arrow) */
+.route-card-exposure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.route-open-exposure-text {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* small arrow button */
+.route-open-exposure-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--primary);
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.route-open-exposure-arrow:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: color-mix(in srgb, var(--primary) 70%, #000 10%);
+}
+
+/* chevron styling */
+.route-open-exposure-arrow .chev {
+  font-size: 14px;
+  line-height: 1;
+}
+
 /*  MOBILE LAYOUT*/
 @media (max-width: 800px) {
   .desktop-layout {

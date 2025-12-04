@@ -10,6 +10,9 @@ export type {
   RouteSummary,
   AqiComparison,
   RouteMode,
+  RouteFeatureProperties,
+  ExposurePoint,
+  RouteType,
 } from './route';
 export type { ApiError, ApiResponse } from './api';
 export type { Place } from './place';

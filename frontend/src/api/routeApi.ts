@@ -1,22 +1,23 @@
-import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
 
 export interface RouteApiResponse {
   routes: Record<string, RouteGeoJSON>;
   summaries: Record<string, RouteSummary>;
+  // optional precomputed AQI / exposure comparisons between routes
+  aqi_differences?: Record<string, Record<string, AqiComparison>>;
 }
 
 /**
  * Computes a route between two locked locations using the backend.
  *
- * Creates a GeoJSON FeatureCollection containing two points: "start" and "end",
- * and sends it via a POST request to the `/getroute/{city}` endpoint.
+ * Creates a GeoJSON FeatureCollection with start/end and posts to /api/getroute.
+ * The backend is expected to return:
+ *  - routes: Record<variant, GeoJSON.FeatureCollection>
+ *  - summaries: Record<variant, RouteSummary> (includes total_distance_m, avg_pm25 etc)
+ *  - optionally aqi_differences: comparative numbers between routes
  *
- * @param fromLocked - The starting location, with coordinates and address
- * @param toLocked - The destination location, with coordinates and address
- * @param selectedCity - The city selected by the user
- * @returns A Promise that resolves to a `RouteApiResponse` object,
- *          containing both the route geometry and route summary
- * @throws Error if the server responds with a non-OK status
+ * Frontend relies on backend-provided summaries.avg_pm25 when present (fallback
+ * to client-side compute if missing).
  */
 export async function fetchRoute(
   fromLocked: LockedLocation,
@@ -68,10 +69,8 @@ export async function fetchRoute(
   return (await response.json()) as RouteApiResponse;
 }
 
-export interface LoopApiResponse {
-  routes: Record<string, RouteGeoJSON>;
-  summaries: Record<string, RouteSummary>;
-}
+// Loop response käyttää samaa muotoa kuin RouteApiResponse
+export type LoopApiResponse = RouteApiResponse;
 /**
  * Computes a loop route starting from one locked location with given distance.
  *

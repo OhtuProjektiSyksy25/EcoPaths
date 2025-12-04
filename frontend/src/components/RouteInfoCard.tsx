@@ -4,8 +4,9 @@ Expandable to show AQI comparisons with other routes.
 */
 
 import React from 'react';
-import { AqiComparison } from '@/types/route';
+import type { AqiComparison, ExposurePoint } from '../types/route';
 import '../styles/RouteInfoCard.css';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 
 export interface RouteInfoCardProps {
   route_type: string;
@@ -35,10 +36,17 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
   onToggleMode: _onToggleMode,
 }) => {
   const hasComparisons = Object.keys(comparisons).length > 0;
+  const hasExposure = exposureEdges.length > 0;
 
   return (
-    <div className={`RouteInfoCard ${isSelected ? 'selected' : ''}`}>
-      {/* Desktop layout */}
+    <div
+      className='RouteInfoCard'
+      onClick={() => {
+        if (hasExposure) {
+          overlay.open({ points: exposureEdges, title: `Route exposure: ${route_type}` });
+        }
+      }}
+    >
       <div className='desktop-layout'>
         <div className='route-type'>
           <span className='route_type'>{route_type}</span>
@@ -50,7 +58,6 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
         </div>
       </div>
 
-      {/* Mobile layout */}
       <div className='route-card-content'>
         <span className='route_type'>{route_type}</span>
         <span className='time-estimate'>{time_estimates[mode]}</span>
@@ -62,15 +69,40 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
         </div>
       </div>
 
-      {isExpanded && hasComparisons && (
-        <div className='route-comparisons'>
-          <div className='comparisons-divider'></div>
-          {Object.entries(comparisons).map(([comparedMode, data]) => (
-            <div key={comparedMode} className='comparison-item'>
-              <span className='comparison-text'>{data.comparison_text}</span>
+      {isExpanded && (
+        <>
+          {hasComparisons && (
+            <div className='route-comparisons'>
+              <div className='comparisons-divider' />
+              {Object.entries(comparisons).map(([comparedMode, data]) => {
+                const comp = data as AqiComparison;
+                return (
+                  <div key={comparedMode} className='comparison-item'>
+                    <span className='comparison-text'>
+                      {comp.comparison_text ?? JSON.stringify(comp)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          )}
+
+          {hasExposure && (
+            <div className='route-card-exposure'>
+              <span className='route-open-exposure-text'>more exposure details</span>
+              <button
+                type='button'
+                className='route-open-exposure-arrow'
+                onClick={handleOpenExposure}
+                aria-label='Open exposure details'
+              >
+                <span aria-hidden='true' className='chev'>
+                  &#x2192;
+                </span>
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

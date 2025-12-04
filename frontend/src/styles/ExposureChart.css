@@ -1,0 +1,181 @@
+:root {
+  --primary: #187e36;
+  --accent: #e94b35;
+  --muted: #666;
+  --bg: #fff;
+  --radius: 10px;
+  --font: 'Public Sans', sans-serif;
+  --line-pm25: #116b4a;
+  --line-pm10: #17045a;
+  --who-line: rgba(233, 75, 53, 0.6);
+}
+
+/* Container */
+.exposure-chart-container {
+  width: 100%;
+  background: var(--bg);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Header with tabs and toggle buttons */
+.expo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.expo-tabs,
+.expo-toggle-group {
+  display: flex;
+  gap: 8px;
+}
+
+.expo-tab,
+.expo-display-button {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: 1px solid #e6e6e6;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.expo-tab.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.expo-display-button.active {
+  background: #444;
+  color: #fff;
+  border-color: #444;
+}
+
+/* SVG */
+.expo-svg {
+  width: 100%;
+  height: 180px;
+  flex: 0 0 auto;
+  display: block;
+  margin: 0;
+  overflow: visible;
+}
+
+/* Lines */
+.pm25-line {
+  stroke: var(--line-pm25);
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pm10-line {
+  stroke: var(--line-pm10);
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Inhaled / segment lines (dashed if needed) */
+.pm25-inhaled-line {
+  stroke: #7b3cff;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  fill: none;
+}
+.pm10-inhaled-line {
+  stroke: #00a3ff;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  fill: none;
+}
+
+/* WHO lines */
+.who-line {
+  stroke: var(--who-line);
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+}
+
+/* Hover points */
+.hover-point {
+  r: 5;
+  stroke: #fff;
+  stroke-width: 1.5;
+  transition: all 0.12s ease;
+}
+
+.hover-point-pm25 {
+  fill: var(--line-pm25);
+}
+
+.hover-point-pm10 {
+  fill: var(--line-pm10);
+}
+
+/* Tooltip */
+.expo-tooltip {
+  position: absolute;
+  background: #fff;
+  padding: 6px 8px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.expo-tooltip-label {
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 2px;
+}
+
+.expo-tooltip-pm25 {
+  color: var(--line-pm25);
+  font-weight: 600;
+}
+
+.expo-tooltip-pm10 {
+  color: var(--line-pm10);
+  font-weight: 600;
+}
+
+/* Grid lines */
+.vgrid-line {
+  stroke: #f0f0f0;
+}
+.ygrid-line {
+  stroke: #f3f3f3;
+}
+
+/* Axis labels */
+.vgrid-label,
+.ygrid-label {
+  font-size: 11px;
+  fill: #888;
+}
+
+/* Responsive tweaks */
+@media (max-width: 640px) {
+  .expo-header {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .expo-tabs,
+  .expo-toggle-group {
+    justify-content: center;
+  }
+}

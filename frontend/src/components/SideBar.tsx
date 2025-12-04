@@ -11,7 +11,17 @@ import RouteSlider from './RouteSlider';
 import RouteModeSelector from './RouteModeSelector';
 import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
-import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
+import {
+  Area,
+  Place,
+  RouteSummary,
+  AqiComparison,
+  RouteMode,
+  RouteGeoJSON,
+  RouteFeatureProperties,
+  ExposurePoint,
+  RouteType,
+} from '../types';
 import { ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 
 interface SideBarProps {
@@ -40,6 +50,8 @@ interface SideBarProps {
   loopLoading?: boolean;
   showLoopOnly: boolean;
   setShowLoopOnly: (val: boolean) => void;
+  routes: Record<string, RouteGeoJSON> | null;
+  loopRoutes: Record<string, RouteGeoJSON> | null;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -68,6 +80,8 @@ const SideBar: React.FC<SideBarProps> = ({
   loopLoading,
   showLoopOnly,
   setShowLoopOnly,
+  routes,
+  loopRoutes,
 }) => {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
@@ -337,6 +351,22 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 400);
   };
 
+  const getExposureEdges = (routeKey: RouteType): ExposurePoint[] => {
+    const routeGeoJSON = loop && routeKey === 'loop' ? loopRoutes?.loop : routes?.[routeKey];
+    if (!routeGeoJSON?.features) return [];
+
+    return routeGeoJSON.features.map((feature) => {
+      const props = feature.properties as RouteFeatureProperties;
+      return {
+        distance_cum: Number(props.distance_cumulative),
+        pm25_cum: Number(props.pm25_inhaled_cumulative),
+        pm10_cum: Number(props.pm10_inhaled_cumulative),
+        pm25_seg: Number(props.pm2_5),
+        pm10_seg: Number(props.pm10),
+      };
+    });
+  };
+
   useEffect(() => {
     // Clear inputs when area changes
     if (selectedArea) {
@@ -468,6 +498,7 @@ const SideBar: React.FC<SideBarProps> = ({
                   isSelected={selectedRoute === 'loop'}
                   isExpanded={selectedRoute === 'loop'}
                   mode={routeMode}
+                  exposureEdges={getExposureEdges('loop')}
                 />
               </div>
             ) : null}
@@ -495,6 +526,7 @@ const SideBar: React.FC<SideBarProps> = ({
                 isSelected={selectedRoute === 'best_aq'}
                 isExpanded={selectedRoute === 'best_aq'}
                 mode={routeMode}
+                exposureEdges={getExposureEdges('best_aq')}
               />
             </div>
 
@@ -512,6 +544,7 @@ const SideBar: React.FC<SideBarProps> = ({
                 isSelected={selectedRoute === 'fastest'}
                 isExpanded={selectedRoute === 'fastest'}
                 mode={routeMode}
+                exposureEdges={getExposureEdges('fastest')}
               />
             </div>
 
@@ -534,6 +567,7 @@ const SideBar: React.FC<SideBarProps> = ({
                   isSelected={selectedRoute === 'balanced'}
                   isExpanded={selectedRoute === 'balanced'}
                   mode={routeMode}
+                  exposureEdges={getExposureEdges('balanced')}
                 />
               )}
             </div>

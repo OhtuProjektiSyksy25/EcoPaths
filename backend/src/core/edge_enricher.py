@@ -177,7 +177,7 @@ class EdgeEnricher:
                         "pm2_5", "raw_pm10", "pm10", "env_influence"]
         preview_str = enriched[preview_cols].sample(
             min(10, len(enriched))).to_string(index=False)
-        log.info(f"Enriched edges preview:\n{preview_str}")
+        log.debug(f"Enriched edges preview:\n{preview_str}")
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained

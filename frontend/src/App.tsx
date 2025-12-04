@@ -93,6 +93,8 @@ function App(): JSX.Element {
           <SideBar
             onFromSelect={setFromLocked}
             onToSelect={setToLocked}
+            routes={routes}
+            loopRoutes={loopRoutes}
             summaries={summaries}
             aqiDifferences={aqiDifferences}
             showAQIColors={showAQIColors}

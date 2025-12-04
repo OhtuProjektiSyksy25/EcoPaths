@@ -9,6 +9,8 @@ import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import { isValidCoordsArray } from '../utils/coordsNormalizer';
 import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/mapBounds';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
+import { ExposureChart } from './ExposureChart';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -57,6 +59,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const overlay = useExposureOverlay();
 
   const visibleRoutes = showLoopOnly ? loopRoutes || {} : routes || {};
 
@@ -199,10 +202,33 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [selectedArea]);
 
+  // debug overlay data ennen renderöintiä
+  useEffect(() => {
+    if (overlay.visible && overlay.data) console.debug('overlay.data', overlay.data);
+  }, [overlay.visible, overlay.data]);
+
   if (mapboxToken) {
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
+        {overlay.visible && overlay.data && (
+          <div className='map-exposure-overlay' role='dialog' onClick={(e) => e.stopPropagation()}>
+            <div className='map-exposure-header'>
+              <button type='button' className='overlay-close' onClick={() => overlay.close()}>
+                ✕
+              </button>
+            </div>
+            <div className='map-exposure-chart'>
+              <ExposureChart
+                exposureEdges={overlay.data.points}
+                height={240}
+                showMode='pm25'
+                gridIntervalMeters={500}
+                distanceUnit='m'
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
