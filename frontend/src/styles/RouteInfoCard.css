@@ -89,6 +89,7 @@
   word-break: break-word;
 }
 
+<<<<<<< HEAD
 /* exposure action (text + arrow) */
 .route-card-exposure {
   display: flex;
@@ -132,6 +133,9 @@
 }
 
 /*  MOBILE LAYOUT*/
+=======
+/* MOBILE LAYOUT */
+>>>>>>> main
 @media (max-width: 800px) {
   .desktop-layout {
     display: none;
@@ -145,55 +149,50 @@
   }
 
   .route-card-content {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto auto auto;
     align-items: center;
-    justify-content: space-between;
     width: 100%;
-    gap: clamp(1px, 2vw, 8px);
-  }
-
-  .route_type,
-  .time-estimate,
-  .additional-info {
-    flex-shrink: 1 !important;
-    min-width: 0 !important;
-    white-space: nowrap !important;
+    gap: clamp(2px, 1vw, 4px);
   }
 
   .route_type {
     font-size: clamp(14px, 3vw, 16px);
-    flex: 1 1 auto;
     text-align: left;
     white-space: nowrap;
-  }
-
-  .route_type::after {
-    content: '|';
-    color: #61896f;
-    opacity: 0.4;
-    margin-left: auto;
+    overflow: hidden;
+    min-width: 0;
+    grid-column: 1;
   }
 
   .time-estimate {
     font-size: clamp(14px, 4vw, 20px);
-    flex: 0 1 auto;
     white-space: nowrap;
+    text-align: right;
+    grid-column: 3;
   }
 
-  .additional-info {
-    font-size: clamp(14px, 3vw, 16px);
-    display: flex;
-    flex-wrap: nowrap;
-    gap: clamp(4px, 2vw, 6px);
-    flex: 1 1 auto;
-    justify-content: flex-end;
+  .total_length {
+    font-size: clamp(14px, 4vw, 20px);
     white-space: nowrap;
+    grid-column: 5;
+  }
+
+  .aq_average {
+    font-size: clamp(14px, 4vw, 20px);
+    white-space: nowrap;
+    text-align: right;
+    grid-column: 7;
   }
 
   .route-stat-divider {
     color: #61896f;
     opacity: 0.5;
-    margin: 0 clamp(1px, 1vw, 4px);
+    padding: 0 clamp(1px, 0.5vw, 2px);
+  }
+
+  .additional-info {
+    font-size: clamp(14px, 3vw, 16px);
+    white-space: nowrap;
   }
 }

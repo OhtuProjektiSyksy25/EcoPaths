@@ -1,4 +1,5 @@
-import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
+import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
+import { getEnvVar } from '../utils/config';
 
 export interface RouteApiResponse {
   routes: Record<string, RouteGeoJSON>;
@@ -50,7 +51,7 @@ export async function fetchRoute(
   If a balanced weight is provided, append as a query param so the backend can
   produce a custom/balanced route. Weight expected in range 0..1.
   */
-  const baseUrl = `${process.env.REACT_APP_API_URL}/api/getroute`;
+  const baseUrl = `${getEnvVar('REACT_APP_API_URL')}/api/getroute`;
   const url =
     typeof balancedWeight === 'number'
       ? `${baseUrl}?balanced_weight=${encodeURIComponent(balancedWeight)}`
@@ -97,7 +98,7 @@ export async function fetchLoopRoute(
     ],
   };
 
-  const url = `${process.env.REACT_APP_API_URL}/api/getloop`;
+  const url = `${getEnvVar('REACT_APP_API_URL')}/api/getloop`;
 
   const response = await fetch(`${url}?distance=${encodeURIComponent(distanceKm)}`, {
     method: 'POST',

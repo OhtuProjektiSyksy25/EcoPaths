@@ -42,6 +42,7 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "from_node": [1, 2],
         "to_node": [2, 3],
         "aqi": [20.0, 40.0],
+        "normalized_aqi":[15.0, 42.0],
         "pm2_5": [10.0, 12.0],
         "pm10": [20.0, 22.0]
     }, crs="EPSG:25833")
@@ -213,15 +214,26 @@ def test_get_round_trip_returns_valid_structure(
     simple_edges_gdf_2, simple_nodes_gdf
 ):
     origin, _ = origin_destination
+    simple_edges_gdf_2["tile_id"] = [
+        "r1_c2", "r1_c2", "r1_c2", "r1_c3", "r1_c3", "r1_c3"]
 
     monkeypatch.setattr(route_service, "_get_tile_edges",
-                        lambda tile_ids: simple_edges_gdf_2)
+                        lambda tile_ids: simple_edges_gdf_2.copy())
     monkeypatch.setattr(route_service, "_get_nodes_from_db",
                         lambda tile_ids: simple_nodes_gdf)
     monkeypatch.setattr(route_service, "_get_outermost_tiles",
                         lambda tile_ids: tile_ids)
+    monkeypatch.setattr(
+        route_service, "extract_best_aq_point_from_tile",
+        lambda edges, tile_ids: gpd.GeoDataFrame(
+            {"geometry": [Point(1.0, 1.0)], "tile_id": ["r1_c2"]},
+            crs="EPSG:25833"
+        )
+    )
 
-    def mock_forward(origin_gdf, edges, nodes, best_edges):
+    monkeypatch.setattr(route_service, "decode_tile", lambda tile: (1, 2))
+
+    def mock_forward(origin_gdf, best_3):
         return [
             {
                 "destination": gpd.GeoDataFrame(geometry=[Point(1.3, 1.4)], crs="EPSG:25833"),
@@ -234,9 +246,7 @@ def test_get_round_trip_returns_valid_structure(
             }
         ]
 
-    monkeypatch.setattr(route_service, "get_round_trip_forward", mock_forward)
-
-    def mock_back(destination, edges, nodes, first_path_data):
+    def mock_back(destination, first_path_data):
         combined_gdf = pd.concat([first_path_data["route"]], ignore_index=True)
         return {
             "routes": {"loop": {"type": "FeatureCollection", "features": []}},
@@ -244,6 +254,7 @@ def test_get_round_trip_returns_valid_structure(
             "aqi_differences": None
         }
 
+    monkeypatch.setattr(route_service, "get_round_trip_forward", mock_forward)
     monkeypatch.setattr(route_service, "get_round_trip_back", mock_back)
 
     result = route_service.get_round_trip(origin, distance=1000)
@@ -273,3 +284,23 @@ def test_compute_balanced_route_only_returns_only_one_route(
     assert isinstance(result, dict)
     assert isinstance(result["routes"], dict)
     assert result["routes"]["balanced"].get("type") == "FeatureCollection"
+
+
+def test_route_trip_forward_handles_empty_gdf(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
+    origin, destination = origin_destination
+
+    monkeypatch.setattr(route_service, "_get_tile_edges",
+                        lambda ids: simple_edges_gdf)
+    monkeypatch.setattr(route_service, "_get_nodes_from_db",
+                        lambda ids: simple_nodes_gdf)
+
+    empty_gdf = gpd.GeoDataFrame()
+    empty_gdf_2 = gpd.GeoDataFrame()
+
+    result = route_service.get_round_trip_forward(
+        origin, [empty_gdf,empty_gdf_2, destination],)
+    assert len(result) == 1
+    assert isinstance(result, list)
+    assert isinstance(result[0], dict)
+    assert "geometry" in result[0]["destination"]
+

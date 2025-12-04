@@ -60,13 +60,12 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
 
       <div className='route-card-content'>
         <span className='route_type'>{route_type}</span>
+        <span className='route-stat-divider'>|</span>
         <span className='time-estimate'>{time_estimates[mode]}</span>
         <span className='route-stat-divider'>|</span>
-        <div className='additional-info'>
-          <span>{total_length} km</span>
-          <span className='route-stat-divider'>|</span>
-          <span>AQI {aq_average}</span>
-        </div>
+        <span className='total_length additional-info'>{total_length} km</span>
+        <span className='route-stat-divider'>|</span>
+        <span className='aq_average additional-info'>AQI {aq_average}</span>
       </div>
 
       {isExpanded && (
