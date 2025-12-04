@@ -1,3 +1,10 @@
+:root {
+  --track-bg: #ececec;
+  --track-active: #047913;
+  --thumb-bg: #495057;
+  --thumb-border: #ffffff;
+}
+
 .loop-slider {
   display: flex;
   flex-direction: column;
@@ -32,11 +39,6 @@
   font-size: clamp(13px, 3vw, 16px);
 }
 
-.loop-slider-range {
-  width: 100%;
-  cursor: pointer;
-}
-
 .loop-distance-box {
   background-color: #ffffff;
   border: 1px solid #ddd;
@@ -45,5 +47,66 @@
   display: flex;
   flex-direction: column;
   gap: clamp(6px, 2vw, 10px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.loop-slider-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  margin-top: 6px;
+  background: var(--track-bg);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.16s ease;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+
+/* WebKit runnable track (Chrome, Safari, Edge Chromium) */
+.loop-slider-range::-webkit-slider-runnable-track {
+  background: var(--track-bg);
+  height: 6px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+
+/* WebKit thumb */
+.loop-slider-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--thumb-bg);
+  border: 2px solid var(--thumb-border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+  margin-top: -4px;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+
+/* Firefox */
+.loop-slider-range::-moz-range-track {
+  background: var(--track-bg);
+  height: 6px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+.loop-slider-range::-moz-range-progress {
+  background: var(--track-active);
+  height: 6px;
+  border-radius: 999px;
+}
+.loop-slider-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-bg);
+  border: 2px solid var(--thumb-border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
 }
