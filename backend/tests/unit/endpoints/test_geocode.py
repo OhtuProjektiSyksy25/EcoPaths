@@ -149,6 +149,7 @@ def test_geocode_forward_http_error(client, monkeypatch, setup_mock_lifespan):
     assert "features" in result
     assert result["features"] == []
 
+
 def test_geocode_forward_check_photon_url(client, setup_mock_lifespan, monkeypatch):
     test_photon_url = None
 

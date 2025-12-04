@@ -25,7 +25,6 @@ describe('routeApi', () => {
     bbox: [13.0, 52.0, 14.0, 53.0],
   };
 
-
   describe('fetchRoute', () => {
     it('sends correct POST request and returns JSON', async () => {
       const mockResponse = { routes: {}, summaries: {} };

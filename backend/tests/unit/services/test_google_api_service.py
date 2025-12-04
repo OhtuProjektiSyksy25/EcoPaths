@@ -25,6 +25,7 @@ def mock_settings(monkeypatch):
     )
     return mock_settings_obj
 
+
 @pytest.fixture
 def api_service(mock_settings):
     """Create GoogleAPIService instance with mocked settings."""

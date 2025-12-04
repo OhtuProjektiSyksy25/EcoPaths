@@ -517,7 +517,6 @@ class RouteService:
             row (int): row
             col (int): column
         """
-        
         row = int(tile.split("_")[0][1:])
         col = int(tile.split("_")[0][1:])
         print(f"col {col}, row {row}")
