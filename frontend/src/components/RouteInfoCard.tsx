@@ -44,26 +44,21 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
           <span className='route_type'>{route_type}</span>
         </div>
         <div className='route-details'>
-          <div className='time-estimate'>
-            <span className='time_estimate'>{time_estimates[mode]}</span>
-          </div>
-          <div className='additional-info'>
-            <span className='total_length'>{total_length} km</span>
-            <span className='aq_average'>AQI {aq_average}</span>
-          </div>
+          <span className='time_estimate time-estimate'>{time_estimates[mode]}</span>
+          <span className='total_length additional-info'>{total_length} km</span>
+          <span className='aq_average additional-info'>AQI {aq_average}</span>
         </div>
       </div>
 
       {/* Mobile layout */}
       <div className='route-card-content'>
         <span className='route_type'>{route_type}</span>
+        <span className='route-stat-divider'>|</span>
         <span className='time-estimate'>{time_estimates[mode]}</span>
         <span className='route-stat-divider'>|</span>
-        <div className='additional-info'>
-          <span>{total_length} km</span>
-          <span className='route-stat-divider'>|</span>
-          <span>AQI {aq_average}</span>
-        </div>
+        <span className='total_length additional-info'>{total_length} km</span>
+        <span className='route-stat-divider'>|</span>
+        <span className='aq_average additional-info'>AQI {aq_average}</span>
       </div>
 
       {isExpanded && hasComparisons && (

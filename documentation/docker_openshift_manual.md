@@ -13,20 +13,8 @@ The build and deployment process is already automated through the project’s CI
 2. Build the image for **OpenShift deployment**:
 
 ```bash
-docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg GOOGLE_API_KEY=<GOOGLE_API_KEY> -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
+docker build -t <DOCKER_HUB_USERNAME>/ecopaths:staging .
 ```
-
-> **Note:** When running this image locally, the map component might not render correctly. The map component will render properly when the image deployed to OpenShift. 
-
-To **test the application locally** with the map component, use this command instead:
-
-```bash
-docker build --build-arg REACT_APP_MAPBOX_TOKEN=<MAPBOX_TOKEN> --build-arg REACT_APP_MAPBOX_STYLE=mapbox://styles/mapbox/streets-v11 --build-arg GOOGLE_API_KEY=<GOOGLE_API_KEY> --build-arg REACT_APP_API_URL=http://localhost:8000 -t <IMAGE_NAME> .
-```
-
-> [!CAUTION]
-> This locally built image is only for testing.  
-> **Do not push it to Docker Hub**, as it will **not work in OpenShift**.
 
 ### Creating and running a Docker container
 
@@ -34,6 +22,28 @@ Create and run a container:
 
 ```bash
 docker run -p 8000:8000 <IMAGE_NAME>
+```
+
+## Docker Compose
+
+Alternatively, you can also use Docker Compose to build the Docker image(s) and start the container(s). The Docker Compose includes three services: db, redis and app. Any combination of these services can be started with Docker Compose.
+
+To start all three services, use the command:
+
+```bash
+docker compose up -d
+```
+
+To start a single service, use the command:
+
+```bash
+docker compose up -d <SERVICE_NAME>
+```
+
+To start a subset of services, use the command:
+
+```bash
+docker compose up -d <SERVICE1_NAME> <SERVICE2_NAME>
 ```
 
 ## Docker Hub
@@ -87,7 +97,6 @@ If the ConfigMap doesn't exist yet:
 
 ```bash
 cp manifests/configmap_template.yaml manifests/configmap.yaml
- 
 ```
 
 3. Update the `DB_URL` in `manifests/configmap.yaml` with the correct database credentials.
