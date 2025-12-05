@@ -1,4 +1,4 @@
-import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
+import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
 import { getEnvVar } from '../utils/config';
 
 export interface RouteApiResponse {

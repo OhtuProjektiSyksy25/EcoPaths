@@ -24,6 +24,7 @@ import {
 } from '../types';
 import { MoreHorizontal } from 'lucide-react';
 import { getEnvVar } from '../utils/config';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -103,6 +104,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [startDragY, setStartDragY] = useState(0);
   const [sidebarHeight, setSidebarHeight] = useState(280);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { open } = useExposureOverlay();
 
   useEffect(() => {
     const checkMobile = (): void => {
@@ -302,12 +304,21 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 400);
   };
 
+  useEffect(() => {
+    console.log('CLICKED routeKey =', selectedRoute);
+  }, [selectedRoute]);
+
+  useEffect(() => {
+    console.log('routes.best_aq:', routes?.best_aq);
+  }, [routes]);
+
   const getExposureEdges = (routeKey: RouteType): ExposurePoint[] => {
     const routeGeoJSON = loop && routeKey === 'loop' ? loopRoutes?.loop : routes?.[routeKey];
     if (!routeGeoJSON?.features) return [];
 
     return routeGeoJSON.features.map((feature) => {
       const props = feature.properties as RouteFeatureProperties;
+      // console.log('Feature props:', props);
       return {
         distance_cum: Number(props.distance_cumulative),
         pm25_cum: Number(props.pm25_inhaled_cumulative),
@@ -455,16 +466,45 @@ const SideBar: React.FC<SideBarProps> = ({
                   time_estimates={loopSummaries.loop.time_estimates}
                   total_length={loopSummaries.loop.total_length}
                   aq_average={loopSummaries.loop.aq_average}
+                  exposurePoints={getExposureEdges('loop')}
                   isSelected={selectedRoute === 'loop'}
                   isExpanded={selectedRoute === 'loop'}
                   mode={routeMode}
-                  exposureEdges={getExposureEdges('loop')}
+                  onClick={() => {
+                    const points = getExposureEdges('loop');
+                    open({ title: 'Loop Route', points, mode: 'cumulative' });
+                  }}
                 />
               </div>
             ) : null}
             <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+              <button
+                onClick={() => setShowAQIColors(!showAQIColors)}
+                className={showAQIColors ? 'active' : ''}
+              >
+                <div className='aqi-button-content'>
+                  <div className='aqi-gradient-bar'>
+                    <div className='aqi-color' style={{ background: '#00E400' }} />
+                    <div className='aqi-color' style={{ background: '#FFFF00' }} />
+                    <div className='aqi-color' style={{ background: '#FF7E00' }} />
+                    <div className='aqi-color' style={{ background: '#FF0000' }} />
+                    <div className='aqi-color' style={{ background: '#8F3F97' }} />
+                    <div className='aqi-color' style={{ background: '#7E0023' }} />
+                  </div>
+                  {showAQIColors && (
+                    <div className='aqi-scale-labels'>
+                      <span>0</span>
+                      <span>50</span>
+                      <span>100</span>
+                      <span>150</span>
+                      <span>200</span>
+                      <span>300+</span>
+                    </div>
+                  )}
+                  <span className='aqi-button-text'>
+                    {showAQIColors ? 'AQI COLORS ON' : 'SHOW AQI COLORS ON MAP'}
+                  </span>
+                </div>
               </button>
             </div>
           </>
@@ -486,7 +526,13 @@ const SideBar: React.FC<SideBarProps> = ({
                 isSelected={selectedRoute === 'best_aq'}
                 isExpanded={selectedRoute === 'best_aq'}
                 mode={routeMode}
-                exposureEdges={getExposureEdges('best_aq')}
+                onClick={() => {
+                  const routeKey: RouteType = 'best_aq';
+                  console.log('routes?.[routeKey]:', routes?.[routeKey]);
+                  const points = getExposureEdges(routeKey);
+                  console.log('Overlay points:', points);
+                  open({ points, title: 'Best AQ Route', mode: 'cumulative' });
+                }}
               />
             </div>
 
@@ -504,7 +550,12 @@ const SideBar: React.FC<SideBarProps> = ({
                 isSelected={selectedRoute === 'fastest'}
                 isExpanded={selectedRoute === 'fastest'}
                 mode={routeMode}
-                exposureEdges={getExposureEdges('fastest')}
+                onClick={() => {
+                  const routeKey: RouteType = 'fastest';
+                  const points = getExposureEdges(routeKey);
+                  console.log('Overlay points (fastest):', points);
+                  open({ points, title: 'Fastest Route', mode: 'cumulative' });
+                }}
               />
             </div>
 
@@ -527,7 +578,12 @@ const SideBar: React.FC<SideBarProps> = ({
                   isSelected={selectedRoute === 'balanced'}
                   isExpanded={selectedRoute === 'balanced'}
                   mode={routeMode}
-                  exposureEdges={getExposureEdges('balanced')}
+                  onClick={() => {
+                    const routeKey: RouteType = 'balanced';
+                    const points = getExposureEdges(routeKey);
+                    console.log('Overlay points (balanced):', points);
+                    open({ points, title: 'Custom Route', mode: 'cumulative' });
+                  }}
                 />
               )}
             </div>
@@ -537,8 +593,33 @@ const SideBar: React.FC<SideBarProps> = ({
               disabled={loading || balancedLoading}
             />
             <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+              <button
+                onClick={() => setShowAQIColors(!showAQIColors)}
+                className={showAQIColors ? 'active' : ''}
+              >
+                <div className='aqi-button-content'>
+                  <div className='aqi-gradient-bar'>
+                    <div className='aqi-color' style={{ background: '#00E400' }} />
+                    <div className='aqi-color' style={{ background: '#FFFF00' }} />
+                    <div className='aqi-color' style={{ background: '#FF7E00' }} />
+                    <div className='aqi-color' style={{ background: '#FF0000' }} />
+                    <div className='aqi-color' style={{ background: '#8F3F97' }} />
+                    <div className='aqi-color' style={{ background: '#7E0023' }} />
+                  </div>
+                  {showAQIColors && (
+                    <div className='aqi-scale-labels'>
+                      <span>0</span>
+                      <span>50</span>
+                      <span>100</span>
+                      <span>150</span>
+                      <span>200</span>
+                      <span>300+</span>
+                    </div>
+                  )}
+                  <span className='aqi-button-text'>
+                    {showAQIColors ? 'AQI COLORS ON' : 'SHOW AQI COLORS ON MAP'}
+                  </span>
+                </div>
               </button>
             </div>
           </>

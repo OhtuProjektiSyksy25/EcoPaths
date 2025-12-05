@@ -48,6 +48,7 @@
 /* LENGTH + AQI */
 .additional-info {
   display: flex;
+  align-items: center;
   gap: clamp(4px, 0.5vw, 6px);
   font-size: clamp(16px, 1.8vw, 18px);
   color: #61896f;
@@ -89,7 +90,6 @@
   word-break: break-word;
 }
 
-<<<<<<< HEAD
 /* exposure action (text + arrow) */
 .route-card-exposure {
   display: flex;
@@ -132,10 +132,42 @@
   line-height: 1;
 }
 
+/* AQI Badge styling */
+.aqi-badge {
+  padding: 6px 12px !important;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: clamp(11px, 2.5vw, 13px);
+  white-space: nowrap;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.aqi-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.aqi-indicator-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1.5px solid rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.aqi-category-header {
+  font-size: clamp(12px, 1.2vw, 14px);
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: clamp(6px, 0.8vw, 8px);
+  font-weight: 400;
+}
+
 /*  MOBILE LAYOUT*/
-=======
-/* MOBILE LAYOUT */
->>>>>>> main
 @media (max-width: 800px) {
   .desktop-layout {
     display: none;

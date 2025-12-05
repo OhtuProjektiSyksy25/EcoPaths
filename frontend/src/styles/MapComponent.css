@@ -1,22 +1,24 @@
 .map-exposure-overlay {
-  position: absolute;
+  position: fixed;
   top: 10px;
   left: 10px;
   width: 320px;
-  z-index: 1000;
-  background: rgba(255,255,255,0.95);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  padding: 8px;
+  height: 240px;
+  z-index: 2147483647;
+  background: transparent;
+  pointer-events: auto;
 }
+
 .map-exposure-chart {
   width: 100%;
-  height: 240px;
+  height: 100%;
 }
+
 .map-exposure-header {
   display: flex;
   justify-content: flex-end;
 }
+
 .overlay-close {
   background: none;
   border: none;

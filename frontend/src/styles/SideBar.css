@@ -109,30 +109,95 @@
   border-color: rgba(0, 0, 0, 0.2);
 }
 
+.route-container {
+  pointer-events: none;
+}
+
+.route-container > * {
+  pointer-events: auto;
+}
+
 .aqi-toggle-button {
-  margin-top: clamp(8px, 3vw, 14px);
-  display: flex;
-  justify-content: center;
+  margin-top: 16px;
+  padding: 0 8px;
 }
 .aqi-toggle-button button {
-  padding: clamp(8px, 2vw, 10px) clamp(12px, 4vw, 18px);
-  background-color: #ffffff;
-  border: 2px solid #60b45a;
-  border-radius: 999px;
-  font-size: clamp(13px, 3vw, 15px);
-  font-weight: 400;
-  color: #333;
-  font-family: 'Public Sans', sans-serif;
+  width: 100%;
+  padding: 14px 16px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px; /* 8px -> 12px */
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  font-family: 'Public Sans', sans-serif;
 }
 
 .aqi-toggle-button button:hover {
-  transform: scale(1.02);
-  background-color: #e8f7ec;
-  border-color: #60b45a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: #187e36;
+  box-shadow: 0 2px 8px rgba(24, 126, 54, 0.15);
+  transform: translateY(-1px);
+}
+
+.aqi-toggle-button button.active {
+  background: #f0f9f0;
+  border-color: #187e36;
+  box-shadow: 0 2px 8px rgba(24, 126, 54, 0.2);
+}
+
+.aqi-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.aqi-gradient-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.aqi-color {
+  flex: 1;
+}
+
+.aqi-button-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.3px;
+}
+
+.aqi-toggle-button button.active .aqi-button-text {
+  color: #111; /* tummempi kun aktiivinen */
+  font-weight: 700;
+}
+
+/* AQI scale labels */
+.aqi-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 9px;
+  font-weight: 600;
+  color: #666;
+  margin-top: 2px;
+}
+
+.aqi-scale-labels span {
+  flex: 1;
+  text-align: center;
+}
+
+.aqi-scale-labels span:first-child {
+  text-align: left;
+}
+
+.aqi-scale-labels span:last-child {
+  text-align: right;
 }
 
 .error-popup-overlay {

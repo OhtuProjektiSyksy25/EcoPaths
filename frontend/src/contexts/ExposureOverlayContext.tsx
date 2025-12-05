@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 
 export interface ExposurePoint {
   distance_cum: number;
@@ -22,11 +22,13 @@ interface ContextType {
   data: OverlayData | null;
 }
 
-const ExposureOverlayContext = createContext<ContextType | null>(null);
+const ExposureOverlayContext = createContext<ContextType | undefined>(undefined);
 
 export const useExposureOverlay = (): ContextType => {
   const ctx = useContext(ExposureOverlayContext);
-  if (!ctx) throw new Error('useExposureOverlay must be used within ExposureOverlayProvider');
+  if (!ctx) {
+    throw new Error('useExposureOverlay must be used within an ExposureOverlayProvider');
+  }
   return ctx;
 };
 
@@ -41,14 +43,8 @@ export const ExposureOverlayProvider: React.FC<{ children: React.ReactNode }> = 
 
   const close = useCallback(() => {
     setVisible(false);
+    setData(null); // Nollaa datan heti, jotta overlay ei jää vanhoihin arvoihin
   }, []);
-
-  useEffect(() => {
-    if (!visible && data) {
-      const timer = setTimeout(() => setData(null), 200);
-      return () => clearTimeout(timer);
-    }
-  }, [visible, data]);
 
   return (
     <ExposureOverlayContext.Provider value={{ open, close, visible, data }}>

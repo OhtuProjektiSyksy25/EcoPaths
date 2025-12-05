@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import mapboxgl from 'mapbox-gl';
@@ -12,6 +12,7 @@ import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/m
 import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 import { ExposureChart } from './ExposureChart';
 import { getEnvVar } from '../utils/config';
+import ReactDOM from 'react-dom';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -43,6 +44,52 @@ export const updateWaterLayers = (map: mapboxgl.Map): void => {
   });
 };
 
+const addAQILegend = (mapContainer: HTMLElement | null): void => {
+  if (!mapContainer) return;
+
+  const existing = mapContainer.querySelector('#aqi-legend');
+  if (existing) {
+    existing.remove?.();
+  }
+
+  const legendContainer = document.createElement('div');
+  legendContainer.id = 'aqi-legend';
+  legendContainer.style.cssText = `
+    position: absolute;
+    bottom: 30px;
+    left: 120px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: none;
+    font-family: 'Public Sans', sans-serif;
+    z-index: 10;
+    width: auto;
+    transition: opacity 0.2s ease;
+  `;
+
+  legendContainer.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="font-size: 10px; font-weight: 600; color: #555; width: 18px; text-align: center;">0</span>
+      <div style="display: flex; height: 20px; width: 140px; border-radius: 20px; overflow: hidden; background: linear-gradient(to right, #00E400, #FFFF00, #FF7E00, #FF0000, #8F3F97, #7E0023);"></div>
+      <span style="font-size: 10px; font-weight: 600; color: #555; width: 24px; text-align: center;">300+</span>
+    </div>
+  `;
+
+  mapContainer.appendChild(legendContainer);
+};
+
+const removeAQILegend = (mapContainer: HTMLElement | null): void => {
+  if (!mapContainer) return;
+  const legend = mapContainer.querySelector('#aqi-legend');
+  if (legend && typeof legend.remove === 'function') {
+    legend.remove();
+  }
+};
+
 const MapComponent: React.FC<MapComponentProps> = ({
   fromLocked,
   toLocked,
@@ -61,6 +108,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const overlay = useExposureOverlay();
+  const [overlayPos, setOverlayPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const visibleRoutes = showLoopOnly ? loopRoutes || {} : routes || {};
 
@@ -121,11 +174,31 @@ const MapComponent: React.FC<MapComponentProps> = ({
       if (scaleEl) scaleEl.style.opacity = '1';
     });
 
-    map.on('load', () => updateWaterLayers(map));
+    map.on('load', () => {
+      updateWaterLayers(map);
+      addAQILegend(map.getContainer());
+    });
 
     mapRef.current = map;
-    return () => map.remove();
+    return () => {
+      map.remove();
+      removeAQILegend(map.getContainer());
+    };
   }, [mapboxToken, mapboxStyle]);
+
+  // Handle AQI legend visibility
+  useEffect(() => {
+    const mapContainer = mapboxRef.current?.parentElement;
+    if (showAQIColors) {
+      addAQILegend(mapContainer || null);
+    } else {
+      removeAQILegend(mapContainer || null);
+    }
+
+    return () => {
+      removeAQILegend(mapContainer || null);
+    };
+  }, [showAQIColors]);
 
   // Update markers & zoom logic for loop / non-loop modes
   useEffect(() => {
@@ -252,28 +325,83 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (overlay.visible && overlay.data) console.debug('overlay.data', overlay.data);
   }, [overlay.visible, overlay.data]);
 
+  console.log('Rendering overlay, visible:', overlay.visible, overlay.data);
+
+  useEffect(() => {
+    const updatePos = (): void => {
+      const m = mapboxRef.current;
+      if (!m) {
+        setOverlayPos(null);
+        return;
+      }
+      const r = m.getBoundingClientRect();
+      const maxW = Math.min(360, r.width - 20);
+      const maxH = Math.min(320, r.height - 20);
+      const top = Math.max(8, r.top + 8);
+      const left = Math.max(8, r.left + 8);
+
+      setOverlayPos({
+        top,
+        left,
+        width: Math.max(200, maxW),
+        height: Math.max(120, maxH),
+      });
+    };
+
+    updatePos();
+    window.addEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos, true);
+    };
+  }, [overlay.visible]);
+
   if (mapboxToken) {
+    const inlineOverlayStyle = overlayPos
+      ? {
+          position: 'fixed' as const,
+          top: overlayPos.top,
+          left: overlayPos.left,
+          width: overlayPos.width,
+          height: overlayPos.height,
+          zIndex: 2147483647,
+        }
+      : {
+          position: 'fixed' as const,
+          top: 10,
+          left: 10,
+          width: 320,
+          height: 240,
+          zIndex: 2147483647,
+        };
+
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
-        {overlay.visible && overlay.data && (
-          <div className='map-exposure-overlay' role='dialog' onClick={(e) => e.stopPropagation()}>
-            <div className='map-exposure-header'>
-              <button type='button' className='overlay-close' onClick={() => overlay.close()}>
-                ✕
-              </button>
-            </div>
-            <div className='map-exposure-chart'>
-              <ExposureChart
-                exposureEdges={overlay.data.points}
-                height={240}
-                showMode='pm25'
-                gridIntervalMeters={500}
-                distanceUnit='m'
-              />
-            </div>
-          </div>
-        )}
+
+        {overlay.visible &&
+          overlay.data &&
+          ReactDOM.createPortal(
+            <div
+              className='map-exposure-overlay'
+              role='dialog'
+              onClick={(e) => e.stopPropagation()}
+              style={inlineOverlayStyle}
+            >
+              <div className='map-exposure-chart'>
+                <ExposureChart
+                  exposureEdges={overlay.data.points}
+                  height={240}
+                  showMode='pm25'
+                  distanceUnit='m'
+                  onClose={() => overlay.close()}
+                />
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
     );
   }

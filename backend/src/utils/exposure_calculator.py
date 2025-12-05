@@ -11,6 +11,10 @@ VENTILATION_LPM_WALK = 8.0  # L/min
 
 
 def compute_exposure(route: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Calculates instantaneous and cumulative exposure to PM2.5 and PM10 along the route
+    for walking mode.
+    """
     gdf = route.copy()
 
     # Ensure numeric
@@ -18,7 +22,6 @@ def compute_exposure(route: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf["pm10"] = gdf["pm10"].astype(float).fillna(0.0)
     gdf["length_m"] = gdf.get("length_m", 0.0).astype(float).fillna(0.0)
 
-    # Cumulative distance
     gdf["distance_cumulative"] = gdf["length_m"].cumsum()
     gdf["distance_cumulative_km"] = gdf["distance_cumulative"] / 1000.0
 

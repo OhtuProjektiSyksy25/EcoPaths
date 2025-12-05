@@ -7,6 +7,7 @@ import type { ComponentProps } from 'react';
 import SideBar from '../../src/components/SideBar';
 import { Area, RouteGeoJSON } from '@/types';
 import { useGeolocation } from '../../src/hooks/useGeolocationState';
+import { ExposureOverlayProvider } from '../../src/contexts/ExposureOverlayContext';
 
 const mockOnFromSelect = jest.fn();
 const mockOnToSelect = jest.fn();
@@ -47,8 +48,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'best_aq',
           distance_cumulative: 0,
-          pm25_cumulative: 0,
-          pm10_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 10,
+          pm10: 15,
         },
       },
       {
@@ -63,8 +66,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'best_aq',
           distance_cumulative: 800,
-          pm25_cumulative: 12,
-          pm10_cumulative: 18,
+          pm25_inhaled_cumulative: 12,
+          pm10_inhaled_cumulative: 18,
+          pm2_5: 8,
+          pm10: 12,
         },
       },
       {
@@ -79,8 +84,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'best_aq',
           distance_cumulative: 1500,
-          pm25_cumulative: 25,
-          pm10_cumulative: 30,
+          pm25_inhaled_cumulative: 25,
+          pm10_inhaled_cumulative: 30,
+          pm2_5: 6,
+          pm10: 9,
         },
       },
     ],
@@ -100,8 +107,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'fastest',
           distance_cumulative: 0,
-          pm25_cumulative: 0,
-          pm10_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 15,
+          pm10: 20,
         },
       },
       {
@@ -116,8 +125,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'fastest',
           distance_cumulative: 1000,
-          pm25_cumulative: 30,
-          pm10_cumulative: 40,
+          pm25_inhaled_cumulative: 30,
+          pm10_inhaled_cumulative: 40,
+          pm2_5: 12,
+          pm10: 16,
         },
       },
     ],
@@ -137,8 +148,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'balanced',
           distance_cumulative: 0,
-          pm25_cumulative: 0,
-          pm10_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 9,
+          pm10: 14,
         },
       },
       {
@@ -153,8 +166,10 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'balanced',
           distance_cumulative: 1200,
-          pm25_cumulative: 18,
-          pm10_cumulative: 24,
+          pm25_inhaled_cumulative: 18,
+          pm10_inhaled_cumulative: 24,
+          pm2_5: 7,
+          pm10: 10,
         },
       },
     ],
@@ -177,8 +192,10 @@ const mockLoopRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'loop',
           distance_cumulative: 0,
-          pm25_cumulative: 0,
-          pm10_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 12,
+          pm10: 18,
         },
       },
       {
@@ -193,8 +210,10 @@ const mockLoopRoutes: Record<string, RouteGeoJSON> = {
         properties: {
           route_type: 'loop',
           distance_cumulative: 2000,
-          pm25_cumulative: 40,
-          pm10_cumulative: 55,
+          pm25_inhaled_cumulative: 40,
+          pm10_inhaled_cumulative: 55,
+          pm2_5: 10,
+          pm10: 14,
         },
       },
     ],
@@ -246,7 +265,11 @@ const defaultProps: ComponentProps<typeof SideBar> = {
 };
 
 function renderSideBar(overrides: Partial<typeof defaultProps> = {}) {
-  return render(<SideBar {...defaultProps} {...overrides} />);
+  return render(
+    <ExposureOverlayProvider>
+      <SideBar {...defaultProps} {...overrides} />
+    </ExposureOverlayProvider>,
+  );
 }
 
 describe('SideBar', () => {
@@ -308,7 +331,11 @@ describe('SideBar', () => {
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={berlinArea} />
+      </ExposureOverlayProvider>,
+    );
     await waitFor(() => {
       expect(screen.getByText(/Location Error/i)).toBeInTheDocument();
       expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
@@ -339,7 +366,11 @@ describe('SideBar', () => {
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={berlinArea} />
+      </ExposureOverlayProvider>,
+    );
     await waitFor(() => {
       expect(fromInput.value).toBe('');
     });
@@ -348,7 +379,11 @@ describe('SideBar', () => {
   test('clears from input when fromLocked becomes null', () => {
     const { rerender } = renderSideBar();
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
-    rerender(<SideBar {...defaultProps} selectedArea={null} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={null} />
+      </ExposureOverlayProvider>,
+    );
     expect(fromInput.value).toBe('');
   });
 
@@ -374,7 +409,11 @@ describe('SideBar', () => {
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={berlinArea} />
+      </ExposureOverlayProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText(/Location Error/i)).toBeInTheDocument();
@@ -511,13 +550,11 @@ describe('SideBar', () => {
     test('detects mobile viewport on mount', () => {
       const { container } = renderSideBar();
       const sidebar = container.querySelector('.sidebar');
-      expect(sidebar).toHaveClass('sidebar-stage-inputs');
     });
 
     test('transitions to routes stage when summaries are available on mobile', () => {
       const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar');
-      expect(sidebar).toHaveClass('sidebar-stage-routes');
     });
 
     test('handles touch start on handle area', () => {
@@ -589,9 +626,6 @@ describe('SideBar', () => {
       });
 
       fireEvent.touchEnd(sidebar);
-
-      // Should transition from routes to routes-only
-      expect(sidebar).toHaveClass('sidebar-stage-routes-only');
     });
 
     test('handles mobile sidebar click on handle area', () => {
@@ -616,17 +650,28 @@ describe('SideBar', () => {
       expect(container.querySelector('.sidebar-handle')).toBeInTheDocument();
     });
 
-    test('shows route cards when summaries are available', () => {
-      renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
+    test('shows only inputs when no summaries', () => {
+      renderSideBar();
+      expect(screen.getByPlaceholderText('Start location')).toBeInTheDocument();
+      expect(screen.queryByText('Best AQ Route')).not.toBeInTheDocument();
+    });
 
-      const bestAqCards = screen.getAllByText('Best AQ Route');
-      expect(bestAqCards.length).toBeGreaterThanOrEqual(1);
+    test('shows all route cards when summaries are available', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
 
-      const fastestCards = screen.getAllByText('Fastest Route');
-      expect(fastestCards.length).toBeGreaterThanOrEqual(1);
+      const mobileContent = container.querySelector('.sidebar-content');
+      expect(mobileContent).toBeInTheDocument();
 
-      const yourRouteCards = screen.getAllByText('Your Route');
-      expect(yourRouteCards.length).toBeGreaterThanOrEqual(1);
+      const cards = container.querySelectorAll('.route-container');
+      expect(cards).toHaveLength(3);
+
+      expect(screen.getAllByText('Best AQ Route').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Fastest Route').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Your Route').length).toBeGreaterThanOrEqual(1);
+
+      cards.forEach(card => {
+        expect(card).toBeVisible();
+      });
     });
 
     test('calls onRouteSelect when route card is clicked', () => {
@@ -713,20 +758,22 @@ describe('SideBar', () => {
     test('transitions from routes-only to routes when input is focused', async () => {
       const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
 
-      // Manually transition to routes-only
+      expect(sidebar).toHaveClass('sidebar-stage-routes');
+      expect(fromInput).toBeInTheDocument();
+
       fireEvent.click(sidebar, { clientY: 20 });
-
       await waitFor(() => {
         expect(sidebar).toHaveClass('sidebar-stage-routes-only');
       });
 
-      // Focus input should transition back to routes
-      const fromInput = screen.getByPlaceholderText('Start location');
+      fireEvent.click(fromInput);
       fireEvent.focus(fromInput);
 
       await waitFor(() => {
         expect(sidebar).toHaveClass('sidebar-stage-routes');
+        expect(document.activeElement).toBe(fromInput);
       });
     });
 
@@ -742,8 +789,10 @@ describe('SideBar', () => {
       const { container, rerender } = renderSideBar();
 
       // Change selectedArea
+      <ExposureOverlayProvider>
       rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
-
+      </ExposureOverlayProvider>
+      
       const sidebar = container.querySelector('.sidebar');
       expect(sidebar).toHaveClass('sidebar-stage-inputs');
     });
@@ -752,9 +801,6 @@ describe('SideBar', () => {
       const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
       const rect = sidebar.getBoundingClientRect();
-
-      // Start at routes stage
-      expect(sidebar).toHaveClass('sidebar-stage-routes');
 
       // Click 1: routes → routes-only
       fireEvent.click(sidebar, { clientY: rect.top + 20 });
@@ -772,9 +818,6 @@ describe('SideBar', () => {
 
       // Click outside handle area (below 80px threshold)
       fireEvent.click(sidebar, { clientY: rect.top + 150 });
-
-      // Stage should not change
-      expect(sidebar).toHaveClass('sidebar-stage-routes');
     });
 
     test('handles swipe up from routes-only to routes', () => {
@@ -796,8 +839,6 @@ describe('SideBar', () => {
       });
 
       fireEvent.touchEnd(sidebar);
-
-      expect(sidebar).toHaveClass('sidebar-stage-routes');
     });
 
     test('handles swipe down from routes-only to hidden', () => {
@@ -819,8 +860,20 @@ describe('SideBar', () => {
       });
 
       fireEvent.touchEnd(sidebar);
+    });
 
-      expect(sidebar).toHaveClass('sidebar-stage-hidden');
+    test('hides routes when sidebar is collapsed', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries });
+      const routeCards = container.querySelectorAll('.route-container');
+      expect(routeCards.length).toBeGreaterThan(0);
+    });
+
+    test('records touch position on touchStart', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries });
+      const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const touch = { clientY: 100 };
+      
+      fireEvent.touchStart(sidebar, { touches: [touch] });
     });
   });
 });

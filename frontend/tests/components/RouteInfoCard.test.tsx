@@ -5,6 +5,7 @@ information such as route type, time estimates, total length, and air quality av
 
 import { render, screen } from '@testing-library/react';
 import RouteInfoCard, { RouteInfoCardProps } from '../../src/components/RouteInfoCard';
+import { ExposureOverlayProvider } from '../../src/contexts/ExposureOverlayContext';
 
 const defaultProps = {
   route_type: 'Fastest Route',
@@ -15,7 +16,11 @@ const defaultProps = {
 } as const;
 
 function renderCard(overrides: Partial<RouteInfoCardProps> = {}) {
-  return render(<RouteInfoCard {...defaultProps} {...overrides} />);
+  return render(
+    <ExposureOverlayProvider>
+      <RouteInfoCard {...defaultProps} {...overrides} />
+    </ExposureOverlayProvider>,
+  );
 }
 
 describe('RouteInfoCard', () => {
