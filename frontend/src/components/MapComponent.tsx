@@ -177,7 +177,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
 
     // CASE B: NORMAL ROUTING MODE
-    const hasRoutes = routes && Object.keys(routes).length > 0;
+    const hasRoutes = routes && Object.values(routes).some((r) => r?.features?.length > 0);
 
     if (hasRoutes) {
       // (B1) route exists -> focus full route
