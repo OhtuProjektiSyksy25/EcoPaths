@@ -104,6 +104,10 @@ body,
   font-size: clamp(16px, 3vw, 18px);
 }
 
+.clear-button {
+  display: none;
+}
+
 .route-loading-message p {
   padding: 16px 24px;
   background-color: rgba(100, 149, 237, 0.2);
@@ -246,5 +250,34 @@ body,
     max-height: min(200px, 40vh) !important;
     margin: 2px 0 0 0 !important;
     width: 100% !important;
+  }
+  .InputContainer input {
+    padding-right: 40px;
+  }
+
+  .clear-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .clear-button:hover {
+    background-color: #f0f0f0;
+    color: #666;
+  }
+
+  .clear-button:active {
+    background-color: #e0e0e0;
   }
 }
