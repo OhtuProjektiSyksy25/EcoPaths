@@ -298,7 +298,8 @@ describe('SideBar', () => {
 
     jest.useRealTimers();
   });
-  test('calls onFromSelect(null) when from input is cleared', async () => {
+
+   test('calls onFromSelect(null) when from input is cleared', async () => {
     renderSideBar();
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
 
