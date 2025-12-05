@@ -289,7 +289,7 @@ describe('SideBar', () => {
     expect(screen.getByPlaceholderText('Destination')).toBeInTheDocument();
   });
 
-  test("shows 'Your location' when from input is clicked on", async () => {
+  test("shows 'Use my current location' when from input is clicked on", async () => {
     renderSideBar();
     fireEvent.focus(screen.getByPlaceholderText('Start location'));
     await waitFor(() => {
@@ -667,7 +667,7 @@ describe('SideBar', () => {
 
       expect(screen.getAllByText('Best AQ Route').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Fastest Route').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Your Route').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Custom Route').length).toBeGreaterThanOrEqual(1);
 
       cards.forEach(card => {
         expect(card).toBeVisible();
