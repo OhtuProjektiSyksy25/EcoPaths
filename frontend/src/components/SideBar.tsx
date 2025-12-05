@@ -403,8 +403,9 @@ const SideBar: React.FC<SideBarProps> = ({
           {loop && (
             <>
               {loopLoading ? (
-                <div className='route-loading-message'>
-                  <p>Loading loop route...</p>
+                <div className='loading-spinner'>
+                  <div className='spinner'></div>
+                  <p>Loading route...</p>
                 </div>
               ) : loopSummaries?.loop ? (
                 <div
@@ -431,74 +432,84 @@ const SideBar: React.FC<SideBarProps> = ({
             </>
           )}
 
-          {!loop && summaries && !children && (
+          {!loop && !children && (
             <>
-              <div
-                className='route-card-base best-aq-container route-container'
-                onClick={() => onRouteSelect('best_aq')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <RouteInfoCard
-                  route_type='Best AQ Route'
-                  time_estimates={summaries.best_aq.time_estimates}
-                  total_length={summaries.best_aq.total_length}
-                  aq_average={summaries.best_aq.aq_average}
-                  comparisons={aqiDifferences?.best_aq}
-                  isSelected={selectedRoute === 'best_aq'}
-                  isExpanded={selectedRoute === 'best_aq'}
-                  mode={routeMode}
-                />
-              </div>
-
-              <div
-                className='route-card-base fastest-container route-container'
-                onClick={() => onRouteSelect('fastest')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <RouteInfoCard
-                  route_type='Fastest Route'
-                  time_estimates={summaries.fastest.time_estimates}
-                  total_length={summaries.fastest.total_length}
-                  aq_average={summaries.fastest.aq_average}
-                  comparisons={aqiDifferences?.fastest}
-                  isSelected={selectedRoute === 'fastest'}
-                  isExpanded={selectedRoute === 'fastest'}
-                  mode={routeMode}
-                />
-              </div>
-
-              <div
-                className='route-card-base balanced-container route-container'
-                onClick={() => onRouteSelect('balanced')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                {balancedLoading ? (
-                  <div className='route-loading-overlay'>
-                    <h4>Loading route...</h4>
+              {loading && !summaries ? (
+                <div className='loading-spinner'>
+                  <div className='spinner'></div>
+                  <p>Loading routes...</p>
+                </div>
+              ) : summaries ? (
+                <>
+                  <div
+                    className='route-card-base best-aq-container route-container'
+                    onClick={() => onRouteSelect('best_aq')}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <RouteInfoCard
+                      route_type='Best AQ Route'
+                      time_estimates={summaries.best_aq.time_estimates}
+                      total_length={summaries.best_aq.total_length}
+                      aq_average={summaries.best_aq.aq_average}
+                      comparisons={aqiDifferences?.best_aq}
+                      isSelected={selectedRoute === 'best_aq'}
+                      isExpanded={selectedRoute === 'best_aq'}
+                      mode={routeMode}
+                    />
                   </div>
-                ) : (
-                  <RouteInfoCard
-                    route_type='Your Route'
-                    time_estimates={summaries.balanced.time_estimates}
-                    total_length={summaries.balanced.total_length}
-                    aq_average={summaries.balanced.aq_average}
-                    comparisons={aqiDifferences?.balanced}
-                    isSelected={selectedRoute === 'balanced'}
-                    isExpanded={selectedRoute === 'balanced'}
-                    mode={routeMode}
+
+                  <div
+                    className='route-card-base fastest-container route-container'
+                    onClick={() => onRouteSelect('fastest')}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <RouteInfoCard
+                      route_type='Fastest Route'
+                      time_estimates={summaries.fastest.time_estimates}
+                      total_length={summaries.fastest.total_length}
+                      aq_average={summaries.fastest.aq_average}
+                      comparisons={aqiDifferences?.fastest}
+                      isSelected={selectedRoute === 'fastest'}
+                      isExpanded={selectedRoute === 'fastest'}
+                      mode={routeMode}
+                    />
+                  </div>
+
+                  <div
+                    className='route-card-base balanced-container route-container'
+                    onClick={() => onRouteSelect('balanced')}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    {balancedLoading ? (
+                      <div className='loading-spinner'>
+                        <div className='spinner'></div>
+                        <p>Loading route...</p>
+                      </div>
+                    ) : (
+                      <RouteInfoCard
+                        route_type='Your Route'
+                        time_estimates={summaries.balanced.time_estimates}
+                        total_length={summaries.balanced.total_length}
+                        aq_average={summaries.balanced.aq_average}
+                        comparisons={aqiDifferences?.balanced}
+                        isSelected={selectedRoute === 'balanced'}
+                        isExpanded={selectedRoute === 'balanced'}
+                        mode={routeMode}
+                      />
+                    )}
+                  </div>
+                  <RouteSlider
+                    value={balancedWeight}
+                    onChange={setBalancedWeight}
+                    disabled={loading || balancedLoading}
                   />
-                )}
-              </div>
-              <RouteSlider
-                value={balancedWeight}
-                onChange={setBalancedWeight}
-                disabled={loading || balancedLoading}
-              />
-              <div className='aqi-toggle-button'>
-                <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                  {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
-                </button>
-              </div>
+                  <div className='aqi-toggle-button'>
+                    <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                      {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </>
           )}
         </div>
