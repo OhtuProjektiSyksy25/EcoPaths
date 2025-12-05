@@ -6,6 +6,7 @@ import { useState } from 'react';
 import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
+import DisclaimerModal from './components/DisclaimerModal';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
@@ -88,6 +89,7 @@ function App(): JSX.Element {
       </header>
 
       <main className='main-container'>
+        <DisclaimerModal />
         {!showAreaSelector && selectedArea && (
           <SideBar
             onFromSelect={setFromLocked}

@@ -1,0 +1,186 @@
+/* DisclaimerModal.css */
+
+/* --- Info Button --- */
+.info-button {
+  position: fixed;
+  top: 1rem;
+  right: 10.75rem;
+  z-index: 2000;
+  width: 80px; /* smaller button */
+  height: 32px; /* smaller button */
+  background: white;
+  color: #248539;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0px 0px rgba(28, 92, 53);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.info-button:hover {
+  background: #f9fafb;
+  box-shadow: 0 3px 7px rgbargba(28, 92, 53);
+  transform: translateY(-1px);
+}
+
+/* Keep the icon size fixed */
+.info-button svg {
+  width: 70px; /* fixed size */
+  height: 70px; /* fixed size */
+  color: rgba(28, 92, 53);
+}
+
+/* --- Modal Overlay --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 1001;
+  transition: background 0.3s ease;
+  pointer-events: auto;
+}
+
+.modal-overlay.overlay-visible {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* --- Modal Wrapper --- */
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+/* --- Modal Container --- */
+.modal-container {
+  background: #f8fdf9;
+  border-radius: 24px;
+  max-width: 768px;
+  width: 100%;
+  max-height: 85vh;
+  overflow: hidden;
+  pointer-events: auto;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: scale(0.95) translateY(1rem);
+  border: 1px solid #d1fae5;
+}
+
+.modal-container.modal-open {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.modal-container.modal-closed {
+  opacity: 0;
+  transform: scale(0.95) translateY(1rem);
+}
+
+/* --- Modal Header --- */
+.modal-header {
+  position: sticky;
+  top: 0;
+  background: #f0fdf4;
+  border-bottom: 1px solid #a7f3d0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  z-index: 10;
+}
+
+/* Close button */
+.close-button {
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  color: #064e3b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: #d1fae5;
+  color: #1e5631;
+}
+
+/* --- Modal Content --- */
+.modal-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(85vh - 73px);
+}
+
+.modal-content .title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #064e3b;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Warning box */
+.warning-box {
+  display: flex;
+  gap: 0.75rem;
+  background: #27642d;
+  border-left: 4px solid #9bdc48;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.warning-box p {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.6;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Sections */
+.modal-content section {
+  margin-bottom: 1.5rem;
+}
+
+.modal-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #065f46;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.modal-content p {
+  font-size: 0.95rem;
+  color: #1f2937;
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.modal-content a {
+  color: #047857;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.modal-content a:hover {
+  color: #065f46;
+}
+
+.modal-content strong {
+  color: #064e3b;
+  font-weight: 600;
+}
