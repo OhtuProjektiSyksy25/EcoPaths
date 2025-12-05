@@ -31,16 +31,26 @@ def _sanitize(obj):
 @router.post("/getroute")
 async def getroute(request: Request):
     """
-    Compute multiple route options between two GeoJSON points within the provided area.
+    Compute multiple route options between two GeoJSON points.
 
-    Request body should include:
-    - features: list of two GeoJSON features (start and end)
-    - area: dict describing the area to compute the route within
-    - balanced_weight (float, optional): 0.0 = fastest, 1.0 = best AQ (default 0.5)
-    - balanced_route (bool, optional): only compute balanced route
+    Optional body parameter:
+    - balanced_weight (float):
+    - balanced_route (bool): If true, only compute the balanced route.
+    Weight for balanced route (0.0 = fastest, 1.0 = best AQ). Defaults to 0.5.
 
     Returns:
-        dict with routes and summaries.
+        dict: {
+            "routes": {
+                "fastest": GeoJSON FeatureCollection,
+                "best_aq": GeoJSON FeatureCollection,
+                "balanced": GeoJSON FeatureCollection
+            },
+            "summaries": {
+                "fastest": {...},
+                "best_aq": {...},
+                "balanced": {...}
+            }
+        }
     """
     start_time = time.time()
     data = await request.json()
