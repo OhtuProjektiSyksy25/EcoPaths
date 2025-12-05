@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from endpoints import admin
 from logger.logging_conf import configure_logging
 from logger.logger import log
 from config.settings import TEST_MODE
@@ -97,6 +98,7 @@ def create_app(lifespan):
     application.include_router(geocode.router, prefix="/api")
     application.include_router(routes.router, prefix="/api")
     application.include_router(static.router)
+    application.include_router(admin.router, prefix="/api")
 
     return application
 
