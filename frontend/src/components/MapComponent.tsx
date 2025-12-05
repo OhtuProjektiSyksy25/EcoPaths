@@ -204,7 +204,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       const isMobile = window.innerWidth <= 800;
       const padding = getPadding(isMobile);
       map.fitBounds(bounds, { padding, duration: 1500 });
-    } else if (!loop && points.length === 1) {
+    } else if (points.length === 1) {
       map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
     }
   }, [fromLocked, toLocked, loop, routes, loopRoutes]);

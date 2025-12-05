@@ -10,14 +10,24 @@ from src.services.google_api_service import GoogleAPIService
 
 
 @pytest.fixture
-def mock_api_key(monkeypatch):
-    """Mock API key for testing."""
-    monkeypatch.setenv("GOOGLE_API_KEY", "test_api_key")
+def mock_settings(monkeypatch):
+    """Mock settings for testing."""
+    mock_settings_obj = Mock()
+    mock_settings_obj.TEST_MODE = False
+    mock_settings_obj.google_api_key = "test_api_key"
+    mock_settings_obj.area = Mock()
+    mock_settings_obj.area.region_code = "us"
+    mock_settings_obj.area.crs = "EPSG:25833"
 
+    monkeypatch.setattr(
+        "src.services.google_api_service.get_settings",
+        lambda area: mock_settings_obj
+    )
+    return mock_settings_obj
 
 @pytest.fixture
-def api_service(mock_api_key):
-    """Create GoogleAPIService instance with mocked API key."""
+def api_service(mock_settings):
+    """Create GoogleAPIService instance with mocked settings."""
     return GoogleAPIService()
 
 
@@ -40,7 +50,7 @@ def mock_load_grid(monkeypatch):
 class TestGoogleAPIService:
     """Unit tests for GoogleAPIService."""
 
-    def test_init_with_api_key(self, mock_api_key):
+    def test_init_with_api_key(self, mock_settings):
         """Service initializes correctly with API key."""
         service = GoogleAPIService()
         assert service.api_key == "test_api_key"
@@ -67,6 +77,12 @@ class TestGoogleAPIService:
         assert isinstance(result["aqi"], (int, type(None)))
         assert isinstance(result["pm2_5"], (float, type(None)))
         assert isinstance(result["pm10"], (float, type(None)))
+
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+        assert "location" in call_args.kwargs["json"]
+        assert call_args.kwargs["json"]["location"]["latitude"] == 52.52
+        assert call_args.kwargs["json"]["location"]["longitude"] == 13.405
 
     @patch("src.services.google_api_service.requests.post", side_effect=RequestException("API down"))
     def test_fetch_single_tile_failure(self, mock_post, api_service):
