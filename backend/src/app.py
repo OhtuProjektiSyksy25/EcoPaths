@@ -97,9 +97,8 @@ def create_app(lifespan):
     application.include_router(areas.router, prefix="/api")
     application.include_router(geocode.router, prefix="/api")
     application.include_router(routes.router, prefix="/api")
+    application.include_router(admin.router, prefix="/api/admin")
     application.include_router(static.router)
-    application.include_router(admin.router, prefix="/api")
-
     return application
 
 

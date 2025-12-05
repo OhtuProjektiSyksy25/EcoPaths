@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import StreamingResponse
 from pathlib import Path
+
 import time
 import secrets
 import os
@@ -24,7 +25,7 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return True
 
-@router.get("/admin/logs")
+@router.get("/logs")
 def get_logs(lines: int = 100, auth: bool = Depends(authenticate)):
     """
     Return last `lines` lines from log file.
@@ -33,9 +34,10 @@ def get_logs(lines: int = 100, auth: bool = Depends(authenticate)):
         return {"logs": []}
     with LOG_FILE.open() as f:
         content = f.readlines()
+        print(content)
     return {"logs": content[-lines:]}
 
-@router.get("/admin/logs/stream")
+@router.get("/logs/stream")
 def stream_logs(auth: bool = Depends(authenticate)):
     def event_generator():
         with LOG_FILE.open() as f:

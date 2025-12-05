@@ -183,6 +183,8 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_JSON = os.getenv("LOG_JSON", "false").lower() == "true"
 LOG_FILE = os.getenv("LOG_FILE", "")
 
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123")
 
 @dataclass
 class DatabaseConfig:

@@ -26,7 +26,7 @@ const DisclaimerModal: React.FC = () => {
   return (
     <>
       <button onClick={() => setIsOpen(true)} className='info-button' aria-label='Open disclaimer'>
-        <Info size={24} data-testid="info-icon" />
+        <Info size={24} data-testid='info-icon' />
       </button>
 
       {isOpen && (
@@ -48,7 +48,7 @@ const DisclaimerModal: React.FC = () => {
                   className='close-button'
                   aria-label='Close disclaimer'
                 >
-                  <X size={20} data-testid="close-icon" />
+                  <X size={20} data-testid='close-icon' />
                 </button>
               </div>
 
@@ -216,7 +216,7 @@ const DisclaimerModal: React.FC = () => {
 
                 {/* ---------------- WARNING ---------------- */}
                 <div className='warning-box'>
-                  <AlertTriangle size={50} data-testid="warning-icon" />
+                  <AlertTriangle size={50} data-testid='warning-icon' />
                   <p>
                     EcoPaths is a prototype and may not function reliably at all times. Air quality
                     estimates and route suggestions should be treated as approximations.

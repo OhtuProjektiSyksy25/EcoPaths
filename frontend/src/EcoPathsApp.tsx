@@ -3,7 +3,6 @@ Root component for the React application.
 It renders the header and the MapComponent.
 */
 import { useState } from 'react';
-import AdminDashboard from './components/AdminDashboard';
 import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';

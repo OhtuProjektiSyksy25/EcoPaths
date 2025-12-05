@@ -1,18 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 
 const AdminDashboard: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const source = new EventSource("/api/admin/logs/stream");
+    const source = new EventSource('http://localhost:8000/api/admin/logs/stream', {
+      withCredentials: true,
+    });
 
     source.onmessage = (event) => {
-      setLogs((prev) => [...prev, event.data].slice(-200)); // Keep last 200 lines
+      setLogs((prev) => [...prev, event.data].slice(-200));
     };
 
     source.onerror = () => {
-      setError("Failed to connect to log stream");
+      setError('Failed to connect to log stream');
       source.close();
     };
 
@@ -22,17 +24,17 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ padding: "1rem" }}>
+    <div style={{ padding: '1rem' }}>
       <h1>Admin Dashboard</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <div
         style={{
-          height: "70vh",
-          overflowY: "scroll",
-          background: "#1e1e1e",
-          color: "#d4d4d4",
-          padding: "1rem",
-          fontFamily: "monospace",
+          height: '70vh',
+          overflowY: 'scroll',
+          background: '#1e1e1e',
+          color: '#d4d4d4',
+          padding: '1rem',
+          fontFamily: 'monospace',
         }}
       >
         {logs.map((line, idx) => (
