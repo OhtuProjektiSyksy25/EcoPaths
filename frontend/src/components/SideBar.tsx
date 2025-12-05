@@ -488,7 +488,7 @@ const SideBar: React.FC<SideBarProps> = ({
                 </div>
               ) : (
                 <RouteInfoCard
-                  route_type='Your Route'
+                  route_type='Custom Route'
                   time_estimates={summaries.balanced.time_estimates}
                   total_length={summaries.balanced.total_length}
                   aq_average={summaries.balanced.aq_average}
