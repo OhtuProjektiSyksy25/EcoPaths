@@ -27,6 +27,67 @@ interface MapWithLock extends mapboxgl.Map {
   interactionLocked?: boolean;
 }
 
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const collectNumbers = (v: unknown, out: number[] = []): number[] => {
+  // Recursively collect all finite numbers from various structures and return as flat array
+  if (isFiniteNumber(v)) {
+    out.push(v);
+    return out;
+  }
+  if (Array.isArray(v)) {
+    for (const element of v) collectNumbers(element, out);
+    return out;
+  }
+  if (typeof v === 'object' && v !== null) {
+    // check for common mapbox objects with numeric properties
+    const asAny = v as Record<string, unknown>;
+    if (isFiniteNumber(asAny.lng)) out.push(asAny.lng as number);
+    if (isFiniteNumber(asAny.lat)) out.push(asAny.lat as number);
+    if (isFiniteNumber(asAny.lon)) out.push(asAny.lon as number);
+    return out;
+  }
+  return out;
+};
+
+const safeFitBounds = (
+  // Wrapper around map.fitBounds that validates bounds before applying. So that we avoid
+  // runtime errors due to bad data (e.g. non-finite numbers) causing the app to crash.
+  map: mapboxgl.Map | null | undefined,
+  bounds: mapboxgl.LngLatBoundsLike | unknown,
+  options?: mapboxgl.FitBoundsOptions,
+): void => {
+  if (!map || !bounds) return;
+
+  try {
+    // If bounds behaves like LngLatBounds, check corner finiteness
+    const maybeBounds = bounds as { getNorthEast?: unknown; getSouthWest?: unknown };
+    if (
+      typeof maybeBounds.getNorthEast === 'function' &&
+      typeof maybeBounds.getSouthWest === 'function'
+    ) {
+      const ne = (maybeBounds.getNorthEast as () => unknown).call(maybeBounds);
+      const sw = (maybeBounds.getSouthWest as () => unknown).call(maybeBounds);
+      const nums = [...collectNumbers(ne), ...collectNumbers(sw)];
+      if (!nums.length || nums.some((n) => !Number.isFinite(n))) {
+        return;
+      }
+    }
+
+    // If bounds is array-like, ensure it contains at least one finite number
+    if (Array.isArray(bounds)) {
+      const nums = collectNumbers(bounds);
+      if (!nums.length) {
+        return;
+      }
+    }
+
+    map.fitBounds(bounds as mapboxgl.LngLatBoundsLike, options);
+  } catch (error) {
+    //eslint-disable-next-line no-console
+    console.warn('[safeFitBounds] error fitting bounds', error);
+  }
+};
+
 export const updateWaterLayers = (map: mapboxgl.Map): void => {
   const layers = map.getStyle().layers;
   if (!layers) return;
@@ -83,7 +144,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const isMobile = window.innerWidth <= 800;
     const padding = getPadding(isMobile);
 
-    map.fitBounds(bounds, {
+    safeFitBounds(map, bounds, {
       padding,
       duration: 1500,
     });
@@ -166,7 +227,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
         if (bounds) {
           const isMobile = window.innerWidth <= 800;
           const padding = getPadding(isMobile);
-          map.fitBounds(bounds, { padding, duration: 1500 });
+          safeFitBounds(map, bounds, { padding, duration: 1500 });
         }
       } else if (fromCoords) {
         // (A2) route has not loaded yet -> center to marker
@@ -186,7 +247,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       if (bounds) {
         const isMobile = window.innerWidth <= 800;
         const padding = getPadding(isMobile);
-        map.fitBounds(bounds, { padding, duration: 1500 });
+        safeFitBounds(map, bounds, { padding, duration: 1500 });
       }
       return;
     }
@@ -203,7 +264,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       );
       const isMobile = window.innerWidth <= 800;
       const padding = getPadding(isMobile);
-      map.fitBounds(bounds, { padding, duration: 1500 });
+      safeFitBounds(map, bounds, { padding, duration: 1500 });
     } else if (points.length === 1) {
       map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
     }

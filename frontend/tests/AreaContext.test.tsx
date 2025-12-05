@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 import { AreaProvider, useArea } from '../src/AreaContext';
 import { Area } from '../src/types/area';
 
@@ -24,10 +24,19 @@ const HookTester: React.FC<{
 
 describe('AreaContext', () => {
   test('useArea throws error when used outside AreaProvider', () => {
-    // Expect using useArea outside provider to throw
-    expect(() => render(<HookTester callback={() => {}} />)).toThrow(
-      'useArea must be used within AreaProvider',
-    );
+    // Expect using useArea outside provider to throw. Use try/catch so the
+    // thrown error is captured by the test runner instead of bubbling to
+    // the global error handler (which can surface as an "unhandled exception").
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      render(<HookTester callback={() => {}} />);
+      // If render did not throw, fail the test
+      throw new Error('Expected useArea to throw when used outside AreaProvider');
+    } catch (err: unknown) {
+      expect((err as Error).message).toContain('useArea must be used within AreaProvider');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   test('AreaProvider provides default null selectedArea', () => {
