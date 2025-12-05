@@ -237,18 +237,24 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (Number.isFinite(lon) && Number.isFinite(lat)) {
       const isMobile = window.innerWidth <= 800;
 
-      const padding = isMobile
-        ? { top: 80, bottom: 320, left: 130, right: 10 }
-        : getPadding(isMobile);
+      if (isMobile) {
+        const padding = { top: 80, bottom: 320, left: 130, right: 10 };
+        const point = new mapboxgl.LngLat(lon, lat);
+        const bounds = new mapboxgl.LngLatBounds(point, point);
 
-      const point = new mapboxgl.LngLat(lon, lat);
-      const bounds = new mapboxgl.LngLatBounds(point, point);
-
-      map.fitBounds(bounds, {
-        padding,
-        maxZoom: isMobile ? 11 : selectedArea.zoom || 13.5,
-        duration: 2000,
-      });
+        map.fitBounds(bounds, {
+          padding,
+          maxZoom: 11,
+          duration: 2000,
+        });
+      } else {
+        map.flyTo({
+          center: selectedArea.focus_point,
+          zoom: selectedArea.zoom || 13.5,
+          duration: 2000,
+          essential: true,
+        });
+      }
     }
   }, [selectedArea]);
 
