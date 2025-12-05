@@ -18,9 +18,9 @@
   font-family: var(--font);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: clamp(4px, 1.5vw, 8px);
   position: relative;
-  padding: 6px;
+  padding: clamp(4px, 1vw, 6px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
@@ -28,12 +28,12 @@
 .expo-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: clamp(4px, 1.5vw, 8px);
 }
 
 .expo-tabs {
   display: flex;
-  gap: 8px;
+  gap: clamp(4px, 1.5vw, 8px);
   justify-content: center;
 }
 
@@ -42,20 +42,20 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding: 8px 0 4px;
+  gap: clamp(6px, 2vw, 12px);
+  padding: clamp(4px, 1.5vw, 8px) 0 clamp(2px, 1vw, 4px);
 }
 
 .expo-toggle-group {
   display: flex;
-  gap: 8px;
+  gap: clamp(4px, 1.5vw, 8px);
 }
 
 .expo-tab {
-  padding: 8px 24px;
+  padding: clamp(6px, 1.5vw, 8px) clamp(16px, 4vw, 24px);
   font-size: clamp(13px, 3.5vw, 18px);
   border: none;
-  border-bottom: 3px solid transparent;
+  border-bottom: clamp(2px, 0.5vw, 3px) solid transparent;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -74,9 +74,9 @@
 }
 
 .expo-display-button {
-  padding: 6px 12px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 2vw, 12px);
   font-size: clamp(11px, 2.5vw, 13px);
-  margin-bottom: 4px;
+  margin-bottom: clamp(2px, 1vw, 4px);
   border-radius: 999px;
   border: 2px solid #e6e6e6;
   background: #fff;
@@ -128,7 +128,7 @@
 /* SVG */
 .expo-svg {
   width: 100%;
-  height: 180px;
+  height: clamp(140px, 35vh, 180px);
   flex: 0 0 auto;
   display: block;
   margin: 0;
@@ -263,10 +263,10 @@
 /* Close button */
 .expo-close-button {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
+  top: clamp(4px, 1.5vw, 8px);
+  right: clamp(4px, 1.5vw, 8px);
+  width: clamp(20px, 4vw, 24px);
+  height: clamp(20px, 4vw, 24px);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -285,20 +285,20 @@
 }
 
 .expo-close-button svg {
-  width: 16px;
-  height: 16px;
+  width: clamp(14px, 3vw, 16px);
+  height: clamp(14px, 3vw, 16px);
 }
 
 /* Info bar */
 .expo-info-bar {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: clamp(6px, 2vw, 12px);
   padding: clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 12px);
   background: #f9f9f9;
   border-radius: 6px;
   font-size: clamp(11px, 2.5vw, 12px);
-  margin: 0 4px;
+  margin: 0 clamp(2px, 1vw, 4px);
 }
 
 .expo-info-label {
@@ -316,7 +316,7 @@
 .expo-info-values {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: clamp(6px, 2vw, 12px);
   flex-wrap: wrap;
   flex: 1;
 }
@@ -324,7 +324,7 @@
 .expo-info-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: clamp(4px, 1vw, 6px);
   flex-wrap: nowrap;
 }
 
@@ -346,7 +346,7 @@
 
 .expo-info-percentage {
   font-size: clamp(10px, 2vw, 11px);
-  padding: 2px 6px;
+  padding: clamp(2px, 0.5vw, 2px) clamp(4px, 1vw, 6px);
   border-radius: 4px;
   font-weight: 500;
   cursor: help;
@@ -371,19 +371,19 @@
 .expo-info-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: clamp(4px, 1vw, 6px);
+  padding: clamp(6px, 1.5vw, 8px) clamp(10px, 2.5vw, 13px);
   background: #e6e6e6;
   color: #333;
   border: none;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: clamp(12px, 2.5vw, 14px);
   font-weight: 600;
   transition: all 0.2s ease;
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  bottom: clamp(8px, 2vw, 12px);
+  right: clamp(8px, 2vw, 12px);
   z-index: 5;
 }
 
@@ -394,8 +394,8 @@
 }
 
 .expo-info-button svg {
-  width: 18px;
-  height: 18px;
+  width: clamp(16px, 3vw, 19px);
+  height: clamp(16px, 3vw, 19px);
   flex-shrink: 0;
 }
 
@@ -428,8 +428,10 @@
   max-width: 600px;
   width: 90%;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
   animation: slideUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -450,6 +452,10 @@
   padding: clamp(14px, 3vw, 18px);
   border-bottom: 1px solid #e8e8e8;
   flex-shrink: 0;
+  background: #fdfdfd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .expo-modal-title {
@@ -490,6 +496,8 @@
   font-size: clamp(12px, 2.5vw, 14px);
   line-height: 1.6;
   color: #333;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .expo-info-section {
@@ -532,7 +540,7 @@
   padding: clamp(10px, 2vw, 14px);
   background: #f9f9f9;
   border-radius: 6px;
-  border-left: 3px solid #d0d0d0;
+  border-left: 3px solid var(--line-pm10);
 }
 
 .expo-info-method:first-child {
@@ -564,16 +572,16 @@
   padding: clamp(6px, 1.5vw, 8px);
   border-radius: 4px;
   font-family: 'Courier New', monospace;
-  font-size: clamp(10px, 2vw, 11px);
+  font-size: clamp(10px, 2vw, 12px);
   font-weight: 500;
-  color: #444;
+  color: #313131;
   margin: 6px 0;
   text-align: center;
 }
 
 .expo-formula-note {
-  font-size: clamp(10px, 2vw, 11px);
-  color: #666;
+  font-size: clamp(10px, 2vw, 12px);
+  color: #474747;
   font-style: italic;
   margin: 6px 0 0 0;
 }
@@ -638,7 +646,7 @@
 }
 
 /* Responsive tweaks */
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .expo-header {
     gap: 6px;
   }
@@ -659,12 +667,5 @@
 
   .expo-toggle-group {
     justify-content: center;
-  }
-
-  .expo-info-button {
-    position: static;
-    margin-bottom: 4px;
-    width: 100%;
-    border: 2px solid #d0d0d0;
   }
 }

@@ -13,6 +13,7 @@ import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 import { ExposureChart } from './ExposureChart';
 import { getEnvVar } from '../utils/config';
 import ReactDOM from 'react-dom';
+import AQILegend from './AQILegend';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -42,52 +43,6 @@ export const updateWaterLayers = (map: mapboxgl.Map): void => {
       } catch {}
     }
   });
-};
-
-const addAQILegend = (mapContainer: HTMLElement | null): void => {
-  if (!mapContainer) return;
-
-  const existing = mapContainer.querySelector('#aqi-legend');
-  if (existing) {
-    existing.remove?.();
-  }
-
-  const legendContainer = document.createElement('div');
-  legendContainer.id = 'aqi-legend';
-  legendContainer.style.cssText = `
-    position: absolute;
-    bottom: 30px;
-    left: 120px;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    padding: 6px 12px;
-    border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: none;
-    font-family: 'Public Sans', sans-serif;
-    z-index: 10;
-    width: auto;
-    transition: opacity 0.2s ease;
-  `;
-
-  legendContainer.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <span style="font-size: 10px; font-weight: 600; color: #555; width: 18px; text-align: center;">0</span>
-      <div style="display: flex; height: 20px; width: 140px; border-radius: 20px; overflow: hidden; background: linear-gradient(to right, #00E400, #FFFF00, #FF7E00, #FF0000, #8F3F97, #7E0023);"></div>
-      <span style="font-size: 10px; font-weight: 600; color: #555; width: 24px; text-align: center;">300+</span>
-    </div>
-  `;
-
-  mapContainer.appendChild(legendContainer);
-};
-
-const removeAQILegend = (mapContainer: HTMLElement | null): void => {
-  if (!mapContainer) return;
-  const legend = mapContainer.querySelector('#aqi-legend');
-  if (legend && typeof legend.remove === 'function') {
-    legend.remove();
-  }
 };
 
 const MapComponent: React.FC<MapComponentProps> = ({
@@ -176,29 +131,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     map.on('load', () => {
       updateWaterLayers(map);
-      addAQILegend(map.getContainer());
     });
 
     mapRef.current = map;
     return () => {
       map.remove();
-      removeAQILegend(map.getContainer());
     };
   }, [mapboxToken, mapboxStyle]);
-
-  // Handle AQI legend visibility
-  useEffect(() => {
-    const mapContainer = mapboxRef.current?.parentElement;
-    if (showAQIColors) {
-      addAQILegend(mapContainer || null);
-    } else {
-      removeAQILegend(mapContainer || null);
-    }
-
-    return () => {
-      removeAQILegend(mapContainer || null);
-    };
-  }, [showAQIColors]);
 
   // Update markers & zoom logic for loop / non-loop modes
   useEffect(() => {
@@ -380,6 +319,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
+
+        <AQILegend show={showAQIColors} />
 
         {overlay.visible &&
           overlay.data &&

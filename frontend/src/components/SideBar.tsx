@@ -104,7 +104,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [startDragY, setStartDragY] = useState(0);
   const [sidebarHeight, setSidebarHeight] = useState(280);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const { open } = useExposureOverlay();
+  const { open, close } = useExposureOverlay();
 
   useEffect(() => {
     const checkMobile = (): void => {
@@ -304,14 +304,6 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 400);
   };
 
-  useEffect(() => {
-    console.log('CLICKED routeKey =', selectedRoute);
-  }, [selectedRoute]);
-
-  useEffect(() => {
-    console.log('routes.best_aq:', routes?.best_aq);
-  }, [routes]);
-
   const getExposureEdges = (routeKey: RouteType): ExposurePoint[] => {
     const routeGeoJSON = loop && routeKey === 'loop' ? loopRoutes?.loop : routes?.[routeKey];
     if (!routeGeoJSON?.features) return [];
@@ -344,6 +336,12 @@ const SideBar: React.FC<SideBarProps> = ({
     // Notify parent when error changes (to disable area button)
     onErrorChange?.(errorMessage);
   }, [errorMessage, onErrorChange, selectedArea]);
+
+  useEffect(() => {
+    if (loading || loopLoading || (!routes && !loading && !loopLoading)) {
+      close();
+    }
+  }, [loading, loopLoading, routes, close]);
 
   return (
     <div
@@ -483,26 +481,8 @@ const SideBar: React.FC<SideBarProps> = ({
                 className={showAQIColors ? 'active' : ''}
               >
                 <div className='aqi-button-content'>
-                  <div className='aqi-gradient-bar'>
-                    <div className='aqi-color' style={{ background: '#00E400' }} />
-                    <div className='aqi-color' style={{ background: '#FFFF00' }} />
-                    <div className='aqi-color' style={{ background: '#FF7E00' }} />
-                    <div className='aqi-color' style={{ background: '#FF0000' }} />
-                    <div className='aqi-color' style={{ background: '#8F3F97' }} />
-                    <div className='aqi-color' style={{ background: '#7E0023' }} />
-                  </div>
-                  {showAQIColors && (
-                    <div className='aqi-scale-labels'>
-                      <span>0</span>
-                      <span>50</span>
-                      <span>100</span>
-                      <span>150</span>
-                      <span>200</span>
-                      <span>300+</span>
-                    </div>
-                  )}
                   <span className='aqi-button-text'>
-                    {showAQIColors ? 'AQI COLORS ON' : 'SHOW AQI COLORS ON MAP'}
+                    {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
                   </span>
                 </div>
               </button>
@@ -528,9 +508,9 @@ const SideBar: React.FC<SideBarProps> = ({
                 mode={routeMode}
                 onClick={() => {
                   const routeKey: RouteType = 'best_aq';
-                  console.log('routes?.[routeKey]:', routes?.[routeKey]);
+                  //console.log('routes?.[routeKey]:', routes?.[routeKey]);
                   const points = getExposureEdges(routeKey);
-                  console.log('Overlay points:', points);
+                  //console.log('Overlay points:', points);
                   open({ points, title: 'Best AQ Route', mode: 'cumulative' });
                 }}
               />
@@ -553,7 +533,6 @@ const SideBar: React.FC<SideBarProps> = ({
                 onClick={() => {
                   const routeKey: RouteType = 'fastest';
                   const points = getExposureEdges(routeKey);
-                  console.log('Overlay points (fastest):', points);
                   open({ points, title: 'Fastest Route', mode: 'cumulative' });
                 }}
               />
@@ -581,7 +560,6 @@ const SideBar: React.FC<SideBarProps> = ({
                   onClick={() => {
                     const routeKey: RouteType = 'balanced';
                     const points = getExposureEdges(routeKey);
-                    console.log('Overlay points (balanced):', points);
                     open({ points, title: 'Custom Route', mode: 'cumulative' });
                   }}
                 />
@@ -598,26 +576,8 @@ const SideBar: React.FC<SideBarProps> = ({
                 className={showAQIColors ? 'active' : ''}
               >
                 <div className='aqi-button-content'>
-                  <div className='aqi-gradient-bar'>
-                    <div className='aqi-color' style={{ background: '#00E400' }} />
-                    <div className='aqi-color' style={{ background: '#FFFF00' }} />
-                    <div className='aqi-color' style={{ background: '#FF7E00' }} />
-                    <div className='aqi-color' style={{ background: '#FF0000' }} />
-                    <div className='aqi-color' style={{ background: '#8F3F97' }} />
-                    <div className='aqi-color' style={{ background: '#7E0023' }} />
-                  </div>
-                  {showAQIColors && (
-                    <div className='aqi-scale-labels'>
-                      <span>0</span>
-                      <span>50</span>
-                      <span>100</span>
-                      <span>150</span>
-                      <span>200</span>
-                      <span>300+</span>
-                    </div>
-                  )}
                   <span className='aqi-button-text'>
-                    {showAQIColors ? 'AQI COLORS ON' : 'SHOW AQI COLORS ON MAP'}
+                    {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
                   </span>
                 </div>
               </button>

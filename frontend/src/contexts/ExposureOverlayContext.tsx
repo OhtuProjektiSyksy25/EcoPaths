@@ -8,7 +8,6 @@ export interface ExposurePoint {
   pm10_seg?: number;
 }
 
-// Overlay-data
 export interface OverlayData {
   points: ExposurePoint[];
   title?: string;
@@ -43,7 +42,7 @@ export const ExposureOverlayProvider: React.FC<{ children: React.ReactNode }> = 
 
   const close = useCallback(() => {
     setVisible(false);
-    setData(null); // Nollaa datan heti, jotta overlay ei jää vanhoihin arvoihin
+    setData(null);
   }, []);
 
   return (

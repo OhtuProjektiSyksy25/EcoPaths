@@ -186,7 +186,6 @@ export const ExposureChart: React.FC<Props> = ({
 
   return (
     <div ref={containerRef} className='exposure-chart-container'>
-      {/* Close button */}
       {onClose && (
         <button className='expo-close-button' onClick={onClose} aria-label='Close chart'>
           <svg
@@ -218,7 +217,6 @@ export const ExposureChart: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Average exposure info */}
       <div className='expo-info-bar'>
         <div className='expo-info-label'>Route Average:</div>
         <div className='expo-info-values'>
@@ -261,7 +259,6 @@ export const ExposureChart: React.FC<Props> = ({
 
         <rect x={0} y={0} width={width} height={height} className='chart-background' />
 
-        {/* Y-akselin gridviivat ja merkit */}
         {yAxisTicks().map((value) => {
           const y = scaleY(value);
           return (
@@ -280,7 +277,6 @@ export const ExposureChart: React.FC<Props> = ({
           );
         })}
 
-        {/* Y-akselin otsikko */}
         <text
           x={10}
           y={margin.top + plotHeight / 2}
@@ -290,7 +286,6 @@ export const ExposureChart: React.FC<Props> = ({
           {yAxisUnit}
         </text>
 
-        {/* X-akselin gridviivat ja merkit */}
         {xAxisTicks().map(({ km, meters }) => {
           const x = scaleX(meters);
           return (
@@ -309,12 +304,10 @@ export const ExposureChart: React.FC<Props> = ({
           );
         })}
 
-        {/* X-akselin otsikko */}
         <text x={margin.left + plotWidth / 2} y={height - 5} className='x-axis-label'>
           Distance (km)
         </text>
 
-        {/* WHO lines vain segmenttinäkymässä ja valitun showMode:n mukaan */}
         {displayMode === 'segment' && (
           <>
             {(showMode === 'pm25' || showMode === 'both') && (
@@ -349,7 +342,6 @@ export const ExposureChart: React.FC<Props> = ({
           </>
         )}
 
-        {/* Area fills */}
         {showMode !== 'pm10' && (
           <path
             d={areaPath(displayMode === 'segment' ? 'pm25_seg' : 'pm25_cum')}
@@ -363,7 +355,6 @@ export const ExposureChart: React.FC<Props> = ({
           />
         )}
 
-        {/* Lines */}
         {showMode !== 'pm10' && (
           <polyline
             points={linePoints(displayMode === 'segment' ? 'pm25_seg' : 'pm25_cum')}
@@ -448,7 +439,6 @@ export const ExposureChart: React.FC<Props> = ({
         </button>
       </div>
 
-      {/* Tooltip */}
       {hover && tooltipPos && (
         <div
           className='expo-tooltip'
@@ -481,7 +471,6 @@ export const ExposureChart: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Info Modal */}
       {showInfoModal && (
         <>
           <div className='expo-modal-overlay' onClick={() => setShowInfoModal(false)} />
@@ -525,6 +514,14 @@ export const ExposureChart: React.FC<Props> = ({
                   PM2.5: {WHO_PM25} µg/m³
                   <br />
                   PM10: {WHO_PM10} µg/m³
+                  <br />
+                  <br />
+                  <em>
+                    WHO 24-hour guidelines represent the maximum average concentrations of PM2.5 and
+                    PM10 that should not be exceeded over a full day to minimize health risks. These
+                    limits refer to daily exposure, meaning short-term peaks can occur as long as
+                    the 24-hour average stays below the guideline.
+                  </em>
                 </p>
               </section>
 
@@ -537,7 +534,7 @@ export const ExposureChart: React.FC<Props> = ({
                     the start of your route to each point. The dose is calculated by:
                   </p>
                   <p className='expo-formula'>
-                    Dose = PM concentration (µg/m³) × Ventilation rate (8.0 L/min) × Time spent in
+                    Dose = PM concentration (µg/m³) x Ventilation rate (8.0 L/min) × Time spent in
                     segment
                   </p>
                   <p className='expo-formula-note'>
@@ -550,17 +547,15 @@ export const ExposureChart: React.FC<Props> = ({
                 <div className='expo-info-method'>
                   <h5 className='expo-method-name'>Segment Exposure</h5>
                   <p>
-                    Shows the <strong>instantaneous inhaled dose per segment</strong> along your
-                    route. Each segment's dose depends on the local PM concentration and time spent
-                    there:
+                    Shows the <strong>instantaneous PM concentration per segment</strong> along your
+                    route. This reflects the modeled air pollution level at that location.
                   </p>
                   <p className='expo-formula'>
-                    Segment Dose = PM concentration (µg/m³) × Ventilation rate (8.0 L/min) × Segment
-                    time
+                    Segment Concentration = PM concentration at that segment (µg/m³)
                   </p>
                   <p className='expo-formula-note'>
-                    Measured in <strong>µg</strong> (micrograms inhaled in that segment). This helps
-                    identify which parts of your route expose you to the most pollution.
+                    Measured in <strong>µg/m³</strong> (airborne particles per cubic meter). This
+                    helps identify which parts of your route have the highest pollution levels.
                   </p>
                 </div>
               </section>
@@ -598,7 +593,7 @@ export const ExposureChart: React.FC<Props> = ({
                   <div className='expo-aqi-category'>
                     <div className='expo-aqi-color' style={{ backgroundColor: '#00E400' }} />
                     <div className='expo-aqi-details'>
-                      <strong>0–50: Good</strong>
+                      <strong>0-50: Good</strong>
                       <p>Air quality is satisfactory. No health concerns expected.</p>
                     </div>
                   </div>
@@ -606,7 +601,7 @@ export const ExposureChart: React.FC<Props> = ({
                   <div className='expo-aqi-category'>
                     <div className='expo-aqi-color' style={{ backgroundColor: '#FFFF00' }} />
                     <div className='expo-aqi-details'>
-                      <strong>51–100: Moderate</strong>
+                      <strong>51-100: Moderate</strong>
                       <p>
                         Air quality is acceptable. Members of sensitive groups may experience minor
                         breathing discomfort.
@@ -617,7 +612,7 @@ export const ExposureChart: React.FC<Props> = ({
                   <div className='expo-aqi-category'>
                     <div className='expo-aqi-color' style={{ backgroundColor: '#FF7E00' }} />
                     <div className='expo-aqi-details'>
-                      <strong>101–150: Unhealthy for Sensitive Groups</strong>
+                      <strong>101-150: Unhealthy for Sensitive Groups</strong>
                       <p>
                         Members of sensitive groups (children, elderly, people with respiratory
                         conditions) may experience health effects.
@@ -628,7 +623,7 @@ export const ExposureChart: React.FC<Props> = ({
                   <div className='expo-aqi-category'>
                     <div className='expo-aqi-color' style={{ backgroundColor: '#FF0000' }} />
                     <div className='expo-aqi-details'>
-                      <strong>151–200: Unhealthy</strong>
+                      <strong>151-200: Unhealthy</strong>
                       <p>
                         Everyone may begin to experience health effects. Sensitive groups may
                         experience more serious health effects.
@@ -639,7 +634,7 @@ export const ExposureChart: React.FC<Props> = ({
                   <div className='expo-aqi-category'>
                     <div className='expo-aqi-color' style={{ backgroundColor: '#8F3F97' }} />
                     <div className='expo-aqi-details'>
-                      <strong>201–300: Very Unhealthy</strong>
+                      <strong>201-300: Very Unhealthy</strong>
                       <p>
                         Health alert. Everyone may experience serious health effects. Avoid outdoor
                         activities.

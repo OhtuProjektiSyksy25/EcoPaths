@@ -35,7 +35,7 @@ interface AQICategory {
   bgColor: string;
 }
 
-const getAQICategory = (aqi: number): AQICategory => {
+export const getAQICategory = (aqi: number): AQICategory => {
   if (aqi <= 50) return { label: 'Good', color: '#00E400', bgColor: '#e8f5e9' };
   if (aqi <= 100) return { label: 'Moderate', color: '#FFFF00', bgColor: '#fffde7' };
   if (aqi <= 150) return { label: 'Unhealthy for SG', color: '#FF7E00', bgColor: '#fff3e0' };
@@ -110,12 +110,12 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
           <span className='time_estimate time-estimate'>{time_estimates[mode]}</span>
           <span className='total_length additional-info'>{total_length} km</span>
           <span className='aq_average additional-info'>
+            AQI {aq_average}
             <span
               className='aqi-indicator-dot'
               style={{ backgroundColor: aqiCategory.color }}
               title={aqiCategory.label}
             />
-            AQI {aq_average}
           </span>
         </div>
       </div>
@@ -128,12 +128,12 @@ const RouteInfoCard: React.FC<RouteInfoCardProps> = ({
         <span className='total_length additional-info'>{total_length} km</span>
         <span className='route-stat-divider'>|</span>
         <span className='aq_average additional-info'>
+          AQI {aq_average}
           <span
             className='aqi-indicator-dot'
             style={{ backgroundColor: aqiCategory.color }}
             title={aqiCategory.label}
           />
-          AQI {aq_average}
         </span>
       </div>
 

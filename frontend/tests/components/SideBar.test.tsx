@@ -8,6 +8,7 @@ import SideBar from '../../src/components/SideBar';
 import { Area, RouteGeoJSON } from '@/types';
 import { useGeolocation } from '../../src/hooks/useGeolocationState';
 import { ExposureOverlayProvider } from '../../src/contexts/ExposureOverlayContext';
+import type { ExposurePoint, RouteType } from '@/types';
 
 const mockOnFromSelect = jest.fn();
 const mockOnToSelect = jest.fn();
@@ -724,7 +725,6 @@ describe('SideBar', () => {
       expect(sidebar).toBeInTheDocument();
     });
 
-
     test('handles click outside handle area with summaries', () => {
       const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
@@ -788,6 +788,87 @@ describe('SideBar', () => {
       const touch = { clientY: 100 };
 
       fireEvent.touchStart(sidebar, { touches: [touch] });
+    });
+  });
+
+  describe('getExposureEdges', () => {
+    const defaultProps = {
+      routes: mockRoutes,
+      loopRoutes: mockLoopRoutes,
+      loop: false,
+    };
+
+    const getExposureEdges = (routeKey: RouteType, loop = false) => {
+      const routeGeoJSON =
+        loop && routeKey === 'loop'
+          ? defaultProps.loopRoutes?.loop
+          : defaultProps.routes?.[routeKey];
+      if (!routeGeoJSON?.features) return [];
+
+      return routeGeoJSON.features
+        .map((feature) => {
+          const props = feature.properties;
+          if (!props) return null;
+          return {
+            distance_cum: Number(props.distance_cumulative),
+            pm25_cum: Number(props.pm25_inhaled_cumulative),
+            pm10_cum: Number(props.pm10_inhaled_cumulative),
+            pm25_seg: Number(props.pm2_5),
+            pm10_seg: Number(props.pm10),
+          };
+        })
+        .filter(Boolean);
+    };
+
+    test('returns correct exposure points for best_aq route', () => {
+      const edges = getExposureEdges('best_aq');
+      expect(edges).toHaveLength(3);
+
+      expect(edges[0]).toEqual({
+        distance_cum: 0,
+        pm25_cum: 0,
+        pm10_cum: 0,
+        pm25_seg: 10,
+        pm10_seg: 15,
+      });
+
+      expect(edges[2]).toEqual({
+        distance_cum: 1500,
+        pm25_cum: 25,
+        pm10_cum: 30,
+        pm25_seg: 6,
+        pm10_seg: 9,
+      });
+    });
+
+    test('returns correct exposure points for fastest route', () => {
+      const edges = getExposureEdges('fastest');
+      expect(edges).toHaveLength(2);
+      expect(edges[1] && edges[1].distance_cum).toBe(1000);
+    });
+
+    test('returns correct exposure points for balanced route', () => {
+      const edges = getExposureEdges('balanced');
+      expect(edges[0] && edges[0].pm25_seg).toBe(9);
+      expect(edges[1] && edges[1].pm10_cum).toBe(24);
+    });
+
+    test('returns correct exposure points for loop route when loop=true', () => {
+      const edges = getExposureEdges('loop', true);
+      expect(edges).toHaveLength(2);
+      expect(edges[0]).toEqual({
+        distance_cum: 0,
+        pm25_cum: 0,
+        pm10_cum: 0,
+        pm25_seg: 12,
+        pm10_seg: 18,
+      });
+      expect(edges[1] && edges[1].distance_cum).toBe(2000);
+    });
+
+    test('returns empty array when routeKey not found', () => {
+      const edges = getExposureEdges('nonexistent' as RouteType);
+      expect(edges).toEqual([]);
     });
   });
 });
