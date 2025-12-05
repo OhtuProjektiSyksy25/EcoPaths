@@ -1,6 +1,5 @@
-// DisclaimerModal.tsx
 import React, { useState, useEffect } from 'react';
-import { Info, X } from 'lucide-react';
+import { Info, X, AlertTriangle } from 'lucide-react';
 import '../styles/DisclaimerModal.css';
 
 const DisclaimerModal: React.FC = () => {
@@ -27,7 +26,7 @@ const DisclaimerModal: React.FC = () => {
   return (
     <>
       <button onClick={() => setIsOpen(true)} className='info-button' aria-label='Open disclaimer'>
-        <Info size={60} />
+        <Info size={24} />
       </button>
 
       {isOpen && (
@@ -39,7 +38,11 @@ const DisclaimerModal: React.FC = () => {
 
           <div className='modal-wrapper'>
             <div className={`modal-container ${isAnimating ? 'modal-open' : 'modal-closed'}`}>
+              {/* ---------------- HEADER WITH TITLE INSIDE GREEN BAR ---------------- */}
               <div className='modal-header'>
+                <div className='modal-title'>
+                  <h4 className='title'>Welcome to EcoPaths!</h4>
+                </div>
                 <button
                   onClick={handleClose}
                   className='close-button'
@@ -50,17 +53,17 @@ const DisclaimerModal: React.FC = () => {
               </div>
 
               <div className='modal-content'>
-                <h1 className='title'>Welcome to EcoPaths!</h1>
-
+                {/* ---------------- ABOUT ---------------- */}
                 <section>
                   <h2>About</h2>
                   <p>
                     EcoPaths is a student project from the University of Helsinki, created in
                     collaboration with MegaSense Oy. The app helps pedestrians and runners explore
-                    routes that balance distance with estimated air quality—anywhere in the world.
+                    routes that balance distance with estimated air quality, anywhere in the world.
                   </p>
                 </section>
 
+                {/* ---------------- WHY IT MATTERS ---------------- */}
                 <section>
                   <h2>Why It Matters</h2>
                   <p>
@@ -68,38 +71,54 @@ const DisclaimerModal: React.FC = () => {
                     in route choice can reduce exposure to pollution. EcoPaths highlights these
                     differences, supporting healthier and more informed everyday movement.
                   </p>
-                </section>
 
+                  {/* placeholder requested by team */}
+                  <p>
+                    <em>
+                      More detailed exposure data is available when searching and clicking on route
+                      cards
+                    </em>
+                  </p>
+                </section>
+                {/* ---------------- HOW TO USE (with bullet points) ---------------- */}
                 <section>
                   <h2>How to Use EcoPaths</h2>
-                  <p>
-                    Choose the city you want to explore. The highlighted area shows where routing is
-                    available.
-                  </p>
-                  <p>
-                    Select your starting point and your destination. You will then see up to three
-                    route options:
-                  </p>
+
+                  <ul className='bullet-list'>
+                    <li>
+                      Select the city you want to explore. The highlighted zone shows where routing
+                      is available.
+                    </li>
+                    <li>Type in your starting point and destination.</li>
+                    <li>You will receive three alternative routes</li>
+                    <li>
+                      Each route displays an average <strong>US Air Quality Index (AQI) </strong>
+                      value (lower is better).
+                    </li>
+                  </ul>
+
                   <p>
                     <strong>Blue:</strong> Fastest route (not optimized for air quality)
                     <br />
                     <strong>Green:</strong> Maximum air-quality optimization
                     <br />
-                    <strong>Custom:</strong> Adjust the slider to balance speed and air cleanliness
-                    based on your preference
+                    <strong>Custom:</strong> Use the slider to balance speed & air cleanliness
                   </p>
+                </section>
+                {/* ---------------- LOOP FEATURE (own subsection) ---------------- */}
+                <section>
+                  <h3>Loop Feature</h3>
                   <p>
-                    Each route displays an average AQI value (lower is better). You can also toggle
-                    a view that reveals local air quality along each part of the route.
-                  </p>
-                  <p>
-                    Runners can use the loop feature: pick a starting point, set your desired
-                    distance, and receive an air-quality-optimized round trip.
+                    Runners can generate a clean-air loop by selecting a starting point and choosing
+                    the desired total distance. EcoPaths will calculate a round trip optimized for
+                    air-quality exposure.
                   </p>
                 </section>
 
+                {/* ---------------- DATA & METHODS ---------------- */}
                 <section>
                   <h2>Data & Methods</h2>
+
                   <p>
                     <strong>Street network data:</strong> Provided by{' '}
                     <a
@@ -108,10 +127,13 @@ const DisclaimerModal: React.FC = () => {
                       rel='noopener noreferrer'
                     >
                       OpenStreetMap
-                    </a>{' '}
+                    </a>
                   </p>
+
                   <p>
-                    <strong>Air quality data:</strong> Real-time Air Quality Index (AQI) from{' '}
+                    <strong>Air quality data: </strong>
+                    Real-time
+                    <strong> US Air Quality Index (AQI)</strong> from{' '}
                     <a
                       href='https://developers.google.com/maps/documentation/air-quality'
                       target='_blank'
@@ -121,19 +143,37 @@ const DisclaimerModal: React.FC = () => {
                     </a>
                     .
                   </p>
+
                   <p>
-                    <strong>Routing logic:</strong> Walking speed ≈ 1.4 m/s (5 km/h), running speed
-                    ≈ 3.0 m/s (10.8 km/h). Routes are computed by combining distance with estimated
-                    exposure along each segment.
+                    <strong>Routing logic:</strong> Walking ≈ 1.4 m/s, Running ≈ 3.0 m/s. Routes are
+                    computed using weighted combinations of distance and estimated exposure.
+                  </p>
+
+                  {/* placeholder for route weighting */}
+                  <p>
+                    <em>Route weighting details: _______________________________________</em>
                   </p>
                 </section>
 
+                {/* ---------------- TEAM ---------------- */}
                 <section>
                   <h2>Team</h2>
                   <p>
-                    Developed by <strong>PathPlanners</strong> as part of the Software Engineering
-                    Project course at the University of Helsinki.
+                    <strong>PathPlanners</strong> — Software Engineering Project, University of
+                    Helsinki.
                   </p>
+                  {/* team names */}
+                  <p>
+                    <strong>Team members:</strong>
+                    <br />
+                    Eero Jantunen <br />
+                    Ilari Ranin <br />
+                    Juho Kronlöf <br />
+                    Laura Anttila <br />
+                    Suvi Liimatainen <br />
+                    Uyen Hoang
+                  </p>
+
                   <p>
                     <strong>GitHub Organization:</strong>{' '}
                     <a
@@ -144,6 +184,7 @@ const DisclaimerModal: React.FC = () => {
                       PathPlanners
                     </a>
                   </p>
+
                   <p>
                     <strong>Repositories:</strong>
                     <br />
@@ -157,6 +198,7 @@ const DisclaimerModal: React.FC = () => {
                   </p>
                 </section>
 
+                {/* ---------------- ACKNOWLEDGMENTS ---------------- */}
                 <section>
                   <h2>Acknowledgments</h2>
                   <p>
@@ -172,7 +214,9 @@ const DisclaimerModal: React.FC = () => {
                   </p>
                 </section>
 
+                {/* ---------------- WARNING ---------------- */}
                 <div className='warning-box'>
+                  <AlertTriangle size={50} />
                   <p>
                     EcoPaths is a prototype and may not function reliably at all times. Air quality
                     estimates and route suggestions should be treated as approximations.

@@ -4,7 +4,7 @@
 /* --- Info Button (Matches Area Button Style) --- */
 .info-button {
   position: fixed;
-  top: 0.7rem;
+  top: 0.695rem;
   right: 0.75rem;
   z-index: 2000;
 
@@ -69,7 +69,7 @@
 
 /* --- Modal Container --- */
 .modal-container {
-  background: #f8fdf9;
+  background: #ffffff;
   border-radius: 24px;
   max-width: 768px;
   width: 100%;
@@ -93,16 +93,27 @@
 }
 
 /* --- Modal Header --- */
-.modal-header {
+.modal-header  {
   position: sticky;
   top: 0;
-  background: #f0fdf4;
+  background: #effdf3;
   border-bottom: 1px solid #a7f3d0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   padding: 1rem 1.5rem;
   z-index: 10;
+}
+
+.modal-title h4 {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #064e3b;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Close button */
@@ -141,11 +152,11 @@
 .warning-box {
   display: flex;
   gap: 0.75rem;
-  background: #27642d;
-  border-left: 4px solid #9bdc48;
+  background: #add6b1;
+  border-left: 4px solid #000000;
   padding: 1rem;
   margin-bottom: 1.5rem;
-  border-radius: 0 0.5rem 0.5rem 0;
+  border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
 }
 
 .warning-box p {
@@ -170,6 +181,15 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
+.modal-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #065f46;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
 .modal-content p {
   font-size: 0.95rem;
   color: #1f2937;
@@ -178,6 +198,18 @@
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
+
+.bullet-list {
+  list-style-type: disc;
+  margin-left: -1rem;
+  margin-bottom: 1rem;
+  color: #1f2937;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
 
 .modal-content a {
   color: #047857;
@@ -196,6 +228,7 @@
 
 @media (max-width: 800px) {
   .info-button {
+    top: 0.775rem;
     padding: 8px 8px;
     font-size: 12px;
     font-weight: 800;
