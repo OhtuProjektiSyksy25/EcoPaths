@@ -117,7 +117,6 @@ describe('SideBar', () => {
 
     rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
     await waitFor(() => {
-      expect(screen.getByText(/Location Error/i)).toBeInTheDocument();
       expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
     });
     expect(mockOnFromSelect).not.toHaveBeenCalled();
@@ -184,16 +183,16 @@ describe('SideBar', () => {
     rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Location Error/i)).toBeInTheDocument();
+      expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
     });
 
-    const okButton = screen.getByText('OK');
+    const errorPopup = screen.getByText(/Your location is outside Berlin/i).closest('.error-popup');
     await act(async () => {
-      fireEvent.click(okButton);
+      fireEvent.click(errorPopup!);
     });
 
     await waitFor(() => {
-      expect(screen.queryByText(/Location Error/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Your location is outside Berlin/i)).not.toBeInTheDocument();
     });
   });
 
@@ -225,6 +224,7 @@ describe('SideBar', () => {
 
   test("selecting from suggestion doesn't trigger new API call", async () => {
     jest.useFakeTimers();
+    (global.fetch as jest.Mock).mockClear();
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,

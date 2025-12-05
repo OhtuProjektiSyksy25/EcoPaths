@@ -14,6 +14,7 @@ import '../styles/SideBar.css';
 import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
 import { MoreHorizontal } from 'lucide-react';
 import { getEnvVar } from '../utils/config';
+import ErrorPopup from './ErrorPopup';
 
 interface SideBarProps {
   onFromSelect: (place: Place) => void;
@@ -154,7 +155,7 @@ const SideBar: React.FC<SideBarProps> = ({
 
         if (!isInside) {
           setErrorMessage(
-            `Your location is outside ${selectedArea.display_name}. Please select a location within the area.`,
+            `Your location is outside ${selectedArea.display_name}.\nPlease select a location within the area.`,
           );
           setFrom('');
           setWaitingForLocation(false);
@@ -193,7 +194,9 @@ const SideBar: React.FC<SideBarProps> = ({
             coordinates.lat <= maxLat;
 
           if (!isInside) {
-            setErrorMessage(`Your location is outside ${selectedArea.display_name}.`);
+            setErrorMessage(
+              `Your location is outside ${selectedArea.display_name}.\nPlease select a location within the area.`,
+            );
             setFrom('');
             setWaitingForLocation(false);
             return;
@@ -305,212 +308,202 @@ const SideBar: React.FC<SideBarProps> = ({
   }, [errorMessage, onErrorChange, selectedArea]);
 
   return (
-    <div
-      ref={sidebarRef}
-      className={`sidebar ${isMobile ? 'sidebar-mobile' : ''}`}
-      style={isMobile ? { transform: getTransform() } : undefined}
-    >
-      {/* Sidebar handle */}
-      <div
-        className='sidebar-handle'
-        onTouchStartCapture={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <MoreHorizontal size={24} />
-      </div>
+    <>
+      <ErrorPopup message={errorMessage} onClose={() => setErrorMessage(null)} />
 
-      {errorMessage && (
-        <div className='error-popup-overlay' onClick={() => setErrorMessage(null)}>
-          <div className='error-popup-modal' onClick={(e) => e.stopPropagation()}>
-            <div className='error-popup-content'>
-              <h3>Location Error</h3>
-              <p>{errorMessage}</p>
-              <button className='error-popup-button' onClick={() => setErrorMessage(null)}>
-                OK
-              </button>
-            </div>
-          </div>
+      <div
+        ref={sidebarRef}
+        className={`sidebar ${isMobile ? 'sidebar-mobile' : ''}`}
+        style={isMobile ? { transform: getTransform() } : undefined}
+      >
+        {/* Sidebar handle */}
+        <div
+          className='sidebar-handle'
+          onTouchStartCapture={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <MoreHorizontal size={24} />
         </div>
-      )}
 
-      <div
-        className='sidebar-content'
-        style={
-          isMobile
-            ? {
-                height: `calc(100dvh - ${window.innerHeight - (isDragging ? sidebarHeight + dragY : sidebarHeight)}px - 40px)`,
-              }
-            : undefined
-        }
-      >
-        <RouteModeSelector
-          mode={routeMode}
-          setMode={setRouteMode}
-          loop={loop}
-          setLoop={setLoop}
-          showLoopOnly={showLoopOnly}
-          setShowLoopOnly={setShowLoopOnly}
-        />
-        <h1 className='sidebar-title'>Where would you like to go?</h1>
-
-        <div className='input-box'>
-          <InputContainer
-            placeholder='Start location'
-            value={from}
-            onChange={HandleFromChange}
-            suggestions={
-              /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
-                ? []
-                : showFromCurrentLocation && !from
-                  ? [
-                      {
-                        full_address: 'Use my current location',
-                        place_name: 'Your Location',
-                        properties: { name: 'Your Location', isCurrentLocation: true },
-                        geometry: { coordinates: [0, 0] },
-                      },
-                    ]
-                  : fromSuggestions
-            }
-            onSelect={(place) => {
-              setShowFromCurrentLocation(false);
-              fromInputSelected.current = true;
-              if (place.properties?.isCurrentLocation) {
-                handleCurrentLocationSelect();
-              } else {
-                onFromSelect(place);
-              }
-            }}
-            onFocus={() => setShowFromCurrentLocation(true)}
-            onBlur={handleFromBlur}
+        <div
+          className='sidebar-content'
+          style={
+            isMobile
+              ? {
+                  height: `calc(100dvh - ${window.innerHeight - (isDragging ? sidebarHeight + dragY : sidebarHeight)}px - 40px)`,
+                }
+              : undefined
+          }
+        >
+          <RouteModeSelector
+            mode={routeMode}
+            setMode={setRouteMode}
+            loop={loop}
+            setLoop={setLoop}
+            showLoopOnly={showLoopOnly}
+            setShowLoopOnly={setShowLoopOnly}
           />
-        </div>
+          <h1 className='sidebar-title'>Where would you like to go?</h1>
 
-        <div className='divider' />
-
-        <div className='input-box'>
-          {loop ? (
-            <LoopDistanceSlider value={loopDistance} onChange={setLoopDistance} />
-          ) : (
+          <div className='input-box'>
             <InputContainer
-              placeholder='Destination'
-              value={to}
-              onChange={HandleToChange}
-              suggestions={toInputSelected.current ? [] : toSuggestions}
+              placeholder='Start location'
+              value={from}
+              onChange={HandleFromChange}
+              suggestions={
+                /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
+                  ? []
+                  : showFromCurrentLocation && !from
+                    ? [
+                        {
+                          full_address: 'Use my current location',
+                          place_name: 'Your Location',
+                          properties: { name: 'Your Location', isCurrentLocation: true },
+                          geometry: { coordinates: [0, 0] },
+                        },
+                      ]
+                    : fromSuggestions
+              }
               onSelect={(place) => {
-                toInputSelected.current = true;
-                onToSelect(place);
+                setShowFromCurrentLocation(false);
+                fromInputSelected.current = true;
+                if (place.properties?.isCurrentLocation) {
+                  handleCurrentLocationSelect();
+                } else {
+                  onFromSelect(place);
+                }
               }}
+              onFocus={() => setShowFromCurrentLocation(true)}
+              onBlur={handleFromBlur}
             />
-          )}
-        </div>
+          </div>
 
-        {children}
+          <div className='divider' />
 
-        {loop && (
-          <>
-            {loopLoading ? (
-              <div className='route-loading-message'>
-                <p>Loading loop route...</p>
+          <div className='input-box'>
+            {loop ? (
+              <LoopDistanceSlider value={loopDistance} onChange={setLoopDistance} />
+            ) : (
+              <InputContainer
+                placeholder='Destination'
+                value={to}
+                onChange={HandleToChange}
+                suggestions={toInputSelected.current ? [] : toSuggestions}
+                onSelect={(place) => {
+                  toInputSelected.current = true;
+                  onToSelect(place);
+                }}
+              />
+            )}
+          </div>
+
+          {children}
+
+          {loop && (
+            <>
+              {loopLoading ? (
+                <div className='route-loading-message'>
+                  <p>Loading loop route...</p>
+                </div>
+              ) : loopSummaries?.loop ? (
+                <div
+                  className='route-card-base loop-container route-container'
+                  onClick={() => onRouteSelect('loop')}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <RouteInfoCard
+                    route_type='Loop Route'
+                    time_estimates={loopSummaries.loop.time_estimates}
+                    total_length={loopSummaries.loop.total_length}
+                    aq_average={loopSummaries.loop.aq_average}
+                    isSelected={selectedRoute === 'loop'}
+                    isExpanded={selectedRoute === 'loop'}
+                    mode={routeMode}
+                  />
+                </div>
+              ) : null}
+              <div className='aqi-toggle-button'>
+                <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                  {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+                </button>
               </div>
-            ) : loopSummaries?.loop ? (
+            </>
+          )}
+
+          {!loop && summaries && !children && (
+            <>
               <div
-                className='route-card-base loop-container route-container'
-                onClick={() => onRouteSelect('loop')}
+                className='route-card-base best-aq-container route-container'
+                onClick={() => onRouteSelect('best_aq')}
                 onMouseDown={(e) => e.preventDefault()}
               >
                 <RouteInfoCard
-                  route_type='Loop Route'
-                  time_estimates={loopSummaries.loop.time_estimates}
-                  total_length={loopSummaries.loop.total_length}
-                  aq_average={loopSummaries.loop.aq_average}
-                  isSelected={selectedRoute === 'loop'}
-                  isExpanded={selectedRoute === 'loop'}
+                  route_type='Best AQ Route'
+                  time_estimates={summaries.best_aq.time_estimates}
+                  total_length={summaries.best_aq.total_length}
+                  aq_average={summaries.best_aq.aq_average}
+                  comparisons={aqiDifferences?.best_aq}
+                  isSelected={selectedRoute === 'best_aq'}
+                  isExpanded={selectedRoute === 'best_aq'}
                   mode={routeMode}
                 />
               </div>
-            ) : null}
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
-              </button>
-            </div>
-          </>
-        )}
 
-        {!loop && summaries && !children && (
-          <>
-            <div
-              className='route-card-base best-aq-container route-container'
-              onClick={() => onRouteSelect('best_aq')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              <RouteInfoCard
-                route_type='Best AQ Route'
-                time_estimates={summaries.best_aq.time_estimates}
-                total_length={summaries.best_aq.total_length}
-                aq_average={summaries.best_aq.aq_average}
-                comparisons={aqiDifferences?.best_aq}
-                isSelected={selectedRoute === 'best_aq'}
-                isExpanded={selectedRoute === 'best_aq'}
-                mode={routeMode}
-              />
-            </div>
-
-            <div
-              className='route-card-base fastest-container route-container'
-              onClick={() => onRouteSelect('fastest')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              <RouteInfoCard
-                route_type='Fastest Route'
-                time_estimates={summaries.fastest.time_estimates}
-                total_length={summaries.fastest.total_length}
-                aq_average={summaries.fastest.aq_average}
-                comparisons={aqiDifferences?.fastest}
-                isSelected={selectedRoute === 'fastest'}
-                isExpanded={selectedRoute === 'fastest'}
-                mode={routeMode}
-              />
-            </div>
-
-            <div
-              className='route-card-base balanced-container route-container'
-              onClick={() => onRouteSelect('balanced')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              {balancedLoading ? (
-                <div className='route-loading-overlay'>
-                  <h4>Loading route...</h4>
-                </div>
-              ) : (
+              <div
+                className='route-card-base fastest-container route-container'
+                onClick={() => onRouteSelect('fastest')}
+                onMouseDown={(e) => e.preventDefault()}
+              >
                 <RouteInfoCard
-                  route_type='Your Route'
-                  time_estimates={summaries.balanced.time_estimates}
-                  total_length={summaries.balanced.total_length}
-                  aq_average={summaries.balanced.aq_average}
-                  comparisons={aqiDifferences?.balanced}
-                  isSelected={selectedRoute === 'balanced'}
-                  isExpanded={selectedRoute === 'balanced'}
+                  route_type='Fastest Route'
+                  time_estimates={summaries.fastest.time_estimates}
+                  total_length={summaries.fastest.total_length}
+                  aq_average={summaries.fastest.aq_average}
+                  comparisons={aqiDifferences?.fastest}
+                  isSelected={selectedRoute === 'fastest'}
+                  isExpanded={selectedRoute === 'fastest'}
                   mode={routeMode}
                 />
-              )}
-            </div>
-            <RouteSlider
-              value={balancedWeight}
-              onChange={setBalancedWeight}
-              disabled={loading || balancedLoading}
-            />
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
-              </button>
-            </div>
-          </>
-        )}
+              </div>
+
+              <div
+                className='route-card-base balanced-container route-container'
+                onClick={() => onRouteSelect('balanced')}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                {balancedLoading ? (
+                  <div className='route-loading-overlay'>
+                    <h4>Loading route...</h4>
+                  </div>
+                ) : (
+                  <RouteInfoCard
+                    route_type='Your Route'
+                    time_estimates={summaries.balanced.time_estimates}
+                    total_length={summaries.balanced.total_length}
+                    aq_average={summaries.balanced.aq_average}
+                    comparisons={aqiDifferences?.balanced}
+                    isSelected={selectedRoute === 'balanced'}
+                    isExpanded={selectedRoute === 'balanced'}
+                    mode={routeMode}
+                  />
+                )}
+              </div>
+              <RouteSlider
+                value={balancedWeight}
+                onChange={setBalancedWeight}
+                disabled={loading || balancedLoading}
+              />
+              <div className='aqi-toggle-button'>
+                <button onClick={() => setShowAQIColors(!showAQIColors)}>
+                  {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
