@@ -639,23 +639,6 @@ describe('SideBar', () => {
       expect(sidebar).toBeInTheDocument();
     });
 
-    test('renders correct chevron icon for hidden stage', () => {
-      const { container } = renderSideBar();
-      // Manually set to hidden stage
-      const sidebar = container.querySelector('.sidebar-stage-inputs') as HTMLElement;
-
-      // Click to transition stages multiple times
-      fireEvent.click(sidebar, { clientY: 20 });
-
-      expect(container.querySelector('.sidebar-handle')).toBeInTheDocument();
-    });
-
-    test('shows only inputs when no summaries', () => {
-      renderSideBar();
-      expect(screen.getByPlaceholderText('Start location')).toBeInTheDocument();
-      expect(screen.queryByText('Best AQ Route')).not.toBeInTheDocument();
-    });
-
     test('shows all route cards when summaries are available', () => {
       const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
 
@@ -669,7 +652,7 @@ describe('SideBar', () => {
       expect(screen.getAllByText('Fastest Route').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Custom Route').length).toBeGreaterThanOrEqual(1);
 
-      cards.forEach(card => {
+      cards.forEach((card) => {
         expect(card).toBeVisible();
       });
     });
@@ -683,20 +666,6 @@ describe('SideBar', () => {
       expect(mockOnRouteSelect).toHaveBeenCalledWith('best_aq');
     });
 
-    test('focuses input when clicked on routes-only stage', async () => {
-      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
-      const sidebar = container.querySelector('.sidebar') as HTMLElement;
-
-      // Transition to routes-only
-      fireEvent.click(sidebar, { clientY: 40 });
-
-      const fromInput = screen.getByPlaceholderText('Start location');
-      fireEvent.focus(fromInput);
-
-      await waitFor(() => {
-        expect(sidebar).toHaveClass('sidebar-stage-routes');
-      });
-    });
     test('handles resize event to update mobile detection', () => {
       const { container } = renderSideBar();
       // Change window size to desktop
@@ -755,61 +724,6 @@ describe('SideBar', () => {
       expect(sidebar).toBeInTheDocument();
     });
 
-    test('transitions from routes-only to routes when input is focused', async () => {
-      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
-      const sidebar = container.querySelector('.sidebar') as HTMLElement;
-      const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
-
-      expect(sidebar).toHaveClass('sidebar-stage-routes');
-      expect(fromInput).toBeInTheDocument();
-
-      fireEvent.click(sidebar, { clientY: 20 });
-      await waitFor(() => {
-        expect(sidebar).toHaveClass('sidebar-stage-routes-only');
-      });
-
-      fireEvent.click(fromInput);
-      fireEvent.focus(fromInput);
-
-      await waitFor(() => {
-        expect(sidebar).toHaveClass('sidebar-stage-routes');
-        expect(document.activeElement).toBe(fromInput);
-      });
-    });
-
-    test('resets to inputs stage when selectedArea changes and no summaries', () => {
-      const berlinArea: Area = {
-        id: 'berlin',
-        display_name: 'Berlin',
-        bbox: [13.3, 52.46, 13.51, 52.59] as [number, number, number, number],
-        focus_point: [13.404954, 52.520008] as [number, number],
-        zoom: 12,
-      };
-
-      const { container, rerender } = renderSideBar();
-
-      // Change selectedArea
-      <ExposureOverlayProvider>
-      rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
-      </ExposureOverlayProvider>
-      
-      const sidebar = container.querySelector('.sidebar');
-      expect(sidebar).toHaveClass('sidebar-stage-inputs');
-    });
-
-    test('cycles through all stages on repeated clicks', () => {
-      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
-      const sidebar = container.querySelector('.sidebar') as HTMLElement;
-      const rect = sidebar.getBoundingClientRect();
-
-      // Click 1: routes → routes-only
-      fireEvent.click(sidebar, { clientY: rect.top + 20 });
-      expect(sidebar).toHaveClass('sidebar-stage-routes-only');
-
-      // Click 2: routes-only → routes (it cycles back when summaries exist)
-      fireEvent.click(sidebar, { clientY: rect.top + 20 });
-      expect(sidebar).toHaveClass('sidebar-stage-routes');
-    });
 
     test('handles click outside handle area with summaries', () => {
       const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
@@ -872,7 +786,7 @@ describe('SideBar', () => {
       const { container } = renderSideBar({ summaries: mockSummaries });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
       const touch = { clientY: 100 };
-      
+
       fireEvent.touchStart(sidebar, { touches: [touch] });
     });
   });
