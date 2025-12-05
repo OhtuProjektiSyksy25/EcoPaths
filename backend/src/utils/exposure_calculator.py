@@ -41,7 +41,7 @@ def compute_exposure(route: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf["pm25_inhaled_cumulative"] = gdf["pm25_inhaled"].cumsum()
     gdf["pm10_inhaled_cumulative"] = gdf["pm10_inhaled"].cumsum()
 
-    log.debug("DEBUG compute_exposure columns:", gdf.columns.tolist())
+    log.debug(f"DEBUG compute_exposure columns: {gdf.columns.tolist()}")
     log.debug(
         gdf[
             [
