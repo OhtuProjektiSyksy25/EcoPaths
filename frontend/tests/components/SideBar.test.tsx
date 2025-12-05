@@ -589,8 +589,8 @@ describe('SideBar', () => {
       const fastestCards = screen.getAllByText('Fastest Route');
       expect(fastestCards.length).toBeGreaterThanOrEqual(1);
 
-      const customRouteCards = screen.getAllByText('Custom Route');
-      expect(customRouteCards.length).toBeGreaterThanOrEqual(1);
+      const yourRouteCards = screen.getAllByText('Your Route');
+      expect(yourRouteCards.length).toBeGreaterThanOrEqual(1);
     });
 
     test('calls onRouteSelect when route card is clicked', () => {
