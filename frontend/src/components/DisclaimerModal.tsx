@@ -1,6 +1,6 @@
 // DisclaimerModal.tsx
 import React, { useState, useEffect } from 'react';
-
+import { Info, X } from 'lucide-react';
 import '../styles/DisclaimerModal.css';
 
 const DisclaimerModal: React.FC = () => {
@@ -27,7 +27,7 @@ const DisclaimerModal: React.FC = () => {
   return (
     <>
       <button onClick={() => setIsOpen(true)} className='info-button' aria-label='Open disclaimer'>
-        About EcoPaths
+        <Info size={60} />
       </button>
 
       {isOpen && (
@@ -44,7 +44,9 @@ const DisclaimerModal: React.FC = () => {
                   onClick={handleClose}
                   className='close-button'
                   aria-label='Close disclaimer'
-                ></button>
+                >
+                  <X size={20} />
+                </button>
               </div>
 
               <div className='modal-content'>

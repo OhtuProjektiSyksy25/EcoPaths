@@ -1,36 +1,45 @@
 /* DisclaimerModal.css */
 
 /* --- Info Button --- */
+/* --- Info Button (Matches Area Button Style) --- */
 .info-button {
   position: fixed;
-  top: 1rem;
-  right: 10.75rem;
+  top: 0.7rem;
+  right: 0.75rem;
   z-index: 2000;
-  width: 80px; /* smaller button */
-  height: 32px; /* smaller button */
-  background: white;
-  color: #248539;
-  border-radius: 5px;
+
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 0px 0px rgba(28, 92, 53);
-  transition: all 0.2s ease;
+  gap: 8px;
+
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 8px;
+
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .info-button:hover {
-  background: #f9fafb;
-  box-shadow: 0 3px 7px rgbargba(28, 92, 53);
-  transform: translateY(-1px);
+  background: #f8f9fa;
+  border-color: #000000;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
 }
 
-/* Keep the icon size fixed */
+/* Icon inside button */
 .info-button svg {
-  width: 70px; /* fixed size */
-  height: 70px; /* fixed size */
-  color: rgba(28, 92, 53);
+  width: 24px;
+  height: 24px;
+  color: rgb(0, 0, 0);
+  flex-shrink: 0;
 }
+
 
 /* --- Modal Overlay --- */
 .modal-overlay {
@@ -183,4 +192,18 @@
 .modal-content strong {
   color: #064e3b;
   font-weight: 600;
+}
+
+@media (max-width: 800px) {
+  .info-button {
+    padding: 8px 8px;
+    font-size: 12px;
+    font-weight: 800;
+    border-radius: 8px;
+  }
+
+  .info-button svg {
+    width: 20px;
+    height: 20px;
+  }
 }
