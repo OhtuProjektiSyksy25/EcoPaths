@@ -263,6 +263,7 @@ describe('SideBar', () => {
 
   test("selecting to suggestion doesn't trigger new API call", async () => {
     jest.useFakeTimers();
+    (global.fetch as jest.Mock).mockClear();
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,

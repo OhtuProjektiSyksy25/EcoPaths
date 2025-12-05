@@ -16,12 +16,10 @@ const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose, duration = 40
       setIsVisible(true);
       setIsFading(false);
 
-      // Start fade out before closing
       const fadeTimer = setTimeout(() => {
         setIsFading(true);
       }, duration - 500);
 
-      // Close after duration
       const closeTimer = setTimeout(() => {
         setIsVisible(false);
         onClose();
