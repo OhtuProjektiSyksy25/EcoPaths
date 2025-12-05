@@ -4,6 +4,7 @@ Utility function for computing instantaneous and cumulative pollution exposure
 """
 
 import geopandas as gpd
+from logger.logger import log
 from utils.route_summary import SPEEDS
 
 # ventilation rate for walking (liters per minute)
@@ -40,10 +41,8 @@ def compute_exposure(route: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf["pm25_inhaled_cumulative"] = gdf["pm25_inhaled"].cumsum()
     gdf["pm10_inhaled_cumulative"] = gdf["pm10_inhaled"].cumsum()
 
-    # --- DEBUG PRINT ---
-    print("DEBUG compute_exposure columns:", gdf.columns.tolist())
-    print("DEBUG sample data (first 10 rows):")
-    print(
+    log.debug("DEBUG compute_exposure columns:", gdf.columns.tolist())
+    log.debug(
         gdf[
             [
                 "length_m",
