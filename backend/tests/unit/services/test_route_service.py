@@ -42,7 +42,7 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "from_node": [1, 2],
         "to_node": [2, 3],
         "aqi": [20.0, 40.0],
-        "normalized_aqi":[15.0, 42.0],
+        "normalized_aqi": [15.0, 42.0],
         "pm2_5": [10.0, 12.0],
         "pm10": [20.0, 22.0]
     }, crs="EPSG:25833")
@@ -298,9 +298,8 @@ def test_route_trip_forward_handles_empty_gdf(monkeypatch, route_service, origin
     empty_gdf_2 = gpd.GeoDataFrame()
 
     result = route_service.get_round_trip_forward(
-        origin, [empty_gdf,empty_gdf_2, destination],)
+        origin, [empty_gdf, empty_gdf_2, destination],)
     assert len(result) == 1
     assert isinstance(result, list)
     assert isinstance(result[0], dict)
     assert "geometry" in result[0]["destination"]
-

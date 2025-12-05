@@ -112,23 +112,6 @@ class RedisCache:
             return None
 
     # Public methods
-    def set_geojson(self, key, geojson_data, expire=None):
-        """
-        Store GeoJSON data in Redis.
-
-        Args:
-            key (str): Key to store the GeoJSON under.
-            geojson_data (dict): GeoJSON data.
-            expire (int, optional): Expiration in seconds. Defaults to None.
-
-        Returns:
-            bool: True if successful, False otherwise.
-        """
-        if not isinstance(geojson_data, dict) or "type" not in geojson_data:
-            log.warning(
-                f"Invalid GeoJSON data for key '{key}'", key=key)
-            return False
-        return self._set(key, geojson_data, expire, as_json=True)
 
     def get_geojson(self, key):
         """
@@ -161,6 +144,42 @@ class RedisCache:
             bool: True if successful, False otherwise.
         """
         return self._set(key, value, expire, as_json=True)
+
+    def check_geojson_validity(self, geojson_data):
+        """Checks if given json is a valid geojson
+        Args:
+            geojson_data (json): json to be checked
+
+        Returns:
+            boolean: True if valid, False otherwise
+        """
+        try:
+            data = json.loads(geojson_data)
+        except (json.JSONDecodeError, TypeError):
+            return False
+        if data["type"] != "FeatureCollection":
+            return False
+        if "features" not in data or not data.get("features"):
+            return False
+        if "crs" not in data or not data.get("crs"):
+            return False
+        return True
+
+    def set_geojson(self, key, geojson_data, expire=None):
+        """Validates and checks that given data is geojson
+
+        Args:
+            key (str): Key to store.
+            geojson_data (geojson): geojson to store.
+            expire (int, optional): Expiration in seconds.
+        Returns:
+            boolean: False if fails, True if success
+        """
+        if not self.check_geojson_validity(geojson_data):
+            log.warning(
+                f"Invalid GeoJSON data for key '{key}'", key=key)
+            return False
+        return self.set_direct(key, geojson_data, expire)
 
     def get(self, key):
         """
