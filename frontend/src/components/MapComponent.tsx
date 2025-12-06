@@ -259,7 +259,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
         map.fitBounds(bounds, {
           padding,
-          maxZoom: 11,
+          maxZoom: 12.5,
           duration: 2000,
         });
       } else {
