@@ -363,7 +363,7 @@ describe('SideBar', () => {
 
     renderSideBar({ selectedArea: berlinArea });
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
-    
+
     fireEvent.focus(fromInput);
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
