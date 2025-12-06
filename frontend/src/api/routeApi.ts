@@ -78,12 +78,14 @@ export interface LoopApiResponse {
  *
  * @param fromLocked - The starting location
  * @param distanceKm - Desired loop length in kilometers
+ * @param areaId - Area ID to contextualize the route
  * @returns A Promise resolving to route geometry and summary
  */
 
 export async function fetchLoopRoute(
   fromLocked: LockedLocation,
   distanceKm: number,
+  areaId: string | null,
 ): Promise<LoopApiResponse> {
   const geojson = {
     type: 'FeatureCollection',
@@ -97,6 +99,7 @@ export async function fetchLoopRoute(
         },
       },
     ],
+    area: areaId ?? null,
   };
 
   const url = `${getEnvVar('REACT_APP_API_URL')}/api/getloop`;

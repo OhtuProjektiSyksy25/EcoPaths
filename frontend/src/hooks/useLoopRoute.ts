@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
 import { fetchLoopRoute } from '../api/routeApi';
+import { useArea } from '../AreaContext';
 
 interface UseLoopRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -13,6 +14,7 @@ export const useLoopRoute = (
   fromLocked: LockedLocation | null,
   distanceKm: number,
 ): UseLoopRouteReturn => {
+  const { selectedArea } = useArea();
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,7 +33,7 @@ export const useLoopRoute = (
         setLoading(true);
         setError(null);
         try {
-          const data = await fetchLoopRoute(fromLocked, distanceKm);
+          const data = await fetchLoopRoute(fromLocked, distanceKm, selectedArea?.id ?? null);
           setRoutes(data.routes ? { loop: data.routes.loop } : null);
           setSummaries(data.summaries ? { loop: data.summaries.loop } : null);
         } catch (err) {
@@ -47,7 +49,7 @@ export const useLoopRoute = (
     }, 400); // debounce‑viive
 
     return () => clearTimeout(timer);
-  }, [fromLocked, distanceKm]);
+  }, [fromLocked, distanceKm, selectedArea]);
 
   return { routes, summaries, loading, error };
 };
