@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import App from '../src/App';
 import { AreaProvider } from '../src/AreaContext';
 
-jest.mock('../src/assets/images/ecopaths-logo-with-text.jpg', () => 'mocked-logo');
+jest.mock('../src/assets/images/ecopaths_logo_with_text.jpg', () => 'mocked-logo');
 
 jest.mock('../src/components/MapComponent', () => () => <div data-testid='map-component' />);
 jest.mock('../src/components/SideBar', () => ({ children }: { children: React.ReactNode }) => (
