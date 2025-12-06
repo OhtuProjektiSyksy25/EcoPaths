@@ -300,6 +300,41 @@ describe('SideBar', () => {
     jest.useRealTimers();
   });
 
+   test('calls onFromSelect(null) when from input is cleared', async () => {
+    renderSideBar();
+    const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
+
+    // simulate user typing something then deleting it
+    fireEvent.change(fromInput, { target: { value: 'Some place' } });
+    expect(fromInput.value).toBe('Some place');
+
+    // now clear the input
+    fireEvent.change(fromInput, { target: { value: '' } });
+
+    // parent should be notified that destination was cleared
+    await waitFor(() => {
+      expect(mockOnFromSelect).toHaveBeenCalledWith(null);
+    });
+  });
+
+
+  test('calls onToSelect(null) when destination input is cleared', async () => {
+    renderSideBar();
+    const toInput = screen.getByPlaceholderText('Destination') as HTMLInputElement;
+
+    // simulate user typing something then deleting it
+    fireEvent.change(toInput, { target: { value: 'Some place' } });
+    expect(toInput.value).toBe('Some place');
+
+    // now clear the input
+    fireEvent.change(toInput, { target: { value: '' } });
+
+    // parent should be notified that destination was cleared
+    await waitFor(() => {
+      expect(mockOnToSelect).toHaveBeenCalledWith(null);
+    });
+  });
+
   describe('SideBar Mobile', () => {
     beforeEach(() => {
       // Mock mobile viewport

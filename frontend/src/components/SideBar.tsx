@@ -17,8 +17,8 @@ import { getEnvVar } from '../utils/config';
 import ErrorPopup from './ErrorPopup';
 
 interface SideBarProps {
-  onFromSelect: (place: Place) => void;
-  onToSelect: (place: Place) => void;
+  onFromSelect: (place: Place | null) => void;
+  onToSelect: (place: Place | null) => void;
   summaries: Record<string, RouteSummary> | null;
   aqiDifferences?: Record<string, Record<string, AqiComparison>> | null;
   showAQIColors: boolean;
@@ -233,6 +233,17 @@ const SideBar: React.FC<SideBarProps> = ({
     setFrom(value);
     setShowFromCurrentLocation(false);
 
+    if (value.length === 0) {
+      setFromSuggestions([]);
+      onFromSelect(null);
+      fromInputSelected.current = false;
+      if (debounce.current) {
+        clearTimeout(debounce.current);
+        debounce.current = null;
+      }
+      return;
+    }
+
     if (fromInputSelected.current) {
       fromInputSelected.current = false;
       setFromSuggestions([]);
@@ -262,6 +273,18 @@ const SideBar: React.FC<SideBarProps> = ({
 
   const HandleToChange = async (value: string): Promise<void> => {
     setTo(value);
+
+    if (value.length === 0) {
+      setToSuggestions([]);
+      // Inform parent that destination was cleared
+      onToSelect(null);
+      toInputSelected.current = false;
+      if (debounce.current) {
+        clearTimeout(debounce.current);
+        debounce.current = null;
+      }
+      return;
+    }
 
     if (toInputSelected.current) {
       toInputSelected.current = false;
