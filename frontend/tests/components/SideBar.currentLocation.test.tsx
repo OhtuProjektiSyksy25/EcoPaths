@@ -69,5 +69,5 @@ test('selecting "Use my current location" sets friendly label and calls onFromSe
   expect(calledPlace.geometry.coordinates).toEqual([24.9384, 60.1699]);
 
   // The input value shown in the SideBar's controlled 'from' state should be the friendly text
-  expect(screen.getAllByTestId('stub-input')[0]).toHaveValue('60.169900, 24.938400');
+  expect(screen.getAllByTestId('stub-input')[0]).toHaveValue('My current location');
 });

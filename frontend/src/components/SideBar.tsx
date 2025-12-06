@@ -163,14 +163,14 @@ const SideBar: React.FC<SideBarProps> = ({
       }
       const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lon.toFixed(6)}`;
       const mockPlace: Place = {
-        full_address: `Current Location`,
+        full_address: `My current location`,
         center: [coordinates.lon, coordinates.lat],
         place_name: `Your Location (${coordsString})`,
-        properties: { name: 'Your Location' },
+        properties: { name: 'Your Location', isCurrentLocation: true },
         geometry: { coordinates: [coordinates.lon, coordinates.lat] },
       };
 
-      setFrom('Current Location');
+      setFrom('My current location');
       onFromSelect(mockPlace);
       setShowFromCurrentLocation(false);
       setWaitingForLocation(false);
@@ -202,14 +202,14 @@ const SideBar: React.FC<SideBarProps> = ({
 
         const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lon.toFixed(6)}`;
         const mockPlace: Place = {
-          full_address: `Current Location`,
+          full_address: `My current location`,
           center: [coordinates.lon, coordinates.lat],
           place_name: `Your Location (${coordsString})`,
-          properties: { name: 'Your Location' },
+          properties: { name: 'Your Location', isCurrentLocation: true },
           geometry: { coordinates: [coordinates.lon, coordinates.lat] },
         };
 
-        setFrom(coordsString);
+        setFrom('My current location');
         onFromSelect(mockPlace);
         setShowFromCurrentLocation(false);
         setWaitingForLocation(false);
