@@ -217,8 +217,6 @@ class RouteService:
                         f"first part of round trip failed for candidate: {exc}")
                     continue
 
-            gdf = compute_exposure(gdf)
-
             data_entry = {}
             data_entry["destination"] = single_gdf
             data_entry["route"] = gdf
@@ -258,13 +256,12 @@ class RouteService:
             destination, origin, current_route_algorithm.igraph,
             balance_factor=0.15, reverse=True, previous_edges=prev_gdf_ids)
 
-        gdf = compute_exposure(gdf)
-
         combined_gdf = pd.concat(
             [first_path_data["route"], gdf], ignore_index=True)
+        combined_gdf = compute_exposure(combined_gdf)
         full_path = GeoTransformer.gdf_to_feature_collection(
             combined_gdf, property_keys=[
-                c for c in gdf.columns if c != "geometry"]
+                c for c in combined_gdf.columns if c != "geometry"]
         )
         results, summaries = {}, {}
         results["loop"] = full_path

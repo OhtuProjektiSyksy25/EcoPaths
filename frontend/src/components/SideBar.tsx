@@ -11,10 +11,21 @@ import RouteSlider from './RouteSlider';
 import RouteModeSelector from './RouteModeSelector';
 import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
-import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
+import {
+  Area,
+  Place,
+  RouteSummary,
+  AqiComparison,
+  RouteMode,
+  RouteGeoJSON,
+  RouteFeatureProperties,
+  ExposurePoint,
+  RouteType,
+} from '../types';
 import { MoreHorizontal } from 'lucide-react';
 import { getEnvVar } from '../utils/config';
 import ErrorPopup from './ErrorPopup';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 
 interface SideBarProps {
   onFromSelect: (place: Place | null) => void;
@@ -42,6 +53,8 @@ interface SideBarProps {
   loopLoading?: boolean;
   showLoopOnly: boolean;
   setShowLoopOnly: (val: boolean) => void;
+  routes: Record<string, RouteGeoJSON> | null;
+  loopRoutes: Record<string, RouteGeoJSON> | null;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -70,6 +83,8 @@ const SideBar: React.FC<SideBarProps> = ({
   loopLoading,
   showLoopOnly,
   setShowLoopOnly,
+  routes,
+  loopRoutes,
 }) => {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
@@ -78,7 +93,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false);
   const [waitingForLocation, setWaitingForLocation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const debounce = useRef<number | null>();
+  const fromDebounce = useRef<number | null>();
+  const toDebounce = useRef<number | null>();
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
@@ -90,6 +106,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [startDragY, setStartDragY] = useState(0);
   const [sidebarHeight, setSidebarHeight] = useState(280);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { open, close } = useExposureOverlay();
 
   useEffect(() => {
     const checkMobile = (): void => {
@@ -230,6 +247,11 @@ const SideBar: React.FC<SideBarProps> = ({
   };
 
   const HandleFromChange = async (value: string): Promise<void> => {
+    // Skip if this is the "Use my current location" suggestion
+    if (value === 'Use my current location') {
+      return;
+    }
+
     setFrom(value);
     setShowFromCurrentLocation(false);
 
@@ -237,9 +259,9 @@ const SideBar: React.FC<SideBarProps> = ({
       setFromSuggestions([]);
       onFromSelect(null);
       fromInputSelected.current = false;
-      if (debounce.current) {
-        clearTimeout(debounce.current);
-        debounce.current = null;
+      if (fromDebounce.current) {
+        clearTimeout(fromDebounce.current);
+        fromDebounce.current = null;
       }
       return;
     }
@@ -250,8 +272,8 @@ const SideBar: React.FC<SideBarProps> = ({
       return;
     }
 
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = window.setTimeout(async () => {
+    if (fromDebounce.current) clearTimeout(fromDebounce.current);
+    fromDebounce.current = window.setTimeout(async () => {
       if (!value) {
         setFromSuggestions([]);
         return;
@@ -276,12 +298,11 @@ const SideBar: React.FC<SideBarProps> = ({
 
     if (value.length === 0) {
       setToSuggestions([]);
-      // Inform parent that destination was cleared
       onToSelect(null);
       toInputSelected.current = false;
-      if (debounce.current) {
-        clearTimeout(debounce.current);
-        debounce.current = null;
+      if (toDebounce.current) {
+        clearTimeout(toDebounce.current);
+        toDebounce.current = null;
       }
       return;
     }
@@ -292,8 +313,8 @@ const SideBar: React.FC<SideBarProps> = ({
       return;
     }
 
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = window.setTimeout(async () => {
+    if (toDebounce.current) clearTimeout(toDebounce.current);
+    toDebounce.current = window.setTimeout(async () => {
       if (!value) {
         setToSuggestions([]);
         return;
@@ -314,6 +335,23 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 400);
   };
 
+  const getExposureEdges = (routeKey: RouteType): ExposurePoint[] => {
+    const routeGeoJSON = loop && routeKey === 'loop' ? loopRoutes?.loop : routes?.[routeKey];
+    if (!routeGeoJSON?.features) return [];
+
+    return routeGeoJSON.features.map((feature) => {
+      const props = feature.properties as RouteFeatureProperties;
+      // console.log('Feature props:', props);
+      return {
+        distance_cum: Number(props.distance_cumulative),
+        pm25_cum: Number(props.pm25_inhaled_cumulative),
+        pm10_cum: Number(props.pm10_inhaled_cumulative),
+        pm25_seg: Number(props.pm2_5),
+        pm10_seg: Number(props.pm10),
+      };
+    });
+  };
+
   useEffect(() => {
     // Clear inputs when area changes
     if (selectedArea) {
@@ -329,6 +367,12 @@ const SideBar: React.FC<SideBarProps> = ({
     // Notify parent when error changes (to disable area button)
     onErrorChange?.(errorMessage);
   }, [errorMessage, onErrorChange, selectedArea]);
+
+  useEffect(() => {
+    if (loading || loopLoading || (!routes && !loading && !loopLoading)) {
+      close();
+    }
+  }, [loading, loopLoading, routes, close]);
 
   return (
     <>
@@ -428,7 +472,7 @@ const SideBar: React.FC<SideBarProps> = ({
               {loopLoading ? (
                 <div className='loading-spinner'>
                   <div className='spinner'></div>
-                  <p>Loading route...</p>
+                  <p>Loading loop route...</p>
                 </div>
               ) : loopSummaries?.loop ? (
                 <div
@@ -441,15 +485,27 @@ const SideBar: React.FC<SideBarProps> = ({
                     time_estimates={loopSummaries.loop.time_estimates}
                     total_length={loopSummaries.loop.total_length}
                     aq_average={loopSummaries.loop.aq_average}
+                    exposurePoints={getExposureEdges('loop')}
                     isSelected={selectedRoute === 'loop'}
                     isExpanded={selectedRoute === 'loop'}
                     mode={routeMode}
+                    onClick={() => {
+                      const points = getExposureEdges('loop');
+                      open({ title: 'Loop Route', points, mode: 'cumulative' });
+                    }}
                   />
                 </div>
               ) : null}
               <div className='aqi-toggle-button'>
-                <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                  {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+                <button
+                  onClick={() => setShowAQIColors(!showAQIColors)}
+                  className={showAQIColors ? 'active' : ''}
+                >
+                  <div className='aqi-button-content'>
+                    <span className='aqi-button-text'>
+                      {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
+                    </span>
+                  </div>
                 </button>
               </div>
             </>
@@ -478,6 +534,13 @@ const SideBar: React.FC<SideBarProps> = ({
                       isSelected={selectedRoute === 'best_aq'}
                       isExpanded={selectedRoute === 'best_aq'}
                       mode={routeMode}
+                      onClick={() => {
+                        const routeKey: RouteType = 'best_aq';
+                        //console.log('routes?.[routeKey]:', routes?.[routeKey]);
+                        const points = getExposureEdges(routeKey);
+                        //console.log('Overlay points:', points);
+                        open({ points, title: 'Best AQ Route', mode: 'cumulative' });
+                      }}
                     />
                   </div>
 
@@ -495,6 +558,11 @@ const SideBar: React.FC<SideBarProps> = ({
                       isSelected={selectedRoute === 'fastest'}
                       isExpanded={selectedRoute === 'fastest'}
                       mode={routeMode}
+                      onClick={() => {
+                        const routeKey: RouteType = 'fastest';
+                        const points = getExposureEdges(routeKey);
+                        open({ points, title: 'Fastest Route', mode: 'cumulative' });
+                      }}
                     />
                   </div>
 
@@ -506,11 +574,11 @@ const SideBar: React.FC<SideBarProps> = ({
                     {balancedLoading ? (
                       <div className='loading-spinner'>
                         <div className='spinner'></div>
-                        <p>Loading route...</p>
+                        <h4>Loading route...</h4>
                       </div>
                     ) : (
                       <RouteInfoCard
-                        route_type='Your Route'
+                        route_type='Custom Route'
                         time_estimates={summaries.balanced.time_estimates}
                         total_length={summaries.balanced.total_length}
                         aq_average={summaries.balanced.aq_average}
@@ -518,6 +586,11 @@ const SideBar: React.FC<SideBarProps> = ({
                         isSelected={selectedRoute === 'balanced'}
                         isExpanded={selectedRoute === 'balanced'}
                         mode={routeMode}
+                        onClick={() => {
+                          const routeKey: RouteType = 'balanced';
+                          const points = getExposureEdges(routeKey);
+                          open({ points, title: 'Custom Route', mode: 'cumulative' });
+                        }}
                       />
                     )}
                   </div>
@@ -527,8 +600,15 @@ const SideBar: React.FC<SideBarProps> = ({
                     disabled={loading || balancedLoading}
                   />
                   <div className='aqi-toggle-button'>
-                    <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                      {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
+                    <button
+                      onClick={() => setShowAQIColors(!showAQIColors)}
+                      className={showAQIColors ? 'active' : ''}
+                    >
+                      <div className='aqi-button-content'>
+                        <span className='aqi-button-text'>
+                          {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
+                        </span>
+                      </div>
                     </button>
                   </div>
                 </>
