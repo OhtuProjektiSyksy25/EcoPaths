@@ -72,4 +72,81 @@ describe('InputContainer', () => {
     fireEvent.click(items[0]);
     expect(handleSelect).toHaveBeenCalled();
   });
+
+  describe('Desktop behavior', () => {
+    beforeEach(() => {
+      Object.defineProperty(window, 'innerWidth', {
+        writable: true,
+        configurable: true,
+        value: 1024,
+      });
+    });
+
+    test('selects all text when focusing input with existing text', () => {
+      const handleChange = jest.fn();
+
+      render(
+        <InputContainer
+          placeholder='Test input'
+          value='Existing text'
+          onChange={handleChange}
+          suggestions={[]}
+          onSelect={jest.fn()}
+        />,
+      );
+
+      const input = screen.getByPlaceholderText('Test input') as HTMLInputElement;
+      const selectSpy = jest.spyOn(input, 'select');
+
+      fireEvent.focus(input);
+
+      expect(selectSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('Mobile behavior', () => {
+    beforeEach(() => {
+      Object.defineProperty(window, 'innerWidth', {
+        writable: true,
+        configurable: true,
+        value: 375,
+      });
+    });
+
+    test('shows clear button when there is text', () => {
+      const handleChange = jest.fn();
+
+      const { container } = render(
+        <InputContainer
+          placeholder='Test input'
+          value='Some text'
+          onChange={handleChange}
+          suggestions={[]}
+          onSelect={jest.fn()}
+        />,
+      );
+
+      const clearButton = container.querySelector('.clear-button');
+      expect(clearButton).toBeInTheDocument();
+    });
+
+    test('clears input when clear button is clicked', () => {
+      const handleChange = jest.fn();
+
+      const { container } = render(
+        <InputContainer
+          placeholder='Test input'
+          value='Some text'
+          onChange={handleChange}
+          suggestions={[]}
+          onSelect={jest.fn()}
+        />,
+      );
+
+      const clearButton = container.querySelector('.clear-button') as HTMLButtonElement;
+      fireEvent.click(clearButton);
+
+      expect(handleChange).toHaveBeenCalledWith('');
+    });
+  });
 });
