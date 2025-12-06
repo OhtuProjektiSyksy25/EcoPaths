@@ -33,9 +33,11 @@ jest.mock('mapbox-gl', () => ({
         getStyle: jest.fn(() => ({
           layers: [{ id: 'water' }, { id: 'land' }],
         })),
-        getContainer: jest.fn(() => ({
-          querySelector: jest.fn(() => ({ style: { opacity: '1' } })),
-        })),
+        getContainer: jest.fn(() => {
+          const div = document.createElement('div');
+          div.querySelector = jest.fn(() => ({ style: { opacity: '1' } }));
+          return div;
+        }),
       };
     }),
     NavigationControl: jest.fn(),

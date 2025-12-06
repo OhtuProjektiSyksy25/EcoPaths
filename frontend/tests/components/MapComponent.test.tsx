@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import mapboxgl from 'mapbox-gl';
 import MapComponent from '../../src/components/MapComponent';
 import { LockedLocation, RouteGeoJSON } from '../../src/types/route';
+import { ExposureOverlayProvider } from '../../src/contexts/ExposureOverlayContext';
 
 /* Leaflet mock */
 jest.mock('react-leaflet', () => ({
@@ -42,12 +43,14 @@ describe('MapComponent', () => {
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
     render(
-      <MapComponent
-        {...defaultProps}
-        fromLocked={mockLocked}
-        toLocked={mockLocked}
-        routes={mockRoutes}
-      />,
+      <ExposureOverlayProvider>
+        <MapComponent
+          {...defaultProps}
+          fromLocked={mockLocked}
+          toLocked={mockLocked}
+          routes={mockRoutes}
+        />
+      </ExposureOverlayProvider>,
     );
 
     expect(screen.getByTestId('mapbox-map')).toBeInTheDocument();
@@ -57,12 +60,14 @@ describe('MapComponent', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = '';
 
     render(
-      <MapComponent
-        {...defaultProps}
-        fromLocked={mockLocked}
-        toLocked={mockLocked}
-        routes={mockRoutes}
-      />,
+      <ExposureOverlayProvider>
+        <MapComponent
+          {...defaultProps}
+          fromLocked={mockLocked}
+          toLocked={mockLocked}
+          routes={mockRoutes}
+        />
+      </ExposureOverlayProvider>,
     );
 
     expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
@@ -73,21 +78,33 @@ describe('MapComponent', () => {
     process.env.REACT_APP_MAPBOX_TOKEN = 'fake-token';
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
-    render(<MapComponent {...defaultProps} />);
+    render(
+      <ExposureOverlayProvider>
+        <MapComponent {...defaultProps} />
+      </ExposureOverlayProvider>,
+    );
 
     const mapInstance = (mapboxgl.Map as jest.Mock).mock.results[0].value;
     expect(mapInstance.setPaintProperty).toHaveBeenCalled();
   });
 
   test('adds ScaleControl to the map', () => {
-    render(<MapComponent {...defaultProps} />);
+    render(
+      <ExposureOverlayProvider>
+        <MapComponent {...defaultProps} />
+      </ExposureOverlayProvider>,
+    );
 
     const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
     expect(mapInstance.addControl).toHaveBeenCalledWith(expect.anything(), 'bottom-left');
   });
 
   test('ScaleControl fades out on movestart and back on moveend', () => {
-    render(<MapComponent {...defaultProps} />);
+    render(
+      <ExposureOverlayProvider>
+        <MapComponent {...defaultProps} />
+      </ExposureOverlayProvider>,
+    );
 
     const mapInstance = (mapboxgl.Map as any).mock.results[0].value;
 
@@ -107,7 +124,11 @@ describe('MapComponent', () => {
     const loopRoute: RouteGeoJSON = { type: 'FeatureCollection', features: [] };
     const loopRoutes = { loop: loopRoute };
 
-    render(<MapComponent {...defaultProps} showLoopOnly={true} loopRoutes={loopRoutes} />);
+    render(
+      <ExposureOverlayProvider>
+        <MapComponent {...defaultProps} showLoopOnly={true} loopRoutes={loopRoutes} />
+      </ExposureOverlayProvider>,
+    );
   });
 
   test('does not create destination marker when loop mode is active', async () => {
@@ -115,13 +136,15 @@ describe('MapComponent', () => {
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
     render(
-      <MapComponent
-        {...defaultProps}
-        fromLocked={mockLocked}
-        toLocked={mockLocked}
-        routes={mockRoutes}
-        loop={true}
-      />,
+      <ExposureOverlayProvider>
+        <MapComponent
+          {...defaultProps}
+          fromLocked={mockLocked}
+          toLocked={mockLocked}
+          routes={mockRoutes}
+          loop={true}
+        />
+      </ExposureOverlayProvider>,
     );
 
     // Marker should be created only for the `from` location; destination marker is skipped when loop=true
@@ -141,13 +164,15 @@ describe('MapComponent', () => {
     process.env.REACT_APP_MAPBOX_STYLE = 'mapbox://styles/mapbox/streets-v11';
 
     render(
-      <MapComponent
-        {...defaultProps}
-        fromLocked={mockLocked}
-        toLocked={mockLocked}
-        routes={mockRoutes}
-        loop={true}
-      />,
+      <ExposureOverlayProvider>
+        <MapComponent
+          {...defaultProps}
+          fromLocked={mockLocked}
+          toLocked={mockLocked}
+          routes={mockRoutes}
+          loop={true}
+        />
+      </ExposureOverlayProvider>,
     );
 
     const mapInstance = (mapboxgl.Map as any).mock.results[0].value;

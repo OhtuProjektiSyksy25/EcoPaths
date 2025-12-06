@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import mapboxgl from 'mapbox-gl';
@@ -9,7 +9,11 @@ import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import { isValidCoordsArray } from '../utils/coordsNormalizer';
 import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/mapBounds';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
+import { ExposureChart } from './ExposureChart';
 import { getEnvVar } from '../utils/config';
+import ReactDOM from 'react-dom';
+import AQILegend from './AQILegend';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -58,6 +62,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const overlay = useExposureOverlay();
+  const [overlayPos, setOverlayPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const visibleRoutes = showLoopOnly ? loopRoutes || {} : routes || {};
 
@@ -118,10 +129,14 @@ const MapComponent: React.FC<MapComponentProps> = ({
       if (scaleEl) scaleEl.style.opacity = '1';
     });
 
-    map.on('load', () => updateWaterLayers(map));
+    map.on('load', () => {
+      updateWaterLayers(map);
+    });
 
     mapRef.current = map;
-    return () => map.remove();
+    return () => {
+      map.remove();
+    };
   }, [mapboxToken, mapboxStyle]);
 
   // Update markers & zoom logic for loop / non-loop modes
@@ -244,10 +259,90 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [selectedArea]);
 
+  // debug overlay data ennen renderöintiä
+  useEffect(() => {
+    if (overlay.visible && overlay.data) console.debug('overlay.data', overlay.data);
+  }, [overlay.visible, overlay.data]);
+
+  console.log('Rendering overlay, visible:', overlay.visible, overlay.data);
+
+  useEffect(() => {
+    const updatePos = (): void => {
+      const m = mapboxRef.current;
+      if (!m) {
+        setOverlayPos(null);
+        return;
+      }
+      const r = m.getBoundingClientRect();
+      const maxW = Math.min(360, r.width - 20);
+      const maxH = Math.min(320, r.height - 20);
+      const top = Math.max(8, r.top + 8);
+      const left = Math.max(8, r.left + 8);
+
+      setOverlayPos({
+        top,
+        left,
+        width: Math.max(200, maxW),
+        height: Math.max(120, maxH),
+      });
+    };
+
+    updatePos();
+    window.addEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos, true);
+    };
+  }, [overlay.visible]);
+
   if (mapboxToken) {
+    const inlineOverlayStyle = overlayPos
+      ? {
+          position: 'fixed' as const,
+          top: overlayPos.top,
+          left: overlayPos.left,
+          width: overlayPos.width,
+          height: overlayPos.height,
+          zIndex: 2147483647,
+        }
+      : {
+          position: 'fixed' as const,
+          top: 10,
+          left: 10,
+          width: 320,
+          height: 240,
+          zIndex: 2147483647,
+        };
+
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
+
+        <AQILegend show={showAQIColors} />
+
+        {overlay.visible &&
+          overlay.data &&
+          ReactDOM.createPortal(
+            <div
+              className='map-exposure-overlay'
+              role='dialog'
+              onClick={(e) => e.stopPropagation()}
+              style={inlineOverlayStyle}
+            >
+              <div className='map-exposure-chart'>
+                <ExposureChart
+                  exposureEdges={overlay.data.points}
+                  height={240}
+                  showMode='pm25'
+                  distanceUnit='m'
+                  onClose={() => overlay.close()}
+                />
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
     );
   }
