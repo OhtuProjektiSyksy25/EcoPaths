@@ -202,7 +202,6 @@ const SideBar: React.FC<SideBarProps> = ({
 
         const coordsString = `${coordinates.lat.toFixed(6)}, ${coordinates.lon.toFixed(6)}`;
         const mockPlace: Place = {
-          //full_address: coordsString,
           full_address: `Current Location`,
           center: [coordinates.lon, coordinates.lat],
           place_name: `Your Location (${coordsString})`,
