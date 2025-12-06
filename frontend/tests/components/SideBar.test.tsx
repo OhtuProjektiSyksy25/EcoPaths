@@ -58,7 +58,7 @@ function renderSideBar(overrides: Partial<typeof defaultProps> = {}) {
 
 describe('SideBar', () => {
   beforeEach(() => {
-    (global.fetch as jest.Mock).mockReset();
+    (global.fetch as jest.Mock).mockClear();
   });
 
   afterEach(() => {
@@ -300,7 +300,7 @@ describe('SideBar', () => {
     jest.useRealTimers();
   });
 
-   test('calls onFromSelect(null) when from input is cleared', async () => {
+  test('calls onFromSelect(null) when from input is cleared', async () => {
     renderSideBar();
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
 
@@ -316,7 +316,6 @@ describe('SideBar', () => {
       expect(mockOnFromSelect).toHaveBeenCalledWith(null);
     });
   });
-
 
   test('calls onToSelect(null) when destination input is cleared', async () => {
     renderSideBar();
