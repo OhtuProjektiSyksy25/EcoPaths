@@ -2,16 +2,17 @@
 Root component for the React application. 
 It renders the header and the MapComponent.
 */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
-import logo from './assets/images/ecopaths-logo-with-text.jpg';
+import logo from './assets/images/ecopaths_logo_with_text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
+import ErrorPopup from './components/ErrorPopup';
 
 /**
  * Root component of the EcoPaths React application.
@@ -52,6 +53,8 @@ function App(): JSX.Element {
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
 
+  const [routeError, setRouteError] = useState<string | null>(null);
+
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
     toLocked,
@@ -65,8 +68,15 @@ function App(): JSX.Element {
     loading: loopLoading,
   } = useLoopRoute(fromLocked, loopDistance);
 
+  useEffect(() => {
+    if (error) {
+      setRouteError(error);
+    }
+  }, [error]);
+
   return (
     <div className='App'>
+      <ErrorPopup message={routeError} onClose={() => setRouteError(null)} />
       {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
 
       <header className='header'>
@@ -114,14 +124,7 @@ function App(): JSX.Element {
             loopLoading={loopLoading}
             showLoopOnly={showLoopOnly}
             setShowLoopOnly={setShowLoopOnly}
-          >
-            {(loading || error) && (
-              <div className='route-loading-message'>
-                {loading && <p>Loading routes...</p>}
-                {error && <p className='error'>{error}</p>}
-              </div>
-            )}
-          </SideBar>
+          ></SideBar>
         )}
 
         <div className='map-container'>
