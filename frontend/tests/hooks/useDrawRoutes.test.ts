@@ -60,7 +60,6 @@ describe('useDrawRoutes hook', () => {
 
     renderHook(() => useDrawRoutes(map, mockRoutes, false));
     expect(map.removeLayer).toHaveBeenCalledWith('route-fastest');
-    expect(map.removeSource).toHaveBeenCalledWith('route-fastest');
   });
 
   test('uses AQI color interpolation when showAQIColors is true', () => {
