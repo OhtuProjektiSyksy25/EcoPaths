@@ -338,7 +338,6 @@ describe('SideBar', () => {
       </ExposureOverlayProvider>,
     );
     await waitFor(() => {
-      expect(screen.getByText(/Location Error/i)).toBeInTheDocument();
       expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
     });
     expect(mockOnFromSelect).not.toHaveBeenCalled();
@@ -361,17 +360,17 @@ describe('SideBar', () => {
       error: null,
     });
 
-    const { rerender } = renderSideBar({ selectedArea: berlinArea });
+    renderSideBar({ selectedArea: berlinArea });
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
+    
     fireEvent.focus(fromInput);
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(
-      <ExposureOverlayProvider>
-        <SideBar {...defaultProps} selectedArea={berlinArea} />
-      </ExposureOverlayProvider>,
-    );
+    await waitFor(() => {
+      expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
+    });
+
     await waitFor(() => {
       expect(fromInput.value).toBe('');
     });
@@ -417,16 +416,16 @@ describe('SideBar', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Location Error/i)).toBeInTheDocument();
+      expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
     });
 
-    const okButton = screen.getByText('OK');
+    const errorPopup = screen.getByText(/Your location is outside Berlin/i).closest('.error-popup');
     await act(async () => {
-      fireEvent.click(okButton);
+      fireEvent.click(errorPopup!);
     });
 
     await waitFor(() => {
-      expect(screen.queryByText(/Location Error/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Your location is outside Berlin/i)).not.toBeInTheDocument();
     });
   });
 
@@ -458,6 +457,7 @@ describe('SideBar', () => {
 
   test("selecting from suggestion doesn't trigger new API call", async () => {
     jest.useFakeTimers();
+    (global.fetch as jest.Mock).mockClear();
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -496,6 +496,7 @@ describe('SideBar', () => {
 
   test("selecting to suggestion doesn't trigger new API call", async () => {
     jest.useFakeTimers();
+    (global.fetch as jest.Mock).mockClear();
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -530,6 +531,40 @@ describe('SideBar', () => {
     expect(mockOnToSelect).toHaveBeenCalledTimes(1);
 
     jest.useRealTimers();
+  });
+
+  test('calls onFromSelect(null) when from input is cleared', async () => {
+    renderSideBar();
+    const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
+
+    // simulate user typing something then deleting it
+    fireEvent.change(fromInput, { target: { value: 'Some place' } });
+    expect(fromInput.value).toBe('Some place');
+
+    // now clear the input
+    fireEvent.change(fromInput, { target: { value: '' } });
+
+    // parent should be notified that destination was cleared
+    await waitFor(() => {
+      expect(mockOnFromSelect).toHaveBeenCalledWith(null);
+    });
+  });
+
+  test('calls onToSelect(null) when destination input is cleared', async () => {
+    renderSideBar();
+    const toInput = screen.getByPlaceholderText('Destination') as HTMLInputElement;
+
+    // simulate user typing something then deleting it
+    fireEvent.change(toInput, { target: { value: 'Some place' } });
+    expect(toInput.value).toBe('Some place');
+
+    // now clear the input
+    fireEvent.change(toInput, { target: { value: '' } });
+
+    // parent should be notified that destination was cleared
+    await waitFor(() => {
+      expect(mockOnToSelect).toHaveBeenCalledWith(null);
+    });
   });
 
   describe('SideBar Mobile', () => {
