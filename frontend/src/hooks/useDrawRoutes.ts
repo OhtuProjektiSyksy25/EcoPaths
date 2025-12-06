@@ -8,7 +8,9 @@ const ROUTE_COLORS: Record<string, string> = {
   fastest: '#003cff',
   best_aq: '#008b23',
   balanced: '#00f5e0',
-  loop: '#007259',
+  loop1: '#1e5a43',
+  loop2: '#7a2ea7',
+  loop3: '#2b4a9c',
 };
 
 const AQI_COLOR_SCALE = [
@@ -59,7 +61,7 @@ export function useDrawRoutes(
       removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
-    const routeTypes = ['fastest', 'balanced', 'best_aq', 'loop'];
+    const routeTypes = ['fastest', 'balanced', 'best_aq', 'loop1', 'loop2', 'loop3'];
 
     routeTypes.forEach((mode) => {
       if (mode === selectedRoute) return;
@@ -82,7 +84,16 @@ export function useDrawRoutes(
             'line-color': selectedRoute ? '#cecdcd' : '#505050',
             'line-width': 5,
             'line-opacity': 0.6,
-            'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
+            'line-offset':
+              mode === 'balanced'
+                ? 1.5
+                : mode === 'fastest'
+                  ? -1.5
+                  : mode === 'loop2'
+                    ? 1.5
+                    : mode === 'loop3'
+                      ? -1.5
+                      : 0,
           },
         });
       }
@@ -115,7 +126,16 @@ export function useDrawRoutes(
               : ROUTE_COLORS[mode],
           'line-width': mode === 'balanced' ? 2.5 : 3.5,
           'line-opacity': selectedRoute ? 0.5 : 1,
-          'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
+          'line-offset':
+            mode === 'balanced'
+              ? 1.5
+              : mode === 'fastest'
+                ? -1.5
+                : mode === 'loop2'
+                  ? 1.5
+                  : mode === 'loop3'
+                    ? -1.5
+                    : 0,
         },
       });
     });

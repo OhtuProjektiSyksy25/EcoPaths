@@ -75,8 +75,26 @@
 }
 .loop-container {
   background-color: rgba(0, 114, 89, 0.1);
-  border: 2px solid #00725995;
-  color: #007259;
+  border: 2px solid #00685a95;
+  color: #005c57;
+}
+
+.loop1-container {
+  background-color: rgba(0, 116, 77, 0.1);
+  border: 2px solid #00745195;
+  color: #007448;
+}
+
+.loop2-container {
+  background-color: rgba(96, 0, 175, 0.1);
+  border: 2px solid #5200af95;
+  color: #5a00af;
+}
+
+.loop3-container {
+  background-color: rgba(0, 34, 146, 0.1);
+  border: 2px solid #003a9295;
+  color: #00388b;
 }
 
 .route-container * {

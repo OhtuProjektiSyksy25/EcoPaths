@@ -158,9 +158,9 @@ class EdgeEnricher:
             how="left"
         )
 
-        enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
-        enriched["raw_pm2_5"] = enriched["raw_pm2_5"].fillna(15)
-        enriched["raw_pm10"] = enriched["raw_pm10"].fillna(25)
+        enriched["raw_aqi"] = enriched["raw_aqi"].astype(float).fillna(50)
+        enriched["raw_pm2_5"] = enriched["raw_pm2_5"].astype(float).fillna(10)
+        enriched["raw_pm10"] = enriched["raw_pm10"].astype(float).fillna(30)
 
         enriched["aqi_norm_base"] = enriched["raw_aqi"] / 500.0
 

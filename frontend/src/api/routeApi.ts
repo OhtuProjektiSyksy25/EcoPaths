@@ -4,8 +4,8 @@ import { getEnvVar } from '../utils/config';
 export interface RouteApiResponse {
   routes: Record<string, RouteGeoJSON>;
   summaries: Record<string, RouteSummary>;
-  // optional precomputed AQI / exposure comparisons between routes
   aqi_differences?: Record<string, Record<string, AqiComparison>>;
+  is_complete?: boolean;
 }
 
 /**
@@ -70,7 +70,6 @@ export async function fetchRoute(
   return (await response.json()) as RouteApiResponse;
 }
 
-// Loop response käyttää samaa muotoa kuin RouteApiResponse
 export type LoopApiResponse = RouteApiResponse;
 /**
  * Computes a loop route starting from one locked location with given distance.
@@ -80,6 +79,7 @@ export type LoopApiResponse = RouteApiResponse;
  * @returns A Promise resolving to route geometry and summary
  */
 
+/* maybe can be used fallback, but if stream works no need for /getloop */
 export async function fetchLoopRoute(
   fromLocked: LockedLocation,
   distanceKm: number,
@@ -111,4 +111,21 @@ export async function fetchLoopRoute(
   }
 
   return (await response.json()) as LoopApiResponse;
+}
+
+/**
+ * Streams loop routes from the backend as they are computed.
+ * Uses Server-Sent Events (SSE) for real-time updates.
+ *
+ * @param fromLocked - The starting location
+ * @param distanceKm - Desired loop length in kilometers
+ * @returns EventSource instance for subscribing to stream events
+ */
+export function streamLoopRoutes(fromLocked: LockedLocation, distanceKm: number): EventSource {
+  const coords = fromLocked.geometry.coordinates;
+  const url =
+    `${getEnvVar('REACT_APP_API_URL')}/api/getloop/stream?` +
+    `lat=${coords[1]}&lon=${coords[0]}&distance=${distanceKm}`;
+
+  return new EventSource(url);
 }

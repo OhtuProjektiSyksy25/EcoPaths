@@ -304,13 +304,15 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 400);
   };
 
-  const getExposureEdges = (routeKey: RouteType): ExposurePoint[] => {
-    const routeGeoJSON = loop && routeKey === 'loop' ? loopRoutes?.loop : routes?.[routeKey];
+  const getExposureEdges = (routeKey: RouteType | 'loop1' | 'loop2' | 'loop3'): ExposurePoint[] => {
+    const routeGeoJSON = routeKey.startsWith('loop')
+      ? loopRoutes?.[routeKey as keyof typeof loopRoutes]
+      : routes?.[routeKey as RouteType];
+
     if (!routeGeoJSON?.features) return [];
 
     return routeGeoJSON.features.map((feature) => {
       const props = feature.properties as RouteFeatureProperties;
-      // console.log('Feature props:', props);
       return {
         distance_cum: Number(props.distance_cumulative),
         pm25_cum: Number(props.pm25_inhaled_cumulative),
@@ -449,32 +451,88 @@ const SideBar: React.FC<SideBarProps> = ({
 
         {loop && (
           <>
-            {loopLoading ? (
+            {loopLoading && (!loopSummaries || Object.keys(loopSummaries).length === 0) ? (
               <div className='route-loading-message'>
-                <p>Loading loop route...</p>
+                <p>Loading loop routes...</p>
               </div>
-            ) : loopSummaries?.loop ? (
+            ) : null}
+
+            {loopSummaries?.loop1 && (
               <div
-                className='route-card-base loop-container route-container'
-                onClick={() => onRouteSelect('loop')}
+                className='route-card-base loop1-container route-container'
+                onClick={() => onRouteSelect('loop1')}
                 onMouseDown={(e) => e.preventDefault()}
               >
                 <RouteInfoCard
-                  route_type='Loop Route'
-                  time_estimates={loopSummaries.loop.time_estimates}
-                  total_length={loopSummaries.loop.total_length}
-                  aq_average={loopSummaries.loop.aq_average}
-                  exposurePoints={getExposureEdges('loop')}
-                  isSelected={selectedRoute === 'loop'}
-                  isExpanded={selectedRoute === 'loop'}
+                  route_type='Loop 1'
+                  time_estimates={loopSummaries.loop1.time_estimates}
+                  total_length={loopSummaries.loop1.total_length}
+                  aq_average={loopSummaries.loop1.aq_average}
+                  exposurePoints={getExposureEdges('loop1')}
+                  isSelected={selectedRoute === 'loop1'}
+                  isExpanded={selectedRoute === 'loop1'}
                   mode={routeMode}
                   onClick={() => {
-                    const points = getExposureEdges('loop');
-                    open({ title: 'Loop Route', points, mode: 'cumulative' });
+                    const points = getExposureEdges('loop1');
+                    open({ title: 'Loop 1', points, mode: 'cumulative' });
                   }}
                 />
               </div>
-            ) : null}
+            )}
+
+            {loopSummaries?.loop2 && (
+              <div
+                className='route-card-base loop2-container route-container'
+                onClick={() => onRouteSelect('loop2')}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                <RouteInfoCard
+                  route_type='Loop 2'
+                  time_estimates={loopSummaries.loop2.time_estimates}
+                  total_length={loopSummaries.loop2.total_length}
+                  aq_average={loopSummaries.loop2.aq_average}
+                  exposurePoints={getExposureEdges('loop2')}
+                  isSelected={selectedRoute === 'loop2'}
+                  isExpanded={selectedRoute === 'loop2'}
+                  mode={routeMode}
+                  onClick={() => {
+                    const points = getExposureEdges('loop2');
+                    open({ title: 'Loop 2', points, mode: 'cumulative' });
+                  }}
+                />
+              </div>
+            )}
+
+            {loopSummaries?.loop3 && (
+              <div
+                className='route-card-base loop3-container route-container'
+                onClick={() => onRouteSelect('loop3')}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                <RouteInfoCard
+                  route_type='Loop 3'
+                  time_estimates={loopSummaries.loop3.time_estimates}
+                  total_length={loopSummaries.loop3.total_length}
+                  aq_average={loopSummaries.loop3.aq_average}
+                  exposurePoints={getExposureEdges('loop3')}
+                  isSelected={selectedRoute === 'loop3'}
+                  isExpanded={selectedRoute === 'loop3'}
+                  mode={routeMode}
+                  onClick={() => {
+                    const points = getExposureEdges('loop3');
+                    open({ title: 'Loop 3', points, mode: 'cumulative' });
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Loading indicator for remaining loops */}
+            {loopLoading && loopSummaries && Object.keys(loopSummaries).length < 3 && (
+              <div className='route-loading-message'>
+                <p>Computing {3 - Object.keys(loopSummaries).length} more loop route(s)...</p>
+              </div>
+            )}
+
             <div className='aqi-toggle-button'>
               <button
                 onClick={() => setShowAQIColors(!showAQIColors)}
