@@ -257,8 +257,9 @@ const SideBar: React.FC<SideBarProps> = ({
         return;
       }
       try {
+        const bboxParam = selectedArea?.bbox?.join(',');
         const response = await fetch(
-          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
+          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}?bbox=${bboxParam}`,
         );
         if (!response.ok) {
           throw new Error(`server error: ${response.status}`);
@@ -299,8 +300,9 @@ const SideBar: React.FC<SideBarProps> = ({
         return;
       }
       try {
+        const bboxParam = selectedArea?.bbox?.join(',');
         const response = await fetch(
-          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
+          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}?bbox=${bboxParam}`,
         );
         if (!response.ok) {
           throw new Error(`server error: ${response.status}`);
