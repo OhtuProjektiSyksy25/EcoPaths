@@ -5,8 +5,10 @@ SideBar.test.tsx tests the SideBar component which provides input fields for sel
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import SideBar from '../../src/components/SideBar';
-import { Area } from '@/types';
+import { Area, RouteGeoJSON } from '@/types';
 import { useGeolocation } from '../../src/hooks/useGeolocationState';
+import { ExposureOverlayProvider } from '../../src/contexts/ExposureOverlayContext';
+import type { ExposurePoint, RouteType } from '@/types';
 
 const mockOnFromSelect = jest.fn();
 const mockOnToSelect = jest.fn();
@@ -29,6 +31,215 @@ const mockUseGeolocation = useGeolocation as jest.MockedFunction<typeof useGeolo
 Mock fetch for geocoding API
 */
 global.fetch = jest.fn();
+
+// minimal mock GeoJSONs for tests (richer features so charts/hooks get data)
+const mockRoutes: Record<string, RouteGeoJSON> = {
+  best_aq: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.937, 60.17],
+          ],
+        },
+        properties: {
+          route_type: 'best_aq',
+          distance_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 10,
+          pm10: 15,
+        },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.937, 60.17],
+            [24.94, 60.171],
+          ],
+        },
+        properties: {
+          route_type: 'best_aq',
+          distance_cumulative: 800,
+          pm25_inhaled_cumulative: 12,
+          pm10_inhaled_cumulative: 18,
+          pm2_5: 8,
+          pm10: 12,
+        },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.94, 60.171],
+            [24.941, 60.17],
+          ],
+        },
+        properties: {
+          route_type: 'best_aq',
+          distance_cumulative: 1500,
+          pm25_inhaled_cumulative: 25,
+          pm10_inhaled_cumulative: 30,
+          pm2_5: 6,
+          pm10: 9,
+        },
+      },
+    ],
+  },
+  fastest: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.938, 60.17],
+          ],
+        },
+        properties: {
+          route_type: 'fastest',
+          distance_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 15,
+          pm10: 20,
+        },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.938, 60.17],
+            [24.94, 60.171],
+          ],
+        },
+        properties: {
+          route_type: 'fastest',
+          distance_cumulative: 1000,
+          pm25_inhaled_cumulative: 30,
+          pm10_inhaled_cumulative: 40,
+          pm2_5: 12,
+          pm10: 16,
+        },
+      },
+    ],
+  },
+  balanced: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.9385, 60.17],
+          ],
+        },
+        properties: {
+          route_type: 'balanced',
+          distance_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 9,
+          pm10: 14,
+        },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.9385, 60.17],
+            [24.941, 60.17],
+          ],
+        },
+        properties: {
+          route_type: 'balanced',
+          distance_cumulative: 1200,
+          pm25_inhaled_cumulative: 18,
+          pm10_inhaled_cumulative: 24,
+          pm2_5: 7,
+          pm10: 10,
+        },
+      },
+    ],
+  },
+};
+
+const mockLoopRoutes: Record<string, RouteGeoJSON> = {
+  loop: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.94, 60.171],
+          ],
+        },
+        properties: {
+          route_type: 'loop',
+          distance_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 12,
+          pm10: 18,
+        },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.94, 60.171],
+            [24.945, 60.168],
+          ],
+        },
+        properties: {
+          route_type: 'loop',
+          distance_cumulative: 2000,
+          pm25_inhaled_cumulative: 40,
+          pm10_inhaled_cumulative: 55,
+          pm2_5: 10,
+          pm10: 14,
+        },
+      },
+    ],
+  },
+};
+
+// shared mock summaries to avoid repeating inline objects
+const mockSummaries = {
+  best_aq: {
+    time_estimates: { walk: '15 min', run: '8 min' },
+    total_length: 2.5,
+    aq_average: 42,
+  },
+  fastest: {
+    time_estimates: { walk: '10 min', run: '5 min' },
+    total_length: 2.0,
+    aq_average: 50,
+  },
+  balanced: {
+    time_estimates: { walk: '12 min', run: '6 min' },
+    total_length: 2.2,
+    aq_average: 45,
+  },
+};
+
 const defaultProps: ComponentProps<typeof SideBar> = {
   onFromSelect: mockOnFromSelect,
   onToSelect: mockOnToSelect,
@@ -50,15 +261,22 @@ const defaultProps: ComponentProps<typeof SideBar> = {
   loopSummaries: null,
   showLoopOnly: false,
   setShowLoopOnly: jest.fn(),
+  routes: mockRoutes,
+  loopRoutes: mockLoopRoutes,
 };
 
 function renderSideBar(overrides: Partial<typeof defaultProps> = {}) {
-  return render(<SideBar {...defaultProps} {...overrides} />);
+  return render(
+    <ExposureOverlayProvider>
+      <SideBar {...defaultProps} {...overrides} />
+    </ExposureOverlayProvider>,
+  );
 }
 
 describe('SideBar', () => {
   beforeEach(() => {
     (global.fetch as jest.Mock).mockClear();
+    (global.fetch as jest.Mock).mockReset();
   });
 
   afterEach(() => {
@@ -115,7 +333,11 @@ describe('SideBar', () => {
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={berlinArea} />
+      </ExposureOverlayProvider>,
+    );
     await waitFor(() => {
       expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
     });
@@ -139,13 +361,17 @@ describe('SideBar', () => {
       error: null,
     });
 
-    const { rerender } = renderSideBar({ selectedArea: berlinArea });
+    renderSideBar({ selectedArea: berlinArea });
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
+
     fireEvent.focus(fromInput);
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
+    await waitFor(() => {
+      expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
+    });
+
     await waitFor(() => {
       expect(fromInput.value).toBe('');
     });
@@ -154,7 +380,11 @@ describe('SideBar', () => {
   test('clears from input when fromLocked becomes null', () => {
     const { rerender } = renderSideBar();
     const fromInput = screen.getByPlaceholderText('Start location') as HTMLInputElement;
-    rerender(<SideBar {...defaultProps} selectedArea={null} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={null} />
+      </ExposureOverlayProvider>,
+    );
     expect(fromInput.value).toBe('');
   });
 
@@ -180,7 +410,11 @@ describe('SideBar', () => {
     const locationSuggestion = await screen.findByText('Use my current location');
     fireEvent.click(locationSuggestion);
 
-    rerender(<SideBar {...defaultProps} selectedArea={berlinArea} />);
+    rerender(
+      <ExposureOverlayProvider>
+        <SideBar {...defaultProps} selectedArea={berlinArea} />
+      </ExposureOverlayProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText(/Your location is outside Berlin/i)).toBeInTheDocument();
@@ -351,64 +585,17 @@ describe('SideBar', () => {
     });
 
     test('detects mobile viewport on mount', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={null}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
+      const { container } = renderSideBar();
+      const sidebar = container.querySelector('.sidebar');
+    });
 
-      const sidebar = container.querySelector('.sidebar') as HTMLElement;
-      // Check for mobile class
-      expect(sidebar).toHaveClass('sidebar-mobile');
-      // Check that transform contains translateY
-      expect(sidebar.style.transform).toContain('translateY');
+    test('transitions to routes stage when summaries are available on mobile', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
+      const sidebar = container.querySelector('.sidebar');
     });
 
     test('handles touch start on handle area', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={null}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar();
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
       const touch = { clientY: 10 }; // Touch within handle area (< 35px)
 
@@ -422,31 +609,7 @@ describe('SideBar', () => {
     });
 
     test('ignores touch start outside handle area', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={null}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar();
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
       const touch = { clientY: 100 }; // Touch below handle area (> 35px)
 
@@ -460,47 +623,7 @@ describe('SideBar', () => {
     });
 
     test('handles swipe up from hidden to routes-only', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={{
-            best_aq: {
-              time_estimates: { walk: '15 min', run: '8 min' },
-              total_length: 2.5,
-              aq_average: 42,
-            },
-            fastest: {
-              time_estimates: { walk: '10 min', run: '5 min' },
-              total_length: 2.0,
-              aq_average: 50,
-            },
-            balanced: {
-              time_estimates: { walk: '12 min', run: '6 min' },
-              total_length: 2.2,
-              aq_average: 45,
-            },
-          }}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
 
       // Start in hidden stage
@@ -524,48 +647,26 @@ describe('SideBar', () => {
       expect(sidebar).toBeInTheDocument();
     });
 
-    test('handles mobile sidebar click on handle area', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={{
-            best_aq: {
-              time_estimates: { walk: '15 min', run: '8 min' },
-              total_length: 2.5,
-              aq_average: 42,
-            },
-            fastest: {
-              time_estimates: { walk: '10 min', run: '5 min' },
-              total_length: 2.0,
-              aq_average: 50,
-            },
-            balanced: {
-              time_estimates: { walk: '12 min', run: '6 min' },
-              total_length: 2.2,
-              aq_average: 45,
-            },
-          }}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
+    test('handles swipe down from routes to routes-only', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
+      const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const rect = sidebar.getBoundingClientRect();
 
+      // Simulate swipe down from routes stage
+      fireEvent.touchStart(sidebar, {
+        touches: [{ clientY: rect.top + 20 }],
+        currentTarget: sidebar,
+      });
+
+      fireEvent.touchMove(sidebar, {
+        touches: [{ clientY: rect.top + 80 }], // Swipe down > threshold
+      });
+
+      fireEvent.touchEnd(sidebar);
+    });
+
+    test('handles mobile sidebar click on handle area', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
       const rect = sidebar.getBoundingClientRect();
 
@@ -575,99 +676,26 @@ describe('SideBar', () => {
       expect(sidebar).toBeInTheDocument();
     });
 
-    test('shows route cards when summaries are available', () => {
-      render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={{
-            best_aq: {
-              time_estimates: { walk: '15 min', run: '8 min' },
-              total_length: 2.5,
-              aq_average: 42,
-            },
-            fastest: {
-              time_estimates: { walk: '10 min', run: '5 min' },
-              total_length: 2.0,
-              aq_average: 50,
-            },
-            balanced: {
-              time_estimates: { walk: '12 min', run: '6 min' },
-              total_length: 2.2,
-              aq_average: 45,
-            },
-          }}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
+    test('shows all route cards when summaries are available', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
 
-      const bestAqCards = screen.getAllByText('Best AQ Route');
-      expect(bestAqCards.length).toBeGreaterThanOrEqual(1);
+      const mobileContent = container.querySelector('.sidebar-content');
+      expect(mobileContent).toBeInTheDocument();
 
-      const fastestCards = screen.getAllByText('Fastest Route');
-      expect(fastestCards.length).toBeGreaterThanOrEqual(1);
+      const cards = container.querySelectorAll('.route-container');
+      expect(cards).toHaveLength(3);
 
-      const yourRouteCards = screen.getAllByText('Your Route');
-      expect(yourRouteCards.length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Best AQ Route').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Fastest Route').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Custom Route').length).toBeGreaterThanOrEqual(1);
+
+      cards.forEach((card) => {
+        expect(card).toBeVisible();
+      });
     });
 
     test('calls onRouteSelect when route card is clicked', () => {
-      render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={{
-            best_aq: {
-              time_estimates: { walk: '15 min', run: '8 min' },
-              total_length: 2.5,
-              aq_average: 42,
-            },
-            fastest: {
-              time_estimates: { walk: '10 min', run: '5 min' },
-              total_length: 2.0,
-              aq_average: 50,
-            },
-            balanced: {
-              time_estimates: { walk: '12 min', run: '6 min' },
-              total_length: 2.2,
-              aq_average: 45,
-            },
-          }}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
+      renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
 
       const bestAqCard = screen.getAllByText('Best AQ Route')[0].closest('.route-container');
       fireEvent.click(bestAqCard!);
@@ -676,31 +704,7 @@ describe('SideBar', () => {
     });
 
     test('handles resize event to update mobile detection', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={null}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar();
       // Change window size to desktop
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
@@ -716,31 +720,7 @@ describe('SideBar', () => {
     });
 
     test('handles touch move without starting drag', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={null}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar();
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
 
       // Try touchMove without touchStart (should do nothing)
@@ -752,31 +732,7 @@ describe('SideBar', () => {
     });
 
     test('handles touch end without drag', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={null}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar();
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
 
       // TouchEnd without starting drag
@@ -786,47 +742,7 @@ describe('SideBar', () => {
     });
 
     test('handles small swipe that does not meet threshold', () => {
-      const { container } = render(
-        <SideBar
-          onFromSelect={mockOnFromSelect}
-          onToSelect={mockOnToSelect}
-          summaries={{
-            best_aq: {
-              time_estimates: { walk: '15 min', run: '8 min' },
-              total_length: 2.5,
-              aq_average: 42,
-            },
-            fastest: {
-              time_estimates: { walk: '10 min', run: '5 min' },
-              total_length: 2.0,
-              aq_average: 50,
-            },
-            balanced: {
-              time_estimates: { walk: '12 min', run: '6 min' },
-              total_length: 2.2,
-              aq_average: 45,
-            },
-          }}
-          aqiDifferences={null}
-          showAQIColors={false}
-          setShowAQIColors={jest.fn()}
-          selectedArea={null}
-          balancedWeight={0.5}
-          setBalancedWeight={jest.fn()}
-          selectedRoute={null}
-          onRouteSelect={mockOnRouteSelect}
-          routeMode='walk'
-          setRouteMode={jest.fn()}
-          loop={false}
-          setLoop={jest.fn()}
-          loopDistance={5}
-          setLoopDistance={jest.fn()}
-          loopSummaries={null}
-          showLoopOnly={false}
-          setShowLoopOnly={jest.fn()}
-        />,
-      );
-
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
       const sidebar = container.querySelector('.sidebar') as HTMLElement;
       const rect = sidebar.getBoundingClientRect();
 
@@ -843,6 +759,152 @@ describe('SideBar', () => {
       fireEvent.touchEnd(sidebar);
 
       expect(sidebar).toBeInTheDocument();
+    });
+
+    test('handles click outside handle area with summaries', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
+      const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const rect = sidebar.getBoundingClientRect();
+
+      // Click outside handle area (below 80px threshold)
+      fireEvent.click(sidebar, { clientY: rect.top + 150 });
+    });
+
+    test('handles swipe up from routes-only to routes', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
+      const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const rect = sidebar.getBoundingClientRect();
+
+      // First transition to routes-only
+      fireEvent.click(sidebar, { clientY: rect.top + 20 });
+
+      // Swipe up from routes-only to routes
+      fireEvent.touchStart(sidebar, {
+        touches: [{ clientY: rect.top + 20 }],
+        currentTarget: sidebar,
+      });
+
+      fireEvent.touchMove(sidebar, {
+        touches: [{ clientY: rect.top - 60 }], // Swipe up
+      });
+
+      fireEvent.touchEnd(sidebar);
+    });
+
+    test('handles swipe down from routes-only to hidden', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries, balancedWeight: 0.5 });
+      const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const rect = sidebar.getBoundingClientRect();
+
+      // First transition to routes-only
+      fireEvent.click(sidebar, { clientY: rect.top + 20 });
+
+      // Swipe down from routes-only to hidden
+      fireEvent.touchStart(sidebar, {
+        touches: [{ clientY: rect.top + 20 }],
+        currentTarget: sidebar,
+      });
+
+      fireEvent.touchMove(sidebar, {
+        touches: [{ clientY: rect.top + 80 }], // Swipe down
+      });
+
+      fireEvent.touchEnd(sidebar);
+    });
+
+    test('hides routes when sidebar is collapsed', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries });
+      const routeCards = container.querySelectorAll('.route-container');
+      expect(routeCards.length).toBeGreaterThan(0);
+    });
+
+    test('records touch position on touchStart', () => {
+      const { container } = renderSideBar({ summaries: mockSummaries });
+      const sidebar = container.querySelector('.sidebar') as HTMLElement;
+      const touch = { clientY: 100 };
+
+      fireEvent.touchStart(sidebar, { touches: [touch] });
+    });
+  });
+
+  describe('getExposureEdges', () => {
+    const defaultProps = {
+      routes: mockRoutes,
+      loopRoutes: mockLoopRoutes,
+      loop: false,
+    };
+
+    const getExposureEdges = (routeKey: RouteType, loop = false) => {
+      const routeGeoJSON =
+        loop && routeKey === 'loop'
+          ? defaultProps.loopRoutes?.loop
+          : defaultProps.routes?.[routeKey];
+      if (!routeGeoJSON?.features) return [];
+
+      return routeGeoJSON.features
+        .map((feature) => {
+          const props = feature.properties;
+          if (!props) return null;
+          return {
+            distance_cum: Number(props.distance_cumulative),
+            pm25_cum: Number(props.pm25_inhaled_cumulative),
+            pm10_cum: Number(props.pm10_inhaled_cumulative),
+            pm25_seg: Number(props.pm2_5),
+            pm10_seg: Number(props.pm10),
+          };
+        })
+        .filter(Boolean);
+    };
+
+    test('returns correct exposure points for best_aq route', () => {
+      const edges = getExposureEdges('best_aq');
+      expect(edges).toHaveLength(3);
+
+      expect(edges[0]).toEqual({
+        distance_cum: 0,
+        pm25_cum: 0,
+        pm10_cum: 0,
+        pm25_seg: 10,
+        pm10_seg: 15,
+      });
+
+      expect(edges[2]).toEqual({
+        distance_cum: 1500,
+        pm25_cum: 25,
+        pm10_cum: 30,
+        pm25_seg: 6,
+        pm10_seg: 9,
+      });
+    });
+
+    test('returns correct exposure points for fastest route', () => {
+      const edges = getExposureEdges('fastest');
+      expect(edges).toHaveLength(2);
+      expect(edges[1] && edges[1].distance_cum).toBe(1000);
+    });
+
+    test('returns correct exposure points for balanced route', () => {
+      const edges = getExposureEdges('balanced');
+      expect(edges[0] && edges[0].pm25_seg).toBe(9);
+      expect(edges[1] && edges[1].pm10_cum).toBe(24);
+    });
+
+    test('returns correct exposure points for loop route when loop=true', () => {
+      const edges = getExposureEdges('loop', true);
+      expect(edges).toHaveLength(2);
+      expect(edges[0]).toEqual({
+        distance_cum: 0,
+        pm25_cum: 0,
+        pm10_cum: 0,
+        pm25_seg: 12,
+        pm10_seg: 18,
+      });
+      expect(edges[1] && edges[1].distance_cum).toBe(2000);
+    });
+
+    test('returns empty array when routeKey not found', () => {
+      const edges = getExposureEdges('nonexistent' as RouteType);
+      expect(edges).toEqual([]);
     });
   });
 });

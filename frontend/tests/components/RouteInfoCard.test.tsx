@@ -2,9 +2,19 @@
 RouteInfoCard.test.tsx tests the RouteInfoCard component which displays 
 information such as route type, time estimates, total length, and air quality average.
 */
+const openMock = jest.fn();
+jest.mock('../../src/contexts/ExposureOverlayContext', () => ({
+  useExposureOverlay: () => ({
+    open: openMock,
+    visible: true,
+  }),
+  ExposureOverlayProvider: ({ children }: any) => children,
+}));
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import RouteInfoCard, { RouteInfoCardProps } from '../../src/components/RouteInfoCard';
+import { ExposureOverlayProvider } from '../../src/contexts/ExposureOverlayContext';
+import { getAQICategory } from '../../src/components/RouteInfoCard';
 
 const defaultProps = {
   route_type: 'Fastest Route',
@@ -15,7 +25,11 @@ const defaultProps = {
 } as const;
 
 function renderCard(overrides: Partial<RouteInfoCardProps> = {}) {
-  return render(<RouteInfoCard {...defaultProps} {...overrides} />);
+  return render(
+    <ExposureOverlayProvider>
+      <RouteInfoCard {...defaultProps} {...overrides} />
+    </ExposureOverlayProvider>,
+  );
 }
 
 describe('RouteInfoCard', () => {
@@ -100,5 +114,42 @@ describe('RouteInfoCard', () => {
 
     const timeElements = screen.getAllByText('6 minutes');
     expect(timeElements.length).toBeGreaterThanOrEqual(1);
+  });
+
+  describe('getAQICategory', () => {
+    it('returns Good for AQI <= 50', () => {
+      expect(getAQICategory(30)).toEqual({
+        label: 'Good',
+        color: '#00E400',
+        bgColor: '#e8f5e9',
+      });
+    });
+
+    it('returns Hazardous for AQI > 300', () => {
+      expect(getAQICategory(400)).toEqual({
+        label: 'Hazardous',
+        color: '#7E0023',
+        bgColor: '#fce4ec',
+      });
+    });
+  });
+
+  describe('RouteInfoCard interactions', () => {
+    it('calls onClick when card is clicked', () => {
+      const onClick = jest.fn();
+      const { container } = render(
+        <RouteInfoCard
+          route_type='Fastest Route'
+          time_estimates={{ walk: '12 minutes', run: '6 minutes' }}
+          total_length={1.8}
+          aq_average={50}
+          mode='walk'
+          onClick={onClick}
+        />,
+      );
+
+      fireEvent.click(container.querySelector('.RouteInfoCard')!);
+      expect(onClick).toHaveBeenCalled();
+    });
   });
 });

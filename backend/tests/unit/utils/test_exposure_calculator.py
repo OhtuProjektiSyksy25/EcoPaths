@@ -1,4 +1,4 @@
-import pandas as pd
+import pytest
 import geopandas as gpd
 from shapely.geometry import LineString
 
@@ -18,10 +18,24 @@ def test_compute_exposure_basic():
 
     result = compute_exposure(df)
 
-    assert result.loc[0, "pm25_exposure"] == 10 * 100
-    assert result.loc[1, "pm10_exposure"] == 10 * 200
+    WALK_SPEED = 1.4  # m/s as defined in utils.route_summary.SPEEDS
+    VENT_LPM = 8.0
+    vent_m3s = (VENT_LPM / 1000.0) / 60.0
 
-    assert result.loc[0, "distance_cumulative"] == 100
-    assert result.loc[1, "distance_cumulative"] == 300
+    t0 = 100.0 / WALK_SPEED
+    t1 = 200.0 / WALK_SPEED
 
-    assert result.loc[1, "pm25_cumulative"] == (10*100 + 20*200)
+    # expected inhaled doses (µg) = concentration (µg/m3) * inhaled_volume (m3)
+    expected_pm25_0 = 10.0 * vent_m3s * t0
+    expected_pm10_1 = 10.0 * vent_m3s * t1
+
+    assert result.loc[0, "pm25_inhaled"] == pytest.approx(expected_pm25_0)
+    assert result.loc[1, "pm10_inhaled"] == pytest.approx(expected_pm10_1)
+
+    assert result.loc[0, "distance_cumulative"] == pytest.approx(100.0)
+    assert result.loc[1, "distance_cumulative"] == pytest.approx(300.0)
+
+    # cumulative pm25 inhaled (row1 should equal sum of row0 and row1 inhaled pm25)
+    expected_pm25_cumulative_row1 = expected_pm25_0 + (20.0 * vent_m3s * t1)
+    assert result.loc[1, "pm25_inhaled_cumulative"] == pytest.approx(
+        expected_pm25_cumulative_row1)

@@ -78,6 +78,14 @@ body,
   right: 0;
 }
 
+.map-container > div[data-testid='mapbox-map'] {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
 .InputContainer {
   display: block;
   width: 100%;
