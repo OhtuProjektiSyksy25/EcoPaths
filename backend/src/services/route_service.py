@@ -93,10 +93,20 @@ class RouteService:
                 nodes = self.get_nodes_from_db(tile_ids)
 
                 if edges is None or edges.empty:
-                    raise RuntimeError(
-                        "No edges found for requested route area.")
+                    log.warning(f"No edges found with buffer {buffer_length}m")
+                    continue
 
                 edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+
+                if edges_subset.empty:
+                    log.warning(
+                        f"No edges intersect buffer with {buffer_length}m")
+                    continue
+
+                if nodes is None or nodes.empty:
+                    log.warning(f"No nodes found with buffer {buffer_length}m")
+                    continue
+
                 return self._compute_routes(
                     edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
                 )
@@ -104,8 +114,10 @@ class RouteService:
             except Exception as e:  # pylint: disable=broad-exception-caught
                 log.warning(
                     f"Routing failed with buffer {buffer_length}m: {e}")
+                continue
 
-            raise RuntimeError("Routing failed even with max buffer")
+        raise RuntimeError(
+            "No route found. Try a different location or larger area.")
 
     def create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """
@@ -158,7 +170,7 @@ class RouteService:
         if all_gdfs:
             return pd.concat(all_gdfs, ignore_index=True)
 
-        return gpd.GeoDataFrame(columns=["geometry"])
+        return gpd.GeoDataFrame(columns=["geometry"], crs=self.area_config.crs)
 
     def _enrich_missing_edges(self, missing_tile_ids: list) -> gpd.GeoDataFrame:
         """Enrich missing tiles using EdgeEnricher and save to Redis."""
@@ -172,7 +184,7 @@ class RouteService:
                 log.warning("Failed to save enriched tiles to Redis.")
             return new_gdf
         log.warning("Enrichment failed or returned empty. Skipping save.")
-        return gpd.GeoDataFrame(columns=["geometry"])
+        return gpd.GeoDataFrame(columns=["geometry"], crs=self.area_config.crs)
 
     def get_tile_ids_by_buffer(self, buffer):
         """
@@ -201,12 +213,20 @@ class RouteService:
             self.network_type,
             tile_ids
         )
-        if result is None:
-            return gpd.GeoDataFrame(columns=["geometry"])
+        if result is None or result.empty:
+            return gpd.GeoDataFrame(columns=["geometry"], crs=self.area_config.crs)
         return result
 
     def _compute_routes(self, edges, nodes, origin_gdf, destination_gdf, balanced_value=0.5):
         """Compute multiple route variants and summaries."""
+
+        if 'geometry' not in edges.columns or edges.empty:
+            raise RuntimeError(
+                "Edges GeoDataFrame has no geometry column or is empty")
+
+        if 'geometry' not in nodes.columns or nodes.empty:
+            raise RuntimeError(
+                "Nodes GeoDataFrame has no geometry column or is empty")
 
         modes = {
             "fastest": 1,

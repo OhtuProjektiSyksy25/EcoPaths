@@ -116,7 +116,15 @@ class RouteAlgorithm:
         path_nodes = self.run_routing_algorithm(
             graph, origin_node, destination_node)
 
+        if not path_nodes or len(path_nodes) < 2:
+            raise ValueError(
+                "No valid route found between origin and destination")
+
         path_edges = self.extract_path_edges(path_nodes, graph)
+
+        if path_edges.empty:
+            raise ValueError("Route computation resulted in empty path")
+
         log.debug(
             f"Extracted {len(path_edges)} edges for final route", edge_count=len(path_edges))
 

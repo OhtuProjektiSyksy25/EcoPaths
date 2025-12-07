@@ -239,5 +239,5 @@ def test_get_route_raises_runtimeerror_when_cant_find_route(monkeypatch, route_s
     monkeypatch.setattr(route_service, "get_nodes_from_db",
                         lambda ids: simple_nodes_gdf)
 
-    with pytest.raises(RuntimeError, match="No edges found|Routing failed"):
+    with pytest.raises(RuntimeError, match="No route found"):
         route_service.get_route(origin, destination)
