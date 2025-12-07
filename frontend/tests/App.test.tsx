@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import App from '../src/App';
 
 // Mock the logo image
-jest.mock('../src/assets/images/ecopaths-logo-with-text.jpg', () => 'logo.jpg');
+jest.mock('../src/assets/images/ecopaths_logo_with_text.jpg', () => 'logo.jpg');
 
 // Mock hooks
 jest.mock('../src/hooks/useRoute', () => ({
