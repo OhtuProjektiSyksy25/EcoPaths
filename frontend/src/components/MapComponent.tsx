@@ -77,7 +77,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current,
     visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    showLoopOnly ? selectedRoute : null,
+    selectedRoute,
   );
 
   // Fit map to active routes
