@@ -10,7 +10,7 @@ import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
 import { ExposureOverlayProvider } from './contexts/ExposureOverlayContext';
-import logo from './assets/images/ecopaths-logo-with-text.jpg';
+import logo from './assets/images/ecopaths_logo_with_text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
 import ErrorPopup from './components/ErrorPopup';
