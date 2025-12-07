@@ -229,8 +229,100 @@ def test_compute_balanced_route_only_returns_only_one_route(
     assert result["routes"]["balanced"].get("type") == "FeatureCollection"
 
 
+def test_compute_routes_raises_error_with_empty_edges(route_service, origin_destination, simple_nodes_gdf):
+    """Test that _compute_routes raises RuntimeError when edges GeoDataFrame is empty."""
+    origin, destination = origin_destination
+    empty_edges = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:25833")
+
+    with pytest.raises(RuntimeError, match="Edges GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            empty_edges, simple_nodes_gdf, origin, destination)
+
+
+def test_compute_routes_raises_error_with_empty_nodes(route_service, origin_destination, simple_edges_gdf):
+    """Test that _compute_routes raises RuntimeError when nodes GeoDataFrame is empty."""
+    origin, destination = origin_destination
+    empty_nodes = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:25833")
+
+    with pytest.raises(RuntimeError, match="Nodes GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            simple_edges_gdf, empty_nodes, origin, destination)
+
+
+def test_compute_routes_raises_error_without_geometry_column_in_edges(route_service, origin_destination, simple_nodes_gdf):
+    """Test that _compute_routes raises RuntimeError when edges has no geometry column."""
+    origin, destination = origin_destination
+    # Create a regular DataFrame and convert to GeoDataFrame without geometry
+    edges_without_geom = gpd.GeoDataFrame(pd.DataFrame({"edge_id": [1, 2]}))
+
+    with pytest.raises(RuntimeError, match="Edges GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            edges_without_geom, simple_nodes_gdf, origin, destination)
+
+
+def test_compute_routes_raises_error_without_geometry_column_in_nodes(route_service, origin_destination, simple_edges_gdf):
+    """Test that _compute_routes raises RuntimeError when nodes has no geometry column."""
+    origin, destination = origin_destination
+    # Create a regular DataFrame and convert to GeoDataFrame without geometry
+    nodes_without_geom = gpd.GeoDataFrame(
+        pd.DataFrame({"node_id": ["A", "B"]}))
+
+    with pytest.raises(RuntimeError, match="Nodes GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            simple_edges_gdf, nodes_without_geom, origin, destination)
+
+
+def test_get_tile_edges_returns_empty_gdf_with_crs_when_no_tiles_found(monkeypatch, route_service):
+    """Test that get_tile_edges returns empty GeoDataFrame with CRS when no tiles found."""
+    monkeypatch.setattr(DummyRedisService, "prune_found_ids",
+                        staticmethod(lambda ids, r, a: ids))
+    monkeypatch.setattr(DummyRedisService, "get_gdf_by_list_of_keys",
+                        staticmethod(lambda ids, r, a: (False, [])))
+
+    def empty_enriched_tiles(self, tile_ids, network_type="walking"):
+        return None
+
+    monkeypatch.setattr(
+        "src.services.route_service.EdgeEnricher.get_enriched_tiles", empty_enriched_tiles)
+
+    result = route_service.get_tile_edges(["t999"])
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert result.empty
+    assert result.crs is not None
+    assert result.crs.to_string() == "EPSG:25833"
+
+
+def test_get_nodes_from_db_returns_empty_gdf_with_crs_when_no_nodes(monkeypatch, route_service):
+    """Test that get_nodes_from_db returns empty GeoDataFrame with CRS when no nodes found."""
+    monkeypatch.setattr("src.services.route_service.DatabaseClient.get_nodes_by_tile_ids",
+                        lambda self, area, network, ids: None)
+
+    result = route_service.get_nodes_from_db(["t999"])
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert result.empty
+    assert result.crs is not None
+    assert result.crs.to_string() == "EPSG:25833"
+
+
+def test_enrich_missing_edges_returns_empty_gdf_with_crs_on_failure(monkeypatch, route_service):
+    """Test that _enrich_missing_edges returns empty GeoDataFrame with CRS when enrichment fails."""
+
+    def failing_enrichment(self, tile_ids, network_type="walking"):
+        return None
+
+    monkeypatch.setattr(
+        "src.services.route_service.EdgeEnricher.get_enriched_tiles", failing_enrichment)
+
+    result = route_service._enrich_missing_edges(["t999"])
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert result.empty
+    assert result.crs is not None
+    assert result.crs.to_string() == "EPSG:25833"
+
+
 @pytest.mark.filterwarnings("ignore:Couldn't reach some vertices:RuntimeWarning")
-def test_get_route_raises_runtimeerror_when_cant_find_route(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
+def test_get_route_tries_multiple_buffer_sizes(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf, caplog):
+    """Test that get_route tries multiple buffer sizes (600m, 900m, 1200m) before failing."""
     origin, destination = origin_destination
     destination = gpd.GeoDataFrame(geometry=[Point(33, 33)], crs="EPSG:25833")
 
@@ -241,3 +333,8 @@ def test_get_route_raises_runtimeerror_when_cant_find_route(monkeypatch, route_s
 
     with pytest.raises(RuntimeError, match="No route found"):
         route_service.get_route(origin, destination)
+
+    # Verify all three buffer sizes were attempted
+    assert "600m" in caplog.text
+    assert "900m" in caplog.text
+    assert "1200m" in caplog.text
