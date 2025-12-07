@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
+import DisclaimerModal from './components/DisclaimerModal';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
@@ -120,18 +121,22 @@ function AppContent(): JSX.Element {
         <div className='header-content'>
           <img src={logo} alt='EcoPaths Logo' className='app-logo' />
         </div>
-        {selectedArea && !showAreaSelector && (
-          <div className='area-dropdown-container'>
-            <button
-              className='area-dropdown-button'
-              onClick={handleChangeArea}
-              disabled={!!locationError}
-            >
-              <Globe size={25} />
-              {selectedArea.display_name}
-            </button>
-          </div>
-        )}
+
+        <div className='header-right'>
+          {selectedArea && !showAreaSelector && (
+            <div className='area-dropdown-container'>
+              <button
+                className='area-dropdown-button'
+                onClick={handleChangeArea}
+                disabled={!!locationError}
+              >
+                <Globe size={25} />
+                {selectedArea.display_name}
+              </button>
+            </div>
+          )}
+          <DisclaimerModal />
+        </div>
       </header>
 
       <main className='main-container'>
