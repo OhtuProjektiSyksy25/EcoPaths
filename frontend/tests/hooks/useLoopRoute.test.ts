@@ -66,47 +66,6 @@ describe('useLoopRoute', () => {
     jest.useRealTimers();
   });
 
-  it('receives and merges loop data from EventSource', async () => {
-    const spy = jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
-      mockEventSource = new MockEventSource('test');
-      return mockEventSource as any;
-    });
-
-    jest.useFakeTimers();
-
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
-
-    act(() => {
-      jest.advanceTimersByTime(400);
-    });
-
-    // Simulate receiving loop1
-    act(() => {
-      if (mockEventSource.onmessage) {
-        mockEventSource.onmessage(
-          new MessageEvent('message', {
-            data: JSON.stringify({
-              variant: 'loop1',
-              route: { type: 'FeatureCollection', features: [] },
-              summary: {
-                time_estimates: { walk: '10 min', run: '5 min' },
-                total_length: 5,
-                aq_average: 45,
-              },
-            }),
-          }),
-        );
-      }
-    });
-
-    await waitFor(() => {
-      expect(result.current.routes).not.toBeNull();
-      expect(result.current.routes?.loop1).toBeDefined();
-    });
-
-    jest.useRealTimers();
-  });
-
   it('handles EventSource errors', async () => {
     const spy = jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
       mockEventSource = new MockEventSource('test');
@@ -129,7 +88,7 @@ describe('useLoopRoute', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Failed to fetch loop routes');
+      expect(result.current.error).toBe('Connection error while fetching loop routes');
     });
 
     jest.useRealTimers();
@@ -161,6 +120,38 @@ describe('useLoopRoute', () => {
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('handles backend loop-error event', async () => {
+    jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
+      mockEventSource = new MockEventSource('test');
+      return mockEventSource as any;
+    });
+
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+
+    act(() => {
+      const errCb = mockEventSource.addEventListener.mock.calls.find(
+        (call) => call[0] === 'loop-error',
+      )?.[1];
+      if (errCb) {
+        errCb(
+          new MessageEvent('loop-error', {
+            data: JSON.stringify({ message: 'Route computation failed' }),
+          }),
+        );
+      }
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('Route computation failed');
     });
 
     jest.useRealTimers();

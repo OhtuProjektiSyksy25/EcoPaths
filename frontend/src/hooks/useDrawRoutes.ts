@@ -8,9 +8,9 @@ const ROUTE_COLORS: Record<string, string> = {
   fastest: '#003cff',
   best_aq: '#008b23',
   balanced: '#00f5e0',
-  loop1: '#1e5a43',
-  loop2: '#7a2ea7',
-  loop3: '#2b4a9c',
+  loop1: '#2e7d32',
+  loop2: '#8f40b1',
+  loop3: '#0277bd',
 };
 
 const AQI_COLOR_SCALE = [

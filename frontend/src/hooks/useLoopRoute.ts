@@ -17,24 +17,28 @@ export const useLoopRoute = (
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const eventSourceRef = useRef<EventSource | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isClosedRef = useRef(false);
 
   useEffect(() => {
+    // Invalid input → reset state and stop
     if (!fromLocked || distanceKm <= 0) {
       setRoutes(null);
       setSummaries(null);
       setError(null);
       setLoading(false);
-      // Clean up EventSource if exists
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
+
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
       return;
     }
 
     const startStreaming = (): void => {
+      isClosedRef.current = false;
+
+      // Reset state
       setLoading(true);
       setError(null);
       setRoutes(null);
@@ -43,52 +47,69 @@ export const useLoopRoute = (
       const eventSource = streamLoopRoutes(fromLocked, distanceKm);
       eventSourceRef.current = eventSource;
 
-      // Receive individual loop routes as they're computed
-      eventSource.onmessage = (event) => {
+      // Helper: safely update routes/summaries
+      const handleLoopMessage = (event: MessageEvent) => {
         try {
           const newLoop = JSON.parse(event.data);
-
-          // Cumulative merge: add new route/summary to existing state
           if (newLoop.variant && newLoop.route && newLoop.summary) {
-            setRoutes((prev) => ({
-              ...prev,
-              [newLoop.variant]: newLoop.route,
-            }));
-            setSummaries((prev) => ({
-              ...prev,
-              [newLoop.variant]: newLoop.summary,
-            }));
+            setRoutes((prev) => ({ ...(prev ?? {}), [newLoop.variant]: newLoop.route }));
+            setSummaries((prev) => ({ ...(prev ?? {}), [newLoop.variant]: newLoop.summary }));
           }
         } catch (err) {
           console.error('Failed to parse loop event:', err);
+          setError('Failed to parse loop data');
         }
       };
 
-      // All loops complete event
-      eventSource.addEventListener('complete', () => {
+      // Loop data
+      eventSource.addEventListener('loop', handleLoopMessage);
+
+      // Loop-specific backend error
+      eventSource.addEventListener('loop-error', (ev) => {
+        try {
+          const data = JSON.parse((ev as MessageEvent).data || '{}');
+          setError(data.message || 'Failed to compute loop routes');
+        } catch {
+          setError('Failed to compute loop routes');
+        }
         setLoading(false);
+
+        isClosedRef.current = true;
         eventSource.close();
         eventSourceRef.current = null;
       });
 
-      // Error handling
-      eventSource.onerror = (err) => {
-        console.error('EventSource error:', err);
-        setError('Failed to fetch loop routes');
+      // All loops complete
+      eventSource.addEventListener('complete', () => {
         setLoading(false);
+        isClosedRef.current = true;
+
         eventSource.close();
         eventSourceRef.current = null;
+      });
+
+      // Connection-level SSE error
+      eventSource.onerror = () => {
+        if (!isClosedRef.current && eventSourceRef.current) {
+          console.warn('SSE connection error');
+          setError('Connection error while fetching loop routes');
+          setLoading(false);
+
+          isClosedRef.current = true;
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
+        }
       };
     };
 
-    // Debounce the stream start
+    // Debounce initial fetch by 400ms
     timerRef.current = setTimeout(startStreaming, 400);
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+      if (timerRef.current) clearTimeout(timerRef.current);
+
       if (eventSourceRef.current) {
+        isClosedRef.current = true;
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }

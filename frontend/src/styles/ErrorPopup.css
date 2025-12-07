@@ -24,8 +24,6 @@
 }
 
 .error-popup-content {
-  background: #ef4444;
-  color: white;
   padding: 18px 24px;
   border-radius: 14px;
   display: flex;
@@ -36,6 +34,40 @@
   font-weight: 500;
   font-family: 'Public Sans', sans-serif;
   white-space: pre-line;
+  border-left: 4px solid;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* ERROR - Punainen */
+.error-popup-content.error {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+  color: #c41e3a;
+  border-left-color: #c41e3a;
+  box-shadow: 0 4px 16px rgba(196, 30, 58, 0.12);
+}
+
+/* WARNING - Oranssi */
+.error-popup-content.warning {
+  background: linear-gradient(135deg, #fff8f0 0%, #ffe8cc 100%);
+  color: #d97706;
+  border-left-color: #d97706;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.12);
+}
+
+/* INFO - Sininen */
+.error-popup-content.info {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e0eeff 100%);
+  color: #0369a1;
+  border-left-color: #0369a1;
+  box-shadow: 0 4px 16px rgba(3, 105, 161, 0.12);
+}
+
+/* SUCCESS - Vihreä */
+.error-popup-content.success {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: #15803d;
+  border-left-color: #15803d;
+  box-shadow: 0 4px 16px rgba(21, 128, 61, 0.12);
 }
 
 @keyframes slideIn {
@@ -68,5 +100,6 @@
     padding: 16px 20px;
     gap: 12px;
     border-radius: 12px;
+    font-size: 14px;
   }
 }

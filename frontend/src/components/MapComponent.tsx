@@ -77,7 +77,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current,
     visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    showLoopOnly ? null : selectedRoute,
+    showLoopOnly ? selectedRoute : null,
   );
 
   // Fit map to active routes
@@ -215,6 +215,30 @@ const MapComponent: React.FC<MapComponentProps> = ({
       map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
     }
   }, [fromLocked, toLocked, loop, routes, loopRoutes]);
+
+  // Fit map to selected route
+  useEffect(() => {
+    if (!mapRef.current || !selectedRoute) return;
+
+    const map = mapRef.current;
+    const activeRoutes = showLoopOnly ? loopRoutes : routes;
+
+    if (!activeRoutes || !activeRoutes[selectedRoute]) return;
+
+    const selectedGeoJSON = activeRoutes[selectedRoute];
+    const coords = extractRouteCoordinates({ [selectedRoute]: selectedGeoJSON });
+    const bounds = calculateBounds(coords);
+
+    if (!bounds) return;
+
+    const isMobile = window.innerWidth <= 800;
+    const padding = getPadding(isMobile);
+
+    map.fitBounds(bounds, {
+      padding,
+      duration: 800,
+    });
+  }, [selectedRoute, routes, loopRoutes, showLoopOnly]);
 
   // Fly to selected area and disable interactions until finished
   useEffect(() => {

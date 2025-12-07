@@ -98,7 +98,9 @@ export const ExposureChart: React.FC<Props> = ({
   const xAxisTicks = (): { km: number; meters: number }[] => {
     const ticks: { km: number; meters: number }[] = [];
     const maxKm = maxX / 1000;
-    const step = 0.5; // km
+
+    const step = maxKm > 5 ? 1 : 0.5;
+
     for (let km = 0; km <= maxKm; km += step) {
       const meters = km * 1000;
       ticks.push({ km, meters });

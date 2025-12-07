@@ -50,16 +50,13 @@
   align-items: center;
   justify-content: space-between;
   gap: clamp(6px, 2vw, 10px);
-  padding: clamp(10px, 4vw, 12px);
+  padding: clamp(8px, 3vw, 14px);
   border-radius: clamp(10px, 2vw, 12px);
   font-family: 'Public Sans', sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   margin-top: clamp(6px, 2vw, 12px);
   user-select: none;
-  margin-left: 10px;
-  margin-right: 10px;
-
 }
 .best-aq-container {
   background-color: rgba(0, 184, 46, 0.1);
@@ -321,6 +318,6 @@
   }
 
   .sidebar-content > *:last-child {
-    margin-bottom: 40px;  
+    margin-bottom: 40px;
   }
 }

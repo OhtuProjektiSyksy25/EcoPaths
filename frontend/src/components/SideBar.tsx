@@ -93,8 +93,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false);
   const [waitingForLocation, setWaitingForLocation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const fromDebounce = useRef<number | null>();
-  const toDebounce = useRef<number | null>();
+  const fromDebounce = useRef<number | null>(null);
+  const toDebounce = useRef<number | null>(null);
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
@@ -246,6 +246,38 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 200);
   };
 
+  // Cleanup debounce timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (fromDebounce.current) {
+        window.clearTimeout(fromDebounce.current);
+        fromDebounce.current = null;
+      }
+      if (toDebounce.current) {
+        window.clearTimeout(toDebounce.current);
+        toDebounce.current = null;
+      }
+    };
+  }, []);
+
+  const safeFetchSuggestions = async (value: string): Promise<Place[]> => {
+    const apiUrl = getEnvVar('REACT_APP_API_URL') || '';
+    const encoded = encodeURIComponent(value);
+    try {
+      const response = await fetch(`${apiUrl}/api/geocode-forward/${encoded}`);
+      if (!response.ok) {
+        console.warn('geocode-forward returned non-ok:', response.status);
+        return [];
+      }
+      const data = await response.json();
+      if (!data || !Array.isArray(data.features)) return [];
+      return data.features;
+    } catch (err) {
+      console.warn('geocode-forward error', err);
+      return [];
+    }
+  };
+
   const HandleFromChange = async (value: string): Promise<void> => {
     // Skip if this is the "Use my current location" suggestion
     if (value === 'Use my current location') {
@@ -260,7 +292,7 @@ const SideBar: React.FC<SideBarProps> = ({
       onFromSelect(null);
       fromInputSelected.current = false;
       if (fromDebounce.current) {
-        clearTimeout(fromDebounce.current);
+        window.clearTimeout(fromDebounce.current);
         fromDebounce.current = null;
       }
       return;
@@ -272,25 +304,15 @@ const SideBar: React.FC<SideBarProps> = ({
       return;
     }
 
-    if (fromDebounce.current) clearTimeout(fromDebounce.current);
+    if (fromDebounce.current) window.clearTimeout(fromDebounce.current);
     fromDebounce.current = window.setTimeout(async () => {
       if (!value) {
         setFromSuggestions([]);
         return;
       }
-      try {
-        const response = await fetch(
-          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
-        );
-        if (!response.ok) {
-          throw new Error(`server error: ${response.status}`);
-        }
-        const data = await response.json();
-        setFromSuggestions(data.features);
-      } catch (error) {
-        console.log(error);
-      }
-    }, 400);
+      const features = await safeFetchSuggestions(value);
+      setFromSuggestions(features);
+    }, 400) as unknown as number;
   };
 
   const HandleToChange = async (value: string): Promise<void> => {
@@ -301,7 +323,7 @@ const SideBar: React.FC<SideBarProps> = ({
       onToSelect(null);
       toInputSelected.current = false;
       if (toDebounce.current) {
-        clearTimeout(toDebounce.current);
+        window.clearTimeout(toDebounce.current);
         toDebounce.current = null;
       }
       return;
@@ -313,30 +335,19 @@ const SideBar: React.FC<SideBarProps> = ({
       return;
     }
 
-    if (toDebounce.current) clearTimeout(toDebounce.current);
+    if (toDebounce.current) window.clearTimeout(toDebounce.current);
     toDebounce.current = window.setTimeout(async () => {
       if (!value) {
         setToSuggestions([]);
         return;
       }
-      try {
-        const response = await fetch(
-          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
-        );
-        if (!response.ok) {
-          throw new Error(`server error: ${response.status}`);
-        }
-        const data = await response.json();
-        setToSuggestions(data.features);
-      } catch (error) {
-        console.log(error);
-        setToSuggestions([]);
-      }
-    }, 400);
+      const features = await safeFetchSuggestions(value);
+      setToSuggestions(features);
+    }, 400) as unknown as number;
   };
 
   const getExposureEdges = (routeKey: RouteType | 'loop1' | 'loop2' | 'loop3'): ExposurePoint[] => {
-    const routeGeoJSON = routeKey.startsWith('loop')
+    const routeGeoJSON = (routeKey as string).startsWith('loop')
       ? loopRoutes?.[routeKey as keyof typeof loopRoutes]
       : routes?.[routeKey as RouteType];
 
@@ -371,6 +382,7 @@ const SideBar: React.FC<SideBarProps> = ({
   }, [errorMessage, onErrorChange, selectedArea]);
 
   useEffect(() => {
+    // Close overlay if loading or no routes
     if (loading || loopLoading || (!routes && !loading && !loopLoading)) {
       close();
     }
@@ -467,37 +479,96 @@ const SideBar: React.FC<SideBarProps> = ({
             )}
           </div>
 
+          {/* user-provided children (render once) */}
           {children}
 
           {loop && (
             <>
-              {loopLoading ? (
+              {loopLoading && (!loopSummaries || Object.keys(loopSummaries).length === 0) ? (
                 <div className='loading-spinner'>
                   <div className='spinner'></div>
-                  <p>Loading loop route...</p>
+                  <p>Loading loop routes...</p>
                 </div>
-              ) : loopSummaries?.loop ? (
-                <div
-                  className='route-card-base loop-container route-container'
-                  onClick={() => onRouteSelect('loop')}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  <RouteInfoCard
-                    route_type='Loop Route'
-                    time_estimates={loopSummaries.loop.time_estimates}
-                    total_length={loopSummaries.loop.total_length}
-                    aq_average={loopSummaries.loop.aq_average}
-                    exposurePoints={getExposureEdges('loop')}
-                    isSelected={selectedRoute === 'loop'}
-                    isExpanded={selectedRoute === 'loop'}
-                    mode={routeMode}
-                    onClick={() => {
-                      const points = getExposureEdges('loop');
-                      open({ title: 'Loop Route', points, mode: 'cumulative' });
-                    }}
-                  />
-                </div>
-              ) : null}
+              ) : (
+                <>
+                  {loopSummaries?.loop1 && (
+                    <div
+                      className='route-card-base loop1-container route-container'
+                      onClick={() => onRouteSelect('loop1')}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <RouteInfoCard
+                        route_type='Loop 1'
+                        time_estimates={loopSummaries.loop1.time_estimates}
+                        total_length={loopSummaries.loop1.total_length}
+                        aq_average={loopSummaries.loop1.aq_average}
+                        exposurePoints={getExposureEdges('loop1')}
+                        isSelected={selectedRoute === 'loop1'}
+                        isExpanded={selectedRoute === 'loop1'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const points = getExposureEdges('loop1');
+                          open({ title: 'Loop 1', points, mode: 'cumulative' });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {loopSummaries?.loop2 && (
+                    <div
+                      className='route-card-base loop2-container route-container'
+                      onClick={() => onRouteSelect('loop2')}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <RouteInfoCard
+                        route_type='Loop 2'
+                        time_estimates={loopSummaries.loop2.time_estimates}
+                        total_length={loopSummaries.loop2.total_length}
+                        aq_average={loopSummaries.loop2.aq_average}
+                        exposurePoints={getExposureEdges('loop2')}
+                        isSelected={selectedRoute === 'loop2'}
+                        isExpanded={selectedRoute === 'loop2'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const points = getExposureEdges('loop2');
+                          open({ title: 'Loop 2', points, mode: 'cumulative' });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {loopSummaries?.loop3 && (
+                    <div
+                      className='route-card-base loop3-container route-container'
+                      onClick={() => onRouteSelect('loop3')}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <RouteInfoCard
+                        route_type='Loop 3'
+                        time_estimates={loopSummaries.loop3.time_estimates}
+                        total_length={loopSummaries.loop3.total_length}
+                        aq_average={loopSummaries.loop3.aq_average}
+                        exposurePoints={getExposureEdges('loop3')}
+                        isSelected={selectedRoute === 'loop3'}
+                        isExpanded={selectedRoute === 'loop3'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const points = getExposureEdges('loop3');
+                          open({ title: 'Loop 3', points, mode: 'cumulative' });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {loopLoading && loopSummaries && Object.keys(loopSummaries).length < 3 && (
+                    <div className='loading-spinner'>
+                      <div className='spinner'></div>
+                      <p>Loading more routes...</p>
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className='aqi-toggle-button'>
                 <button
                   onClick={() => setShowAQIColors(!showAQIColors)}
@@ -513,6 +584,7 @@ const SideBar: React.FC<SideBarProps> = ({
             </>
           )}
 
+          {/* --------- NORMAL MODE (single block) --------- */}
           {!loop && !children && (
             <>
               {loading && !summaries ? (
@@ -538,9 +610,7 @@ const SideBar: React.FC<SideBarProps> = ({
                       mode={routeMode}
                       onClick={() => {
                         const routeKey: RouteType = 'best_aq';
-                        //console.log('routes?.[routeKey]:', routes?.[routeKey]);
                         const points = getExposureEdges(routeKey);
-                        //console.log('Overlay points:', points);
                         open({ points, title: 'Best AQ Route', mode: 'cumulative' });
                       }}
                     />
@@ -596,6 +666,7 @@ const SideBar: React.FC<SideBarProps> = ({
                       />
                     )}
                   </div>
+
                   <RouteSlider
                     value={balancedWeight}
                     onChange={setBalancedWeight}
@@ -618,202 +689,6 @@ const SideBar: React.FC<SideBarProps> = ({
             </>
           )}
         </div>
-
-        {children}
-
-        {loop && (
-          <>
-            {loopLoading && (!loopSummaries || Object.keys(loopSummaries).length === 0) ? (
-              <div className='route-loading-message'>
-                <p>Loading loop routes...</p>
-              </div>
-            ) : null}
-
-            {loopSummaries?.loop1 && (
-              <div
-                className='route-card-base loop1-container route-container'
-                onClick={() => onRouteSelect('loop1')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <RouteInfoCard
-                  route_type='Loop 1'
-                  time_estimates={loopSummaries.loop1.time_estimates}
-                  total_length={loopSummaries.loop1.total_length}
-                  aq_average={loopSummaries.loop1.aq_average}
-                  exposurePoints={getExposureEdges('loop1')}
-                  isSelected={selectedRoute === 'loop1'}
-                  isExpanded={selectedRoute === 'loop1'}
-                  mode={routeMode}
-                  onClick={() => {
-                    const points = getExposureEdges('loop1');
-                    open({ title: 'Loop 1', points, mode: 'cumulative' });
-                  }}
-                />
-              </div>
-            )}
-
-            {loopSummaries?.loop2 && (
-              <div
-                className='route-card-base loop2-container route-container'
-                onClick={() => onRouteSelect('loop2')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <RouteInfoCard
-                  route_type='Loop 2'
-                  time_estimates={loopSummaries.loop2.time_estimates}
-                  total_length={loopSummaries.loop2.total_length}
-                  aq_average={loopSummaries.loop2.aq_average}
-                  exposurePoints={getExposureEdges('loop2')}
-                  isSelected={selectedRoute === 'loop2'}
-                  isExpanded={selectedRoute === 'loop2'}
-                  mode={routeMode}
-                  onClick={() => {
-                    const points = getExposureEdges('loop2');
-                    open({ title: 'Loop 2', points, mode: 'cumulative' });
-                  }}
-                />
-              </div>
-            )}
-
-            {loopSummaries?.loop3 && (
-              <div
-                className='route-card-base loop3-container route-container'
-                onClick={() => onRouteSelect('loop3')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <RouteInfoCard
-                  route_type='Loop 3'
-                  time_estimates={loopSummaries.loop3.time_estimates}
-                  total_length={loopSummaries.loop3.total_length}
-                  aq_average={loopSummaries.loop3.aq_average}
-                  exposurePoints={getExposureEdges('loop3')}
-                  isSelected={selectedRoute === 'loop3'}
-                  isExpanded={selectedRoute === 'loop3'}
-                  mode={routeMode}
-                  onClick={() => {
-                    const points = getExposureEdges('loop3');
-                    open({ title: 'Loop 3', points, mode: 'cumulative' });
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Loading indicator for remaining loops */}
-            {loopLoading && loopSummaries && Object.keys(loopSummaries).length < 3 && (
-              <div className='route-loading-message'>
-                <p>Computing {3 - Object.keys(loopSummaries).length} more loop route(s)...</p>
-              </div>
-            )}
-
-            <div className='aqi-toggle-button'>
-              <button
-                onClick={() => setShowAQIColors(!showAQIColors)}
-                className={showAQIColors ? 'active' : ''}
-              >
-                <div className='aqi-button-content'>
-                  <span className='aqi-button-text'>
-                    {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
-                  </span>
-                </div>
-              </button>
-            </div>
-          </>
-        )}
-
-        {!loop && summaries && !children && (
-          <>
-            <div
-              className='route-card-base best-aq-container route-container'
-              onClick={() => onRouteSelect('best_aq')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              <RouteInfoCard
-                route_type='Best AQ Route'
-                time_estimates={summaries.best_aq.time_estimates}
-                total_length={summaries.best_aq.total_length}
-                aq_average={summaries.best_aq.aq_average}
-                comparisons={aqiDifferences?.best_aq}
-                isSelected={selectedRoute === 'best_aq'}
-                isExpanded={selectedRoute === 'best_aq'}
-                mode={routeMode}
-                onClick={() => {
-                  const routeKey: RouteType = 'best_aq';
-                  //console.log('routes?.[routeKey]:', routes?.[routeKey]);
-                  const points = getExposureEdges(routeKey);
-                  //console.log('Overlay points:', points);
-                  open({ points, title: 'Best AQ Route', mode: 'cumulative' });
-                }}
-              />
-            </div>
-
-            <div
-              className='route-card-base fastest-container route-container'
-              onClick={() => onRouteSelect('fastest')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              <RouteInfoCard
-                route_type='Fastest Route'
-                time_estimates={summaries.fastest.time_estimates}
-                total_length={summaries.fastest.total_length}
-                aq_average={summaries.fastest.aq_average}
-                comparisons={aqiDifferences?.fastest}
-                isSelected={selectedRoute === 'fastest'}
-                isExpanded={selectedRoute === 'fastest'}
-                mode={routeMode}
-                onClick={() => {
-                  const routeKey: RouteType = 'fastest';
-                  const points = getExposureEdges(routeKey);
-                  open({ points, title: 'Fastest Route', mode: 'cumulative' });
-                }}
-              />
-            </div>
-
-            <div
-              className='route-card-base balanced-container route-container'
-              onClick={() => onRouteSelect('balanced')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              {balancedLoading ? (
-                <div className='route-loading-overlay'>
-                  <h4>Loading route...</h4>
-                </div>
-              ) : (
-                <RouteInfoCard
-                  route_type='Custom Route'
-                  time_estimates={summaries.balanced.time_estimates}
-                  total_length={summaries.balanced.total_length}
-                  aq_average={summaries.balanced.aq_average}
-                  comparisons={aqiDifferences?.balanced}
-                  isSelected={selectedRoute === 'balanced'}
-                  isExpanded={selectedRoute === 'balanced'}
-                  mode={routeMode}
-                  onClick={() => {
-                    const routeKey: RouteType = 'balanced';
-                    const points = getExposureEdges(routeKey);
-                    open({ points, title: 'Custom Route', mode: 'cumulative' });
-                  }}
-                />
-              )}
-            </div>
-            <RouteSlider
-              value={balancedWeight}
-              onChange={setBalancedWeight}
-              disabled={loading || balancedLoading}
-            />
-            <div className='aqi-toggle-button'>
-              <button
-                onClick={() => setShowAQIColors(!showAQIColors)}
-                className={showAQIColors ? 'active' : ''}
-              >
-                <div className='aqi-button-content'>
-                  <span className='aqi-button-text'>
-                    {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
-                  </span>
-                </div>
-              </button>
-            </div>
-          </>
-        )}
       </div>
     </>
   );
