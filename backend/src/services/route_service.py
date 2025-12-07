@@ -69,7 +69,7 @@ class RouteService:
         self.current_route_algorithm = None
 
     def get_route(self, origin_gdf: gpd.GeoDataFrame, destination_gdf: gpd.GeoDataFrame,
-                  balanced_value: float = 0.5) -> dict:
+                  balanced_value: float = 0.5, buffer_m=600) -> dict:
         """
         Main entrypoint: compute route and return routes + summaries.
 
@@ -81,23 +81,31 @@ class RouteService:
         Returns:
             dict: GeoJSON FeatureCollection and route summaries.
         """
+        for buffer_length in [buffer_m, buffer_m+300, buffer_m+600]:
+            try:
+                buffer = self.create_buffer(
+                    origin_gdf, destination_gdf, buffer_length)
+                tile_ids = self.db_client.get_tile_ids_by_buffer(
+                    self.area, buffer)
+                # Get edges for relevant tiles (Redis + enrich new tiles if needed)
+                edges = self.get_tile_edges(tile_ids)
+                # Nodes_gdf from database
+                nodes = self.get_nodes_from_db(tile_ids)
 
-        buffer = self.create_buffer(origin_gdf, destination_gdf)
-        tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
+                if edges is None or edges.empty:
+                    raise RuntimeError(
+                        "No edges found for requested route area.")
 
-        # Get edges for relevant tiles (Redis + enrich new tiles if needed)
-        edges = self.get_tile_edges(tile_ids)
+                edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+                return self._compute_routes(
+                    edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
+                )
 
-        # Nodes_gdf from database
-        nodes = self.get_nodes_from_db(tile_ids)
-        if edges is None or edges.empty:
-            raise RuntimeError("No edges found for requested route area.")
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                log.warning(
+                    f"Routing failed with buffer {buffer_length}m: {e}")
 
-        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
-
-        return self._compute_routes(
-            edges_subset, nodes, origin_gdf, destination_gdf, balanced_value
-        )
+        raise RuntimeError("Routing failed even with max buffer")
 
     def create_buffer(self, origin_gdf, destination_gdf, buffer_m=600) -> Polygon:
         """
