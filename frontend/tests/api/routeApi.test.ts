@@ -1,4 +1,4 @@
-import { fetchRoute, fetchLoopRoute } from '../../src/api/routeApi';
+import { fetchRoute, streamLoopRoutes } from '../../src/api/routeApi';
 import { LockedLocation } from '@/types/route';
 
 describe('routeApi', () => {
@@ -57,39 +57,55 @@ describe('routeApi', () => {
     });
   });
 
-  describe('fetchLoopRoute', () => {
-    it('sends correct POST request with distance param and returns JSON', async () => {
-      const mockResponse = { routes: {}, summaries: {} };
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+  describe('streamLoopRoutes', () => {
+    let mockEventSource: any;
 
-      const result = await fetchLoopRoute(fromLocked, 10);
+    beforeEach(() => {
+      mockEventSource = {
+        addEventListener: jest.fn(),
+        close: jest.fn(),
+        readyState: 0,
+        url: '',
+        withCredentials: false,
+        CONNECTING: 0,
+        OPEN: 1,
+        CLOSED: 2,
+        onopen: null,
+        onmessage: null,
+        onerror: null,
+      };
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/getloop?distance=10',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'FeatureCollection',
-            features: [
-              {
-                type: 'Feature',
-                properties: { role: 'start' },
-                geometry: { type: 'Point', coordinates: [13.4, 52.5] },
-              },
-            ],
-          }),
-        }),
-      );
-      expect(result).toEqual(mockResponse);
+      global.EventSource = jest.fn(() => mockEventSource) as any;
     });
 
-    it('throws an error if response is not ok', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 400 });
-      await expect(fetchLoopRoute(fromLocked, 5)).rejects.toThrow('Server error: 400');
+    it('creates EventSource with correct URL parameters', () => {
+      const eventSource = streamLoopRoutes(fromLocked, 2.5);
+
+      expect(global.EventSource).toHaveBeenCalledWith(
+        'http://localhost:8000/api/getloop/stream?lat=52.5&lon=13.4&distance=2.5',
+      );
+      expect(eventSource).toBe(mockEventSource);
+    });
+
+    it('uses correct coordinate order (lat, lon)', () => {
+      const customLocation: LockedLocation = {
+        full_address: 'Test',
+        geometry: { coordinates: [13.404954, 52.520008] },
+      };
+
+      streamLoopRoutes(customLocation, 5);
+
+      expect(global.EventSource).toHaveBeenCalledWith(
+        'http://localhost:8000/api/getloop/stream?lat=52.520008&lon=13.404954&distance=5',
+      );
+    });
+
+    it('returns EventSource instance for subscribing to events', () => {
+      const eventSource = streamLoopRoutes(fromLocked, 3);
+
+      expect(eventSource).toBeDefined();
+      expect(eventSource).toHaveProperty('addEventListener');
+      expect(eventSource).toHaveProperty('close');
     });
   });
 });

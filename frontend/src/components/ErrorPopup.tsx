@@ -4,47 +4,31 @@ import '../styles/ErrorPopup.css';
 interface ErrorPopupProps {
   message: string | null;
   onClose: () => void;
-  duration?: number;
+  type?: 'error' | 'warning' | 'info' | 'success';
 }
 
-const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose, duration = 4000 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isFading, setIsFading] = useState(false);
+const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose, type = 'error' }) => {
+  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    if (message) {
-      setIsVisible(true);
-      setIsFading(false);
+    if (!message) return;
 
-      const fadeTimer = setTimeout(() => {
-        setIsFading(true);
-      }, duration - 500);
-
-      const closeTimer = setTimeout(() => {
-        setIsVisible(false);
+    const timer = setTimeout(() => {
+      setFadeOut(true);
+      setTimeout(() => {
         onClose();
-      }, duration);
+        setFadeOut(false);
+      }, 500);
+    }, 5000);
 
-      return () => {
-        clearTimeout(fadeTimer);
-        clearTimeout(closeTimer);
-      };
-    }
-  }, [message, duration, onClose]);
+    return () => clearTimeout(timer);
+  }, [message, onClose]);
 
-  const handleClick = (): void => {
-    setIsFading(true);
-    setTimeout(() => {
-      setIsVisible(false);
-      onClose();
-    }, 300);
-  };
-
-  if (!isVisible || !message) return null;
+  if (!message) return null;
 
   return (
-    <div className={`error-popup ${isFading ? 'fade-out' : ''}`} onClick={handleClick}>
-      <div className='error-popup-content'>{message}</div>
+    <div className={`error-popup ${fadeOut ? 'fade-out' : ''}`} onClick={onClose}>
+      <div className={`error-popup-content ${type}`}>{message}</div>
     </div>
   );
 };

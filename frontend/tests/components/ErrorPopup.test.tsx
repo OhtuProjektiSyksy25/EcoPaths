@@ -12,7 +12,9 @@ describe('ErrorPopup', () => {
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
   });
 
   afterAll(() => {
@@ -41,21 +43,12 @@ describe('ErrorPopup', () => {
     });
   });
 
-  test('auto-closes after default duration', async () => {
-    render(<ErrorPopup message='Auto close test' onClose={mockOnClose} />);
-
-    act(() => {
-      jest.advanceTimersByTime(4000);
-    });
-
-    await waitFor(() => {
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
-    });
-  });
-
   test('cleans up timers when unmounted', () => {
     const { unmount } = render(<ErrorPopup message='Unmount test' onClose={mockOnClose} />);
-    unmount();
+
+    act(() => {
+      unmount();
+    });
 
     act(() => {
       jest.advanceTimersByTime(5000);

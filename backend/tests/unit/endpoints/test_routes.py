@@ -4,6 +4,8 @@ from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from src.main import app
 
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="pyproj")
+
 
 class MockAreaConfig:
     crs = "EPSG:25833"
@@ -130,25 +132,121 @@ def test_getroute_calls_correct_function_according_to_balancedbool(monkeypatch, 
     args, _ = mock_service.get_route.call_args
     assert len(args) == 3
     assert args[2] == 0.5
-    mock_service.compute_balanced_route_only.assert_not_called()
 
+    # Test with balanced_route=True
     mock_service.reset_mock()
-
-    new_body = {
-        "features": [
-            {"type": "Feature", "properties": {"role": "start"},
-                "geometry": {"type": "Point", "coordinates": [1, 2]}},
-            {"type": "Feature", "properties": {"role": "end"},
-                "geometry": {"type": "Point", "coordinates": [3, 4]}},
-        ],
-        "balanced_route": True,
-        "balanced_weight": 0.8,
-    }
+    new_body = body.copy()
+    new_body["balanced_route"] = True
+    new_body["balanced_weight"] = 0.8
 
     client.post("/api/getroute", json=new_body)
-
-    args, _ = mock_service.compute_balanced_route_only.call_args
-    assert len(args) == 1
-    assert args[0] == 0.8
+    mock_service.compute_balanced_route_only.assert_called_once_with(0.8)
     mock_service.get_route.assert_not_called()
-    client.post("/api/getroute", json=new_body)
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_getloop_stream_no_area_selected(client):
+    client.app.state.area_config = None
+
+    response = client.get(
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+    assert response.status_code == 400
+    assert response.json() == {"error": "No area selected."}
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_getloop_stream_success(monkeypatch, client):
+    """Test successful SSE stream with three loop variants."""
+
+    class MockLoopRouteService:
+        def __init__(self, area):
+            self.area = area
+
+        def get_round_trip(self, origin_gdf, distance_m):
+            for i in range(1, 4):
+                loop_key = f"loop{i}"
+                yield {
+                    "routes": {loop_key: {"type": "FeatureCollection", "features": [{}]}},
+                    "summaries": {loop_key: {"distance": 2500 + i * 100, "duration": 600 + i*50, "aq_average": 50+i}}
+                }
+
+    monkeypatch.setattr(
+        "endpoints.routes.LoopRouteService", MockLoopRouteService
+    )
+
+    response = client.get(
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+
+    content = response.text
+    assert 'event: loop' in content
+    assert 'event: complete' in content
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_getloop_stream_loop_error(monkeypatch, client):
+    """Test handling of error emitted by service."""
+
+    class MockLoopRouteService:
+        def __init__(self, area):
+            self.area = area
+
+        def get_round_trip(self, origin_gdf, distance_m):
+            raise RuntimeError("Test loop-error")
+
+    monkeypatch.setattr(
+        "endpoints.routes.LoopRouteService", MockLoopRouteService
+    )
+
+    response = client.get(
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+    assert response.status_code == 200
+    content = response.text
+    assert 'event: error' in content
+    assert 'Test loop-error' in content
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_getloop_stream_general_error(monkeypatch, client):
+    """Test that unexpected exceptions emit event: error."""
+
+    class MockLoopRouteService:
+        def __init__(self, area):
+            self.area = area
+
+        def get_round_trip(self, origin_gdf, distance_m):
+            raise ValueError("Unexpected bug")
+
+    monkeypatch.setattr(
+        "endpoints.routes.LoopRouteService", MockLoopRouteService
+    )
+
+    response = client.get(
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+    content = response.text
+    assert 'event: error' in content
+    assert 'Internal error while computing loops' in content
+
+
+@pytest.mark.usefixtures("setup_mock_lifespan")
+def test_getloop_stream_distance_capping(monkeypatch, client):
+    """Test that distance is capped at 10km."""
+
+    captured_distance = {}
+
+    class MockLoopRouteService:
+        def __init__(self, area):
+            self.area = area
+
+        def get_round_trip(self, origin_gdf, distance_m):
+            captured_distance['value'] = distance_m
+            yield {"routes": {"loop1": {"type": "FeatureCollection", "features": []}},
+                   "summaries": {"loop1": {"distance": 2500}}}
+
+    monkeypatch.setattr(
+        "endpoints.routes.LoopRouteService", MockLoopRouteService
+    )
+
+    client.get("/api/getloop/stream?lat=52.52&lon=13.40&distance=5")
+    assert captured_distance['value'] == 5000

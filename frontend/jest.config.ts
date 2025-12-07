@@ -27,9 +27,9 @@ const config: Config = {
     // Map all CSS/SCSS imports to identity-obj-proxy
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     // Mock image files (jpg, jpeg, png, gif, etc.)
-    '\\.(jpg|jpeg|png|gif|webp|bmp)$': '<rootDir>/tests/__mocks__/fileMock.ts',
+    '\\.(jpg|jpeg|png|gif|webp|bmp)$': '<rootDir>/tests/__mocks__/fileMock',
     // Mock SVG imports (support `import { ReactComponent as Icon } from './icon.svg'`)
-    '\\.(svg)$': '<rootDir>/tests/__mocks__/svgrMock.ts',
+    '\\.(svg)$': '<rootDir>/tests/__mocks__/svgrMock',
   },
 
   // Transform ignore patterns (except certain node_modules that need transpiling)

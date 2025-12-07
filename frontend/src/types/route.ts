@@ -21,7 +21,7 @@ export interface RouteFeatureProperties {
   [key: string]: string | number | boolean | Array<string | number | boolean> | undefined;
 }
 
-export type RouteType = 'fastest' | 'best_aq' | 'balanced' | 'loop';
+export type RouteType = 'fastest' | 'best_aq' | 'balanced' | 'loop1' | 'loop2' | 'loop3';
 
 /**
  * A single GeoJSON Feature representing a segment or part of a route.

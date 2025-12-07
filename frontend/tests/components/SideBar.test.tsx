@@ -178,7 +178,7 @@ const mockRoutes: Record<string, RouteGeoJSON> = {
 };
 
 const mockLoopRoutes: Record<string, RouteGeoJSON> = {
-  loop: {
+  loop1: {
     type: 'FeatureCollection',
     features: [
       {
@@ -191,7 +191,7 @@ const mockLoopRoutes: Record<string, RouteGeoJSON> = {
           ],
         },
         properties: {
-          route_type: 'loop',
+          route_type: 'loop1',
           distance_cumulative: 0,
           pm25_inhaled_cumulative: 0,
           pm10_inhaled_cumulative: 0,
@@ -209,12 +209,58 @@ const mockLoopRoutes: Record<string, RouteGeoJSON> = {
           ],
         },
         properties: {
-          route_type: 'loop',
+          route_type: 'loop1',
           distance_cumulative: 2000,
           pm25_inhaled_cumulative: 40,
           pm10_inhaled_cumulative: 55,
           pm2_5: 10,
           pm10: 14,
+        },
+      },
+    ],
+  },
+  loop2: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.94, 60.171],
+          ],
+        },
+        properties: {
+          route_type: 'loop2',
+          distance_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 8,
+          pm10: 12,
+        },
+      },
+    ],
+  },
+  loop3: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [24.935, 60.169],
+            [24.94, 60.171],
+          ],
+        },
+        properties: {
+          route_type: 'loop3',
+          distance_cumulative: 0,
+          pm25_inhaled_cumulative: 0,
+          pm10_inhaled_cumulative: 0,
+          pm2_5: 15,
+          pm10: 20,
         },
       },
     ],
@@ -834,11 +880,11 @@ describe('SideBar', () => {
       loop: false,
     };
 
-    const getExposureEdges = (routeKey: RouteType, loop = false) => {
-      const routeGeoJSON =
-        loop && routeKey === 'loop'
-          ? defaultProps.loopRoutes?.loop
-          : defaultProps.routes?.[routeKey];
+    const getExposureEdges = (routeKey: RouteType | 'loop1' | 'loop2' | 'loop3', loop = false) => {
+      const routeGeoJSON = routeKey.startsWith('loop')
+        ? defaultProps.loopRoutes?.[routeKey as keyof typeof defaultProps.loopRoutes]
+        : defaultProps.routes?.[routeKey as RouteType];
+
       if (!routeGeoJSON?.features) return [];
 
       return routeGeoJSON.features
@@ -889,8 +935,8 @@ describe('SideBar', () => {
       expect(edges[1] && edges[1].pm10_cum).toBe(24);
     });
 
-    test('returns correct exposure points for loop route when loop=true', () => {
-      const edges = getExposureEdges('loop', true);
+    test('returns correct exposure points for loop1 route', () => {
+      const edges = getExposureEdges('loop1', true);
       expect(edges).toHaveLength(2);
       expect(edges[0]).toEqual({
         distance_cum: 0,
@@ -900,6 +946,18 @@ describe('SideBar', () => {
         pm10_seg: 18,
       });
       expect(edges[1] && edges[1].distance_cum).toBe(2000);
+    });
+
+    test('returns correct exposure points for loop2 route', () => {
+      const edges = getExposureEdges('loop2', true);
+      expect(edges).toHaveLength(1);
+      expect(edges[0] && edges[0].pm25_seg).toBe(8);
+    });
+
+    test('returns correct exposure points for loop3 route', () => {
+      const edges = getExposureEdges('loop3', true);
+      expect(edges).toHaveLength(1);
+      expect(edges[0] && edges[0].pm25_seg).toBe(15);
     });
 
     test('returns empty array when routeKey not found', () => {
