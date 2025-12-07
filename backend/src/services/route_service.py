@@ -164,7 +164,7 @@ class RouteService:
                 log.warning("Failed to save enriched tiles to Redis.")
             return new_gdf
         log.warning("Enrichment failed or returned empty. Skipping save.")
-        return None
+        return gpd.GeoDataFrame(columns=["geometry"])
 
     def get_tile_ids_by_buffer(self, buffer):
         """
