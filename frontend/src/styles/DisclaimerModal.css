@@ -152,7 +152,7 @@
   background: #add6b1;
   border-left: 4px solid #000000;
   padding: clamp(0.75rem, 2vw, 1rem);
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+  margin-bottom: clamp(1.5rem, 3vw, 6rem);
   border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
 }
 
