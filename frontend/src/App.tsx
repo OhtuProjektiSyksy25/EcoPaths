@@ -27,7 +27,7 @@ import ErrorPopup from './components/ErrorPopup';
  *
  * @returns JSX.Element representing the full application layout
  */
-function App(): JSX.Element {
+function AppContent(): JSX.Element {
   const {
     selectedArea,
     showAreaSelector,
@@ -45,15 +45,12 @@ function App(): JSX.Element {
     handleAreaSelect,
     handleChangeArea,
     handleRouteSelect,
-  } = useAreaHandlers(); // Area selection state
+  } = useAreaHandlers();
 
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showAQIColors, setShowAQIColors] = useState(false);
   const [routeMode, setRouteMode] = useState<'walk' | 'run'>('walk');
-
-  // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
-
   const [routeError, setRouteError] = useState<string | null>(null);
 
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
@@ -67,85 +64,130 @@ function App(): JSX.Element {
     routes: loopRoutes,
     summaries: loopSummaries,
     loading: loopLoading,
+    error: loopError,
   } = useLoopRoute(fromLocked, loopDistance);
 
   useEffect(() => {
-    if (error) {
-      setRouteError(error);
+    setRouteError(error || loopError);
+  }, [error, loopError]);
+
+  const getErrorType = (errorMsg: string | null): 'error' | 'warning' | 'info' | 'success' => {
+    if (!errorMsg) return 'error';
+
+    const msg = errorMsg.toLowerCase();
+
+    if (msg.includes('success') || msg.includes('completed')) {
+      return 'success';
     }
-  }, [error]);
+
+    if (msg.includes('info') || msg.includes('processing')) {
+      return 'info';
+    }
+
+    if (
+      msg.includes('connection error') ||
+      msg.includes('timeout') ||
+      msg.includes('isolated') ||
+      msg.includes('island') ||
+      msg.includes('no route found') ||
+      msg.includes('partial')
+    ) {
+      return 'warning';
+    }
+
+    if (
+      msg.includes('route computation failed') ||
+      msg.includes('internal error') ||
+      msg.includes('failed') ||
+      msg.includes('exception')
+    ) {
+      return 'error';
+    }
+
+    return 'error';
+  };
 
   return (
+    <div className='App'>
+      <ErrorPopup
+        message={routeError}
+        onClose={() => setRouteError(null)}
+        type={getErrorType(routeError)}
+      />
+      {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
+
+      <header className='header'>
+        <div className='header-content'>
+          <img src={logo} alt='EcoPaths Logo' className='app-logo' />
+        </div>
+        {selectedArea && !showAreaSelector && (
+          <div className='area-dropdown-container'>
+            <button
+              className='area-dropdown-button'
+              onClick={handleChangeArea}
+              disabled={!!locationError}
+            >
+              <Globe size={25} />
+              {selectedArea.display_name}
+            </button>
+          </div>
+        )}
+      </header>
+
+      <main className='main-container'>
+        {!showAreaSelector && selectedArea && (
+          <SideBar
+            onFromSelect={setFromLocked}
+            onToSelect={setToLocked}
+            summaries={summaries}
+            aqiDifferences={aqiDifferences}
+            showAQIColors={showAQIColors}
+            setShowAQIColors={setShowAQIColors}
+            selectedArea={selectedArea}
+            onErrorChange={setLocationError}
+            balancedWeight={balancedWeight}
+            setBalancedWeight={setBalancedWeight}
+            loading={loading}
+            balancedLoading={balancedLoading}
+            selectedRoute={selectedRoute}
+            onRouteSelect={handleRouteSelect}
+            routeMode={routeMode}
+            setRouteMode={setRouteMode}
+            loop={loop}
+            setLoop={setLoop}
+            loopDistance={loopDistance}
+            setLoopDistance={setLoopDistance}
+            loopSummaries={loopSummaries}
+            loopLoading={loopLoading}
+            showLoopOnly={showLoopOnly}
+            setShowLoopOnly={setShowLoopOnly}
+            routes={routes}
+            loopRoutes={loopRoutes}
+          ></SideBar>
+        )}
+
+        <div className='map-container'>
+          <MapComponent
+            fromLocked={fromLocked}
+            toLocked={toLocked}
+            routes={routes}
+            loopRoutes={loopRoutes}
+            showAQIColors={showAQIColors}
+            selectedArea={selectedArea}
+            selectedRoute={selectedRoute}
+            showLoopOnly={showLoopOnly}
+            loop={loop}
+          />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function App(): JSX.Element {
+  return (
     <ExposureOverlayProvider>
-      <div className='App'>
-        <ErrorPopup message={routeError} onClose={() => setRouteError(null)} />
-        {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
-
-        <header className='header'>
-          <div className='header-content'>
-            <img src={logo} alt='EcoPaths Logo' className='app-logo' />
-          </div>
-          {selectedArea && !showAreaSelector && (
-            <div className='area-dropdown-container'>
-              <button
-                className='area-dropdown-button'
-                onClick={handleChangeArea}
-                disabled={!!locationError}
-              >
-                <Globe size={25} />
-                {selectedArea.display_name}
-              </button>
-            </div>
-          )}
-        </header>
-
-        <main className='main-container'>
-          {!showAreaSelector && selectedArea && (
-            <SideBar
-              onFromSelect={setFromLocked}
-              onToSelect={setToLocked}
-              summaries={summaries}
-              aqiDifferences={aqiDifferences}
-              showAQIColors={showAQIColors}
-              setShowAQIColors={setShowAQIColors}
-              selectedArea={selectedArea}
-              onErrorChange={setLocationError}
-              balancedWeight={balancedWeight}
-              setBalancedWeight={setBalancedWeight}
-              loading={loading}
-              balancedLoading={balancedLoading}
-              selectedRoute={selectedRoute}
-              onRouteSelect={handleRouteSelect}
-              routeMode={routeMode}
-              setRouteMode={setRouteMode}
-              loop={loop}
-              setLoop={setLoop}
-              loopDistance={loopDistance}
-              setLoopDistance={setLoopDistance}
-              loopSummaries={loopSummaries}
-              loopLoading={loopLoading}
-              showLoopOnly={showLoopOnly}
-              setShowLoopOnly={setShowLoopOnly}
-              routes={routes}
-              loopRoutes={loopRoutes}
-            ></SideBar>
-          )}
-
-          <div className='map-container'>
-            <MapComponent
-              fromLocked={fromLocked}
-              toLocked={toLocked}
-              routes={routes}
-              loopRoutes={loopRoutes}
-              showAQIColors={showAQIColors}
-              selectedArea={selectedArea}
-              selectedRoute={selectedRoute}
-              showLoopOnly={showLoopOnly}
-              loop={loop}
-            />
-          </div>
-        </main>
-      </div>
+      <AppContent />
     </ExposureOverlayProvider>
   );
 }

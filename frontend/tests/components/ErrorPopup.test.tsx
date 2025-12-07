@@ -12,7 +12,9 @@ describe('ErrorPopup', () => {
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
   });
 
   afterAll(() => {
@@ -55,7 +57,10 @@ describe('ErrorPopup', () => {
 
   test('cleans up timers when unmounted', () => {
     const { unmount } = render(<ErrorPopup message='Unmount test' onClose={mockOnClose} />);
-    unmount();
+
+    act(() => {
+      unmount();
+    });
 
     act(() => {
       jest.advanceTimersByTime(5000);

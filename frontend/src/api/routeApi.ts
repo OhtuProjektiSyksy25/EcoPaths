@@ -71,47 +71,6 @@ export async function fetchRoute(
 }
 
 export type LoopApiResponse = RouteApiResponse;
-/**
- * Computes a loop route starting from one locked location with given distance.
- *
- * @param fromLocked - The starting location
- * @param distanceKm - Desired loop length in kilometers
- * @returns A Promise resolving to route geometry and summary
- */
-
-/* maybe can be used fallback, but if stream works no need for /getloop */
-export async function fetchLoopRoute(
-  fromLocked: LockedLocation,
-  distanceKm: number,
-): Promise<LoopApiResponse> {
-  const geojson = {
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: { role: 'start' },
-        geometry: {
-          type: 'Point',
-          coordinates: fromLocked.geometry.coordinates,
-        },
-      },
-    ],
-  };
-
-  const url = `${getEnvVar('REACT_APP_API_URL')}/api/getloop`;
-
-  const response = await fetch(`${url}?distance=${encodeURIComponent(distanceKm)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(geojson),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Server error: ${response.status}`);
-  }
-
-  return (await response.json()) as LoopApiResponse;
-}
 
 /**
  * Streams loop routes from the backend as they are computed.

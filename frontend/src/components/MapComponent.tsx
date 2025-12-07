@@ -169,25 +169,22 @@ const MapComponent: React.FC<MapComponentProps> = ({
       toMarkerRef.current = new mapboxgl.Marker({ color: 'red' }).setLngLat(toCoords).addTo(map);
     }
 
-    // Determine zoom behaviour
+    const isMobile = window.innerWidth <= 800;
+    const padding = getPadding(isMobile);
+
     // CASE A: LOOP MODE
     if (loop) {
       const hasLoopRoute = loopRoutes && Object.keys(loopRoutes).length > 0;
 
       if (hasLoopRoute) {
-        // (A1) LOOP ROUTE EXISTS -> center to route
         const coords = extractRouteCoordinates(loopRoutes);
         const bounds = calculateBounds(coords);
         if (bounds) {
-          const isMobile = window.innerWidth <= 800;
-          const padding = getPadding(isMobile);
           map.fitBounds(bounds, { padding, duration: 1500 });
         }
       } else if (fromCoords) {
-        // (A2) route has not loaded yet -> center to marker
         map.flyTo({ center: fromCoords, zoom: 16, duration: 1500 });
       }
-
       return;
     }
 
@@ -195,18 +192,15 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const hasRoutes = routes && Object.keys(routes).length > 0;
 
     if (hasRoutes) {
-      // (B1) route exists -> focus full route
       const coords = extractRouteCoordinates(routes);
       const bounds = calculateBounds(coords);
       if (bounds) {
-        const isMobile = window.innerWidth <= 800;
-        const padding = getPadding(isMobile);
         map.fitBounds(bounds, { padding, duration: 1500 });
       }
       return;
     }
 
-    // (B2) No route -> focus markers
+    // No route -> focus markers
     const points: [number, number][] = [];
     if (fromCoords) points.push(fromCoords);
     if (toCoords) points.push(toCoords);
@@ -216,8 +210,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
         (b, c) => b.extend(c),
         new mapboxgl.LngLatBounds(points[0], points[0]),
       );
-      const isMobile = window.innerWidth <= 800;
-      const padding = getPadding(isMobile);
       map.fitBounds(bounds, { padding, duration: 1500 });
     } else if (points.length === 1) {
       map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
@@ -250,35 +242,14 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     const [lon, lat] = selectedArea.focus_point || [];
     if (Number.isFinite(lon) && Number.isFinite(lat)) {
-      const isMobile = window.innerWidth <= 800;
-
-      if (isMobile) {
-        const padding = { top: 80, bottom: 320, left: 130, right: 10 };
-        const point = new mapboxgl.LngLat(lon, lat);
-        const bounds = new mapboxgl.LngLatBounds(point, point);
-
-        map.fitBounds(bounds, {
-          padding,
-          maxZoom: 12.5,
-          duration: 2000,
-        });
-      } else {
-        map.flyTo({
-          center: selectedArea.focus_point,
-          zoom: selectedArea.zoom || 13.5,
-          duration: 2000,
-          essential: true,
-        });
-      }
+      map.flyTo({
+        center: selectedArea.focus_point,
+        zoom: selectedArea.zoom || 13.5,
+        duration: 2000,
+        essential: true,
+      });
     }
   }, [selectedArea]);
-
-  // debug overlay data ennen renderöintiä
-  useEffect(() => {
-    if (overlay.visible && overlay.data) console.debug('overlay.data', overlay.data);
-  }, [overlay.visible, overlay.data]);
-
-  console.log('Rendering overlay, visible:', overlay.visible, overlay.data);
 
   useEffect(() => {
     const updatePos = (): void => {

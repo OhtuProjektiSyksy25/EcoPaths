@@ -50,13 +50,16 @@
   align-items: center;
   justify-content: space-between;
   gap: clamp(6px, 2vw, 10px);
-  padding: clamp(8px, 3vw, 14px);
+  padding: clamp(10px, 4vw, 12px);
   border-radius: clamp(10px, 2vw, 12px);
   font-family: 'Public Sans', sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   margin-top: clamp(6px, 2vw, 12px);
   user-select: none;
+  margin-left: 10px;
+  margin-right: 10px;
+
 }
 .best-aq-container {
   background-color: rgba(0, 184, 46, 0.1);
@@ -144,7 +147,7 @@
   padding: 14px 16px;
   background: white;
   border: 2px solid #e0e0e0;
-  border-radius: 12px; /* 8px -> 12px */
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: 'Public Sans', sans-serif;
@@ -190,7 +193,7 @@
 }
 
 .aqi-toggle-button button.active .aqi-button-text {
-  color: #111; /* tummempi kun aktiivinen */
+  color: #111;
   font-weight: 700;
 }
 
@@ -318,6 +321,6 @@
   }
 
   .sidebar-content > *:last-child {
-    margin-bottom: 40px;
+    margin-bottom: 40px;  
   }
 }
