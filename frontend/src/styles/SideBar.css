@@ -109,44 +109,95 @@
   border-color: rgba(0, 0, 0, 0.2);
 }
 
+.route-container {
+  pointer-events: none;
+}
+
+.route-container > * {
+  pointer-events: auto;
+}
+
 .aqi-toggle-button {
-  margin-top: clamp(8px, 3vw, 14px);
-  display: flex;
-  justify-content: center;
+  margin-top: 16px;
+  padding: 0 8px;
 }
 .aqi-toggle-button button {
-  padding: clamp(8px, 2vw, 10px) clamp(12px, 4vw, 18px);
-  background-color: #ffffff;
-  border: 2px solid #60b45a;
-  border-radius: 999px;
-  font-size: clamp(13px, 3vw, 15px);
-  font-weight: 400;
-  color: #333;
-  font-family: 'Public Sans', sans-serif;
+  width: 100%;
+  padding: 14px 16px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px; /* 8px -> 12px */
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  font-family: 'Public Sans', sans-serif;
 }
 
 .aqi-toggle-button button:hover {
-  transform: scale(1.02);
-  background-color: #e8f7ec;
-  border-color: #60b45a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: #187e36;
+  box-shadow: 0 2px 8px rgba(24, 126, 54, 0.15);
+  transform: translateY(-1px);
 }
 
-.error-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+.aqi-toggle-button button.active {
+  background: #f0f9f0;
+  border-color: #187e36;
+  box-shadow: 0 2px 8px rgba(24, 126, 54, 0.2);
+}
+
+.aqi-button-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.3s ease-in-out;
+  gap: 10px;
+}
+
+.aqi-gradient-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.aqi-color {
+  flex: 1;
+}
+
+.aqi-button-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.3px;
+}
+
+.aqi-toggle-button button.active .aqi-button-text {
+  color: #111; /* tummempi kun aktiivinen */
+  font-weight: 700;
+}
+
+/* AQI scale labels */
+.aqi-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 9px;
+  font-weight: 600;
+  color: #666;
+  margin-top: 2px;
+}
+
+.aqi-scale-labels span {
+  flex: 1;
+  text-align: center;
+}
+
+.aqi-scale-labels span:first-child {
+  text-align: left;
+}
+
+.aqi-scale-labels span:last-child {
+  text-align: right;
 }
 
 @keyframes fadeIn {
@@ -158,69 +209,39 @@
   }
 }
 
-.error-popup-modal {
-  background: rgb(255, 255, 255);
-  border-radius: 16px;
-  padding: 40px;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.error-popup-content h3 {
-  margin: 0 0 20px 0;
-  color: #d32f2f;
-  font-size: 24px;
-  text-align: center;
-  font-family: 'Arial', sans-serif;
-  font-weight: 600;
-}
-
-.error-popup-content p {
-  color: #666;
-  font-size: 16px;
-  text-align: center;
-  margin: 0 0 30px 0;
-  font-family: 'Arial', sans-serif;
-  line-height: 1.5;
-}
-
-.error-popup-button {
-  background: #ffffff;
-  color: rgb(0, 0, 0);
-  border: 2px solid black;
-  border-radius: 8px;
-  padding: 12px 40px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: 'Arial', sans-serif;
-  cursor: pointer;
-  display: block;
-  margin: 0 auto;
-  transition: background 0.3s;
-}
-
-.error-popup-button:hover {
-  background: #f5f5f5;
-}
-
-.route-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  backdrop-filter: blur(2px);
-}
-
 .sidebar-handle {
   display: none;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.loading-spinner p {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #000000;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* MOBILE LAYOUT */

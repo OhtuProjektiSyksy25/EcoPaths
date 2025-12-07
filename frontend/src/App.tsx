@@ -2,16 +2,18 @@
 Root component for the React application. 
 It renders the header and the MapComponent.
 */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MapComponent from './components/MapComponent';
 import SideBar from './components/SideBar';
 import AreaSelector from './components/AreaSelector';
 import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
+import { ExposureOverlayProvider } from './contexts/ExposureOverlayContext';
 import logo from './assets/images/ecopaths-logo-with-text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
+import ErrorPopup from './components/ErrorPopup';
 
 /**
  * Root component of the EcoPaths React application.
@@ -52,6 +54,8 @@ function App(): JSX.Element {
   // Balanced weight for the custom/balanced route. 0 = fastest, 1 = best AQI.
   const [balancedWeight, setBalancedWeight] = useState<number>(0.5);
 
+  const [routeError, setRouteError] = useState<string | null>(null);
+
   const { routes, summaries, aqiDifferences, loading, balancedLoading, error } = useRoute(
     fromLocked,
     toLocked,
@@ -65,80 +69,84 @@ function App(): JSX.Element {
     loading: loopLoading,
   } = useLoopRoute(fromLocked, loopDistance);
 
+  useEffect(() => {
+    if (error) {
+      setRouteError(error);
+    }
+  }, [error]);
+
   return (
-    <div className='App'>
-      {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
+    <ExposureOverlayProvider>
+      <div className='App'>
+        <ErrorPopup message={routeError} onClose={() => setRouteError(null)} />
+        {showAreaSelector && <AreaSelector onAreaSelect={handleAreaSelect} />}
 
-      <header className='header'>
-        <div className='header-content'>
-          <img src={logo} alt='EcoPaths Logo' className='app-logo' />
-        </div>
-        {selectedArea && !showAreaSelector && (
-          <div className='area-dropdown-container'>
-            <button
-              className='area-dropdown-button'
-              onClick={handleChangeArea}
-              disabled={!!locationError}
-            >
-              <Globe size={25} />
-              {selectedArea.display_name}
-            </button>
+        <header className='header'>
+          <div className='header-content'>
+            <img src={logo} alt='EcoPaths Logo' className='app-logo' />
           </div>
-        )}
-      </header>
+          {selectedArea && !showAreaSelector && (
+            <div className='area-dropdown-container'>
+              <button
+                className='area-dropdown-button'
+                onClick={handleChangeArea}
+                disabled={!!locationError}
+              >
+                <Globe size={25} />
+                {selectedArea.display_name}
+              </button>
+            </div>
+          )}
+        </header>
 
-      <main className='main-container'>
-        {!showAreaSelector && selectedArea && (
-          <SideBar
-            onFromSelect={setFromLocked}
-            onToSelect={setToLocked}
-            summaries={summaries}
-            aqiDifferences={aqiDifferences}
-            showAQIColors={showAQIColors}
-            setShowAQIColors={setShowAQIColors}
-            selectedArea={selectedArea}
-            onErrorChange={setLocationError}
-            balancedWeight={balancedWeight}
-            setBalancedWeight={setBalancedWeight}
-            loading={loading}
-            balancedLoading={balancedLoading}
-            selectedRoute={selectedRoute}
-            onRouteSelect={handleRouteSelect}
-            routeMode={routeMode}
-            setRouteMode={setRouteMode}
-            loop={loop}
-            setLoop={setLoop}
-            loopDistance={loopDistance}
-            setLoopDistance={setLoopDistance}
-            loopSummaries={loopSummaries}
-            loopLoading={loopLoading}
-            showLoopOnly={showLoopOnly}
-            setShowLoopOnly={setShowLoopOnly}
-          >
-            {(loading || error) && (
-              <div className='route-loading-message'>
-                {loading && <p>Loading routes...</p>}
-                {error && <p className='error'>{error}</p>}
-              </div>
-            )}
-          </SideBar>
-        )}
+        <main className='main-container'>
+          {!showAreaSelector && selectedArea && (
+            <SideBar
+              onFromSelect={setFromLocked}
+              onToSelect={setToLocked}
+              summaries={summaries}
+              aqiDifferences={aqiDifferences}
+              showAQIColors={showAQIColors}
+              setShowAQIColors={setShowAQIColors}
+              selectedArea={selectedArea}
+              onErrorChange={setLocationError}
+              balancedWeight={balancedWeight}
+              setBalancedWeight={setBalancedWeight}
+              loading={loading}
+              balancedLoading={balancedLoading}
+              selectedRoute={selectedRoute}
+              onRouteSelect={handleRouteSelect}
+              routeMode={routeMode}
+              setRouteMode={setRouteMode}
+              loop={loop}
+              setLoop={setLoop}
+              loopDistance={loopDistance}
+              setLoopDistance={setLoopDistance}
+              loopSummaries={loopSummaries}
+              loopLoading={loopLoading}
+              showLoopOnly={showLoopOnly}
+              setShowLoopOnly={setShowLoopOnly}
+              routes={routes}
+              loopRoutes={loopRoutes}
+            ></SideBar>
+          )}
 
-        <div className='map-container'>
-          <MapComponent
-            fromLocked={fromLocked}
-            toLocked={toLocked}
-            routes={routes}
-            loopRoutes={loopRoutes}
-            showAQIColors={showAQIColors}
-            selectedArea={selectedArea}
-            selectedRoute={selectedRoute}
-            showLoopOnly={showLoopOnly}
-            loop={loop}
-          />
-        </div>
-      </main>
-    </div>
+          <div className='map-container'>
+            <MapComponent
+              fromLocked={fromLocked}
+              toLocked={toLocked}
+              routes={routes}
+              loopRoutes={loopRoutes}
+              showAQIColors={showAQIColors}
+              selectedArea={selectedArea}
+              selectedRoute={selectedRoute}
+              showLoopOnly={showLoopOnly}
+              loop={loop}
+            />
+          </div>
+        </main>
+      </div>
+    </ExposureOverlayProvider>
   );
 }
 

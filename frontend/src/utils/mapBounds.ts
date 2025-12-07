@@ -37,6 +37,15 @@ export const getPadding = (
 } => {
   const basePadding = 80;
 
+  if (isMobile) {
+    return {
+      top: 80,
+      bottom: 320,
+      left: 20,
+      right: 20,
+    };
+  }
+
   let sidebarWidth = 0;
 
   if (typeof window !== 'undefined') {
@@ -47,15 +56,6 @@ export const getPadding = (
   }
 
   if (!sidebarWidth) sidebarWidth = 300;
-
-  if (isMobile) {
-    return {
-      top: basePadding,
-      bottom: basePadding + sidebarWidth,
-      left: 30,
-      right: 30,
-    };
-  }
 
   return {
     top: basePadding,

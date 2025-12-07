@@ -48,6 +48,8 @@ class EdgeEnricher:
             f"Enriching {len(tile_ids)} tiles", tile_count=len(tile_ids))
         # Load edges and AQ data for the tiles
         self.edges_gdf = self.load_edges_from_db(tile_ids, network_type)
+        if self.edges_gdf is None or self.edges_gdf.empty:
+            return None
         self.aq_gdf = self.load_aq_tiles(tile_ids)
 
         # Perform enrichment
@@ -177,7 +179,7 @@ class EdgeEnricher:
                         "pm2_5", "raw_pm10", "pm10", "env_influence"]
         preview_str = enriched[preview_cols].sample(
             min(10, len(enriched))).to_string(index=False)
-        log.info(f"Enriched edges preview:\n{preview_str}")
+        log.debug(f"Enriched edges preview:\n{preview_str}")
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained

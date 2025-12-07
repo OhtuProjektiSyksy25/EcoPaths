@@ -32,9 +32,12 @@ const AQI_COLOR_SCALE = [
 /**
  * Removes a layer and source if they exist
  */
-const removeLayerIfExists = (map: mapboxgl.Map, id: string): void => {
-  if (map.getLayer(id)) map.removeLayer(id);
-  if (map.getSource(id)) map.removeSource(id);
+const removeLayerIfExists = (map: mapboxgl.Map, layerId: string): void => {
+  if (map.getLayer(layerId)) map.removeLayer(layerId);
+};
+
+const removeSourceIfExists = (map: mapboxgl.Map, sourceId: string): void => {
+  if (map.getSource(sourceId)) map.removeSource(sourceId);
 };
 
 /**
@@ -175,9 +178,11 @@ export function useDrawRoutes(
     // Cleanup
     return (): void => {
       if (!map) return;
+
       Object.keys(ROUTE_COLORS).forEach((mode) => {
-        removeLayerIfExists(map, `route-${mode}`);
         removeLayerIfExists(map, `route-${mode}-halo`);
+        removeLayerIfExists(map, `route-${mode}`);
+        removeSourceIfExists(map, `route-${mode}`);
       });
     };
   }, [map, routes, showAQIColors, selectedRoute]);

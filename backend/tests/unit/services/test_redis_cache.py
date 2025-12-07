@@ -18,7 +18,8 @@ def mock_cache():
     "key,value,method",
     [
         ("test_key", {"foo": "bar"}, "regular"),
-        ("geo_key", {"type": "FeatureCollection", "features": []}, "geojson"),
+        ("geo_key", {"type": "FeatureCollection",
+         "features": ["test"], "crs": "TEST"}, "geojson"),
     ],
 )
 def test_set_and_get(mock_cache, key, value, method):
@@ -34,12 +35,53 @@ def test_set_and_get(mock_cache, key, value, method):
         assert cache.get(key) == value
 
     elif method == "geojson":
-        assert cache.set_geojson(key, value) is True
+        json_data = json.dumps(value, separators=(",", ":"))
+        assert cache.set_geojson(key, json_data) is True
         expected_value = json.dumps(value, separators=(',', ':'))
         mock_client.set.assert_called_once_with(
             key, expected_value, ex=cache.default_expire)
         mock_client.get.return_value = expected_value
         assert cache.get_geojson(key) == value
+
+
+def test_set_geojson_fails_without_crs(mock_cache):
+    cache, mock_client = mock_cache
+
+    no_crs = {"type": "FeatureCollection", "features": []}
+    json_data = json.dumps(no_crs, separators=(",", ":"))
+    assert cache.set_geojson("key", json_data) is False
+
+
+def test_set_geojson_fails_with_empty_crs(mock_cache):
+    cache, mock_client = mock_cache
+
+    no_crs = {"type": "FeatureCollection", "features": [], "crs": None}
+    json_data = json.dumps(no_crs, separators=(",", ":"))
+    assert cache.set_geojson("key", json_data) is False
+
+
+def test_set_geojson_fails_without_features(mock_cache):
+    cache, mock_client = mock_cache
+
+    no_crs = {"type": "FeatureCollection", "crs": "TEST"}
+    json_data = json.dumps(no_crs, separators=(",", ":"))
+    assert cache.set_geojson("key", json_data) is False
+
+
+def test_set_geojson_fails_with_empty_features(mock_cache):
+    cache, mock_client = mock_cache
+
+    no_crs = {"type": "FeatureCollection", "features": None, "crs": "TEST"}
+    json_data = json.dumps(no_crs, separators=(",", ":"))
+    assert cache.set_geojson("key", json_data) is False
+
+
+def test_set_geojson_fails_if_type_not_correct(mock_cache):
+    cache, mock_client = mock_cache
+
+    no_crs = {"type": "FeatureCollection!", "features": None, "crs": "TEST"}
+    json_data = json.dumps(no_crs, separators=(",", ":"))
+    assert cache.set_geojson("key", json_data) is False
 
 
 def test_get_geojson_invalid(mock_cache, caplog):

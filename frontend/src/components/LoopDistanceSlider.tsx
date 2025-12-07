@@ -8,7 +8,7 @@ interface LoopDistanceSliderProps {
 
 const LoopDistanceSlider: React.FC<LoopDistanceSliderProps> = ({ value, onChange }) => {
   return (
-    <div className='input-box loop-distance-box'>
+    <div className='input-box loop-d istance-box'>
       <div className='loop-distance-header'>
         <label htmlFor='loop-distance'>Loop length ( km ) :</label>
         <input
