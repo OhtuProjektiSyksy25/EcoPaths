@@ -3,13 +3,19 @@ API endpoint for route computation between two GeoJSON points
 within the selected area.
 Returns multiple route options and route summaries.
 """
+import asyncio
 import time
 import math
+import json
+from shapely.geometry import Point
+import geopandas as gpd
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
+from services.loop_route_service import LoopRouteService
 from logger.logger import log
+
 
 router = APIRouter()
 
@@ -105,41 +111,94 @@ async def getroute(request: Request):
     return JSONResponse(content=response)
 
 
-@router.post("/getloop")
-async def getloop(request: Request):
+@router.get("/getloop/stream")
+async def getloop_stream(request: Request, lat: float, lon: float, distance: float):
     """
-    Mock endpoint for loop route.
-    Accepts a start point and desired distance, returns a fake loop route.
+    Stream loop routes as they are computed using Server-Sent Events (SSE).
     """
     area_config = request.app.state.area_config
-    route_service = request.app.state.route_service
+
+    if not area_config:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected."}
+        )
+
+    loop_route_service = LoopRouteService(request.app.state.selected_area)
 
     start_time = time.time()
-    data = await request.json()
-    features = data.get("features", [])
-    distance = float(request.query_params.get("distance", 7)) * 1000
-
-    if len(features) != 1:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "GeoJSON must contain one start feature"}
-        )
-
-    start_feature = features[0]
     target_crs = area_config.crs
-    origin_gdf = GeoTransformer.geojson_to_projected_gdf(
-        start_feature["geometry"], target_crs)
 
-    if not area_config or not route_service:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "No area selected. Please select an area first."}
-        )
+    point = Point(lon, lat)
+    origin_gdf = (
+        gpd.GeoDataFrame([1], geometry=[point], crs="EPSG:4326")
+        .to_crs(target_crs)
+    )
 
-    distance = min(distance, 5000)
-    response = route_service.get_round_trip(origin_gdf, distance)
+    distance_m = min(distance * 1000, 5000)
 
-    duration = time.time() - start_time
-    print(f"/getloop took {duration:.3f} seconds")
+    log.debug(
+        f"/getloop/stream started: lat={lat}, lon={lon}, distance={distance}km")
 
-    return JSONResponse(content=response)
+    def _sanitize(obj):
+        if isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return obj
+        if isinstance(obj, dict):
+            return {k: _sanitize(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [_sanitize(v) for v in obj]
+        return obj
+
+    async def event_generator():
+        loop_count = 0
+        try:
+            # This function yields N loops or raises RuntimeError
+            for loop_result in loop_route_service.get_round_trip(origin_gdf, distance_m):
+                try:
+                    loop_count += 1
+                    loop_name = list(loop_result["routes"].keys())[0]
+
+                    payload = {
+                        "variant": loop_name,
+                        "route": loop_result["routes"][loop_name],
+                        "summary": loop_result["summaries"][loop_name],
+                    }
+
+                    payload = _sanitize(jsonable_encoder(payload))
+
+                    yield f"event: loop\ndata: {json.dumps(payload)}\n\n"
+                    await asyncio.sleep(0.05)
+                except Exception as e:   # pylint: disable=broad-exception-caught
+                    # If any single loop fails unexpectedly, log and continue
+                    log.error(f"Error yielding loop result: {e}")
+                    continue
+
+            # Completed normally
+            duration = time.time() - start_time
+            log.info(
+                f"/getloop/stream completed: {loop_count} loops in {duration:.2f}s")
+
+            yield "event: complete\ndata: {}\n\n"
+
+        except RuntimeError as e:
+            # Expected loop-error raised by loop service (e.g. no outer tiles)
+            duration = time.time() - start_time
+            log.warning(
+                f"/getloop/stream loop error after {duration:.2f}s: {e}")
+
+            msg = {"message": str(e)}
+            yield f"event: error\ndata: {json.dumps(msg)}\n\n"
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # Unexpected bug
+            duration = time.time() - start_time
+            log.error(
+                f"/getloop/stream general failure after {duration:.2f}s: {e}")
+
+            msg = {
+                "message": "Internal error while computing loops. Try a different location."}
+            yield f"event: error\ndata: {json.dumps(msg)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

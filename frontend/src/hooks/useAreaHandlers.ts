@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 import { Area, LockedLocation } from '../types';
 
 interface UseAreaHandlersReturn {
@@ -32,19 +33,25 @@ export function useAreaHandlers(): UseAreaHandlersReturn {
   const [loop, setLoop] = useState(false);
   const [loopDistance, setLoopDistance] = useState(0);
   const [showLoopOnly, setShowLoopOnly] = useState(false);
+  const { close } = useExposureOverlay();
 
-  const handleAreaSelect = (area: Area): void => {
-    setSelectedArea(area);
-    setShowAreaSelector(false);
-    setFromLocked(null);
-    setToLocked(null);
-    setSelectedRoute(null);
-    setLoop(false);
-    setLoopDistance(0);
-    setShowLoopOnly(false);
-  };
+  const handleAreaSelect = useCallback(
+    (area: Area): void => {
+      close();
+      setSelectedArea(area);
+      setShowAreaSelector(false);
+      setFromLocked(null);
+      setToLocked(null);
+      setSelectedRoute(null);
+      setLoop(false);
+      setLoopDistance(0);
+      setShowLoopOnly(false);
+    },
+    [close],
+  );
 
-  const handleChangeArea = (): void => {
+  const handleChangeArea = useCallback((): void => {
+    close();
     setFromLocked(null);
     setToLocked(null);
     setSelectedRoute(null);
@@ -52,7 +59,7 @@ export function useAreaHandlers(): UseAreaHandlersReturn {
     setLoopDistance(0);
     setShowLoopOnly(false);
     setShowAreaSelector(true);
-  };
+  }, [close]);
 
   const handleRouteSelect = (route: string): void => {
     setSelectedRoute(route === selectedRoute ? null : route);

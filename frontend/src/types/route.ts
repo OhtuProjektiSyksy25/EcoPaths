@@ -12,12 +12,16 @@ export interface LockedLocation {
 
 /**
  * Properties attached to a single route feature.
- * Includes optional route type and any additional metadata.
+ * Includes optional route type and any additional metadata returned by backend.
  */
 export interface RouteFeatureProperties {
   route_type?: 'fastest' | 'best_aq' | 'balanced' | 'loop';
-  [key: string]: string | number | boolean | Array<string | number | boolean> | undefined; // allow extra metadata
+
+  // allow other unknown backend-provided metadata
+  [key: string]: string | number | boolean | Array<string | number | boolean> | undefined;
 }
+
+export type RouteType = 'fastest' | 'best_aq' | 'balanced' | 'loop1' | 'loop2' | 'loop3';
 
 /**
  * A single GeoJSON Feature representing a segment or part of a route.
@@ -77,3 +81,11 @@ export interface AqiComparison {
  * Select route mode
  */
 export type RouteMode = 'walk' | 'run';
+
+export interface ExposurePoint {
+  distance_cum: number;
+  pm25_cum?: number;
+  pm10_cum?: number;
+  pm25_seg?: number;
+  pm10_seg?: number;
+}

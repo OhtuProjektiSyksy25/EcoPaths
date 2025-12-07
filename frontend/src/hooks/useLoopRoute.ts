@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
-import { fetchLoopRoute } from '../api/routeApi';
+import { streamLoopRoutes } from '../api/routeApi';
 
 interface UseLoopRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -18,35 +18,114 @@ export const useLoopRoute = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isClosedRef = useRef(false);
+
   useEffect(() => {
+    // Invalid input → reset state and stop
     if (!fromLocked || distanceKm <= 0) {
       setRoutes(null);
       setSummaries(null);
       setError(null);
+      setLoading(false);
+
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
       return;
     }
 
-    const timer = setTimeout(() => {
-      const fetchData = async (): Promise<void> => {
-        setLoading(true);
-        setError(null);
+    const startStreaming = (): void => {
+      isClosedRef.current = false;
+
+      // Reset state
+      setLoading(true);
+      setError(null);
+      setRoutes(null);
+      setSummaries(null);
+
+      const eventSource = streamLoopRoutes(fromLocked, distanceKm);
+      eventSourceRef.current = eventSource;
+
+      // Helper: safely update routes/summaries with NoneType protection
+      const handleLoopMessage = (event: MessageEvent): void => {
         try {
-          const data = await fetchLoopRoute(fromLocked, distanceKm);
-          setRoutes(data.routes ? { loop: data.routes.loop } : null);
-          setSummaries(data.summaries ? { loop: data.summaries.loop } : null);
+          const newLoop = JSON.parse(event.data);
+
+          // Validate all required fields exist and are not null
+          if (newLoop?.variant && newLoop?.route && newLoop?.summary) {
+            setRoutes((prev) => ({
+              ...(prev ?? {}),
+              [newLoop.variant]: newLoop.route,
+            }));
+            setSummaries((prev) => ({
+              ...(prev ?? {}),
+              [newLoop.variant]: newLoop.summary,
+            }));
+          } else {
+            console.warn('Received incomplete loop data:', newLoop);
+          }
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch loop route');
-          setRoutes(null);
-          setSummaries(null);
-        } finally {
-          setLoading(false);
+          console.error('Failed to parse loop event:', err);
+          setError('Failed to parse loop data');
         }
       };
 
-      fetchData();
-    }, 400); // debounce‑viive
+      // Loop data event
+      eventSource.addEventListener('loop', handleLoopMessage);
 
-    return () => clearTimeout(timer);
+      // Error event (replaces loop-error) - handles all backend errors
+      eventSource.addEventListener('error', (ev) => {
+        try {
+          const data = JSON.parse((ev as MessageEvent).data || '{}');
+          const errorMessage =
+            data?.message || 'Failed to compute loop routes. Try a different location.';
+          setError(errorMessage);
+        } catch {
+          setError('Failed to compute loop routes. Try a different location.');
+        }
+        setLoading(false);
+
+        isClosedRef.current = true;
+        eventSource.close();
+        eventSourceRef.current = null;
+      });
+
+      // All loops complete
+      eventSource.addEventListener('complete', () => {
+        setLoading(false);
+        isClosedRef.current = true;
+
+        eventSource.close();
+        eventSourceRef.current = null;
+      });
+
+      // Connection-level SSE error
+      eventSource.onerror = () => {
+        if (!isClosedRef.current && eventSourceRef.current) {
+          console.warn('SSE connection error');
+          setError('Connection error while fetching loop routes.\nTry a different location.');
+          setLoading(false);
+
+          isClosedRef.current = true;
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
+        }
+      };
+    };
+
+    // Debounce initial fetch by 400ms
+    timerRef.current = setTimeout(startStreaming, 400);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+
+      if (eventSourceRef.current) {
+        isClosedRef.current = true;
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
   }, [fromLocked, distanceKm]);
 
   return { routes, summaries, loading, error };

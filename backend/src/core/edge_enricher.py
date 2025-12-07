@@ -160,9 +160,9 @@ class EdgeEnricher:
             how="left"
         )
 
-        enriched["raw_aqi"] = enriched["raw_aqi"].fillna(50)
-        enriched["raw_pm2_5"] = enriched["raw_pm2_5"].fillna(15)
-        enriched["raw_pm10"] = enriched["raw_pm10"].fillna(25)
+        enriched["raw_aqi"] = enriched["raw_aqi"].astype(float).fillna(50)
+        enriched["raw_pm2_5"] = enriched["raw_pm2_5"].astype(float).fillna(10)
+        enriched["raw_pm10"] = enriched["raw_pm10"].astype(float).fillna(30)
 
         enriched["aqi_norm_base"] = enriched["raw_aqi"] / 500.0
 
@@ -179,7 +179,7 @@ class EdgeEnricher:
                         "pm2_5", "raw_pm10", "pm10", "env_influence"]
         preview_str = enriched[preview_cols].sample(
             min(10, len(enriched))).to_string(index=False)
-        log.info(f"Enriched edges preview:\n{preview_str}")
+        log.debug(f"Enriched edges preview:\n{preview_str}")
 
         # Remove raw AQI to comply with Google API storage policy
         # only derived values are retained

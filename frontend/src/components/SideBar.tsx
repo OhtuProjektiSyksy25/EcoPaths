@@ -11,13 +11,25 @@ import RouteSlider from './RouteSlider';
 import RouteModeSelector from './RouteModeSelector';
 import LoopDistanceSlider from './LoopDistanceSlider';
 import '../styles/SideBar.css';
-import { Area, Place, RouteSummary, AqiComparison, RouteMode } from '../types';
+import {
+  Area,
+  Place,
+  RouteSummary,
+  AqiComparison,
+  RouteMode,
+  RouteGeoJSON,
+  RouteFeatureProperties,
+  ExposurePoint,
+  RouteType,
+} from '../types';
 import { MoreHorizontal } from 'lucide-react';
 import { getEnvVar } from '../utils/config';
+import ErrorPopup from './ErrorPopup';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
 
 interface SideBarProps {
-  onFromSelect: (place: Place) => void;
-  onToSelect: (place: Place) => void;
+  onFromSelect: (place: Place | null) => void;
+  onToSelect: (place: Place | null) => void;
   summaries: Record<string, RouteSummary> | null;
   aqiDifferences?: Record<string, Record<string, AqiComparison>> | null;
   showAQIColors: boolean;
@@ -41,6 +53,8 @@ interface SideBarProps {
   loopLoading?: boolean;
   showLoopOnly: boolean;
   setShowLoopOnly: (val: boolean) => void;
+  routes: Record<string, RouteGeoJSON> | null;
+  loopRoutes: Record<string, RouteGeoJSON> | null;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -69,6 +83,8 @@ const SideBar: React.FC<SideBarProps> = ({
   loopLoading,
   showLoopOnly,
   setShowLoopOnly,
+  routes,
+  loopRoutes,
 }) => {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
@@ -77,7 +93,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const [showFromCurrentLocation, setShowFromCurrentLocation] = useState(false);
   const [waitingForLocation, setWaitingForLocation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const debounce = useRef<number | null>();
+  const fromDebounce = useRef<number | null>(null);
+  const toDebounce = useRef<number | null>(null);
   const { getCurrentLocation, coordinates } = useGeolocation();
   const fromInputSelected = useRef(false);
   const toInputSelected = useRef(false);
@@ -89,6 +106,7 @@ const SideBar: React.FC<SideBarProps> = ({
   const [startDragY, setStartDragY] = useState(0);
   const [sidebarHeight, setSidebarHeight] = useState(280);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { open, close } = useExposureOverlay();
 
   useEffect(() => {
     const checkMobile = (): void => {
@@ -154,7 +172,7 @@ const SideBar: React.FC<SideBarProps> = ({
 
         if (!isInside) {
           setErrorMessage(
-            `Your location is outside ${selectedArea.display_name}. Please select a location within the area.`,
+            `Your location is outside ${selectedArea.display_name}.\nPlease select a location within the area.`,
           );
           setFrom('');
           setWaitingForLocation(false);
@@ -193,7 +211,9 @@ const SideBar: React.FC<SideBarProps> = ({
             coordinates.lat <= maxLat;
 
           if (!isInside) {
-            setErrorMessage(`Your location is outside ${selectedArea.display_name}.`);
+            setErrorMessage(
+              `Your location is outside ${selectedArea.display_name}.\nPlease select a location within the area.`,
+            );
             setFrom('');
             setWaitingForLocation(false);
             return;
@@ -226,9 +246,57 @@ const SideBar: React.FC<SideBarProps> = ({
     }, 200);
   };
 
+  // Cleanup debounce timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (fromDebounce.current) {
+        window.clearTimeout(fromDebounce.current);
+        fromDebounce.current = null;
+      }
+      if (toDebounce.current) {
+        window.clearTimeout(toDebounce.current);
+        toDebounce.current = null;
+      }
+    };
+  }, []);
+
+  const safeFetchSuggestions = async (value: string): Promise<Place[]> => {
+    const apiUrl = getEnvVar('REACT_APP_API_URL') || '';
+    const encoded = encodeURIComponent(value);
+    try {
+      const response = await fetch(`${apiUrl}/api/geocode-forward/${encoded}`);
+      if (!response.ok) {
+        console.warn('geocode-forward returned non-ok:', response.status);
+        return [];
+      }
+      const data = await response.json();
+      if (!data || !Array.isArray(data.features)) return [];
+      return data.features;
+    } catch (err) {
+      console.warn('geocode-forward error', err);
+      return [];
+    }
+  };
+
   const HandleFromChange = async (value: string): Promise<void> => {
+    // Skip if this is the "Use my current location" suggestion
+    if (value === 'Use my current location') {
+      return;
+    }
+
     setFrom(value);
     setShowFromCurrentLocation(false);
+
+    if (value.length === 0) {
+      setFromSuggestions([]);
+      onFromSelect(null);
+      fromInputSelected.current = false;
+      if (fromDebounce.current) {
+        window.clearTimeout(fromDebounce.current);
+        fromDebounce.current = null;
+      }
+      return;
+    }
 
     if (fromInputSelected.current) {
       fromInputSelected.current = false;
@@ -236,29 +304,30 @@ const SideBar: React.FC<SideBarProps> = ({
       return;
     }
 
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = window.setTimeout(async () => {
+    if (fromDebounce.current) window.clearTimeout(fromDebounce.current);
+    fromDebounce.current = window.setTimeout(async () => {
       if (!value) {
         setFromSuggestions([]);
         return;
       }
-      try {
-        const response = await fetch(
-          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
-        );
-        if (!response.ok) {
-          throw new Error(`server error: ${response.status}`);
-        }
-        const data = await response.json();
-        setFromSuggestions(data.features);
-      } catch (error) {
-        console.log(error);
-      }
-    }, 400);
+      const features = await safeFetchSuggestions(value);
+      setFromSuggestions(features);
+    }, 400) as unknown as number;
   };
 
   const HandleToChange = async (value: string): Promise<void> => {
     setTo(value);
+
+    if (value.length === 0) {
+      setToSuggestions([]);
+      onToSelect(null);
+      toInputSelected.current = false;
+      if (toDebounce.current) {
+        window.clearTimeout(toDebounce.current);
+        toDebounce.current = null;
+      }
+      return;
+    }
 
     if (toInputSelected.current) {
       toInputSelected.current = false;
@@ -266,26 +335,34 @@ const SideBar: React.FC<SideBarProps> = ({
       return;
     }
 
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = window.setTimeout(async () => {
+    if (toDebounce.current) window.clearTimeout(toDebounce.current);
+    toDebounce.current = window.setTimeout(async () => {
       if (!value) {
         setToSuggestions([]);
         return;
       }
-      try {
-        const response = await fetch(
-          `${getEnvVar('REACT_APP_API_URL')}/api/geocode-forward/${value}`,
-        );
-        if (!response.ok) {
-          throw new Error(`server error: ${response.status}`);
-        }
-        const data = await response.json();
-        setToSuggestions(data.features);
-      } catch (error) {
-        console.log(error);
-        setToSuggestions([]);
-      }
-    }, 400);
+      const features = await safeFetchSuggestions(value);
+      setToSuggestions(features);
+    }, 400) as unknown as number;
+  };
+
+  const getExposureEdges = (routeKey: RouteType | 'loop1' | 'loop2' | 'loop3'): ExposurePoint[] => {
+    const routeGeoJSON = (routeKey as string).startsWith('loop')
+      ? loopRoutes?.[routeKey as keyof typeof loopRoutes]
+      : routes?.[routeKey as RouteType];
+
+    if (!routeGeoJSON?.features) return [];
+
+    return routeGeoJSON.features.map((feature) => {
+      const props = feature.properties as RouteFeatureProperties;
+      return {
+        distance_cum: Number(props.distance_cumulative),
+        pm25_cum: Number(props.pm25_inhaled_cumulative),
+        pm10_cum: Number(props.pm10_inhaled_cumulative),
+        pm25_seg: Number(props.pm2_5),
+        pm10_seg: Number(props.pm10),
+      };
+    });
   };
 
   useEffect(() => {
@@ -304,213 +381,316 @@ const SideBar: React.FC<SideBarProps> = ({
     onErrorChange?.(errorMessage);
   }, [errorMessage, onErrorChange, selectedArea]);
 
+  useEffect(() => {
+    // Close overlay if loading or no routes
+    if (loading || loopLoading || (!routes && !loading && !loopLoading)) {
+      close();
+    }
+  }, [loading, loopLoading, routes, close]);
+
   return (
-    <div
-      ref={sidebarRef}
-      className={`sidebar ${isMobile ? 'sidebar-mobile' : ''}`}
-      style={isMobile ? { transform: getTransform() } : undefined}
-    >
-      {/* Sidebar handle */}
-      <div
-        className='sidebar-handle'
-        onTouchStartCapture={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <MoreHorizontal size={24} />
-      </div>
+    <>
+      <ErrorPopup message={errorMessage} onClose={() => setErrorMessage(null)} />
 
-      {errorMessage && (
-        <div className='error-popup-overlay' onClick={() => setErrorMessage(null)}>
-          <div className='error-popup-modal' onClick={(e) => e.stopPropagation()}>
-            <div className='error-popup-content'>
-              <h3>Location Error</h3>
-              <p>{errorMessage}</p>
-              <button className='error-popup-button' onClick={() => setErrorMessage(null)}>
-                OK
-              </button>
-            </div>
-          </div>
+      <div
+        ref={sidebarRef}
+        className={`sidebar ${isMobile ? 'sidebar-mobile' : ''}`}
+        style={isMobile ? { transform: getTransform() } : undefined}
+      >
+        {/* Sidebar handle */}
+        <div
+          className='sidebar-handle'
+          onTouchStartCapture={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <MoreHorizontal size={24} />
         </div>
-      )}
 
-      <div
-        className='sidebar-content'
-        style={
-          isMobile
-            ? {
-                height: `calc(100dvh - ${window.innerHeight - (isDragging ? sidebarHeight + dragY : sidebarHeight)}px - 40px)`,
-              }
-            : undefined
-        }
-      >
-        <RouteModeSelector
-          mode={routeMode}
-          setMode={setRouteMode}
-          loop={loop}
-          setLoop={setLoop}
-          showLoopOnly={showLoopOnly}
-          setShowLoopOnly={setShowLoopOnly}
-        />
-        <h1 className='sidebar-title'>Where would you like to go?</h1>
-
-        <div className='input-box'>
-          <InputContainer
-            placeholder='Start location'
-            value={from}
-            onChange={HandleFromChange}
-            suggestions={
-              /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
-                ? []
-                : showFromCurrentLocation && !from
-                  ? [
-                      {
-                        full_address: 'Use my current location',
-                        place_name: 'Your Location',
-                        properties: { name: 'Your Location', isCurrentLocation: true },
-                        geometry: { coordinates: [0, 0] },
-                      },
-                    ]
-                  : fromSuggestions
-            }
-            onSelect={(place) => {
-              setShowFromCurrentLocation(false);
-              fromInputSelected.current = true;
-              if (place.properties?.isCurrentLocation) {
-                handleCurrentLocationSelect();
-              } else {
-                onFromSelect(place);
-              }
-            }}
-            onFocus={() => setShowFromCurrentLocation(true)}
-            onBlur={handleFromBlur}
+        <div
+          className='sidebar-content'
+          style={
+            isMobile
+              ? {
+                  height: `calc(100dvh - ${window.innerHeight - (isDragging ? sidebarHeight + dragY : sidebarHeight)}px - 40px)`,
+                }
+              : undefined
+          }
+        >
+          <RouteModeSelector
+            mode={routeMode}
+            setMode={setRouteMode}
+            loop={loop}
+            setLoop={setLoop}
+            showLoopOnly={showLoopOnly}
+            setShowLoopOnly={setShowLoopOnly}
           />
-        </div>
+          <h1 className='sidebar-title'>Where would you like to go?</h1>
 
-        <div className='divider' />
-
-        <div className='input-box'>
-          {loop ? (
-            <LoopDistanceSlider value={loopDistance} onChange={setLoopDistance} />
-          ) : (
+          <div className='input-box'>
             <InputContainer
-              placeholder='Destination'
-              value={to}
-              onChange={HandleToChange}
-              suggestions={toInputSelected.current ? [] : toSuggestions}
+              placeholder='Start location'
+              value={from}
+              onChange={HandleFromChange}
+              suggestions={
+                /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(from)
+                  ? []
+                  : showFromCurrentLocation && !from
+                    ? [
+                        {
+                          full_address: 'Use my current location',
+                          place_name: 'Your Location',
+                          properties: { name: 'Your Location', isCurrentLocation: true },
+                          geometry: { coordinates: [0, 0] },
+                        },
+                      ]
+                    : fromSuggestions
+              }
               onSelect={(place) => {
-                toInputSelected.current = true;
-                onToSelect(place);
+                setShowFromCurrentLocation(false);
+                fromInputSelected.current = true;
+                if (place.properties?.isCurrentLocation) {
+                  handleCurrentLocationSelect();
+                } else {
+                  onFromSelect(place);
+                }
               }}
+              onFocus={() => setShowFromCurrentLocation(true)}
+              onBlur={handleFromBlur}
             />
-          )}
-        </div>
+          </div>
 
-        {children}
+          <div className='divider' />
 
-        {loop && (
-          <>
-            {loopLoading ? (
-              <div className='route-loading-message'>
-                <p>Loading loop route...</p>
-              </div>
-            ) : loopSummaries?.loop ? (
-              <div
-                className='route-card-base loop-container route-container'
-                onClick={() => onRouteSelect('loop')}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <RouteInfoCard
-                  route_type='Loop Route'
-                  time_estimates={loopSummaries.loop.time_estimates}
-                  total_length={loopSummaries.loop.total_length}
-                  aq_average={loopSummaries.loop.aq_average}
-                  isSelected={selectedRoute === 'loop'}
-                  isExpanded={selectedRoute === 'loop'}
-                  mode={routeMode}
-                />
-              </div>
-            ) : null}
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
-              </button>
-            </div>
-          </>
-        )}
-
-        {!loop && summaries && !children && (
-          <>
-            <div
-              className='route-card-base best-aq-container route-container'
-              onClick={() => onRouteSelect('best_aq')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              <RouteInfoCard
-                route_type='Best AQ Route'
-                time_estimates={summaries.best_aq.time_estimates}
-                total_length={summaries.best_aq.total_length}
-                aq_average={summaries.best_aq.aq_average}
-                comparisons={aqiDifferences?.best_aq}
-                isSelected={selectedRoute === 'best_aq'}
-                isExpanded={selectedRoute === 'best_aq'}
-                mode={routeMode}
+          <div className='input-box'>
+            {loop ? (
+              <LoopDistanceSlider value={loopDistance} onChange={setLoopDistance} />
+            ) : (
+              <InputContainer
+                placeholder='Destination'
+                value={to}
+                onChange={HandleToChange}
+                suggestions={toInputSelected.current ? [] : toSuggestions}
+                onSelect={(place) => {
+                  toInputSelected.current = true;
+                  onToSelect(place);
+                }}
               />
-            </div>
+            )}
+          </div>
 
-            <div
-              className='route-card-base fastest-container route-container'
-              onClick={() => onRouteSelect('fastest')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              <RouteInfoCard
-                route_type='Fastest Route'
-                time_estimates={summaries.fastest.time_estimates}
-                total_length={summaries.fastest.total_length}
-                aq_average={summaries.fastest.aq_average}
-                comparisons={aqiDifferences?.fastest}
-                isSelected={selectedRoute === 'fastest'}
-                isExpanded={selectedRoute === 'fastest'}
-                mode={routeMode}
-              />
-            </div>
+          {/* user-provided children (render once) */}
+          {children}
 
-            <div
-              className='route-card-base balanced-container route-container'
-              onClick={() => onRouteSelect('balanced')}
-              onMouseDown={(e) => e.preventDefault()}
-            >
-              {balancedLoading ? (
-                <div className='route-loading-overlay'>
-                  <h4>Loading route...</h4>
+          {loop && (
+            <>
+              {loopLoading && (!loopSummaries || Object.keys(loopSummaries).length === 0) ? (
+                <div className='loading-spinner'>
+                  <div className='spinner'></div>
+                  <p>Loading loop routes...</p>
                 </div>
               ) : (
-                <RouteInfoCard
-                  route_type='Your Route'
-                  time_estimates={summaries.balanced.time_estimates}
-                  total_length={summaries.balanced.total_length}
-                  aq_average={summaries.balanced.aq_average}
-                  comparisons={aqiDifferences?.balanced}
-                  isSelected={selectedRoute === 'balanced'}
-                  isExpanded={selectedRoute === 'balanced'}
-                  mode={routeMode}
-                />
+                <>
+                  {loopSummaries?.loop1 && (
+                    <div
+                      className='route-card-base loop1-container route-container'
+                      onClick={() => onRouteSelect('loop1')}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <RouteInfoCard
+                        route_type='Loop 1'
+                        time_estimates={loopSummaries.loop1.time_estimates}
+                        total_length={loopSummaries.loop1.total_length}
+                        aq_average={loopSummaries.loop1.aq_average}
+                        exposurePoints={getExposureEdges('loop1')}
+                        isSelected={selectedRoute === 'loop1'}
+                        isExpanded={selectedRoute === 'loop1'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const points = getExposureEdges('loop1');
+                          open({ title: 'Loop 1', points, mode: 'cumulative' });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {loopSummaries?.loop2 && (
+                    <div
+                      className='route-card-base loop2-container route-container'
+                      onClick={() => onRouteSelect('loop2')}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <RouteInfoCard
+                        route_type='Loop 2'
+                        time_estimates={loopSummaries.loop2.time_estimates}
+                        total_length={loopSummaries.loop2.total_length}
+                        aq_average={loopSummaries.loop2.aq_average}
+                        exposurePoints={getExposureEdges('loop2')}
+                        isSelected={selectedRoute === 'loop2'}
+                        isExpanded={selectedRoute === 'loop2'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const points = getExposureEdges('loop2');
+                          open({ title: 'Loop 2', points, mode: 'cumulative' });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {loopSummaries?.loop3 && (
+                    <div
+                      className='route-card-base loop3-container route-container'
+                      onClick={() => onRouteSelect('loop3')}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <RouteInfoCard
+                        route_type='Loop 3'
+                        time_estimates={loopSummaries.loop3.time_estimates}
+                        total_length={loopSummaries.loop3.total_length}
+                        aq_average={loopSummaries.loop3.aq_average}
+                        exposurePoints={getExposureEdges('loop3')}
+                        isSelected={selectedRoute === 'loop3'}
+                        isExpanded={selectedRoute === 'loop3'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const points = getExposureEdges('loop3');
+                          open({ title: 'Loop 3', points, mode: 'cumulative' });
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {loopLoading && loopSummaries && Object.keys(loopSummaries).length < 3 && (
+                    <div className='loading-spinner'>
+                      <div className='spinner'></div>
+                      <p>Loading more routes...</p>
+                    </div>
+                  )}
+                </>
               )}
-            </div>
-            <RouteSlider
-              value={balancedWeight}
-              onChange={setBalancedWeight}
-              disabled={loading || balancedLoading}
-            />
-            <div className='aqi-toggle-button'>
-              <button onClick={() => setShowAQIColors(!showAQIColors)}>
-                {showAQIColors ? 'Hide AQ on map' : 'Show AQ on map'}
-              </button>
-            </div>
-          </>
-        )}
+
+              <div className='aqi-toggle-button'>
+                <button
+                  onClick={() => setShowAQIColors(!showAQIColors)}
+                  className={showAQIColors ? 'active' : ''}
+                >
+                  <div className='aqi-button-content'>
+                    <span className='aqi-button-text'>
+                      {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* --------- NORMAL MODE (single block) --------- */}
+          {!loop && !children && (
+            <>
+              {loading && !summaries ? (
+                <div className='loading-spinner'>
+                  <div className='spinner'></div>
+                  <p>Loading routes...</p>
+                </div>
+              ) : summaries ? (
+                <>
+                  <div
+                    className='route-card-base best-aq-container route-container'
+                    onClick={() => onRouteSelect('best_aq')}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <RouteInfoCard
+                      route_type='Best AQ Route'
+                      time_estimates={summaries.best_aq.time_estimates}
+                      total_length={summaries.best_aq.total_length}
+                      aq_average={summaries.best_aq.aq_average}
+                      comparisons={aqiDifferences?.best_aq}
+                      isSelected={selectedRoute === 'best_aq'}
+                      isExpanded={selectedRoute === 'best_aq'}
+                      mode={routeMode}
+                      onClick={() => {
+                        const routeKey: RouteType = 'best_aq';
+                        const points = getExposureEdges(routeKey);
+                        open({ points, title: 'Best AQ Route', mode: 'cumulative' });
+                      }}
+                    />
+                  </div>
+
+                  <div
+                    className='route-card-base fastest-container route-container'
+                    onClick={() => onRouteSelect('fastest')}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <RouteInfoCard
+                      route_type='Fastest Route'
+                      time_estimates={summaries.fastest.time_estimates}
+                      total_length={summaries.fastest.total_length}
+                      aq_average={summaries.fastest.aq_average}
+                      comparisons={aqiDifferences?.fastest}
+                      isSelected={selectedRoute === 'fastest'}
+                      isExpanded={selectedRoute === 'fastest'}
+                      mode={routeMode}
+                      onClick={() => {
+                        const routeKey: RouteType = 'fastest';
+                        const points = getExposureEdges(routeKey);
+                        open({ points, title: 'Fastest Route', mode: 'cumulative' });
+                      }}
+                    />
+                  </div>
+
+                  <div
+                    className='route-card-base balanced-container route-container'
+                    onClick={() => onRouteSelect('balanced')}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    {balancedLoading ? (
+                      <div className='loading-spinner'>
+                        <div className='spinner'></div>
+                        <h4>Loading route...</h4>
+                      </div>
+                    ) : (
+                      <RouteInfoCard
+                        route_type='Custom Route'
+                        time_estimates={summaries.balanced.time_estimates}
+                        total_length={summaries.balanced.total_length}
+                        aq_average={summaries.balanced.aq_average}
+                        comparisons={aqiDifferences?.balanced}
+                        isSelected={selectedRoute === 'balanced'}
+                        isExpanded={selectedRoute === 'balanced'}
+                        mode={routeMode}
+                        onClick={() => {
+                          const routeKey: RouteType = 'balanced';
+                          const points = getExposureEdges(routeKey);
+                          open({ points, title: 'Custom Route', mode: 'cumulative' });
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <RouteSlider
+                    value={balancedWeight}
+                    onChange={setBalancedWeight}
+                    disabled={loading || balancedLoading}
+                  />
+                  <div className='aqi-toggle-button'>
+                    <button
+                      onClick={() => setShowAQIColors(!showAQIColors)}
+                      className={showAQIColors ? 'active' : ''}
+                    >
+                      <div className='aqi-button-content'>
+                        <span className='aqi-button-text'>
+                          {showAQIColors ? 'AQI COLOURS ON' : 'SHOW AQI COLOURS ON MAP'}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

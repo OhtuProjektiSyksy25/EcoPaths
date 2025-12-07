@@ -11,6 +11,7 @@ Props:
 */
 import React, { useState, useEffect, useRef } from 'react';
 import { ReactComponent as PoiIcon } from '../assets/icons/poi-icon.svg';
+import { X } from 'lucide-react';
 import { Place } from '../types';
 
 // Keys used by the backend to classify POIs (keep in sync with backend POI_KEYS)
@@ -45,6 +46,7 @@ const InputContainer: React.FC<InputContainerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const inputSelected = useRef(false);
 
   // Prepare suggestions so that POIs are shown after address suggestions
@@ -95,9 +97,12 @@ const InputContainer: React.FC<InputContainerProps> = ({
     };
   }, []);
 
+  const isMobile = window.innerWidth <= 800;
+
   return (
     <div className='InputContainer' ref={containerRef}>
       <input
+        ref={inputRef}
         type='text'
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -105,11 +110,26 @@ const InputContainer: React.FC<InputContainerProps> = ({
         onFocus={() => {
           suggestions?.length > 0 && inputSelected.current === false && setIsOpen(true);
           onFocus?.();
+          if (!isMobile && value) {
+            inputRef.current?.select();
+          }
         }}
         onBlur={() => {
           onBlur?.();
         }}
       />
+      {isMobile && value && (
+        <button
+          className='clear-button'
+          onClick={() => {
+            onChange('');
+            inputRef.current?.focus();
+          }}
+          type='button'
+        >
+          <X size={18} />
+        </button>
+      )}
       {isOpen && sortedSuggestions?.length && (
         <ul className='originul'>
           {sortedSuggestions.map((s, i) => (

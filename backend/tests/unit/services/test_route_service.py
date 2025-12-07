@@ -42,7 +42,7 @@ def dummy_get_enriched_tiles(self, tile_ids, network_type="walking"):
         "from_node": [1, 2],
         "to_node": [2, 3],
         "aqi": [20.0, 40.0],
-        "normalized_aqi":[15.0, 42.0],
+        "normalized_aqi": [15.0, 42.0],
         "pm2_5": [10.0, 12.0],
         "pm10": [20.0, 22.0]
     }, crs="EPSG:25833")
@@ -70,11 +70,12 @@ def origin_destination():
 @pytest.fixture
 def simple_nodes_gdf():
     data = {
-        "node_id": ["A", "B", "C", "D", "E", "F"],
-        "tile_id": [1, 1, 1, 1, 1, 1],
+        "node_id": ["A", "B", "C", "D", "E", "F", "G", "H"],
+        "tile_id": [1, 1, 1, 1, 1, 1, 1, 1],
         "geometry": [
             Point(0, 0), Point(2, 2), Point(4, 4),
-            Point(0, 2), Point(2, 4), Point(4, 0)
+            Point(0, 2), Point(2, 4), Point(4, 0),
+            Point(35, 35), Point(36, 36)
         ]
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
@@ -83,21 +84,22 @@ def simple_nodes_gdf():
 @pytest.fixture
 def simple_edges_gdf():
     data = {
-        "edge_id": [1, 2, 3, 4, 5, 6],
-        "from_node": ["A", "B", "D", "D", "E", "F"],
-        "to_node": ["B", "C", "B", "E", "C", "C"],
-        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0],
-        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6],
-        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0],
-        "pm2_5": [10.0, 12.0, 11.0, 13.0, 14.0, 15.0],
-        "pm10": [20.0, 22.0, 21.0, 23.0, 24.0, 25.0],
+        "edge_id": [1, 2, 3, 4, 5, 6, 7],
+        "from_node": ["A", "B", "D", "D", "E", "F", "G"],
+        "to_node": ["B", "C", "B", "E", "C", "C", "H"],
+        "length_m": [2.8, 2.8, 2.8, 2.8, 2.8, 4.0, 1],
+        "normalized_aqi": [0.5, 0.2, 0.3, 0.4, 0.1, 0.6, 1],
+        "aqi": [20.0, 40.0, 30.0, 44.0, 50.0, 30.0, 1],
+        "pm2_5": [10.0, 12.0, 11.0, 13.0, 14.0, 15.0, 1],
+        "pm10": [20.0, 22.0, 21.0, 23.0, 24.0, 25.0, 1],
         "geometry": [
             LineString([(0, 0), (2, 2)]),
             LineString([(2, 2), (4, 4)]),
             LineString([(0, 2), (2, 2)]),
             LineString([(0, 2), (2, 4)]),
             LineString([(2, 4), (4, 4)]),
-            LineString([(4, 0), (4, 4)])
+            LineString([(4, 0), (4, 4)]),
+            LineString([(35, 35), (36, 36)])
         ]
     }
     return gpd.GeoDataFrame(data, crs="EPSG:25833")
@@ -135,14 +137,14 @@ def test_factory_creates_service_and_config():
 
 def test_create_buffer_returns_polygon(route_service, origin_destination):
     origin, destination = origin_destination
-    buffer = route_service._create_buffer(origin, destination, buffer_m=100)
+    buffer = route_service.create_buffer(origin, destination, buffer_m=100)
     assert buffer.geom_type == "Polygon"
     assert buffer.area > 0
 
 
 def test_get_tile_edges_returns_expected_data(route_service):
     tile_ids = ["t101", "t102", "t103"]
-    result = route_service._get_tile_edges(tile_ids)
+    result = route_service.get_tile_edges(tile_ids)
     assert isinstance(result, gpd.GeoDataFrame)
     assert not result.empty
     assert "aqi" in result.columns
@@ -156,7 +158,7 @@ def test_prune_and_fetch_combines_correctly(monkeypatch, route_service):
     monkeypatch.setattr(DummyRedisService, "prune_found_ids",
                         staticmethod(lambda ids, r, a: ["t102", "t103"]))
     tile_ids = ["t101", "t102", "t103"]
-    edges = route_service._get_tile_edges(tile_ids)
+    edges = route_service.get_tile_edges(tile_ids)
     assert not edges.empty
     assert set(edges["tile_id"]).issubset(set(tile_ids))
 
@@ -173,7 +175,7 @@ def test_save_to_redis_is_triggered(monkeypatch, route_service):
     monkeypatch.setattr(DummyRedisService, "save_gdf",
                         staticmethod(fake_save_gdf))
 
-    _ = route_service._get_tile_edges(["t104", "t106"])
+    _ = route_service.get_tile_edges(["t104", "t106"])
     assert called.get("was_called", False)
 
 
@@ -197,9 +199,9 @@ def test_compute_routes_single_edge(route_service, origin_destination, simple_ed
 def test_get_route_returns_expected_structure(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
     origin, destination = origin_destination
 
-    monkeypatch.setattr(route_service, "_get_tile_edges",
+    monkeypatch.setattr(route_service, "get_tile_edges",
                         lambda ids: simple_edges_gdf)
-    monkeypatch.setattr(route_service, "_get_nodes_from_db",
+    monkeypatch.setattr(route_service, "get_nodes_from_db",
                         lambda ids: simple_nodes_gdf)
 
     result = route_service.get_route(origin, destination)
@@ -209,73 +211,14 @@ def test_get_route_returns_expected_structure(monkeypatch, route_service, origin
         assert result["routes"][mode]["features"]
 
 
-def test_get_round_trip_returns_valid_structure(
-    monkeypatch, route_service, origin_destination,
-    simple_edges_gdf_2, simple_nodes_gdf
-):
-    origin, _ = origin_destination
-    simple_edges_gdf_2["tile_id"] = [
-        "r1_c2", "r1_c2", "r1_c2", "r1_c3", "r1_c3", "r1_c3"]
-
-    monkeypatch.setattr(route_service, "_get_tile_edges",
-                        lambda tile_ids: simple_edges_gdf_2.copy())
-    monkeypatch.setattr(route_service, "_get_nodes_from_db",
-                        lambda tile_ids: simple_nodes_gdf)
-    monkeypatch.setattr(route_service, "_get_outermost_tiles",
-                        lambda tile_ids: tile_ids)
-    monkeypatch.setattr(
-        route_service, "extract_best_aq_point_from_tile",
-        lambda edges, tile_ids: gpd.GeoDataFrame(
-            {"geometry": [Point(1.0, 1.0)], "tile_id": ["r1_c2"]},
-            crs="EPSG:25833"
-        )
-    )
-
-    monkeypatch.setattr(route_service, "decode_tile", lambda tile: (1, 2))
-
-    def mock_forward(origin_gdf, best_3):
-        return [
-            {
-                "destination": gpd.GeoDataFrame(geometry=[Point(1.3, 1.4)], crs="EPSG:25833"),
-                "route": gpd.GeoDataFrame({
-                    "geometry": [LineString([(0.1, 0.2), (1.3, 1.4)])],
-                    "edge_id": [1]
-                }, crs="EPSG:25833"),
-                "summary": {"aq_average": 10},
-                "epath_gdf_ids": [1]
-            }
-        ]
-
-    def mock_back(destination, first_path_data):
-        combined_gdf = pd.concat([first_path_data["route"]], ignore_index=True)
-        return {
-            "routes": {"loop": {"type": "FeatureCollection", "features": []}},
-            "summaries": {"loop": {"length_m": 10, "aq_average": 10}},
-            "aqi_differences": None
-        }
-
-    monkeypatch.setattr(route_service, "get_round_trip_forward", mock_forward)
-    monkeypatch.setattr(route_service, "get_round_trip_back", mock_back)
-
-    result = route_service.get_round_trip(origin, distance=1000)
-
-    assert "routes" in result
-    assert "summaries" in result
-    assert "loop" in result["routes"]
-    assert "loop" in result["summaries"]
-    assert isinstance(result["routes"]["loop"], dict)
-    assert result["summaries"]["loop"]["length_m"] == 10
-    assert result["summaries"]["loop"]["aq_average"] == 10
-
-
 def test_compute_balanced_route_only_returns_only_one_route(
     monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf
 ):
     origin, destination = origin_destination
 
-    monkeypatch.setattr(route_service, "_get_tile_edges",
+    monkeypatch.setattr(route_service, "get_tile_edges",
                         lambda ids: simple_edges_gdf)
-    monkeypatch.setattr(route_service, "_get_nodes_from_db",
+    monkeypatch.setattr(route_service, "get_nodes_from_db",
                         lambda ids: simple_nodes_gdf)
 
     route_service.get_route(origin, destination)
@@ -286,21 +229,112 @@ def test_compute_balanced_route_only_returns_only_one_route(
     assert result["routes"]["balanced"].get("type") == "FeatureCollection"
 
 
-def test_route_trip_forward_handles_empty_gdf(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf):
+def test_compute_routes_raises_error_with_empty_edges(route_service, origin_destination, simple_nodes_gdf):
+    """Test that _compute_routes raises RuntimeError when edges GeoDataFrame is empty."""
     origin, destination = origin_destination
+    empty_edges = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:25833")
 
-    monkeypatch.setattr(route_service, "_get_tile_edges",
+    with pytest.raises(RuntimeError, match="Edges GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            empty_edges, simple_nodes_gdf, origin, destination)
+
+
+def test_compute_routes_raises_error_with_empty_nodes(route_service, origin_destination, simple_edges_gdf):
+    """Test that _compute_routes raises RuntimeError when nodes GeoDataFrame is empty."""
+    origin, destination = origin_destination
+    empty_nodes = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:25833")
+
+    with pytest.raises(RuntimeError, match="Nodes GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            simple_edges_gdf, empty_nodes, origin, destination)
+
+
+def test_compute_routes_raises_error_without_geometry_column_in_edges(route_service, origin_destination, simple_nodes_gdf):
+    """Test that _compute_routes raises RuntimeError when edges has no geometry column."""
+    origin, destination = origin_destination
+    # Create a regular DataFrame and convert to GeoDataFrame without geometry
+    edges_without_geom = gpd.GeoDataFrame(pd.DataFrame({"edge_id": [1, 2]}))
+
+    with pytest.raises(RuntimeError, match="Edges GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            edges_without_geom, simple_nodes_gdf, origin, destination)
+
+
+def test_compute_routes_raises_error_without_geometry_column_in_nodes(route_service, origin_destination, simple_edges_gdf):
+    """Test that _compute_routes raises RuntimeError when nodes has no geometry column."""
+    origin, destination = origin_destination
+    # Create a regular DataFrame and convert to GeoDataFrame without geometry
+    nodes_without_geom = gpd.GeoDataFrame(
+        pd.DataFrame({"node_id": ["A", "B"]}))
+
+    with pytest.raises(RuntimeError, match="Nodes GeoDataFrame has no geometry column or is empty"):
+        route_service._compute_routes(
+            simple_edges_gdf, nodes_without_geom, origin, destination)
+
+
+def test_get_tile_edges_returns_empty_gdf_with_crs_when_no_tiles_found(monkeypatch, route_service):
+    """Test that get_tile_edges returns empty GeoDataFrame with CRS when no tiles found."""
+    monkeypatch.setattr(DummyRedisService, "prune_found_ids",
+                        staticmethod(lambda ids, r, a: ids))
+    monkeypatch.setattr(DummyRedisService, "get_gdf_by_list_of_keys",
+                        staticmethod(lambda ids, r, a: (False, [])))
+
+    def empty_enriched_tiles(self, tile_ids, network_type="walking"):
+        return None
+
+    monkeypatch.setattr(
+        "src.services.route_service.EdgeEnricher.get_enriched_tiles", empty_enriched_tiles)
+
+    result = route_service.get_tile_edges(["t999"])
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert result.empty
+    assert result.crs is not None
+    assert result.crs.to_string() == "EPSG:25833"
+
+
+def test_get_nodes_from_db_returns_empty_gdf_with_crs_when_no_nodes(monkeypatch, route_service):
+    """Test that get_nodes_from_db returns empty GeoDataFrame with CRS when no nodes found."""
+    monkeypatch.setattr("src.services.route_service.DatabaseClient.get_nodes_by_tile_ids",
+                        lambda self, area, network, ids: None)
+
+    result = route_service.get_nodes_from_db(["t999"])
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert result.empty
+    assert result.crs is not None
+    assert result.crs.to_string() == "EPSG:25833"
+
+
+def test_enrich_missing_edges_returns_empty_gdf_with_crs_on_failure(monkeypatch, route_service):
+    """Test that _enrich_missing_edges returns empty GeoDataFrame with CRS when enrichment fails."""
+
+    def failing_enrichment(self, tile_ids, network_type="walking"):
+        return None
+
+    monkeypatch.setattr(
+        "src.services.route_service.EdgeEnricher.get_enriched_tiles", failing_enrichment)
+
+    result = route_service._enrich_missing_edges(["t999"])
+    assert isinstance(result, gpd.GeoDataFrame)
+    assert result.empty
+    assert result.crs is not None
+    assert result.crs.to_string() == "EPSG:25833"
+
+
+@pytest.mark.filterwarnings("ignore:Couldn't reach some vertices:RuntimeWarning")
+def test_get_route_tries_multiple_buffer_sizes(monkeypatch, route_service, origin_destination, simple_edges_gdf, simple_nodes_gdf, caplog):
+    """Test that get_route tries multiple buffer sizes (600m, 900m, 1200m) before failing."""
+    origin, destination = origin_destination
+    destination = gpd.GeoDataFrame(geometry=[Point(33, 33)], crs="EPSG:25833")
+
+    monkeypatch.setattr(route_service, "get_tile_edges",
                         lambda ids: simple_edges_gdf)
-    monkeypatch.setattr(route_service, "_get_nodes_from_db",
+    monkeypatch.setattr(route_service, "get_nodes_from_db",
                         lambda ids: simple_nodes_gdf)
 
-    empty_gdf = gpd.GeoDataFrame()
-    empty_gdf_2 = gpd.GeoDataFrame()
+    with pytest.raises(RuntimeError, match="No route found"):
+        route_service.get_route(origin, destination)
 
-    result = route_service.get_round_trip_forward(
-        origin, [empty_gdf,empty_gdf_2, destination],)
-    assert len(result) == 1
-    assert isinstance(result, list)
-    assert isinstance(result[0], dict)
-    assert "geometry" in result[0]["destination"]
-
+    # Verify all three buffer sizes were attempted
+    assert "600m" in caplog.text
+    assert "900m" in caplog.text
+    assert "1200m" in caplog.text

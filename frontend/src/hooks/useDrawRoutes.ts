@@ -8,7 +8,9 @@ const ROUTE_COLORS: Record<string, string> = {
   fastest: '#003cff',
   best_aq: '#008b23',
   balanced: '#00f5e0',
-  loop: '#007259',
+  loop1: '#2e7d32',
+  loop2: '#8f40b1',
+  loop3: '#0277bd',
 };
 
 const AQI_COLOR_SCALE = [
@@ -32,9 +34,12 @@ const AQI_COLOR_SCALE = [
 /**
  * Removes a layer and source if they exist
  */
-const removeLayerIfExists = (map: mapboxgl.Map, id: string): void => {
-  if (map.getLayer(id)) map.removeLayer(id);
-  if (map.getSource(id)) map.removeSource(id);
+const removeLayerIfExists = (map: mapboxgl.Map, layerId: string): void => {
+  if (map.getLayer(layerId)) map.removeLayer(layerId);
+};
+
+const removeSourceIfExists = (map: mapboxgl.Map, sourceId: string): void => {
+  if (map.getSource(sourceId)) map.removeSource(sourceId);
 };
 
 /**
@@ -56,7 +61,7 @@ export function useDrawRoutes(
       removeLayerIfExists(map, `route-${mode}-halo`);
     });
 
-    const routeTypes = ['fastest', 'balanced', 'best_aq', 'loop'];
+    const routeTypes = ['fastest', 'balanced', 'best_aq', 'loop1', 'loop2', 'loop3'];
 
     routeTypes.forEach((mode) => {
       if (mode === selectedRoute) return;
@@ -79,7 +84,16 @@ export function useDrawRoutes(
             'line-color': selectedRoute ? '#cecdcd' : '#505050',
             'line-width': 5,
             'line-opacity': 0.6,
-            'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
+            'line-offset':
+              mode === 'balanced'
+                ? 1.5
+                : mode === 'fastest'
+                  ? -1.5
+                  : mode === 'loop2'
+                    ? 1.5
+                    : mode === 'loop3'
+                      ? -1.5
+                      : 0,
           },
         });
       }
@@ -112,7 +126,16 @@ export function useDrawRoutes(
               : ROUTE_COLORS[mode],
           'line-width': mode === 'balanced' ? 2.5 : 3.5,
           'line-opacity': selectedRoute ? 0.5 : 1,
-          'line-offset': mode === 'balanced' ? 1.5 : mode === 'fastest' ? -1.5 : 0,
+          'line-offset':
+            mode === 'balanced'
+              ? 1.5
+              : mode === 'fastest'
+                ? -1.5
+                : mode === 'loop2'
+                  ? 1.5
+                  : mode === 'loop3'
+                    ? -1.5
+                    : 0,
         },
       });
     });
@@ -175,9 +198,11 @@ export function useDrawRoutes(
     // Cleanup
     return (): void => {
       if (!map) return;
+
       Object.keys(ROUTE_COLORS).forEach((mode) => {
-        removeLayerIfExists(map, `route-${mode}`);
         removeLayerIfExists(map, `route-${mode}-halo`);
+        removeLayerIfExists(map, `route-${mode}`);
+        removeSourceIfExists(map, `route-${mode}`);
       });
     };
   }, [map, routes, showAQIColors, selectedRoute]);

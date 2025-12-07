@@ -86,9 +86,9 @@ describe('mapBounds utils', () => {
     const paddingMobile = getPadding(true);
     expect(paddingMobile).toEqual({
       top: 80,
-      bottom: 80 + 400,
-      left: 30,
-      right: 30,
+      bottom: 320,
+      left: 20,
+      right: 20,
     });
   });
 });

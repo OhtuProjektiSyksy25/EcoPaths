@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import mapboxgl from 'mapbox-gl';
@@ -9,7 +9,11 @@ import { useDrawRoutes } from '../hooks/useDrawRoutes';
 import { useHighlightChosenArea } from '../hooks/useHighlightChosenArea';
 import { isValidCoordsArray } from '../utils/coordsNormalizer';
 import { extractRouteCoordinates, calculateBounds, getPadding } from '../utils/mapBounds';
+import { useExposureOverlay } from '../contexts/ExposureOverlayContext';
+import { ExposureChart } from './ExposureChart';
 import { getEnvVar } from '../utils/config';
+import ReactDOM from 'react-dom';
+import AQILegend from './AQILegend';
 
 interface MapComponentProps {
   fromLocked: LockedLocation | null;
@@ -58,6 +62,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const mapRef = useRef<MapWithLock | null>(null);
   const fromMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const toMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const overlay = useExposureOverlay();
+  const [overlayPos, setOverlayPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const visibleRoutes = showLoopOnly ? loopRoutes || {} : routes || {};
 
@@ -66,7 +77,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     mapRef.current,
     visibleRoutes as Record<string, GeoJSON.FeatureCollection>,
     showAQIColors,
-    showLoopOnly ? null : selectedRoute,
+    selectedRoute,
   );
 
   // Fit map to active routes
@@ -118,10 +129,14 @@ const MapComponent: React.FC<MapComponentProps> = ({
       if (scaleEl) scaleEl.style.opacity = '1';
     });
 
-    map.on('load', () => updateWaterLayers(map));
+    map.on('load', () => {
+      updateWaterLayers(map);
+    });
 
     mapRef.current = map;
-    return () => map.remove();
+    return () => {
+      map.remove();
+    };
   }, [mapboxToken, mapboxStyle]);
 
   // Update markers & zoom logic for loop / non-loop modes
@@ -154,25 +169,22 @@ const MapComponent: React.FC<MapComponentProps> = ({
       toMarkerRef.current = new mapboxgl.Marker({ color: 'red' }).setLngLat(toCoords).addTo(map);
     }
 
-    // Determine zoom behaviour
+    const isMobile = window.innerWidth <= 800;
+    const padding = getPadding(isMobile);
+
     // CASE A: LOOP MODE
     if (loop) {
       const hasLoopRoute = loopRoutes && Object.keys(loopRoutes).length > 0;
 
       if (hasLoopRoute) {
-        // (A1) LOOP ROUTE EXISTS -> center to route
         const coords = extractRouteCoordinates(loopRoutes);
         const bounds = calculateBounds(coords);
         if (bounds) {
-          const isMobile = window.innerWidth <= 800;
-          const padding = getPadding(isMobile);
           map.fitBounds(bounds, { padding, duration: 1500 });
         }
       } else if (fromCoords) {
-        // (A2) route has not loaded yet -> center to marker
         map.flyTo({ center: fromCoords, zoom: 16, duration: 1500 });
       }
-
       return;
     }
 
@@ -180,18 +192,15 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const hasRoutes = routes && Object.keys(routes).length > 0;
 
     if (hasRoutes) {
-      // (B1) route exists -> focus full route
       const coords = extractRouteCoordinates(routes);
       const bounds = calculateBounds(coords);
       if (bounds) {
-        const isMobile = window.innerWidth <= 800;
-        const padding = getPadding(isMobile);
         map.fitBounds(bounds, { padding, duration: 1500 });
       }
       return;
     }
 
-    // (B2) No route -> focus markers
+    // No route -> focus markers
     const points: [number, number][] = [];
     if (fromCoords) points.push(fromCoords);
     if (toCoords) points.push(toCoords);
@@ -201,13 +210,35 @@ const MapComponent: React.FC<MapComponentProps> = ({
         (b, c) => b.extend(c),
         new mapboxgl.LngLatBounds(points[0], points[0]),
       );
-      const isMobile = window.innerWidth <= 800;
-      const padding = getPadding(isMobile);
       map.fitBounds(bounds, { padding, duration: 1500 });
     } else if (points.length === 1) {
       map.flyTo({ center: points[0], zoom: 16, duration: 1500 });
     }
   }, [fromLocked, toLocked, loop, routes, loopRoutes]);
+
+  // Fit map to selected route
+  useEffect(() => {
+    if (!mapRef.current || !selectedRoute) return;
+
+    const map = mapRef.current;
+    const activeRoutes = showLoopOnly ? loopRoutes : routes;
+
+    if (!activeRoutes || !activeRoutes[selectedRoute]) return;
+
+    const selectedGeoJSON = activeRoutes[selectedRoute];
+    const coords = extractRouteCoordinates({ [selectedRoute]: selectedGeoJSON });
+    const bounds = calculateBounds(coords);
+
+    if (!bounds) return;
+
+    const isMobile = window.innerWidth <= 800;
+    const padding = getPadding(isMobile);
+
+    map.fitBounds(bounds, {
+      padding,
+      duration: 800,
+    });
+  }, [selectedRoute, routes, loopRoutes, showLoopOnly]);
 
   // Fly to selected area and disable interactions until finished
   useEffect(() => {
@@ -244,10 +275,83 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [selectedArea]);
 
+  useEffect(() => {
+    const updatePos = (): void => {
+      const m = mapboxRef.current;
+      if (!m) {
+        setOverlayPos(null);
+        return;
+      }
+      const r = m.getBoundingClientRect();
+      const maxW = Math.min(360, r.width - 20);
+      const maxH = Math.min(320, r.height - 20);
+      const top = Math.max(8, r.top + 8);
+      const left = Math.max(8, r.left + 8);
+
+      setOverlayPos({
+        top,
+        left,
+        width: Math.max(200, maxW),
+        height: Math.max(120, maxH),
+      });
+    };
+
+    updatePos();
+    window.addEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos, true);
+    };
+  }, [overlay.visible]);
+
   if (mapboxToken) {
+    const inlineOverlayStyle = overlayPos
+      ? {
+          position: 'fixed' as const,
+          top: overlayPos.top,
+          left: overlayPos.left,
+          width: overlayPos.width,
+          height: overlayPos.height,
+          zIndex: 2147483647,
+        }
+      : {
+          position: 'fixed' as const,
+          top: 10,
+          left: 10,
+          width: 320,
+          height: 240,
+          zIndex: 2147483647,
+        };
+
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <div ref={mapboxRef} data-testid='mapbox-map' style={{ height: '100%', width: '100%' }} />
+
+        <AQILegend show={showAQIColors} />
+
+        {overlay.visible &&
+          overlay.data &&
+          ReactDOM.createPortal(
+            <div
+              className='map-exposure-overlay'
+              role='dialog'
+              onClick={(e) => e.stopPropagation()}
+              style={inlineOverlayStyle}
+            >
+              <div className='map-exposure-chart'>
+                <ExposureChart
+                  exposureEdges={overlay.data.points}
+                  height={240}
+                  showMode='pm25'
+                  distanceUnit='m'
+                  onClose={() => overlay.close()}
+                />
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
     );
   }
