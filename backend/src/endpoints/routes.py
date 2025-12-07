@@ -152,25 +152,28 @@ async def getloop_stream(request: Request, lat: float, lon: float, distance: flo
         return obj
 
     async def event_generator():
-
+        loop_count = 0
         try:
-            loop_count = 0
-
             # This function yields N loops or raises RuntimeError
             for loop_result in loop_route_service.get_round_trip(origin_gdf, distance_m):
-                loop_count += 1
-                loop_name = list(loop_result["routes"].keys())[0]
+                try:
+                    loop_count += 1
+                    loop_name = list(loop_result["routes"].keys())[0]
 
-                payload = {
-                    "variant": loop_name,
-                    "route": loop_result["routes"][loop_name],
-                    "summary": loop_result["summaries"][loop_name],
-                }
+                    payload = {
+                        "variant": loop_name,
+                        "route": loop_result["routes"][loop_name],
+                        "summary": loop_result["summaries"][loop_name],
+                    }
 
-                payload = _sanitize(jsonable_encoder(payload))
+                    payload = _sanitize(jsonable_encoder(payload))
 
-                yield f"event: loop\ndata: {json.dumps(payload)}\n\n"
-                await asyncio.sleep(0.05)
+                    yield f"event: loop\ndata: {json.dumps(payload)}\n\n"
+                    await asyncio.sleep(0.05)
+                except Exception as e:   # pylint: disable=broad-exception-caught
+                    # If any single loop fails unexpectedly, log and continue
+                    log.error(f"Error yielding loop result: {e}")
+                    continue
 
             # Completed normally
             duration = time.time() - start_time
@@ -180,21 +183,22 @@ async def getloop_stream(request: Request, lat: float, lon: float, distance: flo
             yield "event: complete\ndata: {}\n\n"
 
         except RuntimeError as e:
-            # Expected loop-error raised by loop service
+            # Expected loop-error raised by loop service (e.g. no outer tiles)
             duration = time.time() - start_time
             log.warning(
                 f"/getloop/stream loop error after {duration:.2f}s: {e}")
 
             msg = {"message": str(e)}
-            yield f"event: loop-error\ndata: {json.dumps(msg)}\n\n"
+            yield f"event: error\ndata: {json.dumps(msg)}\n\n"
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            # Unexpected bug: send `event: error`
+            # Unexpected bug
             duration = time.time() - start_time
             log.error(
                 f"/getloop/stream general failure after {duration:.2f}s: {e}")
 
-            msg = {"message": "Internal error while computing loops."}
+            msg = {
+                "message": "Internal error while computing loops. Try a different location."}
             yield f"event: error\ndata: {json.dumps(msg)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

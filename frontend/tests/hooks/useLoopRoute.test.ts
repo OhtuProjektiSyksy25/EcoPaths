@@ -66,8 +66,8 @@ describe('useLoopRoute', () => {
     jest.useRealTimers();
   });
 
-  it('handles EventSource errors', async () => {
-    const spy = jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
+  it('handles EventSource connection errors', async () => {
+    jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
       mockEventSource = new MockEventSource('test');
       return mockEventSource as any;
     });
@@ -80,7 +80,7 @@ describe('useLoopRoute', () => {
       jest.advanceTimersByTime(400);
     });
 
-    // Simulate error
+    // Simulate connection-level error
     act(() => {
       if (mockEventSource.onerror) {
         mockEventSource.onerror(new Event('error'));
@@ -88,14 +88,17 @@ describe('useLoopRoute', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Connection error while fetching loop routes');
+      expect(result.current.error).toMatch(
+        /Connection error while fetching loop routes\.\s*Try a different location\./,
+      );
+      expect(result.current.loading).toBe(false);
     });
 
     jest.useRealTimers();
   });
 
   it('handles complete event', async () => {
-    const spy = jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
+    jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
       mockEventSource = new MockEventSource('test');
       return mockEventSource as any;
     });
@@ -125,7 +128,7 @@ describe('useLoopRoute', () => {
     jest.useRealTimers();
   });
 
-  it('handles backend loop-error event', async () => {
+  it('handles backend error event with custom message', async () => {
     jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
       mockEventSource = new MockEventSource('test');
       return mockEventSource as any;
@@ -137,21 +140,133 @@ describe('useLoopRoute', () => {
       jest.advanceTimersByTime(400);
     });
 
+    // Simulate error event with backend message
     act(() => {
       const errCb = mockEventSource.addEventListener.mock.calls.find(
-        (call) => call[0] === 'loop-error',
+        (call) => call[0] === 'error',
       )?.[1];
       if (errCb) {
         errCb(
-          new MessageEvent('loop-error', {
-            data: JSON.stringify({ message: 'Route computation failed' }),
+          new MessageEvent('error', {
+            data: JSON.stringify({
+              message:
+                'Unable to compute loop routes from this location. Try a different area or distance.',
+            }),
           }),
         );
       }
     });
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Route computation failed');
+      expect(result.current.error).toBe(
+        'Unable to compute loop routes from this location. Try a different area or distance.',
+      );
+      expect(result.current.loading).toBe(false);
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('handles backend error event with empty data fallback', async () => {
+    jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
+      mockEventSource = new MockEventSource('test');
+      return mockEventSource as any;
+    });
+
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+
+    // Simulate error event with empty/invalid data
+    act(() => {
+      const errCb = mockEventSource.addEventListener.mock.calls.find(
+        (call) => call[0] === 'error',
+      )?.[1];
+      if (errCb) {
+        errCb(new MessageEvent('error', { data: '{}' }));
+      }
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('Failed to compute loop routes. Try a different location.');
+      expect(result.current.loading).toBe(false);
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('handles loop data event with valid data', async () => {
+    jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
+      mockEventSource = new MockEventSource('test');
+      return mockEventSource as any;
+    });
+
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+
+    // Simulate loop event
+    act(() => {
+      const loopCb = mockEventSource.addEventListener.mock.calls.find(
+        (call) => call[0] === 'loop',
+      )?.[1];
+      if (loopCb) {
+        loopCb(
+          new MessageEvent('loop', {
+            data: JSON.stringify({
+              variant: 'loop1',
+              route: { type: 'FeatureCollection', features: [] },
+              summary: { total_distance_m: 5000, avg_pm25: 10 },
+            }),
+          }),
+        );
+      }
+    });
+
+    await waitFor(() => {
+      expect(result.current.routes?.loop1).toBeDefined();
+      expect(result.current.summaries?.loop1).toBeDefined();
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('ignores incomplete loop data', async () => {
+    jest.spyOn(routeApi, 'streamLoopRoutes').mockImplementation(() => {
+      mockEventSource = new MockEventSource('test');
+      return mockEventSource as any;
+    });
+
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+
+    // Simulate incomplete loop event (missing summary)
+    act(() => {
+      const loopCb = mockEventSource.addEventListener.mock.calls.find(
+        (call) => call[0] === 'loop',
+      )?.[1];
+      if (loopCb) {
+        loopCb(
+          new MessageEvent('loop', {
+            data: JSON.stringify({
+              variant: 'loop1',
+              route: { type: 'FeatureCollection', features: [] },
+            }),
+          }),
+        );
+      }
+    });
+
+    await waitFor(() => {
+      expect(result.current.routes).toBeNull();
+      expect(result.current.summaries).toBeNull();
     });
 
     jest.useRealTimers();

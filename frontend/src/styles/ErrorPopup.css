@@ -69,7 +69,9 @@
   border-left-color: #15803d;
   box-shadow: 0 4px 16px rgba(21, 128, 61, 0.12);
 }
-
+.error-message {
+  white-space: pre-line;
+}
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -103,3 +105,5 @@
     font-size: 14px;
   }
 }
+
+

@@ -47,13 +47,23 @@ export const useLoopRoute = (
       const eventSource = streamLoopRoutes(fromLocked, distanceKm);
       eventSourceRef.current = eventSource;
 
-      // Helper: safely update routes/summaries
+      // Helper: safely update routes/summaries with NoneType protection
       const handleLoopMessage = (event: MessageEvent): void => {
         try {
           const newLoop = JSON.parse(event.data);
-          if (newLoop.variant && newLoop.route && newLoop.summary) {
-            setRoutes((prev) => ({ ...(prev ?? {}), [newLoop.variant]: newLoop.route }));
-            setSummaries((prev) => ({ ...(prev ?? {}), [newLoop.variant]: newLoop.summary }));
+
+          // Validate all required fields exist and are not null
+          if (newLoop?.variant && newLoop?.route && newLoop?.summary) {
+            setRoutes((prev) => ({
+              ...(prev ?? {}),
+              [newLoop.variant]: newLoop.route,
+            }));
+            setSummaries((prev) => ({
+              ...(prev ?? {}),
+              [newLoop.variant]: newLoop.summary,
+            }));
+          } else {
+            console.warn('Received incomplete loop data:', newLoop);
           }
         } catch (err) {
           console.error('Failed to parse loop event:', err);
@@ -61,16 +71,18 @@ export const useLoopRoute = (
         }
       };
 
-      // Loop data
+      // Loop data event
       eventSource.addEventListener('loop', handleLoopMessage);
 
-      // Loop-specific backend error
-      eventSource.addEventListener('loop-error', (ev) => {
+      // Error event (replaces loop-error) - handles all backend errors
+      eventSource.addEventListener('error', (ev) => {
         try {
           const data = JSON.parse((ev as MessageEvent).data || '{}');
-          setError(data.message || 'Failed to compute loop routes');
+          const errorMessage =
+            data?.message || 'Failed to compute loop routes. Try a different location.';
+          setError(errorMessage);
         } catch {
-          setError('Failed to compute loop routes');
+          setError('Failed to compute loop routes. Try a different location.');
         }
         setLoading(false);
 
@@ -92,7 +104,7 @@ export const useLoopRoute = (
       eventSource.onerror = () => {
         if (!isClosedRef.current && eventSourceRef.current) {
           console.warn('SSE connection error');
-          setError('Connection error while fetching loop routes');
+          setError('Connection error while fetching loop routes.\nTry a different location.');
           setLoading(false);
 
           isClosedRef.current = true;

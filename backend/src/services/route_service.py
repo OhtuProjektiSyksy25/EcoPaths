@@ -143,11 +143,14 @@ class RouteService:
                 all_gdfs.append(found_gdf)
 
         if non_existing_tile_ids:
-            all_gdfs.append(self._enrich_missing_edges(non_existing_tile_ids))
+            enriched_gdf = self._enrich_missing_edges(non_existing_tile_ids)
+            if enriched_gdf is not None and not enriched_gdf.empty:
+                all_gdfs.append(enriched_gdf)
 
         if all_gdfs:
             return pd.concat(all_gdfs, ignore_index=True)
-        return None
+
+        return gpd.GeoDataFrame(columns=["geometry"])
 
     def _enrich_missing_edges(self, missing_tile_ids: list) -> gpd.GeoDataFrame:
         """Enrich missing tiles using EdgeEnricher and save to Redis."""
@@ -185,11 +188,14 @@ class RouteService:
         Returns:
             GeoDataFrame: Nodes for requested tiles.
         """
-        return self.db_client.get_nodes_by_tile_ids(
+        result = self.db_client.get_nodes_by_tile_ids(
             self.area_config.area,
             self.network_type,
             tile_ids
         )
+        if result is None:
+            return gpd.GeoDataFrame(columns=["geometry"])
+        return result
 
     def _compute_routes(self, edges, nodes, origin_gdf, destination_gdf, balanced_value=0.5):
         """Compute multiple route variants and summaries."""

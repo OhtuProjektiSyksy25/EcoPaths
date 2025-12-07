@@ -87,10 +87,10 @@ function AppContent(): JSX.Element {
     if (
       msg.includes('connection error') ||
       msg.includes('timeout') ||
-      msg.includes('isolated') ||
-      msg.includes('island') ||
       msg.includes('no route found') ||
-      msg.includes('partial')
+      msg.includes('partial') ||
+      msg.includes('try a different location') ||
+      msg.includes('try another location')
     ) {
       return 'warning';
     }

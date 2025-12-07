@@ -195,28 +195,6 @@ def test_get_round_trip_returns_valid_structure(
     assert result["summaries"]["loop1"]["aq_average"] == 10
 
 
-def test_route_trip_forward_handles_empty_gdf(monkeypatch, origin_destination, simple_edges_gdf, simple_nodes_gdf):
-    """Test that get_round_trip_forward handles empty GeoDataFrames"""
-    origin, destination = origin_destination
-
-    loop_service = LoopRouteService("testarea")
-
-    monkeypatch.setattr(loop_service.route_service, "get_tile_edges",
-                        lambda ids: simple_edges_gdf)
-    monkeypatch.setattr(loop_service.route_service, "get_nodes_from_db",
-                        lambda ids: simple_nodes_gdf)
-
-    empty_gdf = gpd.GeoDataFrame()
-    empty_gdf_2 = gpd.GeoDataFrame()
-
-    result = loop_service.get_round_trip_forward(
-        origin, [empty_gdf, empty_gdf_2, destination])
-    assert len(result) == 1
-    assert isinstance(result, list)
-    assert isinstance(result[0], dict)
-    assert "geometry" in result[0]["destination"]
-
-
 def test_iterate_candidates_yields_three_loops(monkeypatch, route_service, origin_destination):
     """Test that iterate_candidates yields three distinct loop results"""
     origin, _ = origin_destination
@@ -437,6 +415,10 @@ def test_get_round_trip_forward_sorts_by_aq(monkeypatch, origin_destination, sim
     monkeypatch.setattr(loop_service.route_service,
                         "get_nodes_from_db", lambda ids: simple_nodes_gdf)
 
+    # Mock _snap_points_to_network to return the input unchanged
+    monkeypatch.setattr(loop_service, "_snap_points_to_network",
+                        lambda points_gdf, edges_gdf: points_gdf)
+
     # Three GeoDataFrames with different expected AQ outcomes
     best_3 = [
         gpd.GeoDataFrame(geometry=[Point(1, 1)], crs="EPSG:25833"),
@@ -451,3 +433,92 @@ def test_get_round_trip_forward_sorts_by_aq(monkeypatch, origin_destination, sim
         for i in range(len(result) - 1):
             assert result[i]["summary"]["aq_average"] <= result[i +
                                                                 1]["summary"]["aq_average"]
+
+
+def test_get_round_trip_forward_continues_on_route_failures(monkeypatch, origin_destination, simple_edges_gdf, simple_nodes_gdf):
+    """Test that get_round_trip_forward continues processing candidates even when some fail"""
+    origin, _ = origin_destination
+
+    loop_service = LoopRouteService("testarea")
+
+    # Mock to return valid candidates but with some that will fail during processing
+    call_count = [0]
+
+    def mock_snap_that_filters(points_gdf, edges_gdf):
+        """Second candidate returns empty (simulating snap failure)"""
+        call_count[0] += 1
+        if call_count[0] == 2:
+            # Second candidate: return empty GeoDataFrame (snap failed)
+            return gpd.GeoDataFrame(columns=["geometry", "tile_id"], crs=points_gdf.crs)
+        # First and third: return as-is
+        return points_gdf
+
+    # Mock ALL required route_service methods
+    monkeypatch.setattr(loop_service.route_service, "create_buffer",
+                        lambda origin, dest, buffer_m=1000: "mock_buffer")
+    monkeypatch.setattr(loop_service.route_service, "get_tile_ids_by_buffer",
+                        lambda buffer: ["t101", "t102"])
+    monkeypatch.setattr(loop_service.route_service, "get_tile_edges",
+                        lambda ids: simple_edges_gdf)
+    monkeypatch.setattr(loop_service.route_service, "get_nodes_from_db",
+                        lambda ids: simple_nodes_gdf)
+    monkeypatch.setattr(
+        loop_service, "_snap_points_to_network", mock_snap_that_filters)
+
+    # Mock RouteAlgorithm with working implementation
+    from unittest.mock import MagicMock
+
+    def mock_route_algorithm_init(edges, nodes):
+        mock_algo = MagicMock()
+        mock_algo.igraph = MagicMock()
+        mock_algo.igraph.ecount.return_value = 1
+
+        # Mock edge with proper __getitem__ access
+        mock_edge = MagicMock()
+        mock_edge.__getitem__ = lambda self, key: 1  # Return edge ID 1
+        mock_algo.igraph.es = [mock_edge]
+
+        def successful_calculate(origin_gdf, dest_gdf, igraph, balance_factor=0.15):
+            route_gdf = gpd.GeoDataFrame({
+                "geometry": [LineString([(0, 0), (1, 1)])],
+                "edge_id": [1],
+                "length_m": [100.0],
+                "aqi": [25.0],
+                "pm2_5": [10.0],
+                "pm10": [20.0]
+            }, crs="EPSG:25833")
+            return route_gdf, [0]
+
+        mock_algo.calculate_round_trip = successful_calculate
+        return mock_algo
+
+    monkeypatch.setattr("src.services.loop_route_service.RouteAlgorithm",
+                        mock_route_algorithm_init)
+
+    # Mock summarize_route to return predictable summary
+    def mock_summarize(gdf):
+        return {
+            "length_m": float(gdf["length_m"].sum()) if "length_m" in gdf.columns else 100.0,
+            "aq_average": float(gdf["aqi"].mean()) if "aqi" in gdf.columns else 25.0
+        }
+
+    monkeypatch.setattr(
+        "src.services.loop_route_service.summarize_route", mock_summarize)
+
+    # Three candidates: 1st succeeds, 2nd fails (empty snap), 3rd succeeds
+    candidates = [
+        gpd.GeoDataFrame({"geometry": [Point(1, 1)], "tile_id": [
+                         "t101"]}, crs="EPSG:25833"),
+        gpd.GeoDataFrame({"geometry": [Point(2, 2)], "tile_id": [
+                         "t102"]}, crs="EPSG:25833"),
+        gpd.GeoDataFrame({"geometry": [Point(3, 3)], "tile_id": [
+                         "t103"]}, crs="EPSG:25833")
+    ]
+
+    result = loop_service.get_round_trip_forward(origin, candidates)
+
+    # Should return 2 successful routes (1st and 3rd), skipping the failed 2nd
+    assert len(result) == 2
+    assert all(isinstance(r, dict) for r in result)
+    assert all(
+        "destination" in r and "route" in r and "summary" in r for r in result)

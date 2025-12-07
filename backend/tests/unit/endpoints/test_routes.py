@@ -4,6 +4,8 @@ from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from src.main import app
 
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="pyproj")
+
 
 class MockAreaConfig:
     crs = "EPSG:25833"
@@ -184,7 +186,7 @@ def test_getloop_stream_success(monkeypatch, client):
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getloop_stream_loop_error(monkeypatch, client):
-    """Test handling of loop-error emitted by service."""
+    """Test handling of error emitted by service."""
 
     class MockLoopRouteService:
         def __init__(self, area):
@@ -201,7 +203,7 @@ def test_getloop_stream_loop_error(monkeypatch, client):
         "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
     assert response.status_code == 200
     content = response.text
-    assert 'event: loop-error' in content
+    assert 'event: error' in content
     assert 'Test loop-error' in content
 
 

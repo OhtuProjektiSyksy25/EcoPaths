@@ -90,12 +90,22 @@ class LoopRouteService:
 
         tile_rotated_right = self.rotate_tile_about_center(
             first_tile_id, origin_tile[0], outer_tiles)
+        if tile_rotated_right is None:
+            log.warning("Could not find rotated tile candidate")
+            tile_rotated_right_edges = gpd.GeoDataFrame()
+        else:
+            tile_rotated_right_edges = best_edges_by_outer_tiles[
+                best_edges_by_outer_tiles["tile_id"] == tile_rotated_right]
+
         tile_rotated_left = self.rotate_tile_about_center(
             first_tile_id, origin_tile[0], outer_tiles, degrees=-120)
-        tile_rotated_right_edges = best_edges_by_outer_tiles[
-            best_edges_by_outer_tiles["tile_id"] == tile_rotated_right]
-        tile_rotated_left_edges = best_edges_by_outer_tiles[
-            best_edges_by_outer_tiles["tile_id"] == tile_rotated_left]
+        if tile_rotated_left is None:
+            log.warning("Could not find rotated left tile candidate")
+            tile_rotated_left_edges = gpd.GeoDataFrame()
+        else:
+            tile_rotated_left_edges = best_edges_by_outer_tiles[
+                best_edges_by_outer_tiles["tile_id"] == tile_rotated_left]
+
         best_3 = [best_edges_by_outer_tiles.iloc[[0]],
                   tile_rotated_right_edges, tile_rotated_left_edges]
 
@@ -158,6 +168,7 @@ class LoopRouteService:
     def get_round_trip_forward(self, origin_gdf, best_3):
         """
         Compute forward routes to candidate outer-tile points.
+        Uses expanded buffer to find routes across bridges/obstacles.
 
         Args:
             origin_gdf (GeoDataFrame): Starting point of the round trip.
@@ -173,8 +184,11 @@ class LoopRouteService:
                 continue
 
             buffer = self.route_service.create_buffer(
-                origin_gdf, gdf.iloc[[0]])
+                origin_gdf, gdf.iloc[[0]], buffer_m=1000)
             tile_ids = self.route_service.get_tile_ids_by_buffer(buffer)
+
+            if not tile_ids:
+                continue
 
             edges = self.route_service.get_tile_edges(tile_ids)
             if edges is None or edges.empty:
@@ -184,22 +198,27 @@ class LoopRouteService:
             if nodes is None or nodes.empty:
                 continue
 
+            snapped_gdf = self._snap_points_to_network(gdf, edges)
+            if snapped_gdf.empty:
+                continue
+
             success = False
             single_gdf = None
             epath = []
             gdf_route = None
 
-            for idx in gdf.index:
+            for idx in snapped_gdf.index:
                 edges_x = edges.copy()
                 nodes_x = nodes.copy()
 
                 try:
                     current_route_algorithm = RouteAlgorithm(
                         edges_x, nodes_x)
-                except Exception:  # pylint: disable=broad-exception-caught
+                except (ValueError, RuntimeError) as e:
+                    log.debug(f"Failed to initialize RouteAlgorithm: {e}")
                     continue
 
-                single_gdf = gdf.loc[[idx]]
+                single_gdf = snapped_gdf.loc[[idx]]
 
                 try:
                     gdf_route, epath = (
@@ -214,7 +233,8 @@ class LoopRouteService:
                             'geometry' in gdf_route.columns):
                         success = True
                         break
-                except (ValueError, KeyError):  # pylint: disable=broad-exception-caught
+                except (ValueError, KeyError) as e:
+                    log.debug(f"Route calculation failed: {e}")
                     continue
 
             if not success or single_gdf is None or gdf_route is None:
@@ -251,12 +271,10 @@ class LoopRouteService:
         Raises:
             RuntimeError: If any step of the route computation fails.
         """
-        # Validate first_path_data
         if not first_path_data or "route" not in first_path_data or first_path_data["route"].empty:
             raise RuntimeError(
                 "Route computation failed. Try a different location.")
 
-        # Validate destination
         if destination is None or (hasattr(destination, 'empty') and destination.empty):
             raise RuntimeError(
                 "Route computation failed. Try a different location.")
@@ -267,8 +285,14 @@ class LoopRouteService:
                 "Route computation failed. Try a different location.")
 
         try:
-            buffer = self.route_service.create_buffer(origin, destination)
+            buffer = self.route_service.create_buffer(
+                origin, destination, buffer_m=1000)
             tile_ids = self.route_service.get_tile_ids_by_buffer(buffer)
+
+            if not tile_ids:
+                raise RuntimeError(
+                    "No tiles found between origin and destination.")
+
         except Exception as exc:
             raise RuntimeError(
                 "Route computation failed. Try a different location.") from exc
@@ -276,12 +300,12 @@ class LoopRouteService:
         edges = self.route_service.get_tile_edges(tile_ids)
         if edges is None or edges.empty:
             raise RuntimeError(
-                "Route computation failed. Try a different location.")
+                "No road network found in requested area.")
 
         nodes = self.route_service.get_nodes_from_db(tile_ids)
         if nodes is None or nodes.empty:
             raise RuntimeError(
-                "Route computation failed. Try a different location.")
+                "No nodes found in requested area.")
 
         try:
             current_route_algorithm = RouteAlgorithm(edges, nodes)
@@ -463,3 +487,39 @@ class LoopRouteService:
                         return f"r{candidate[0]}_c{candidate[1]}"
 
         return None
+
+    def _snap_points_to_network(self, points_gdf, edges_gdf) -> gpd.GeoDataFrame:
+        """
+        Snap points to nearest edges in the walking network.
+
+        Args:
+            points_gdf: GeoDataFrame with destination points (can be on water)
+            edges_gdf: GeoDataFrame with walking network edges
+
+        Returns:
+            GeoDataFrame: Snapped points that are on the network
+        """
+        snapped_points = []
+
+        for idx, point in points_gdf.iterrows():
+
+            distances = edges_gdf.geometry.distance(point.geometry)
+            nearest_idx = distances.idxmin()
+            nearest_edge = edges_gdf.iloc[nearest_idx]
+
+            snapped_point = nearest_edge.geometry.interpolate(
+                nearest_edge.geometry.project(point.geometry)
+            )
+
+            snapped_points.append({
+                'geometry': snapped_point,
+                'tile_id': (
+                    points_gdf.loc[idx, 'tile_id']
+                    if 'tile_id' in points_gdf.columns
+                    else None
+                )
+            })
+
+        if snapped_points:
+            return gpd.GeoDataFrame(snapped_points, crs=points_gdf.crs)
+        return gpd.GeoDataFrame(columns=["geometry", "tile_id"])
