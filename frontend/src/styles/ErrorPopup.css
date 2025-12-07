@@ -38,7 +38,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-/* ERROR - Punainen */
+/* ERROR RED */
 .error-popup-content.error {
   background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
   color: #c41e3a;
@@ -46,7 +46,7 @@
   box-shadow: 0 4px 16px rgba(196, 30, 58, 0.12);
 }
 
-/* WARNING - Oranssi */
+/* WARNING ORANGE */
 .error-popup-content.warning {
   background: linear-gradient(135deg, #fff8f0 0%, #ffe8cc 100%);
   color: #d97706;
@@ -54,7 +54,7 @@
   box-shadow: 0 4px 16px rgba(217, 119, 6, 0.12);
 }
 
-/* INFO - Sininen */
+/* INFO BLUE */
 .error-popup-content.info {
   background: linear-gradient(135deg, #f0f7ff 0%, #e0eeff 100%);
   color: #0369a1;
@@ -62,7 +62,7 @@
   box-shadow: 0 4px 16px rgba(3, 105, 161, 0.12);
 }
 
-/* SUCCESS - Vihreä */
+/* SUCCESS GREEN */
 .error-popup-content.success {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   color: #15803d;
