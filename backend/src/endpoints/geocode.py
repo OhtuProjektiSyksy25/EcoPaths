@@ -32,7 +32,7 @@ async def geocode_forward(request: Request, value: str = Path(...)):
         f"?text={value}&limit=4&filter=rect:{bbox_str}"
         f"&apiKey={GEOAPIFY_KEY}"
     )
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:  # 10s timeout
         try:
             response = await client.get(photon_url)
 
@@ -49,38 +49,46 @@ async def geocode_forward(request: Request, value: str = Path(...)):
             )
             suggestions["features"] = trimmed_features
 
-        except httpx.HTTPError as exc:
+        except (httpx.HTTPError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
             log.warning(f"Photon failed ({exc}), falling back to Geoapify")
 
-            response = await client.get(geo_url)
-            response.raise_for_status()
-
             try:
-                geo_data = response.json()
-            except ValueError as geo_parse_err:
+                response = await client.get(geo_url)
+                response.raise_for_status()
+
+                try:
+                    geo_data = response.json()
+                except ValueError as geo_parse_err:
+                    raise HTTPException(
+                        status_code=502,
+                        detail="Geoapify returned invalid JSON",
+                    ) from geo_parse_err
+
+                # normalize…
+                features = []
+                for item in geo_data.get("features", []):
+                    props = item.get("properties", {})
+                    features.append({
+                        "type": "Feature",
+                        "properties": {
+                            "osm_key": None,
+                            "osm_id": props.get("place_id"),
+                            "name": props.get("name"),
+                            "street": props.get("street"),
+                            "housenumber": props.get("housenumber"),
+                            "city": props.get("city"),
+                            "country": props.get("country"),
+                        },
+                        "geometry": item.get("geometry"),
+                    })
+
+                suggestions = {"features": features}
+
+            except (httpx.HTTPError, httpx.ConnectTimeout, httpx.ReadTimeout) as geo_exc:
+                log.error(f"All geocoding services failed: {geo_exc}")
                 raise HTTPException(
-                    status_code=502,
-                    detail="Geoapify returned invalid JSON",
-                ) from geo_parse_err
-
-            # normalize…
-            features = []
-            for item in geo_data.get("features", []):
-                props = item.get("properties", {})
-                features.append({
-                    "type": "Feature",
-                    "properties": {
-                        "osm_key": None,
-                        "osm_id": props.get("place_id"),
-                        "name": props.get("name"),
-                        "street": props.get("street"),
-                        "housenumber": props.get("housenumber"),
-                        "city": props.get("city"),
-                        "country": props.get("country"),
-                    },
-                    "geometry": item.get("geometry"),
-                })
-
-            suggestions = {"features": features}
+                    status_code=503,
+                    detail="Geocoding services unavailable. Please try again later."
+                ) from geo_exc
 
     return compose_photon_suggestions(suggestions)

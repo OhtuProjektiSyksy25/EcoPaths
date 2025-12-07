@@ -15,7 +15,7 @@ const LoopDistanceSlider: React.FC<LoopDistanceSliderProps> = ({ value, onChange
           id='loop-distance'
           type='number'
           min={0}
-          max={10}
+          max={5}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           className='loop-slider-number'
@@ -24,7 +24,7 @@ const LoopDistanceSlider: React.FC<LoopDistanceSliderProps> = ({ value, onChange
       <input
         type='range'
         min={0}
-        max={10}
+        max={5}
         step={1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}

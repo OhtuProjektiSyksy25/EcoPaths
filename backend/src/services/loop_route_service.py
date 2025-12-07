@@ -184,7 +184,7 @@ class LoopRouteService:
                 continue
 
             buffer = self.route_service.create_buffer(
-                origin_gdf, gdf.iloc[[0]], buffer_m=1000)
+                origin_gdf, gdf.iloc[[0]], buffer_m=800)
             tile_ids = self.route_service.get_tile_ids_by_buffer(buffer)
 
             if not tile_ids:
@@ -286,7 +286,7 @@ class LoopRouteService:
 
         try:
             buffer = self.route_service.create_buffer(
-                origin, destination, buffer_m=1000)
+                origin, destination, buffer_m=800)
             tile_ids = self.route_service.get_tile_ids_by_buffer(buffer)
 
             if not tile_ids:

@@ -135,7 +135,7 @@ async def getloop_stream(request: Request, lat: float, lon: float, distance: flo
         .to_crs(target_crs)
     )
 
-    distance_m = min(distance * 1000, 10000)
+    distance_m = min(distance * 1000, 5000)
 
     log.debug(
         f"/getloop/stream started: lat={lat}, lon={lon}, distance={distance}km")

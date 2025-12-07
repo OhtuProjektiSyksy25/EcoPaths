@@ -248,5 +248,5 @@ def test_getloop_stream_distance_capping(monkeypatch, client):
         "endpoints.routes.LoopRouteService", MockLoopRouteService
     )
 
-    client.get("/api/getloop/stream?lat=52.52&lon=13.40&distance=10")
-    assert captured_distance['value'] == 10000
+    client.get("/api/getloop/stream?lat=52.52&lon=13.40&distance=5")
+    assert captured_distance['value'] == 5000
