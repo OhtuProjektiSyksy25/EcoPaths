@@ -48,7 +48,7 @@ export const useLoopRoute = (
       eventSourceRef.current = eventSource;
 
       // Helper: safely update routes/summaries
-      const handleLoopMessage = (event: MessageEvent) => {
+      const handleLoopMessage = (event: MessageEvent): void => {
         try {
           const newLoop = JSON.parse(event.data);
           if (newLoop.variant && newLoop.route && newLoop.summary) {
