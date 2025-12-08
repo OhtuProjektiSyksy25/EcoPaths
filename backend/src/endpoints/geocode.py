@@ -18,18 +18,18 @@ GEOAPIFY_KEY = settings.geoapify_api_key
 
 @router.get("/geocode-forward/{value:path}")
 @require_area_config
-async def geocode_forward(request: Request, value: str = Path(...)):
+async def geocode_forward(request: Request, value: str = Path(...), bbox: str = None):  # pylint: disable=W0613
     """Return suggested addresses/POIs for the given value."""
     if len(value) < 3:
         return []
+    if not bbox:
+        return []
 
-    area_config = request.app.state.area_config
-    bbox = area_config.bbox
-    bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
-    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox_str}"
+    log.debug(f"Geocode forward request for '{value}' within bbox {bbox}")
+    photon_url = f"https://photon.komoot.io/api/?q={value}&limit=4&bbox={bbox}"
     geo_url = (
         f"https://api.geoapify.com/v1/geocode/autocomplete"
-        f"?text={value}&limit=4&filter=rect:{bbox_str}"
+        f"?text={value}&limit=4&filter=rect:{bbox}"
         f"&apiKey={GEOAPIFY_KEY}"
     )
     async with httpx.AsyncClient(timeout=10.0) as client:  # 10s timeout

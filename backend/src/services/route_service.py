@@ -255,20 +255,47 @@ class RouteService:
             "aqi_differences": aqi_differences
         }
 
-    def compute_balanced_route_only(self, balanced_value):
+    def compute_balanced_route_only(self, origin_gdf: gpd.GeoDataFrame,
+                                    destination_gdf: gpd.GeoDataFrame,
+                                    balanced_value: float) -> dict:
         """
-        Computes only the "balanced route" for the given balanced_value
-        Uses a pre-initialized graph
+        Computes only the "balanced route" for the given balanced_value.
+        Works statelessly by rebuilding the graph from scratch each time.
+
         Args:
+            origin_gdf (GeoDataFrame): Origin point.
+            destination_gdf (GeoDataFrame): Destination point.
             balanced_value (float): Weight for balanced route (0.0 = fastest, 1.0 = best AQ).
+
         Returns:
-            result (GeoJSON FeatureCollection): Route edges
-            summary (dict): Route data summary
+            dict: Contains routes, summaries, and aqi_differences keys.
         """
-        graph = self.current_route_algorithm.igraph
-        gdf = self.current_route_algorithm.re_calculate_balanced_path(
-            balanced_value, graph)
+        buffer = self.create_buffer(origin_gdf, destination_gdf)
+        tile_ids = self.db_client.get_tile_ids_by_buffer(self.area, buffer)
+
+        edges = self.get_tile_edges(tile_ids)
+        nodes = self.get_nodes_from_db(tile_ids)
+
+        if edges is None or edges.empty:
+            raise RuntimeError("No edges found for requested route area.")
+
+        edges_subset = edges[edges.geometry.intersects(buffer)].copy()
+
+        if edges_subset.empty:
+            raise RuntimeError("No edges intersect the requested buffer area.")
+
+        route_algorithm = RouteAlgorithm(edges_subset, nodes)
+
+        gdf = route_algorithm.calculate_path(
+            origin_gdf,
+            destination_gdf,
+            graph=None,
+            balance_factor=balanced_value
+        )
+
         gdf = compute_exposure(gdf)
+        gdf["mode"] = "balanced"
+
         summary = summarize_route(gdf)
         result = GeoTransformer.gdf_to_feature_collection(
             gdf, property_keys=[c for c in gdf.columns if c != "geometry"]
@@ -278,6 +305,5 @@ class RouteService:
         results["balanced"] = result
         summaries["balanced"] = summary
         aqi_differences["aqi_differences"] = None
-        x = {"routes": results, "summaries": summaries,
-             "aqi_differences": aqi_differences}
-        return x
+
+        return {"routes": results, "summaries": summaries, "aqi_differences": aqi_differences}
