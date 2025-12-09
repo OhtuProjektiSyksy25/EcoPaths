@@ -199,6 +199,7 @@ body,
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   white-space: nowrap;
+  color: #000000;
 }
 
 .area-dropdown-button:hover {
@@ -216,3 +217,40 @@ body,
 /*     display: none; */
 /*   } */
 /* } */
+
+/* MOBILE LAYOUT */
+@media (max-width: 800px) {
+  .header-content {
+    height: 65px;
+  }
+
+  .InputContainer input {
+    padding-right: 40px;
+  }
+
+  .clear-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .clear-button:hover {
+    background-color: #f0f0f0;
+    color: #666;
+  }
+
+  .clear-button:active {
+    background-color: #e0e0e0;
+  }
+}
