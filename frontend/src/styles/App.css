@@ -245,11 +245,6 @@ body,
     transition: all 0.2s ease;
   }
 
-  .clear-button:hover {
-    background-color: #f0f0f0;
-    color: #666;
-  }
-
   .clear-button:active {
     background-color: #e0e0e0;
   }
