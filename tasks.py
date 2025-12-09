@@ -174,7 +174,7 @@ def run_redis(c):
         print("Redis is already running.")
     else:
         print("Starting Redis container...")
-        c.run("docker compose up -d redis", pty=True)
+        c.run("docker-compose up -D redis", pty=True)
 
 def is_redis_running(host="127.0.0.1", port=6379):
     """Return True if Redis port is already in use."""
@@ -215,7 +215,7 @@ def run_all(c, test_mode=False):
         print(f"Docker container '{container_name}' is already running.")
     else:
         print(f"Starting Docker container '{container_name}'...")
-        c.run("docker compose up -d db", pty=True)
+        c.run("docker-compose up -D db", pty=True)
 
     # Start Redis container via Docker Compose
     redis_proc = None
@@ -223,7 +223,7 @@ def run_all(c, test_mode=False):
         print("Redis already running.")
     else:
         print("Starting Redis container...")
-        c.run("docker compose up -d redis", pty=True)
+        c.run("docker-compose up -D redis", pty=True)
 
     backend_proc = subprocess.Popen(
         ["poetry", "run", "uvicorn", "src.main:app", "--reload"],
