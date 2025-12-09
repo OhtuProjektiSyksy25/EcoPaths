@@ -71,15 +71,8 @@ const DisclaimerModal: React.FC = () => {
                     in route choice can reduce exposure to pollution. EcoPaths highlights these
                     differences, supporting healthier and more informed everyday movement.
                   </p>
-
-                  {/* placeholder requested by team */}
-                  <p>
-                    <em>
-                      More detailed exposure data is available when searching and clicking on route
-                      cards
-                    </em>
-                  </p>
                 </section>
+
                 {/* ---------------- HOW TO USE (with bullet points) ---------------- */}
                 <section>
                   <h2>How to Use EcoPaths</h2>
@@ -90,28 +83,71 @@ const DisclaimerModal: React.FC = () => {
                       is available.
                     </li>
                     <li>Type in your starting point and destination.</li>
-                    <li>You will receive three alternative routes</li>
+                    <li>
+                      You will receive three alternative routes with different optimization
+                      strategies.
+                    </li>
                     <li>
                       Each route displays an average <strong>US Air Quality Index (AQI) </strong>
                       value (lower is better).
                     </li>
+                    <li>Click on any route card to select it and view it on the map.</li>
                   </ul>
 
+                  <h3>Route Types</h3>
+
                   <p>
-                    <strong>Blue:</strong> Fastest route (not optimized for air quality)
-                    <br />
-                    <strong>Green:</strong> Maximum air-quality optimization
-                    <br />
-                    <strong>Custom:</strong> Use the slider to balance speed & air cleanliness
+                    <strong>
+                      Best AQ (<span style={{ color: '#008b23' }}>Green</span>):
+                    </strong>{' '}
+                    Maximizes air quality by selecting paths with the lowest pollution levels. This
+                    route may be longer in distance but offers the cleanest air.
+                  </p>
+
+                  <p>
+                    <strong>
+                      Fastest (<span style={{ color: '#003cff' }}>Blue</span>):
+                    </strong>{' '}
+                    Prioritizes the shortest travel time without considering air quality. This is
+                    the most direct path to your destination.
+                  </p>
+
+                  <p>
+                    <strong>
+                      Custom (<span style={{ color: '#01a597ff' }}>Cyan</span>):
+                    </strong>{' '}
+                    Use the slider to find your preferred balance between speed and air quality.
+                    Adjust the weight to create a personalized route that matches your priorities.
+                  </p>
+
+                  <p>
+                    <em>
+                      Note: Click any route card to view detailed PM2.5 and PM10 exposure graphs
+                      along your journey.
+                    </em>
                   </p>
                 </section>
                 {/* ---------------- LOOP FEATURE (own subsection) ---------------- */}
                 <section>
                   <h3>Loop Feature</h3>
                   <p>
-                    Runners can generate a clean-air loop by selecting a starting point and choosing
-                    the desired total distance. EcoPaths will calculate a round trip optimized for
-                    air-quality exposure.
+                    Toggle Loop mode to create circular routes that start and end at the same
+                    location. Select your desired distance (1-5 km), and you'll receive up to three
+                    optimized loop options:
+                  </p>
+                  <ul className='bullet-list'>
+                    <li>The first loop prioritizes the best possible air quality.</li>
+                    <li>
+                      Additional loops explore different directions while maintaining good air
+                      quality.
+                    </li>
+                    <li>Route lengths are approximate and may vary based on available paths.</li>
+                  </ul>
+                  <p>
+                    <em>
+                      Note: The number of loops generated (1-3) depends on your starting location
+                      and available routing options.
+                    </em>
                   </p>
                 </section>
 
@@ -131,9 +167,8 @@ const DisclaimerModal: React.FC = () => {
                   </p>
 
                   <p>
-                    <strong>Air quality data: </strong>
-                    Real-time
-                    <strong> US Air Quality Index (AQI)</strong> from{' '}
+                    <strong>Air quality data:</strong> Real-time{' '}
+                    <strong>US Air Quality Index (AQI)</strong> values from{' '}
                     <a
                       href='https://developers.google.com/maps/documentation/air-quality'
                       target='_blank'
@@ -141,22 +176,17 @@ const DisclaimerModal: React.FC = () => {
                     >
                       Google Air Quality API
                     </a>
-                    .
                   </p>
 
                   <p>
-                    <strong>Routing logic:</strong> Walking ≈ 1.4 m/s, Running ≈ 3.0 m/s. Routes are
-                    computed using weighted combinations of distance and estimated exposure.
+                    <strong>Speed assumptions:</strong> Walking: 5 km/h, Running: 10.8 km/h
                   </p>
 
-                  {/* placeholder for route weighting */}
                   <p>
-                    {' '}
-                    <strong>Route weighting details:</strong> Routes are weighted based on real-time
-                    Google AQI data combined with traffic proximity (penalties for roads near heavy
-                    traffic) and green area proximity (benefits for routes near parks and
-                    vegetation). The algorithm balances distance with these environmental factors to
-                    recommend healthier paths.
+                    <strong>Route optimization:</strong> Routes are weighted using real-time AQI
+                    data, traffic proximity (penalties near busy roads), and green space proximity
+                    (benefits near green areas and trees). The algorithm balances these factors with
+                    distance to recommend healthier paths.
                   </p>
                 </section>
 
@@ -164,34 +194,22 @@ const DisclaimerModal: React.FC = () => {
                 <section>
                   <h2>Team</h2>
                   <p>
-                    <strong>PathPlanners</strong> Software Engineering Project, University of
-                    Helsinki.
+                    We are <strong>PathPlanners</strong>, a software development team from the
+                    University of Helsinki.
                   </p>
-                  {/* team names */}
                   <p>
                     <strong>Team members:</strong> Eero Jantunen, Ilari Ranin, Juho Kronlöf, Laura
                     Anttila, Suvi Liimatainen, Uyen Hoang
                   </p>
 
                   <p>
-                    <strong>GitHub Organization:</strong>{' '}
-                    <a
-                      href='https://github.com/OhtuProjektiSyksy25'
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      PathPlanners
-                    </a>
-                  </p>
-
-                  <p>
-                    <strong>Repositories:</strong>{' '}
+                    <strong>Github Repository:</strong>{' '}
                     <a
                       href='https://github.com/OhtuProjektiSyksy25/EcoPaths'
                       target='_blank'
                       rel='noopener noreferrer'
                     >
-                      EcoPaths — Frontend / Backend
+                      EcoPaths (Frontend / Backend)
                     </a>
                   </p>
                 </section>
@@ -200,7 +218,7 @@ const DisclaimerModal: React.FC = () => {
                 <section>
                   <h2>Acknowledgments</h2>
                   <p>
-                    This project takes inspiration from the{' '}
+                    Inspired by the{' '}
                     <a
                       href='https://github.com/DigitalGeographyLab/hope-green-path-ui'
                       target='_blank'
@@ -208,7 +226,7 @@ const DisclaimerModal: React.FC = () => {
                     >
                       Green Paths
                     </a>{' '}
-                    project by the Digital Geography Lab, University of Helsinki.
+                    project from the Digital Geography Lab, University of Helsinki.
                   </p>
                 </section>
 

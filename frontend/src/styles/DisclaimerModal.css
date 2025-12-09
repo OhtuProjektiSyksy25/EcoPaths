@@ -4,7 +4,7 @@
 /* --- Info Button (Matches Area Button Style) --- */
 .info-button {
   position: relative;
-  z-index: 2000;
+  z-index: 10;
 
   display: flex;
   align-items: center;
