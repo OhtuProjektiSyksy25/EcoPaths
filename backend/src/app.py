@@ -26,7 +26,6 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
     "https://photon.komoot.io",
-    "http://172.25.211.59:3000",
 ]
 
 if TEST_MODE:
