@@ -320,4 +320,9 @@
   .sidebar-content > *:last-child {
     margin-bottom: 40px;
   }
+
+  body:has(.exposure-chart-container) .sidebar,
+  body:has(.exposure-chart-container) .sidebar-mobile {
+    display: none;
+  }
 }
