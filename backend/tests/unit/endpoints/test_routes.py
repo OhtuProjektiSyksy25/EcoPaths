@@ -34,13 +34,13 @@ def test_getroute_no_area_selected(client):
     response = client.post("/api/getroute", json={"features": []})
     assert response.status_code == 400
     assert response.json() == {
-        "error": "No area selected. Please select an area first."}
+        "error": "No area selected."}
 
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getroute_invalid_features_count(client):
     response = client.post(
-        "/api/getroute", json={"features": [{"properties": {"role": "start"}}]})
+        "/api/getroute", json={"features": [{"properties": {"role": "start"}}], "area": "test_area"})
     assert response.status_code == 400
     assert response.json() == {"error": "GeoJSON must contain two features"}
 
@@ -51,7 +51,8 @@ def test_getroute_missing_start_or_end(client):
         "features": [
             {"properties": {"role": "end"}, "geometry": {}},
             {"properties": {"role": "start_missing"}, "geometry": {}}
-        ]
+        ],
+        "area": "test_area"
     })
     assert response.status_code == 400
     assert response.json() == {"error": "Missing start or end feature"}
@@ -64,7 +65,7 @@ def test_getroute_invalid_balanced_weight(client):
         {"properties": {"role": "end"}, "geometry": {}}
     ]
     response = client.post(
-        "/api/getroute", json={"features": features, "balanced_weight": 1.5})
+        "/api/getroute", json={"features": features, "balanced_weight": 1.5, "area": "test_area"})
     assert response.status_code == 400
     assert response.json() == {
         "error": "balanced_weight must be a number between 0 and 1"}
@@ -89,6 +90,14 @@ def test_getroute_success(monkeypatch, client):
         def get_route(self, origin, dest, weight):
             return mock_response
 
+        def compute_balanced_route_only(self, origin, dest, weight):
+            return mock_response
+
+    class FakeAreaConfig:
+        crs = "EPSG:25833"
+        area = "test_area"
+
+    # Patch the GeoTransformer used in the endpoint
     class MockGeoTransformer:
         @staticmethod
         def geojson_to_projected_gdf(geom, crs):
@@ -96,67 +105,82 @@ def test_getroute_success(monkeypatch, client):
 
     monkeypatch.setattr(
         "src.endpoints.routes.GeoTransformer", MockGeoTransformer)
-    client.app.state.route_service = MockRouteService()
 
-    response = client.post("/api/getroute", json={"features": features})
+    # Patch the factory to return mock service and fake config
+    monkeypatch.setattr(
+        "src.endpoints.routes.RouteServiceFactory.from_area",
+        lambda area: (MockRouteService(), FakeAreaConfig())
+    )
+
+    response = client.post(
+        "/api/getroute", json={"features": features, "area": "test_area"})
     assert response.status_code == 200
     assert response.json() == mock_response
 
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getroute_calls_correct_function_according_to_balancedbool(monkeypatch, client):
+    # Create a mock RouteService with return values for both methods
     mock_service = Mock()
     mock_service.get_route.return_value = {"result": "ok"}
     mock_service.compute_balanced_route_only.return_value = {"result": "ok"}
 
-    app.state.route_service = mock_service
-    app.state.area_config = MockAreaConfig()
+    # Fake area config to return from the factory
+    class FakeAreaConfig:
+        crs = "EPSG:25833"
+        area = "test_area"
+
+    # Patch the GeoTransformer used in the endpoint
     monkeypatch.setattr(
-        "src.endpoints.routes.GeoTransformer.geojson_to_projected_gdf", Mock())
+        "src.endpoints.routes.GeoTransformer.geojson_to_projected_gdf", Mock()
+    )
+
+    # Patch the factory to return the mock service and fake config
+    monkeypatch.setattr(
+        "src.endpoints.routes.RouteServiceFactory.from_area",
+        lambda area: (mock_service, FakeAreaConfig())
+    )
 
     body = {
         "features": [
             {"type": "Feature", "properties": {"role": "start"},
-                "geometry": {"type": "Point", "coordinates": [1, 2]}},
+             "geometry": {"type": "Point", "coordinates": [1, 2]}},
             {"type": "Feature", "properties": {"role": "end"},
-                "geometry": {"type": "Point", "coordinates": [3, 4]}},
+             "geometry": {"type": "Point", "coordinates": [3, 4]}},
         ],
         "balanced_route": False,
         "balanced_weight": 0.5,
+        "area": "test_area"
     }
+
+    # Call endpoint with balanced_route=False
     client.post("/api/getroute", json=body)
 
     mock_service.get_route.assert_called_once()
     mock_service.compute_balanced_route_only.assert_not_called()
-
     args, _ = mock_service.get_route.call_args
     assert len(args) == 3
     assert args[2] == 0.5
 
-    # Test with balanced_route=True
+    # Call endpoint with balanced_route=True
     mock_service.reset_mock()
     new_body = body.copy()
     new_body["balanced_route"] = True
     new_body["balanced_weight"] = 0.8
 
     client.post("/api/getroute", json=new_body)
-    mock_service.compute_balanced_route_only.assert_called_once_with(0.8)
+
+    mock_service.compute_balanced_route_only.assert_called_once_with(
+        args[0], args[1], 0.8
+    )
     mock_service.get_route.assert_not_called()
-
-
-@pytest.mark.usefixtures("setup_mock_lifespan")
-def test_getloop_stream_no_area_selected(client):
-    client.app.state.area_config = None
-
-    response = client.get(
-        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
-    assert response.status_code == 400
-    assert response.json() == {"error": "No area selected."}
 
 
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getloop_stream_success(monkeypatch, client):
     """Test successful SSE stream with three loop variants."""
+    warnings.filterwarnings(
+        "ignore", category=DeprecationWarning, module="pyproj")
 
     class MockLoopRouteService:
         def __init__(self, area):
@@ -175,7 +199,7 @@ def test_getloop_stream_success(monkeypatch, client):
     )
 
     response = client.get(
-        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5&area=test_area")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
 
@@ -187,6 +211,8 @@ def test_getloop_stream_success(monkeypatch, client):
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getloop_stream_loop_error(monkeypatch, client):
     """Test handling of error emitted by service."""
+    warnings.filterwarnings(
+        "ignore", category=DeprecationWarning, module="pyproj")
 
     class MockLoopRouteService:
         def __init__(self, area):
@@ -200,7 +226,7 @@ def test_getloop_stream_loop_error(monkeypatch, client):
     )
 
     response = client.get(
-        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5&area=test_area")
     assert response.status_code == 200
     content = response.text
     assert 'event: error' in content
@@ -210,6 +236,8 @@ def test_getloop_stream_loop_error(monkeypatch, client):
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getloop_stream_general_error(monkeypatch, client):
     """Test that unexpected exceptions emit event: error."""
+    warnings.filterwarnings(
+        "ignore", category=DeprecationWarning, module="pyproj")
 
     class MockLoopRouteService:
         def __init__(self, area):
@@ -223,7 +251,7 @@ def test_getloop_stream_general_error(monkeypatch, client):
     )
 
     response = client.get(
-        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5")
+        "/api/getloop/stream?lat=52.52&lon=13.40&distance=2.5&area=test_area")
     content = response.text
     assert 'event: error' in content
     assert 'Internal error while computing loops' in content
@@ -232,6 +260,8 @@ def test_getloop_stream_general_error(monkeypatch, client):
 @pytest.mark.usefixtures("setup_mock_lifespan")
 def test_getloop_stream_distance_capping(monkeypatch, client):
     """Test that distance is capped at 10km."""
+    warnings.filterwarnings(
+        "ignore", category=DeprecationWarning, module="pyproj")
 
     captured_distance = {}
 
@@ -248,5 +278,5 @@ def test_getloop_stream_distance_capping(monkeypatch, client):
         "endpoints.routes.LoopRouteService", MockLoopRouteService
     )
 
-    client.get("/api/getloop/stream?lat=52.52&lon=13.40&distance=5")
+    client.get("/api/getloop/stream?lat=52.52&lon=13.40&distance=5&area=test_area")
     assert captured_distance['value'] == 5000

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary, AqiComparison } from '../types/route';
 import { normalizeCoords } from '../utils/coordsNormalizer';
+import { useArea } from '../contexts/AreaContext';
 import { getEnvVar } from '../utils/config';
 
 interface UseRouteReturn {
@@ -26,6 +27,7 @@ export const useRoute = (
   balancedWeight: number,
   loop: boolean,
 ): UseRouteReturn => {
+  const { selectedArea } = useArea();
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
   const [aqiDifferences, setAqiDifferences] = useState<Record<
@@ -137,6 +139,7 @@ export const useRoute = (
               ],
               balanced_weight: balancedWeight,
               balanced_route: balancedRouteBool,
+              area: selectedArea?.id ?? null,
             }),
           });
           if (!response.ok) {
@@ -202,7 +205,7 @@ export const useRoute = (
       prevFromRef.current = null;
       prevToRef.current = null;
     }
-  }, [fromLocked, toLocked, balancedWeight, loop]);
+  }, [fromLocked, toLocked, balancedWeight, loop, selectedArea]);
 
   return { routes, summaries, aqiDifferences, loading, balancedLoading, error };
 };

@@ -1,5 +1,7 @@
 import { fetchRoute, streamLoopRoutes } from '../../src/api/routeApi';
 import { LockedLocation } from '@/types/route';
+import { AreaProvider, useArea } from '../../src/contexts/AreaContext';
+import { Area } from '@/types';
 
 describe('routeApi', () => {
   const fromLocked: LockedLocation = {
@@ -9,6 +11,13 @@ describe('routeApi', () => {
   const toLocked: LockedLocation = {
     full_address: 'End',
     geometry: { coordinates: [13.41, 52.51] },
+  };
+  const area: Area = {
+    id: 'area1',
+    display_name: 'test_area',
+    focus_point: [13.4, 52.5],
+    zoom: 12,
+    bbox: [13.0, 52.0, 14.0, 53.0],
   };
 
   beforeEach(() => {
@@ -79,10 +88,10 @@ describe('routeApi', () => {
     });
 
     it('creates EventSource with correct URL parameters', () => {
-      const eventSource = streamLoopRoutes(fromLocked, 2.5);
+      const eventSource = streamLoopRoutes(fromLocked, 2.5, area.id);
 
       expect(global.EventSource).toHaveBeenCalledWith(
-        'http://localhost:8000/api/getloop/stream?lat=52.5&lon=13.4&distance=2.5',
+        'http://localhost:8000/api/getloop/stream?lat=52.5&lon=13.4&distance=2.5&area=area1',
       );
       expect(eventSource).toBe(mockEventSource);
     });
@@ -93,15 +102,15 @@ describe('routeApi', () => {
         geometry: { coordinates: [13.404954, 52.520008] },
       };
 
-      streamLoopRoutes(customLocation, 5);
+      streamLoopRoutes(customLocation, 5, area.id);
 
       expect(global.EventSource).toHaveBeenCalledWith(
-        'http://localhost:8000/api/getloop/stream?lat=52.520008&lon=13.404954&distance=5',
+        'http://localhost:8000/api/getloop/stream?lat=52.520008&lon=13.404954&distance=5&area=area1',
       );
     });
 
     it('returns EventSource instance for subscribing to events', () => {
-      const eventSource = streamLoopRoutes(fromLocked, 3);
+      const eventSource = streamLoopRoutes(fromLocked, 3, area.id);
 
       expect(eventSource).toBeDefined();
       expect(eventSource).toHaveProperty('addEventListener');

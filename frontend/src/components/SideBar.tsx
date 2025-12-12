@@ -263,8 +263,9 @@ const SideBar: React.FC<SideBarProps> = ({
   const safeFetchSuggestions = async (value: string): Promise<Place[]> => {
     const apiUrl = getEnvVar('REACT_APP_API_URL') || '';
     const encoded = encodeURIComponent(value);
+    const bboxParam = selectedArea?.bbox?.join(',');
     try {
-      const response = await fetch(`${apiUrl}/api/geocode-forward/${encoded}`);
+      const response = await fetch(`${apiUrl}/api/geocode-forward/${encoded}?bbox=${bboxParam} `);
       if (!response.ok) {
         console.warn('geocode-forward returned non-ok:', response.status);
         return [];

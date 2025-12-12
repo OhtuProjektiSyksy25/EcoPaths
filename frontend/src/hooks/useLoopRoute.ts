@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { LockedLocation, RouteGeoJSON, RouteSummary } from '../types/route';
 import { streamLoopRoutes } from '../api/routeApi';
+import { useArea } from '../contexts/AreaContext';
 
 interface UseLoopRouteReturn {
   routes: Record<string, RouteGeoJSON> | null;
@@ -13,6 +14,7 @@ export const useLoopRoute = (
   fromLocked: LockedLocation | null,
   distanceKm: number,
 ): UseLoopRouteReturn => {
+  const { selectedArea } = useArea();
   const [routes, setRoutes] = useState<Record<string, RouteGeoJSON> | null>(null);
   const [summaries, setSummaries] = useState<Record<string, RouteSummary> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,7 +46,7 @@ export const useLoopRoute = (
       setRoutes(null);
       setSummaries(null);
 
-      const eventSource = streamLoopRoutes(fromLocked, distanceKm);
+      const eventSource = streamLoopRoutes(fromLocked, distanceKm, selectedArea?.id ?? null);
       eventSourceRef.current = eventSource;
 
       // Helper: safely update routes/summaries with NoneType protection
@@ -126,7 +128,7 @@ export const useLoopRoute = (
         eventSourceRef.current = null;
       }
     };
-  }, [fromLocked, distanceKm]);
+  }, [fromLocked, distanceKm, selectedArea]);
 
   return { routes, summaries, loading, error };
 };

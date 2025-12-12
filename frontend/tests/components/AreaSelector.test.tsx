@@ -6,6 +6,7 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { AreaSelector } from '../../src/components/AreaSelector';
+import { AreaProvider } from '../../src/contexts/AreaContext';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -30,7 +31,11 @@ describe('AreaSelector', () => {
       () => new Promise(() => {}), // Never resolves
     );
 
-    render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+    render(
+      <AreaProvider>
+        <AreaSelector onAreaSelect={mockOnAreaSelect} />
+      </AreaProvider>,
+    );
 
     expect(screen.getByText('Loading areas...')).toBeInTheDocument();
   });
@@ -51,7 +56,11 @@ describe('AreaSelector', () => {
       json: async () => mockAreas,
     });
 
-    render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+    render(
+      <AreaProvider>
+        <AreaSelector onAreaSelect={mockOnAreaSelect} />
+      </AreaProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Select Your Area')).toBeInTheDocument();
@@ -80,7 +89,11 @@ describe('AreaSelector', () => {
         json: async () => 'berlin',
       });
 
-    render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+    render(
+      <AreaProvider>
+        <AreaSelector onAreaSelect={mockOnAreaSelect} />
+      </AreaProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Berlin')).toBeInTheDocument();
@@ -118,7 +131,11 @@ describe('AreaSelector', () => {
 
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-    render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+    render(
+      <AreaProvider>
+        <AreaSelector onAreaSelect={mockOnAreaSelect} />
+      </AreaProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Connection Error')).toBeInTheDocument();
@@ -140,7 +157,11 @@ describe('AreaSelector', () => {
       json: async () => ({ areas: [] }),
     });
 
-    render(<AreaSelector onAreaSelect={mockOnAreaSelect} />);
+    render(
+      <AreaProvider>
+        <AreaSelector onAreaSelect={mockOnAreaSelect} />
+      </AreaProvider>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('No Areas Available')).toBeInTheDocument();

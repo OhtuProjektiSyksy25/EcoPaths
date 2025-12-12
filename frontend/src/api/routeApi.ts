@@ -24,6 +24,7 @@ export async function fetchRoute(
   fromLocked: LockedLocation,
   toLocked: LockedLocation,
   balancedWeight?: number,
+  area?: string,
 ): Promise<RouteApiResponse> {
   const geojson = {
     type: 'FeatureCollection',
@@ -45,6 +46,7 @@ export async function fetchRoute(
         },
       },
     ],
+    area: area ?? null,
   };
 
   /*
@@ -78,13 +80,18 @@ export type LoopApiResponse = RouteApiResponse;
  *
  * @param fromLocked - The starting location
  * @param distanceKm - Desired loop length in kilometers
+ * @param area - The selected area for routing
  * @returns EventSource instance for subscribing to stream events
  */
-export function streamLoopRoutes(fromLocked: LockedLocation, distanceKm: number): EventSource {
+export function streamLoopRoutes(
+  fromLocked: LockedLocation,
+  distanceKm: number,
+  areaId: string | null,
+): EventSource {
   const coords = fromLocked.geometry.coordinates;
   const url =
     `${getEnvVar('REACT_APP_API_URL')}/api/getloop/stream?` +
-    `lat=${coords[1]}&lon=${coords[0]}&distance=${distanceKm}`;
+    `lat=${coords[1]}&lon=${coords[0]}&distance=${distanceKm}&area=${areaId ?? ''}`;
 
   return new EventSource(url);
 }

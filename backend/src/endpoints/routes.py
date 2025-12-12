@@ -13,6 +13,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from utils.geo_transformer import GeoTransformer
+from services.route_service import RouteServiceFactory
 from services.loop_route_service import LoopRouteService
 from logger.logger import log
 
@@ -27,6 +28,7 @@ async def getroute(request: Request):
 
     Optional body parameter:
     - balanced_weight (float):
+    - balanced_route (bool): If true, only compute the balanced route.
     Weight for balanced route (0.0 = fastest, 1.0 = best AQ). Defaults to 0.5.
 
     Returns:
@@ -43,21 +45,20 @@ async def getroute(request: Request):
             }
         }
     """
-    area_config = request.app.state.area_config
-    route_service = request.app.state.route_service
-
-    if not area_config or not route_service:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "No area selected. Please select an area first."}
-        )
 
     start_time = time.time()
 
     data = await request.json()
     features = data.get("features", [])
+    area = data.get("area")
     balanced_weight = data.get("balanced_weight", 0.5)
-    only_compute_balanced_route = data.get("balanced_route")
+    only_compute_balanced_route = data.get("balanced_route", False)
+
+    if not area:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected."}
+        )
 
     if not isinstance(balanced_weight, (int, float)) or not 0 <= balanced_weight <= 1:
         return JSONResponse(
@@ -67,6 +68,14 @@ async def getroute(request: Request):
 
     if len(features) != 2:
         return JSONResponse(status_code=400, content={"error": "GeoJSON must contain two features"})
+
+    route_service, area_config = RouteServiceFactory.from_area(area)
+    if not route_service or not area_config:
+        log.error("Error: Couldn't load route_service or area_config")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Could not load route service for the provided area"}
+        )
 
     start_feature = next(
         (f for f in features if f["properties"].get("role") == "start"), None)
@@ -82,7 +91,9 @@ async def getroute(request: Request):
         end_feature["geometry"], target_crs)
 
     if only_compute_balanced_route:
-        response = route_service.compute_balanced_route_only(balanced_weight)
+        response = route_service.compute_balanced_route_only(
+            origin_gdf, destination_gdf, balanced_weight
+        )
     else:
         response = route_service.get_route(
             origin_gdf, destination_gdf, balanced_weight)
@@ -112,19 +123,25 @@ async def getroute(request: Request):
 
 
 @router.get("/getloop/stream")
-async def getloop_stream(request: Request, lat: float, lon: float, distance: float):
+async def getloop_stream(lat: float, lon: float, distance: float, area: str = ""):
     """
     Stream loop routes as they are computed using Server-Sent Events (SSE).
     """
-    area_config = request.app.state.area_config
 
-    if not area_config:
+    if area == "":
         return JSONResponse(
             status_code=400,
             content={"error": "No area selected."}
         )
 
-    loop_route_service = LoopRouteService(request.app.state.selected_area)
+    route_service, area_config = RouteServiceFactory.from_area(area)
+    loop_route_service = LoopRouteService(area)
+
+    if not area_config or not route_service:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "No area selected."}
+        )
 
     start_time = time.time()
     target_crs = area_config.crs

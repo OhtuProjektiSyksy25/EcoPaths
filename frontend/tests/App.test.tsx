@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import App from '../src/App';
+import { AreaProvider } from '../src/contexts/AreaContext';
 
 // Mock the logo image
 jest.mock('../src/assets/images/ecopaths_logo_with_text.jpg', () => 'logo.jpg');
@@ -56,13 +57,21 @@ jest.mock('../src/components/AreaSelector', () => () => (
 jest.mock('../src/components/ErrorPopup', () => () => null);
 
 test('renders App without crashing', () => {
-  render(<App />);
+  render(
+    <AreaProvider>
+      <App />
+    </AreaProvider>,
+  );
   expect(screen.getByTestId('map-component')).toBeInTheDocument();
   expect(screen.getByTestId('area-selector')).toBeInTheDocument();
   expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
 });
 
 test('renders EcoPaths header', () => {
-  render(<App />);
+  render(
+    <AreaProvider>
+      <App />
+    </AreaProvider>,
+  );
   expect(screen.getByRole('banner')).toBeInTheDocument();
 });

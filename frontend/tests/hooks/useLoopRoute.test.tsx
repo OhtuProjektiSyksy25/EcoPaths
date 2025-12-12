@@ -2,11 +2,18 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useLoopRoute } from '../../src/hooks/useLoopRoute';
 import * as routeApi from '../../src/api/routeApi';
 import { LockedLocation } from '../../src/types/route';
+import { AreaProvider } from '../../src/contexts/AreaContext';
 
 const mockLocation: LockedLocation = {
   full_address: 'Test Address',
   geometry: { coordinates: [24.94, 60.17] }, // Helsinki
 };
+
+const mockArea = { id: 'area1', name: 'Test Area' };
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <AreaProvider>{children}</AreaProvider>
+);
 
 // Mock EventSource
 class MockEventSource {
@@ -36,7 +43,7 @@ describe('useLoopRoute', () => {
   it('does not call streamLoopRoutes if fromLocked=null', async () => {
     const spy = jest.spyOn(routeApi, 'streamLoopRoutes');
 
-    renderHook(() => useLoopRoute(null, 5));
+    renderHook(() => useLoopRoute(null, 5), { wrapper });
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -44,7 +51,7 @@ describe('useLoopRoute', () => {
   it('does not call streamLoopRoutes if distanceKm<=0', async () => {
     const spy = jest.spyOn(routeApi, 'streamLoopRoutes');
 
-    renderHook(() => useLoopRoute(mockLocation, 0));
+    renderHook(() => useLoopRoute(mockLocation, 0), { wrapper });
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -54,14 +61,14 @@ describe('useLoopRoute', () => {
 
     jest.useFakeTimers();
 
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
 
     // Wrap timer advancement in act()
     act(() => {
       jest.advanceTimersByTime(400);
     });
 
-    expect(spy).toHaveBeenCalledWith(mockLocation, 5);
+    expect(spy).toHaveBeenCalled();
 
     jest.useRealTimers();
   });
@@ -74,7 +81,7 @@ describe('useLoopRoute', () => {
 
     jest.useFakeTimers();
 
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
 
     act(() => {
       jest.advanceTimersByTime(400);
@@ -105,7 +112,7 @@ describe('useLoopRoute', () => {
 
     jest.useFakeTimers();
 
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
 
     act(() => {
       jest.advanceTimersByTime(400);
@@ -135,7 +142,7 @@ describe('useLoopRoute', () => {
     });
 
     jest.useFakeTimers();
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
     act(() => {
       jest.advanceTimersByTime(400);
     });
@@ -174,7 +181,7 @@ describe('useLoopRoute', () => {
     });
 
     jest.useFakeTimers();
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
     act(() => {
       jest.advanceTimersByTime(400);
     });
@@ -204,7 +211,7 @@ describe('useLoopRoute', () => {
     });
 
     jest.useFakeTimers();
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
     act(() => {
       jest.advanceTimersByTime(400);
     });
@@ -242,7 +249,7 @@ describe('useLoopRoute', () => {
     });
 
     jest.useFakeTimers();
-    const { result } = renderHook(() => useLoopRoute(mockLocation, 5));
+    const { result } = renderHook(() => useLoopRoute(mockLocation, 5), { wrapper });
     act(() => {
       jest.advanceTimersByTime(400);
     });

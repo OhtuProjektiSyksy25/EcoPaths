@@ -11,6 +11,7 @@ import { useRoute } from './hooks/useRoute';
 import { useLoopRoute } from './hooks/useLoopRoute';
 import { useAreaHandlers } from './hooks/useAreaHandlers';
 import { ExposureOverlayProvider } from './contexts/ExposureOverlayContext';
+import { AreaProvider } from './contexts/AreaContext';
 import logo from './assets/images/ecopaths_logo_with_text.jpg';
 import './styles/App.css';
 import { Globe } from 'lucide-react';
@@ -191,9 +192,11 @@ function AppContent(): JSX.Element {
 
 function App(): JSX.Element {
   return (
-    <ExposureOverlayProvider>
-      <AppContent />
-    </ExposureOverlayProvider>
+    <AreaProvider>
+      <ExposureOverlayProvider>
+        <AppContent />
+      </ExposureOverlayProvider>
+    </AreaProvider>
   );
 }
 

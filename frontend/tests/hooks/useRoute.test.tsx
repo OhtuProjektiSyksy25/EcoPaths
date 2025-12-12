@@ -1,6 +1,7 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useRoute } from '../../src/hooks/useRoute';
 import { LockedLocation, RouteGeoJSON, RouteSummary } from '../../src/types/route';
+import { AreaProvider } from '../../src/contexts/AreaContext';
 
 const mockFrom: LockedLocation = {
   full_address: 'Start Address',
@@ -11,6 +12,10 @@ const mockTo: LockedLocation = {
   full_address: 'End Address',
   geometry: { coordinates: [24.941, 60.17] },
 };
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <AreaProvider>{children}</AreaProvider>
+);
 
 const mockRoutes: Record<string, RouteGeoJSON> = {
   fastest: {
@@ -89,7 +94,7 @@ describe('useRoute', () => {
       }),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, false));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, false), { wrapper });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -108,14 +113,15 @@ describe('useRoute', () => {
   });
 
   test('does not fetch if fromLocked or toLocked is incomplete', () => {
-    renderHook(() => useRoute(null, mockTo, 0.5, false));
+    const { result } = renderHook(() => useRoute(null, mockTo, 0.5, false), { wrapper });
+
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
   test('handles fetch error correctly', async () => {
     (global.fetch as jest.Mock).mockRejectedValue(new Error('Network request failed'));
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, false));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, false), { wrapper });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -144,6 +150,7 @@ describe('useRoute', () => {
     const { result, rerender } = renderHook(
       ({ weight }) => useRoute(mockFrom, mockTo, weight, false),
       {
+        wrapper,
         initialProps: { weight: 0.5 },
       },
     );
@@ -178,6 +185,7 @@ describe('useRoute', () => {
     const { result, rerender } = renderHook(
       ({ weight }) => useRoute(mockFrom, mockTo, weight, false),
       {
+        wrapper,
         initialProps: { weight: 0.5 },
       },
     );
@@ -215,6 +223,7 @@ describe('useRoute', () => {
     const { result, rerender } = renderHook(
       ({ from, to, weight }) => useRoute(from, to, weight, false),
       {
+        wrapper,
         initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
       },
     );
@@ -244,7 +253,7 @@ describe('useRoute', () => {
       json: async () => ({}),
     });
 
-    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, false));
+    const { result } = renderHook(() => useRoute(mockFrom, mockTo, 0.5, false), { wrapper });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -275,6 +284,7 @@ describe('useRoute', () => {
     const { result, rerender } = renderHook(
       ({ weight }) => useRoute(mockFrom, mockTo, weight, false),
       {
+        wrapper,
         initialProps: { weight: 0.5 },
       },
     );
@@ -308,6 +318,7 @@ describe('useRoute', () => {
 
     const { rerender } = renderHook(({ from, to, weight }) => useRoute(from, to, weight, false), {
       initialProps: { from: mockFrom, to: mockTo, weight: 0.5 },
+      wrapper,
     });
 
     await waitFor(() => {
@@ -333,6 +344,7 @@ describe('useRoute', () => {
 
     const { result, rerender } = renderHook(({ loop }) => useRoute(mockFrom, mockTo, 0.5, loop), {
       initialProps: { loop: false },
+      wrapper,
     });
 
     // initial fetch
