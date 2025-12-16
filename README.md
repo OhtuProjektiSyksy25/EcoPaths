@@ -309,6 +309,7 @@ invoke test-playwright [--flush]
 
 - [Product backlog](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/1)  
 - [Sprint task board](https://github.com/orgs/OhtuProjektiSyksy25/projects/5/views/4)
+- [WIKI](https://github.com/OhtuProjektiSyksy25/EcoPaths/wiki)
 
 
 ## License
